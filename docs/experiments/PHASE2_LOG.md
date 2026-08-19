@@ -193,4 +193,181 @@ priorities (canonicalization stage, precision-aware promotion gate,
 compiler fixes for R1-E03's disjunction/negation bugs, and the
 structural-plus-delegated-Tantivy integration design) are now
 appropriately unblocked to proceed, rather than needing the decision
-tree revisited first.
+tree revisited first. Priority 2 (canonicalization) is attacked next,
+since it directly targets R1-E02/E02b's single most severe finding
+(5.0% filter recall against real Exact-labeled products).
+
+---
+
+## P2-E02 — A frequency-threshold canonicalization stage more than doubles real filter recall
+
+**Evidence class**: real (same 1,215,854-product catalog and
+22,458-query real ESCI judgment set as R1-E01 through P2-E01).
+**Independence**: yes — same real, third-party held-out queries/judgments
+as every other real-data measurement in this project; the threshold
+itself is a structural, catalog-derived signal, not tuned against these
+specific judgments before being evaluated on them (each threshold value
+was evaluated once, not selected by fitting to this test set).
+
+**Question**: R1-E02/E02b's most severe finding was that a
+cold-start lexicon built by trusting every distinct raw catalog `color`
+value produces a **5.0%** filter recall against real Exact-labeled
+relevant products — traced to extraction quality (noisy, one-off,
+non-categorical field values indexed with the same 1.0 confidence as
+genuine values), not aggregation logic. Issue #6 priority 2 and ADR 0008
+both call for a canonicalization/validation stage before a raw catalog
+value becomes a trusted lexicon entry. Does the simplest deterministic,
+zero-model-call signal available — how many times a value recurs across
+the catalog — actually fix this, and at what cost to coverage (Semantic
+FIB hit rate) and precision?
+
+**Hypothesis**: a genuine controlled-vocabulary value (a real color name,
+a real brand) gets reused across many products; a one-off data-entry
+mistake (the R1-E02 diagnostic's "#2", "Without Lids", "10 Gallon")
+typically does not. Requiring a minimum occurrence count before an enum
+value becomes a trusted lexicon entry will raise filter recall
+substantially (more than R1-E02b's rejected OR-within-attribute fix,
+which only moved Exact recall 5.0% -> 6.0%) without a comparable
+precision cost, because the mechanism targets the actual root cause
+(extraction quality) rather than working around it (aggregation logic).
+
+**Decision threshold**: "substantially" is calibrated against R1-E02b's
+already-rejected fix as the floor to beat (a ~20% relative improvement
+was rejected as insufficient) — a canonicalization threshold that only
+matches or modestly exceeds R1-E02b's result would not be different
+enough to call this root-cause fix confirmed rather than another
+marginal mitigation.
+
+**Implementation**  
+`commerce_core::cold_start::CatalogProfile` gains `enum_occurrence:
+BTreeMap<String, usize>` (incremented once per catalog attribute
+occurrence, alongside the existing dedup-by-source bookkeeping) and a
+public `enum_occurrence_count` accessor. `compile_lexicon` gains a
+required `min_enum_frequency: usize` parameter: an enum/multi-enum
+value's entire lexicon entry (all its candidates together — filtering is
+per-value, not per-candidate) is skipped unless its combined occurrence
+count meets the threshold. `min_enum_frequency=1` means "no filtering" —
+every Phase 0 test fixture call site was updated to pass `1` explicitly,
+preserving exact prior behavior (verified: all pre-existing tests still
+pass unmodified). Brand/product-type/category/boolean vocabulary is
+**not** subject to this threshold — those come from an already-curated
+registry, not raw per-product field values, matching the actual root
+cause R1-E01/E02 identified (the `color` field specifically). A new
+regression test, `min_enum_frequency_excludes_one_off_values_but_keeps_repeated_ones`
+(`crates/commerce-core/tests/cold_start.rs`), uses `cold_start_catalog`'s
+known occurrence counts (verified via `enum_occurrence_count` directly in
+the test, not assumed) to confirm threshold 2 excludes a value seen once
+("red") while keeping values seen twice ("black", and the deliberately
+planted "green" collision, which correctly stays *ambiguous*, not
+resolved to one arbitrary candidate) resolvable, and confirms
+brand/product-type resolution is unaffected. `crates/phase2-eval/src/bin/canonicalization_eval.rs`
+sweeps `min_enum_frequency` in {1, 2, 3, 5, 10, 25, 50, 100, 250} against
+the real catalog/query set, reusing `round1_eval::classify`'s
+classification and `measure_precision` (existing `AggregationRule::ExistingAnd`,
+the actual compiler's real aggregation rule) unmodified.
+
+**Results** (same environment as R1-E01 through P2-E01; single
+deterministic run, ~0.4-0.5s per threshold after the catalog/profile
+build):
+
+```
+ threshold  fib_rate  ambig_rate  punt_rate  precision  recall_ES  recall_Exact
+         1     55.4%      38.4%       2.5%      94.5%       4.3%        5.0%   (baseline, R1-E02)
+         2     48.4%      41.7%       2.8%      93.3%       6.1%        7.1%
+         3     47.9%      39.4%       2.9%      93.5%       7.2%        8.4%
+         5     48.2%      36.6%       3.0%      93.2%       8.2%        9.5%
+        10     48.5%      33.3%       3.0%      93.2%       9.2%       10.7%
+        25     55.6%      21.4%       3.1%      92.3%       9.7%       11.2%   <- recall peak
+        50     59.8%      16.0%       3.1%      92.3%       9.2%       10.6%
+       100     61.8%      13.0%       3.1%      92.2%       9.1%       10.5%
+       250     64.0%      10.0%       3.1%      92.2%       8.9%       10.2%
+```
+
+**Interpretation**
+
+**Confirmed, decisively, and the fix is substantially stronger than
+R1-E02b's rejected alternative.** Exact-label filter recall more than
+**doubles** (5.0% -> 11.2% at its peak, threshold=25; still 10.2-10.7%
+across the whole threshold >= 10 range) — a ~2.2x improvement, well past
+R1-E02b's rejected ~1.2x (5.0% -> 6.0%) result, confirming the
+hypothesis that extraction-quality canonicalization is the dominant
+lever, not aggregation logic (consistent with R1-E02b's own root-cause
+diagnosis). Precision costs almost nothing (94.5% -> ~92.2-93.5% across
+the whole sweep, a 1-2 point absolute change) — the filter stays
+precise, it just now also *retains* far more of what it should. Ambiguity
+rate — R1-E02's other major finding (38.4% at baseline, largely
+accidental collisions among six-figure noisy vocabulary) — falls sharply
+at high thresholds (down to 10.0% at threshold=250), meaning most of
+that ambiguity really was a symptom of untrusted, low-frequency
+vocabulary polluting the lexicon, not genuine multi-attribute collisions
+like the deliberately-planted Phase 0 case.
+
+**A real, non-monotonic wrinkle worth explaining rather than glossing
+over**: ambiguity rate does not fall monotonically with threshold — it
+*rises* from 38.4% to 41.7% between threshold 1 and 2, before falling
+at higher thresholds. This is not noise or a bug: `ir::query::compile`
+matches the *longest* phrase window first (`crates/commerce-core/src/ir/query.rs`).
+When a low-frequency multi-word lexicon entry (e.g. a two-word noisy
+"color" value) is filtered out at a given threshold, the compiler falls
+through to trying *shorter* sub-windows within the same span — and a
+shorter, single-word substring can land on a genuinely ambiguous entry
+that the longer (now-removed) phrase had been silently shadowing. This
+is a real, mechanistic, second-order effect of greedy longest-match
+compilation interacting with frequency filtering, not a flaw in the
+threshold approach itself (the *net* effect across the full sweep is
+still a large ambiguity reduction) — flagged here so a future reader
+does not mistake the small threshold=1-to-2 uptick for a regression.
+
+**Semantic FIB hit rate follows a U-shape, and the far end is
+informative**: it dips to 47.9% around threshold 3 (removing noisy
+entries converts some illusory `structural_only` resolutions into safe
+`residual`/`ambiguous` outcomes) before *exceeding* the unfiltered
+baseline at threshold >= 25 (64.0% at threshold 250) — because at
+aggressive thresholds, the surviving lexicon entries are overwhelmingly
+genuine, high-frequency, real-world-common values (actual frequently-sold
+colors/brands), which resolve unambiguously and correctly far more
+often than the six-figure long tail of one-off noise ever did. This is
+consistent with real commerce catalogs' vocabulary being Zipfian: a
+small set of true common values accounts for a large share of
+occurrences.
+
+**What this does not claim**: even at its best (11.2%), Exact-label
+filter recall remains far below a ranked lexical engine's Recall@10
+(P2-E01: Tantivy 0.1801, i.e. 18.01%) — this experiment fixes a specific,
+severe defect in the structural path's *own* filter recall, it does not
+and is not intended to make structural retrieval a substitute for
+delegated lexical ranking on the queries it cannot resolve, consistent
+with ADR 0008's narrowed scope (structural retrieval owns the confident,
+validated subset; Tantivy owns the rest). Recall also does not increase
+monotonically forever — it peaks around threshold 25 and drifts slightly
+down at 50-250 (11.2% -> 10.2%), meaning very aggressive thresholds trade
+a small amount of real recall for further ambiguity/FIB-rate improvement;
+threshold selection is a real tradeoff, not a "higher is strictly
+better" free win.
+
+**Caveats**: single run per threshold (deterministic pipeline, no
+variance to characterize). The sweep only tests one canonicalization
+signal (occurrence frequency); other signals named in Issue #6 (e.g. a
+"does this look like a genuine categorical value" content heuristic) are
+not tested here and could plausibly compose with frequency filtering for
+a further improvement — not attempted this entry, since frequency alone
+already clears the "substantially stronger than R1-E02b" bar this
+entry's decision threshold set. No single threshold value is adopted as
+"the" production default in this entry — that is a downstream
+integration decision (Issue #6 priority 5) informed by, but not settled
+by, this sweep.
+
+**Regression check**: `commerce-core`'s test suite grew from 36 to 37
+tests (1 new: the canonicalization-behavior regression test described
+above), all green; every pre-existing test's expected output is
+unchanged (`min_enum_frequency=1` call sites are a verified no-op).
+Verified via `cargo fmt --all -- --check`, `cargo clippy --workspace
+--all-targets --all-features -- -D warnings`, `cargo test --workspace
+--all-features`, `cargo build --workspace --release`.
+
+**Next question**: Issue #6 priority 3 (a precision-aware promotion gate
+for the control plane, fixing R1-E06's structural safety gap) is the
+next highest-value item — it is independent of this entry's
+canonicalization work (different subsystem: control-plane promotion, not
+cold-start lexicon construction) and was flagged as equally severe in
+`ROUND1_DECISION_TREE.md`.

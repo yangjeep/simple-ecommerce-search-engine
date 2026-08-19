@@ -44,7 +44,7 @@ fn generated_queries_are_deterministic_across_runs() {
 #[test]
 fn coverage_holes_are_exactly_the_deliberate_green_collision() {
     let profile = build_profile();
-    let lexicon = compile_lexicon(&profile);
+    let lexicon = compile_lexicon(&profile, 1);
     let generated = generate_shopper_queries(&profile);
     let generated_refs: Vec<&str> = generated.iter().map(String::as_str).collect();
 
@@ -70,6 +70,64 @@ fn coverage_holes_are_exactly_the_deliberate_green_collision() {
     assert_eq!(compiled.ambiguous[0].candidates.len(), 2);
 }
 
+/// Round 1 R1-E02/E02b canonicalization fix
+/// (`docs/experiments/ROUND1_LOG.md`): a `min_enum_frequency` threshold
+/// above 1 must exclude one-off enum values from the lexicon entirely
+/// (they become safely `residual`, not a wrong hard filter) while keeping
+/// values seen more than once. In `cold_start_catalog`, "red" and "blue"
+/// are each seen exactly once (one variant each); "black" (two variants,
+/// one per brand) and the deliberately planted "green" collision (color
+/// on one product, a feature tag on another) are each seen twice.
+#[test]
+fn min_enum_frequency_excludes_one_off_values_but_keeps_repeated_ones() {
+    let profile = build_profile();
+    assert_eq!(profile.enum_occurrence_count("red"), 1);
+    assert_eq!(profile.enum_occurrence_count("blue"), 1);
+    assert_eq!(profile.enum_occurrence_count("black"), 2);
+    assert_eq!(profile.enum_occurrence_count("green"), 2);
+
+    let unfiltered = compile_lexicon(&profile, 1);
+    let red_unfiltered = compile("red running shoes", &unfiltered);
+    assert!(
+        red_unfiltered.residual_lexical.is_empty(),
+        "threshold 1 must not filter anything: {red_unfiltered:?}"
+    );
+
+    let filtered = compile_lexicon(&profile, 2);
+    let red_filtered = compile("red running shoes", &filtered);
+    assert!(
+        red_filtered.residual_lexical.contains(&"red".to_string()),
+        "\"red\" is seen once in the fixture; threshold 2 must exclude it as residual, not silently keep it: {red_filtered:?}"
+    );
+
+    // "black" is seen twice (once per brand) and must survive threshold 2,
+    // still resolving to a real constraint, not filtered away.
+    let black_filtered = compile("black running shoes", &filtered);
+    assert!(
+        black_filtered.residual_lexical.is_empty() && black_filtered.ambiguous.is_empty(),
+        "\"black\" is seen twice; threshold 2 must keep it resolvable: {black_filtered:?}"
+    );
+
+    // "green" is seen twice (the deliberate collision) and must survive
+    // threshold 2 -- still ambiguous (two sources), not filtered away.
+    let green_filtered = compile("green running shoes", &filtered);
+    assert_eq!(
+        green_filtered.ambiguous.len(),
+        1,
+        "\"green\" is seen twice; threshold 2 must keep it (still ambiguous, not residual): {green_filtered:?}"
+    );
+
+    // Brand/product-type vocabulary is never subject to this threshold,
+    // even though "nike" and "running shoes" are also low-frequency in
+    // this tiny fixture -- they come from the curated Brand/ProductType
+    // registry, not raw per-product enum values.
+    let brand_and_type = compile("nike running shoes", &filtered);
+    assert!(
+        brand_and_type.residual_lexical.is_empty() && brand_and_type.ambiguous.is_empty(),
+        "brand/product-type resolution must be unaffected by min_enum_frequency: {brand_and_type:?}"
+    );
+}
+
 /// Independent-evidence cross-check: does a lexicon compiled purely from
 /// catalog data (zero hand curation, zero aliases) cover any of the
 /// hand-authored Gate 4/5 query set it was never built from? This
@@ -81,7 +139,7 @@ fn coverage_holes_are_exactly_the_deliberate_green_collision() {
 #[test]
 fn catalog_derived_lexicon_partially_covers_the_hand_authored_query_set() {
     let profile = build_profile();
-    let catalog_lexicon = compile_lexicon(&profile);
+    let catalog_lexicon = compile_lexicon(&profile, 1);
     let report = measure_coverage(REPRESENTATIVE_QUERY_SET, &catalog_lexicon);
 
     // Sanity bounds, not a hand-predicted exact figure: some overlap must
@@ -117,7 +175,7 @@ fn catalog_derived_lexicon_partially_covers_the_hand_authored_query_set() {
 fn hand_curated_and_catalog_derived_lexicons_are_independently_comparable() {
     let hand_curated = shoe_semantic_context();
     let profile = build_profile();
-    let catalog_derived = compile_lexicon(&profile);
+    let catalog_derived = compile_lexicon(&profile, 1);
 
     let hand_report = measure_coverage(REPRESENTATIVE_QUERY_SET, hand_curated.lexicon());
     let catalog_report = measure_coverage(REPRESENTATIVE_QUERY_SET, &catalog_derived);

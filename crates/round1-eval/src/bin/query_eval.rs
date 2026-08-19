@@ -49,7 +49,12 @@ fn main() {
     println!("deriving cold-start lexicon from the real catalog (commerce_core::cold_start, unmodified)...");
     let t2 = Instant::now();
     let profile = CatalogProfile::build(&ingested.catalog, &ingested.brands, &[], &[]);
-    let lexicon = compile_lexicon(&profile);
+    // min_enum_frequency=1: unfiltered, preserving this entry's exact
+    // recorded R1-E02 behavior. The canonicalization fix this finding
+    // motivated is swept separately in phase2-eval (P2-E02,
+    // docs/experiments/PHASE2_LOG.md) rather than changed here, so R1-E02's
+    // evidence stays reproducible as originally recorded.
+    let lexicon = compile_lexicon(&profile, 1);
     println!("lexicon derived in {:.2}s", t2.elapsed().as_secs_f64());
 
     println!("loading queries from {queries_path:?}...");

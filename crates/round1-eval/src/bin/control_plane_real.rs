@@ -34,7 +34,10 @@ fn main() {
     let products = data::load_catalog(&catalog_path);
     let ingested = catalog::build_catalog(&products);
     let profile = CatalogProfile::build(&ingested.catalog, &ingested.brands, &[], &[]);
-    let lexicon = compile_lexicon(&profile);
+    // min_enum_frequency=1: unfiltered, preserving this entry's exact
+    // recorded R1-E06 behavior (the point of R1-E06 was measuring the
+    // *unfiltered* gate/lexicon's behavior).
+    let lexicon = compile_lexicon(&profile, 1);
     let context = SemanticContext::new(
         1,
         "R1-E06: real catalog-derived lexicon (Gate 6, unmodified)",

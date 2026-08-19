@@ -31,6 +31,20 @@ pub struct CatalogProfile {
     category_names: BTreeMap<String, CategoryId>,
     boolean_attributes: BTreeSet<String>,
     enum_candidates: BTreeMap<String, BTreeSet<EnumSource>>,
+    /// How many catalog attribute *occurrences* (not distinct sources) each
+    /// lowercased enum value string was seen under, across every
+    /// product/variant. Round 1 R1-E02/E02b (`docs/experiments/ROUND1_LOG.md`)
+    /// found that on a real 1.2M-product catalog, naively trusting every
+    /// distinct raw field value as a lexicon entry produces catastrophic
+    /// filter recall (5.0% against real Exact-labeled relevant products):
+    /// noisy, one-off data-entry values ("#2", "Without Lids", "10 Gallon")
+    /// become hard-filter-worthy exactly as confidently as genuine,
+    /// repeatedly-used categorical values ("Black", "Nike"). Occurrence
+    /// frequency is used as a deterministic (zero model call), canonicalization
+    /// signal in [`compile_lexicon`]: a real controlled-vocabulary value gets
+    /// reused across many products; a one-off data-entry mistake typically
+    /// does not.
+    enum_occurrence: BTreeMap<String, usize>,
     numeric_values: BTreeMap<String, Vec<f64>>,
     price_cents: Vec<i64>,
 }
@@ -99,14 +113,22 @@ impl CatalogProfile {
     }
 
     fn index_enum_source(&mut self, attribute: &str, value: &str, is_multi: bool) {
+        let key = value.to_lowercase();
+        *self.enum_occurrence.entry(key.clone()).or_insert(0) += 1;
         self.enum_candidates
-            .entry(value.to_lowercase())
+            .entry(key)
             .or_default()
             .insert(EnumSource {
                 attribute: attribute.to_string(),
                 value: value.to_string(),
                 is_multi,
             });
+    }
+
+    /// How many catalog attribute occurrences `value_lower` (already
+    /// lowercased) was seen under. 0 if never seen.
+    pub fn enum_occurrence_count(&self, value_lower: &str) -> usize {
+        self.enum_occurrence.get(value_lower).copied().unwrap_or(0)
     }
 
     pub fn product_type_names(&self) -> impl Iterator<Item = &str> {
@@ -158,7 +180,20 @@ impl CatalogProfile {
 /// decisive attribute (color, size) from a descriptive/soft one
 /// (cushioned, breathable), so it cannot propose `ir::Preference`s the way
 /// a human curator did in Gate 2/4 — see `docs/adr/0006-cold-start-fuzzing.md`.
-pub fn compile_lexicon(profile: &CatalogProfile) -> SemanticLexicon {
+///
+/// `min_enum_frequency` is the Round 1 R1-E02/E02b canonicalization fix
+/// (`docs/experiments/ROUND1_LOG.md`, `docs/adr/0008-narrow-to-structural-planning-layer.md`):
+/// an enum/multi-enum value must have been seen at least this many times
+/// across the catalog to become a trusted lexicon entry at all. `1` means
+/// "no filtering" — every Phase 0 test fixture uses `1` and keeps its
+/// exact pre-existing behavior. Brand/product-type/category/boolean
+/// vocabulary is never filtered by this threshold: those come from an
+/// already-curated registry (`Brand`/`ProductType`/`Category`), not raw,
+/// unvalidated per-product field values — the specific failure mode this
+/// threshold targets is real-catalog enum attributes (e.g. `color`) whose
+/// raw values are frequently data-entry noise, not a genuine controlled
+/// vocabulary (R1-E01/E02's finding).
+pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> SemanticLexicon {
     let mut lex = SemanticLexicon::new();
     for (name, id) in &profile.brand_names {
         lex.insert(
@@ -200,6 +235,9 @@ pub fn compile_lexicon(profile: &CatalogProfile) -> SemanticLexicon {
         );
     }
     for (value_lower, sources) in &profile.enum_candidates {
+        if profile.enum_occurrence_count(value_lower) < min_enum_frequency {
+            continue;
+        }
         let candidates: Vec<Candidate> = sources
             .iter()
             .map(|source| {
