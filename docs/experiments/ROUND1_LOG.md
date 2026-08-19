@@ -621,3 +621,159 @@ higher-value fix — noted for R1-E06 (control plane / cold start on real
 vocabulary) rather than pursued immediately, since R1-E03 (adversarial
 query stress test) and R1-E04 (external baseline) are still open and
 don't depend on resolving this.
+
+---
+
+## R1-E03 — Commerce IR stress test: the compiler doesn't just fail on OR/NOT, it inverts them
+
+**Evidence class**: hand-authored (the 10 queries are verbatim from the
+Round 1 brief, deliberately adversarial; not a coverage/frequency claim —
+this is a targeted correctness probe, not a random sample). **Lexicon**:
+`commerce_core::fixtures::shoe_lexicon` (Phase 0's hand-curated, genuinely
+validated lexicon — deliberately *not* the noisy real-data lexicon from
+R1-E01/E02, to isolate "does the compiler's syntax handle
+OR/NOT/ranges/numeric-words" from "is the vocabulary clean," which R1-E02
+already covered exhaustively).
+
+**Question**: run the brief's own 10 adversarial example queries verbatim
+through the actual compiler. For each: fully/correctly resolved, safely
+unresolved (residual/ambiguous, no wrong answer), or — the outcome that
+matters most — **actively misinterpreted** (a wrong deterministic answer,
+worse than a punt)?
+
+**Hypothesis**: negation ("not", "aren't") and disjunction ("or") are not
+special-cased anywhere in `ir::query::compile`'s token loop; the
+compiler's phrase-matcher will treat every recognized word as an
+independent positive AND-clause regardless of a preceding negation or
+disjunction marker. Numeric words ("nine"), units ("16 inch", "32GB"),
+and multi-value ranges ("between $500 and $900") are similarly
+unhandled by the `size <n>`/`under|over <n>` patterns, which only accept
+literal digit tokens — but unlike negation/disjunction, these should
+*fail safely* (residual, not a wrong constraint), since there's no
+recognized keyword to misapply. The context-poor case ("black size 9")
+should, per the brief's own stated design principle, come back
+ambiguous or under-resolved rather than a confident full match.
+
+**Decision threshold**: any query that compiles to a **wrong** hard
+constraint (not just missing information) is a correctness defect, not a
+coverage gap — CLAUDE.md's "cross-variant false matches are bugs" applies
+by the same logic to cross-intent false constraints. Any query where the
+compiler emits high-confidence full resolution against the brief's
+explicitly-flagged context-poor case is a direct violation of a design
+principle stated in this round's own instructions, not a debatable
+judgment call.
+
+**Results** (verbatim `compile()` output, `crates/round1-eval/src/bin/adversarial_ir.rs`):
+
+```
+"black Nike waterproof running shoes size 9 under $150"
+  -> constraints: [color=Black, Brand(Nike), waterproof=true, ProductType(running shoes), size=9.0, price<$150]
+     ambiguous: []  residual: []                                                    ✅ correct (Phase 0's own case)
+
+"black or navy running shoes"
+  -> constraints: [color=Black, ProductType(running shoes)]
+     ambiguous: []  residual: ["or", "navy"]                                        ❌ MISINTERPRETED
+     (silently narrows to black-only; "or navy" dropped, not preserved as a second option)
+
+"Nike shoes not red"
+  -> constraints: [Brand(Nike), color=Red]
+     ambiguous: []  residual: ["shoes", "not"]                                      ❌ MISINTERPRETED
+     ("not red" compiles to a REQUIRED red constraint — the exact opposite of stated intent)
+
+"size nine men's trail shoes"
+  -> constraints: []  ambiguous: []  residual: ["size","nine","men's","trail","shoes"]  ✅ safe punt
+
+"16 inch laptop with 32GB RAM"
+  -> constraints: []  ambiguous: []  residual: ["16","inch","laptop","32gb","ram"]   ✅ safe punt
+
+"lightweight waterproof shoes for winter running"
+  -> constraints: [waterproof=true]  residual: ["lightweight","shoes","winter","running"]  ~ partial, safe
+     ("running shoes" doesn't match — not adjacent in this word order — a real phrase-order rigidity limit)
+
+"gift for a runner under $100"
+  -> constraints: [price<$100]  residual: ["gift","runner"]                          ~ partial, safe
+     (price extracted correctly; occasion/need intent entirely lost, as expected — not this compiler's job)
+
+"TV between $500 and $900"
+  -> constraints: []  residual: ["tv","between","$500","and","$900"]                 ✅ safe punt
+     ("between X and Y" entirely unsupported — neither bound extracted)
+
+"dress shoes that aren't leather"
+  -> constraints: []  ambiguous: ["leather"]  residual: ["dress","shoes","that","aren't"] ✅ safe (coincidentally)
+     (flagged ambiguous because "leather" is Phase 0's planted collision, not because negation was detected)
+
+"black size 9"
+  -> constraints: [color=Black, size=9.0]  ambiguous: []  residual: []               ❌ DESIGN-PRINCIPLE VIOLATION
+     (fully, confidently resolved despite zero product-type/scope signal — the brief names this
+      exact query as one where "preserving ambiguity is preferable to a wrong deterministic route")
+```
+
+**Interpretation**
+
+**3 of 10 brief-specified adversarial queries (30%) produce actively
+wrong or inappropriately-confident output, not merely incomplete
+output.** This is a sharper and more important finding than a coverage
+percentage: R1-E02 already established that *incomplete* resolution
+(residual/punt) is common and largely harmless (the query correctly
+falls through to lexical retrieval); this experiment establishes that
+the *existing* compiler, unmodified, has at least three concrete,
+reproducible ways to be **actively incorrect**:
+
+1. **Disjunction is silently dropped, narrowing the result set.** "black
+   or navy" compiles as if the shopper had typed "black" alone. A hard
+   structural filter built from this would exclude every navy product
+   the shopper explicitly said was acceptable.
+2. **Negation is silently inverted.** "not red" compiles to a *required*
+   red constraint. This is not a missing-feature gap; it is a
+   sign-flip bug in the token loop's treatment of any recognized word,
+   negated or not, as a positive assertion. Of everything found in this
+   round, this is the single most severe correctness defect: it produces
+   the exact opposite of stated shopper intent, with full confidence and
+   zero ambiguity signal.
+3. **No scope-sufficiency check exists at all.** "black size 9" resolves
+   exactly as confidently as the fully-specified baseline query. The
+   compiler has no notion that "color + size with no product type" is
+   under-determined — it will happily emit a hard two-clause filter for
+   a shoe, a shirt, a ring, or anything else "black" and "size 9" could
+   mean. This directly contradicts a design principle stated in this
+   round's own brief, using the brief's own worked example.
+
+The remaining safe-punt/partial cases (numeric words, units, multi-value
+ranges, phrase-order rigidity) are real coverage gaps, consistent with
+R1-E02's structural-coverage findings, but are not correctness bugs —
+they fail by doing too little, not by doing the wrong thing. Per
+CLAUDE.md's hard rule that cross-variant false matches are bugs, the
+disjunction/negation findings are the same category of defect at the
+query-compilation layer instead of the matching layer, and are more
+severe than anything found in Phase 0 because Phase 0's fixtures never
+included a negated or disjunctive query at all.
+
+**What this does and does not motivate**: per the brief's own
+instruction ("extend the compiler only where evidence shows important
+coverage holes"), and given negation/disjunction support is a genuine
+parser-design change (deciding how "not" and "or" scope over the tokens
+around them, not a one-line patch), no compiler change is implemented in
+this entry. The finding is recorded as a required input to
+`ROUND1_SCALE_UP_DECISION.md` rather than patched under time pressure —
+a rushed negation/disjunction implementation without its own adversarial
+test suite would risk introducing a second, differently-shaped
+correctness bug in the same session that just found the first one.
+
+**Caveats**: 10 hand-picked queries, not a frequency-weighted sample —
+this says "these specific failure modes exist and are reproducible," not
+"X% of real queries trigger them." R1-E02's real 22,458-query corpus
+would need negation/disjunction-detection instrumentation to estimate
+real-world frequency; not built this round (flagged as a natural
+follow-up: grep the real query corpus for "not"/"without"/"aren't"/" or "
+as a cheap frequency lower-bound, without needing full parser support to
+just *count* the exposure).
+
+**Regression check**: none (no compiler code changed). If/when
+negation/disjunction support is built, these 10 queries are the
+regression suite that should gate it.
+
+**Next question**: R1-E04, the external baseline — orthogonal to this
+finding (Solr has no equivalent "silently invert negation" failure mode
+since it doesn't attempt structural extraction from free text at all;
+this is a place where the comparison may cut in Solr's favor on
+correctness grounds even before considering ranking quality).
