@@ -223,6 +223,16 @@ fn punt_routes_when_there_is_no_structural_constraint_at_all() {
     assert_eq!(delegate.call_count(), 1);
 }
 
+/// Note: this test's misbehaving-delegate scenario happens to also
+/// violate the query's own Brand constraint, so `matches_variant` alone
+/// would already drop product 5 here -- it does not, by itself, isolate
+/// `restrict_to`'s independent contribution from the constraint check's.
+/// `commerce_core::plan::tests::restrict_to_independently_excludes_a_constraint_satisfying_hit`
+/// (a white-box unit test in `plan/mod.rs`) isolates that specifically,
+/// with a constraint-free query where only `restrict_to` can be
+/// responsible for the exclusion. Kept here too because it still validates
+/// real end-to-end behavior through the public `execute_planned` API, just
+/// not in isolation from the constraint check.
 #[test]
 fn verify_and_truncate_drops_a_delegate_hit_outside_restrict_to() {
     let catalog = eleven_product_catalog();

@@ -249,6 +249,27 @@ pub fn execute_planned(
 /// per-product, matching discipline) — a product with no satisfying
 /// variant is dropped even if the delegate ranked it highly.
 ///
+/// `pub(crate)` (not private) specifically so `tests` below can exercise
+/// `restrict_to` in isolation from `query.constraints` — worth recording
+/// why. `execute_planned`'s one current caller always derives `restrict_to`
+/// from `query.constraints` itself (`indexed_candidates(&query.constraints)`),
+/// and `matches_variant` below already checks every constraint in that same
+/// set, so *in that one call pattern* the `restrict_to` membership check
+/// can never independently change the outcome — it is provably redundant
+/// with the constraint check today. This was found, not assumed: an
+/// attempted RED-evidence demonstration for a `restrict_to`-focused test
+/// (temporarily removing the membership check) stayed GREEN, because the
+/// test's query's only constraint already excluded the same product the
+/// removed check would have. Deleting the check would have been the wrong
+/// fix: `restrict_to` is kept as an independent parameter deliberately, as
+/// the extension point for a future restriction *not* derivable from
+/// `query.constraints` alone — e.g. a merchandising policy restricting to
+/// a curated collection, or an in-stock-only filter applied above the
+/// query layer (Issue #5 section 12's merchandising-policy category).
+/// `tests::restrict_to_independently_excludes_a_constraint_satisfying_hit`
+/// exercises exactly that scenario directly, since `execute_planned`'s
+/// current single call pattern cannot.
+///
 /// Looks products up via `index.lookup_product` (an O(1) hash-map lookup)
 /// rather than a linear `catalog.products.iter().find(...)` scan. The
 /// first version of this function used the linear scan and was only
@@ -263,7 +284,7 @@ pub fn execute_planned(
 /// "record failed experiments" discipline (`docs/experiments/PHASE2_LOG.md`
 /// P2-E03 set the precedent for a real-data-caught bug in new code being
 /// reported, not smoothed over).
-fn verify_and_truncate(
+pub(crate) fn verify_and_truncate(
     raw: Vec<LexicalHit>,
     restrict_to: Option<&BTreeSet<ProductId>>,
     query: &CommerceQuery,
@@ -298,4 +319,81 @@ fn verify_and_truncate(
         });
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::{
+        attributes, BrandId, CategoryId, Inventory, Price, Product, ProductTypeId, Variant,
+    };
+
+    fn two_product_catalog() -> Catalog {
+        let make = |id: u64| Product {
+            id: ProductId(id),
+            product_type: ProductTypeId(1),
+            brand: BrandId(1),
+            category: CategoryId(1),
+            title: format!("Product {id}"),
+            attributes: attributes([]),
+            variants: vec![Variant {
+                id: VariantId(100 + id),
+                attributes: attributes([]),
+                price: Price::usd(1_000),
+                inventory: Inventory::in_stock(1),
+            }],
+        };
+        Catalog {
+            products: vec![make(1), make(2)],
+        }
+    }
+
+    /// Directly exercises `verify_and_truncate`'s `restrict_to` parameter
+    /// independent of `query.constraints`, proving it does real,
+    /// independent filtering work when a caller supplies a restriction not
+    /// derivable from the query's own constraints -- something
+    /// `execute_planned`'s current single call pattern (`restrict_to`
+    /// always derived from `query.constraints`) cannot demonstrate, since
+    /// `matches_variant` alone already subsumes a same-derivation
+    /// `restrict_to` there. See the doc comment on `verify_and_truncate`
+    /// for the full context: an earlier, less specific version of this
+    /// test (`tests/plan.rs`'s `verify_and_truncate_drops_a_delegate_hit_outside_restrict_to`)
+    /// stayed GREEN even with the `restrict_to` check temporarily deleted,
+    /// because that test's query had a structural constraint that already
+    /// excluded the same product for an unrelated reason -- a false
+    /// negative in RED-evidence terms, corrected by this test.
+    #[test]
+    fn restrict_to_independently_excludes_a_constraint_satisfying_hit() {
+        let catalog = two_product_catalog();
+        let index = CatalogIndex::build(&catalog);
+        // No constraints at all: both products trivially satisfy
+        // `matches_variant` (an empty `.all(...)` is vacuously true), so
+        // only `restrict_to` can be responsible for excluding product 2.
+        let query = CommerceQuery {
+            constraints: vec![],
+            preferences: vec![],
+            ambiguous: vec![],
+            residual_lexical: vec!["anything".to_string()],
+        };
+        let restrict_to: BTreeSet<ProductId> = BTreeSet::from([ProductId(1)]);
+        let raw = vec![
+            LexicalHit {
+                product: ProductId(1),
+                score: 1.0,
+            },
+            LexicalHit {
+                product: ProductId(2),
+                score: 2.0, // ranked higher, but outside restrict_to
+            },
+        ];
+
+        let hits = verify_and_truncate(raw, Some(&restrict_to), &query, &catalog, &index, 10);
+
+        assert_eq!(
+            hits.iter().map(|h| h.product).collect::<Vec<_>>(),
+            vec![ProductId(1)],
+            "product 2 satisfies every (empty) query constraint and was ranked \
+             higher by the delegate, yet must still be excluded by restrict_to alone"
+        );
+    }
 }

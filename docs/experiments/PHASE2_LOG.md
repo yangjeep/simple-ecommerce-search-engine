@@ -684,3 +684,394 @@ plus-delegated-Tantivy integration design (priority 5) and the memory-
 representation follow-up (priority 6) — both larger, architecture-level
 tasks appropriate for the epic's continued execution rather than a
 single further checkpoint in this session.
+
+---
+
+## P2-E05 — Structural-plus-delegated-Tantivy integration (Issue #6 priority 5): three real bugs found, one dominant real root cause
+
+**Evidence class**: real (same 1,215,854-product catalog and full
+22,458-query real ESCI judgment set as every prior real-data entry) for
+the final results; hand-authored/deterministic for the `commerce_core`
+unit/regression tests. **Independence**: yes — same real, third-party
+held-out judgments as every other real-data measurement in this project.
+
+**Question**: P2-E01 validated that a delegated Tantivy index recovers
+Solr's real relevance *standalone*. It explicitly did not validate how
+that delegate composes with `commerce_core`'s own structural/facet index
+at query time — Issue #6 priority 5, and the `FastPath`/`Hybrid`/`Punt`
+execution-outcome contract Issue #5's own Branch A/C priority list named.
+Does a real implementation of that contract, run end-to-end against the
+full real catalog/query set, actually work — and does it preserve the
+relevance P2-E01 already proved reachable?
+
+**Hypothesis**: a query that resolves entirely to structural constraints
+needs no delegate call at all (`FastPath`); a query with a genuinely
+selective structural constraint should narrow via the index before
+delegating (`Hybrid`), recovering close to P2-E01's standalone relevance
+on the residual free text; a query with no constraint, or a non-selective
+one, should skip structural narrowing entirely and delegate over the
+whole corpus (`Punt`), avoiding R1-E05's non-selective-bitmap collapse.
+`commerce_core` should own correctness throughout, never trusting a
+delegate's own filtering.
+
+**Decision threshold**: qualitative, matching P2-E01's own framing — does
+the integrated system's real relevance approach P2-E01's standalone
+Tantivy numbers (NDCG@10=0.3033, Recall@10=0.1801) closely enough to call
+the composition sound, or does composing structural-first execution with
+a delegate cost real relevance versus using the delegate alone?
+
+**Implementation**
+
+`commerce_core::plan` (new module): `LexicalDelegate` trait (`commerce_core`
+defines the mechanism only — no lexical-engine dependency enters
+`commerce_core`, mirroring `control_plane::provider::ModelProvider`/
+`control_plane::precision::PrecisionOracle` exactly), `ExecutionOutcome`,
+`PlannedQuery`, `PlannedHit`, `plan()` (pure routing decision) and
+`execute_planned()` (routes and executes). `CommerceQuery::matches_variant`
+extracted from `execute()` (zero behavior change — `execute()` now calls
+it) so `plan` and `execute()` share exactly one definition of "matches."
+`CatalogIndex::candidate_product_ids` added so a delegate can be
+restricted by `ProductId` without knowing about internal bitmap ordinals.
+Regardless of outcome, every delegate hit is re-verified against
+`query.matches_variant` before being returned — a delegate is trusted for
+ranking/recall, never correctness. 9 new `commerce-core` tests
+(`tests/plan.rs`) using a deliberately misbehaving mock delegate (returns
+out-of-restriction / constraint-violating hits) to prove `execute_planned`
+re-checks everything itself.
+
+Real-data validation harness: `crates/phase2-eval/src/bin/planner_integration_eval.rs`,
+wiring a `TantivyDelegate` (wrapping the exact same Tantivy index/schema
+P2-E01 validated) into `commerce_core::plan` against the full real
+catalog and query set.
+
+**Three real defects found via real-data validation, each recorded rather
+than smoothed over (this project's established discipline, set by
+P2-E03's "loophole found and fixed during the real-data run" precedent):**
+
+1. **A performance bug that looked like a hang.** The first
+   `verify_and_truncate` looked up each delegate hit's product via
+   `catalog.products.iter().find(...)` — a linear scan, fine against
+   unit-test fixtures with 11 products, but the full 1.2M-product real run
+   did not complete in the few seconds every other real-data experiment in
+   this project has taken; it was still running after 590s with zero
+   output. Every delegate hit (up to `k * delegate_oversample` per query,
+   across thousands of queries) was paying up to O(catalog size) just to
+   be verified. Fixed via `CatalogIndex::lookup_product` (an existing O(1)
+   hash-map lookup already used elsewhere in `commerce_core`).
+
+2. **A delegate design that looked reasonable but collapsed relevance.**
+   The first `TantivyDelegate` did not push `Hybrid`'s structural
+   restriction into the Tantivy query itself — it asked for a global,
+   oversampled top-N ranked by free-text relevance, then let
+   `verify_and_truncate` post-filter to the restricted set. A 500-query
+   real-data smoke run showed this fails badly: 8/8 `Hybrid` queries in
+   that sample returned fewer than `k` verified hits, and integrated
+   relevance came out at NDCG@10=0.0536 — far below P2-E01's standalone
+   0.3033. Mechanism: a genuinely *selective* structural candidate set
+   (the exact condition that routes a query to `Hybrid` in the first
+   place) essentially never overlaps a generic free-text query's global
+   top few thousand results by chance — oversampling further would not
+   have fixed this in general. Fixed with real query-time push-down:
+   `BooleanQuery` combining the free-text query with a `TermSetQuery` over
+   the restricted `ProductId` set's ASINs, both `Occur::Must`, so Tantivy
+   only ever scores documents that are actually structurally eligible.
+
+3. **The real, dominant root cause, found while diagnosing (2), confirmed
+   independently.** Even after fix (2), the *full* 22,458-query real run
+   still showed severely degraded integrated relevance (NDCG@10=0.1080),
+   **identical across every `selectivity_threshold` swept (0.01, 0.05,
+   0.20)** — a strong signal the routing threshold wasn't the actual
+   variable in play. Investigation traced this to `commerce_core::cold_start::compile_lexicon`:
+   its brand loop was never subject to P2-E02's `min_enum_frequency`
+   canonicalization, on the documented assumption that brand came from
+   "an already-curated registry." Independently verified false for this
+   real catalog: `round1_eval::catalog::build_catalog` interns brand from
+   a raw per-product field exactly like it does `color` — no validation.
+   Direct measurement: **206,227 distinct real "brand" strings, 49.4%
+   occurring on exactly one product**, the large majority of those
+   one-off values being seller-junk text ("funny musician gifts co", "this
+   is a sharp not a hashtag tee for musicians") rather than genuine brand
+   names — R1-E02/E02b's exact original failure mode (noisy, unvalidated
+   per-product field values trusted as controlled vocabulary), undetected
+   until now for this specific vocabulary, and explaining both the
+   threshold-invariance (most `Hybrid`-routed candidate sets were
+   singleton products, insensitive to any reasonable selectivity
+   threshold) and the collapsed relevance (a query happening to match a
+   junk "brand" string hard-filters to one wrong product). Fixed:
+   `CatalogProfile` now tracks `brand_occurrence` the same way it tracks
+   `enum_occurrence`; `compile_lexicon` gates brand entries on the same
+   `min_enum_frequency` parameter already used for enum values.
+
+**A fourth finding, from a deliberate RED-evidence check, not a bug but a
+documented design decision.** Attempting to retroactively demonstrate RED
+for `verify_and_truncate_drops_a_delegate_hit_outside_restrict_to` (by
+temporarily removing the `restrict_to` membership check) stayed GREEN:
+that test's query has a Brand constraint that already excludes the same
+product for an unrelated reason, so the test did not isolate `restrict_to`
+from `matches_variant`'s own constraint check. Traced to a real, provable
+fact about the current code: `execute_planned`'s only caller derives
+`restrict_to` from `query.constraints` itself, and `matches_variant`
+already checks that same constraint set completely — in *that one call
+pattern*, the `restrict_to` check can never independently change the
+outcome. The correct fix was not to delete the "redundant" check: kept
+deliberately as the extension point for a future restriction *not*
+derivable from `query.constraints` (a merchandising/curated-collection
+policy, Issue #5 section 12's merchandising-policy category). Made
+`verify_and_truncate` `pub(crate)` and added a genuine white-box unit
+test (`plan::tests::restrict_to_independently_excludes_a_constraint_satisfying_hit`)
+that isolates `restrict_to`'s independent effect directly, with a
+constraint-free query where only `restrict_to` can be responsible for an
+exclusion — proving the mechanism does real, independent work when
+actually exercised on its own terms, something the existing integration
+test could not demonstrate given today's one call pattern.
+
+**A fifth, architecture-only change from self-review against Issue #6's
+own review questions** ("are we accidentally introducing a feature flag
+where a semantic type or policy should exist?"): `selectivity_threshold`
+was a bare `f64` threaded through `plan()`/`execute_planned()`, and the
+oversample factor was a private const — neither had a typed home a future
+per-vertical/per-merchant override could extend without changing a
+function signature. Replaced both with `PlannerPolicy{selectivity_threshold,
+delegate_oversample}`, a named policy type with deliberately no `Default`
+(neither field had an evidence-backed recommended value at the time —
+asserting one would have asserted a conclusion ahead of the evidence that
+justifies it). Zero behavior change — verified by reproducing the prior
+bare-parameter values exactly in every caller.
+
+**Results** (same environment as every prior real-data entry: 4 vCPU
+Intel Xeon @2.80GHz, 15 GiB RAM, Linux 6.18.5; full real 22,458-query set,
+`selectivity_threshold` fixed at 0.05 — swept separately at {0.01, 0.05,
+0.20} against the *unfixed* brand lexicon and found not to matter, see
+finding 3 above — sweeping `min_enum_frequency`, now that it gates brand
+too, instead):
+
+```
+ min_enum_freq  outcome(Hybrid/Punt/FastPath)  Hybrid<k hits   zero-result  NDCG@10  Recall@10   MRR    p50 latency
+            1     12004 / 2659 / 7795            11712/12004     73.94%      0.0456    0.0273   0.0748   0.09ms
+            5     10846 / 9908 / 1704              9518/10846     36.06%      0.1365    0.0814   0.2181   1.37ms
+           25      5589 /16541 /  328              3277/5589       9.55%      0.2278    0.1354   0.3663   2.62ms
+          100      2847 /19507 /  104               916/2847       2.93%      0.2703    0.1611   0.4324   2.84ms
+
+(P2-E01 Tantivy-alone, full 22,458-query set: zero-result=0.6%, NDCG@10=0.3033, Recall@10=0.1801, MRR=0.4838, p50=1.09ms)
+(R1-E04 Solr baseline, 1,000-query sample: zero-result=0.2%, NDCG@10=0.3052, Recall@10=0.1811, MRR=0.4910, p50=1486us)
+```
+
+`commerce-core`: 42 → 52 tests (10 new: 9 in `tests/plan.rs`, 1 white-box
+unit test in `plan::tests`), all green; every pre-existing test unchanged.
+
+**Interpretation**
+
+**Confirmed, with a clear, strong, monotonic trend, not yet at full
+parity.** As `min_enum_frequency` rises (less noisy vocabulary trusted),
+integrated relevance climbs steadily toward P2-E01's standalone ceiling:
+NDCG@10 reaches 89.1% of Tantivy-alone's (0.2703 / 0.3033) and Recall@10
+reaches 89.5% (0.1611 / 0.1801) at threshold=100, up from 15.0%/15.2% at
+threshold=1. The fraction of `Hybrid` queries returning fewer than `k`
+verified hits — the symptom finding (3) explains — falls in lockstep
+(97.6% → 87.8% → 58.6% → 32.2% across the same sweep), cross-validating
+the diagnosis: as junk brand vocabulary is filtered out, the *genuine*
+structural candidate sets remaining are large enough to actually supply
+`k` relevant hits more often. This is real, monotonic, multi-point
+evidence — not a single before/after number — that the composition
+architecture itself (`FastPath`/`Hybrid`/`Punt`, delegate push-down,
+`commerce_core`-owned verification) is sound, and that the remaining gap
+to full parity is attributable to a *further-improvable* canonicalization
+signal (occurrence-frequency alone), not a structural flaw in the
+integration design.
+
+**A real, honest trade-off surfaced by the same sweep, not hidden:**
+`FastPath` — the zero-delegate-call outcome, the entire point of Gate 3's
+specialization — shrinks sharply as the threshold rises (7795 → 1704 →
+328 → 104 out of 22,458): a stricter canonicalization threshold means
+fewer full queries resolve entirely to trusted structural vocabulary.
+Higher `min_enum_frequency` buys integrated relevance at the cost of
+`FastPath` coverage. Neither this entry nor P2-E02 selects a single
+"correct" threshold — that remains a downstream deployment decision, now
+informed by both this trade-off and P2-E02's own recall-vs-threshold
+curve for the cold-start filter path specifically.
+
+**What this does not claim**: full parity with P2-E01's standalone
+Tantivy numbers was not reached at any threshold tested (up to 100);
+whether a higher threshold, a stronger canonicalization signal (P2-E02's
+own noted future work — a content heuristic beyond raw frequency), or
+some other mechanism closes the remaining ~11% gap is not established
+here. Latency also does not improve monotonically with the threshold in
+the way relevance does (p50 rises from 0.09ms to 2.84ms as more queries
+route through `Hybrid`'s `TermSetQuery` construction rather than
+`FastPath`'s free index lookup) — a real, secondary cost of the same
+trade-off, not previously measured.
+
+**Caveats**: single run per threshold (deterministic pipeline given a
+fixed lexicon and index, matching this project's precedent for
+deterministic pipelines — no variance to characterize). The
+`selectivity_threshold={0.01,0.05,0.20}` sweep against the *unfixed*
+brand lexicon is real evidence that threshold didn't matter under that
+specific confound, not evidence it never matters — re-sweeping selectivity
+threshold against the now-fixed brand lexicon is unattempted here (this
+entry fixed `selectivity_threshold=0.05` throughout the `min_enum_frequency`
+sweep instead, since that was the newly-identified variable). The
+`TantivyDelegate`'s push-down uses a `TermSetQuery` sized to the
+restricted candidate set — at large candidate-set sizes (a less selective
+`min_enum_frequency`/threshold combination than tested here) this
+construction cost is unmeasured and could plausibly dominate at some
+scale not reached in this sweep.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, `cargo test
+--workspace --all-features` (52/52 `commerce-core` tests green), `cargo
+build --workspace --release` all clean throughout.
+
+**Next question**: Issue #6 priority 6 (memory representation follow-up)
+is now unblocked and is the next entry.
+
+---
+
+## P2-E06 — Memory representation follow-up (Issue #6 priority 6): the bitmap index was never the dominant cost, and Tantivy's own added cost is modest
+
+**Evidence class**: real (same full real 1,215,854-product catalog and
+22,458-query set). **Independence**: n/a for this entry (a resource
+measurement, not a relevance/precision claim scored against held-out
+judgments).
+
+**Question**: R1-E04 found Solr's on-disk index 7.3x larger than
+`commerce-core`'s approximate index size, yet Solr's live RSS grew by
+only 175MB versus `commerce-core`'s 3.76GB for the same real catalog — "a
+real, measured memory-architecture disadvantage" (ADR 0008). Issue #6
+priority 6 asks whether *delegating* lexical storage to Tantivy's
+segment/mmap model closes that gap. `commerce_core`'s own structural
+index is not being replaced by this project's architecture (ADR 0008:
+delegate lexical/ranking, keep structural) — so the real, useful question
+is not "does the integrated system's RSS match Solr's," it is "does
+*adding* a delegated Tantivy index on top of the structural index that
+already exists cost roughly what Tantivy's mmap-based design promises (a
+small, mostly-lazily-paged-in increment), or does it stack another
+multi-GB cost on top of the one R1-E04 already found?"
+
+**Hypothesis**: Tantivy's own incremental RSS contribution — building the
+index, opening a reader, and running the full real query workload once to
+touch mmap pages under real access patterns — will be small relative to
+`commerce_core`'s own already-resident structural index, because mmap'd
+segments are lazily paged in by the OS rather than eagerly loaded, unlike
+`commerce_core`'s in-memory `RoaringBitmap`/`HashMap`-based structures.
+
+**Decision threshold**: qualitative — "small relative to the structural
+index's own footprint" vs. "comparable to or larger than it" (no specific
+percentage fixed in advance; the real question, matching R1-E04's own
+framing, is architectural direction, not a precise target).
+
+**Implementation**: `crates/phase2-eval/src/bin/memory_representation_eval.rs`,
+reusing R1-E01's exact RSS measurement method (`round1_eval::bin::profile_catalog`'s
+`/proc/self/status` `VmRSS:` read) so numbers are comparably derived, not
+just similarly named. Measures RSS at 6 checkpoints in one process: process
+start (baseline), after loading raw `catalog.jsonl` into `RealProduct`
+structs, after `commerce_core::domain::Catalog` is built, after
+`CatalogIndex::build`, after building the Tantivy index (same schema as
+P2-E01/P2-E05) and dropping the writer, after opening a Tantivy
+reader/searcher (before any query), and after running all 22,458 distinct
+real queries once (to touch mmap pages under real access patterns rather
+than measuring a cold, never-queried index).
+
+**Results** (same environment as every prior real-data entry; single run —
+RSS is not expected to vary meaningfully run-to-run for a deterministic
+build/query sequence):
+
+```
+                                                    cumulative RSS    incremental
+  process baseline                                      3.29 MB              --
+  + raw catalog.jsonl loaded (RealProduct structs)   1,629.64 MB      +1,626.35 MB
+  + Catalog struct built                             4,555.81 MB      +2,926.17 MB
+  + CatalogIndex::build (structural index resident)  5,383.41 MB        +827.60 MB   (approximate_size_bytes: 259.22 MB)
+  + Tantivy index built (writer dropped)              6,035.10 MB        +651.68 MB
+  + Tantivy reader/searcher opened                    6,036.35 MB          +1.25 MB
+  + full real 22,458-query sweep run once             6,589.88 MB        +553.54 MB
+
+  Tantivy's OWN total incremental cost (build + reader + full real query sweep): ~1,206 MB
+  commerce_core's OWN total cost (raw load + Catalog struct + CatalogIndex): ~5,380 MB
+    of which CatalogIndex (the bitmap/range structure itself) is only:        ~828 MB
+```
+
+**Interpretation**
+
+**Confirmed, and with an important, more precise correction to R1-E04's
+original framing than a simple "yes/no."** Tantivy's own incremental cost
+(~1.2GB, from an empty index through a fully real-query-warmed one) is
+indeed meaningfully smaller than `commerce_core`'s own pipeline (~5.4GB)
+— the direction R1-E04/ADR 0008 anticipated. But decomposing
+`commerce_core`'s own ~5.4GB shows the *bitmap/range index itself* (Gate
+3's actual specialized structure, `CatalogIndex::build`'s own
+contribution) is only **~828MB** — a real, non-trivial, but not
+dominant, share of the total. The dominant cost, by a wide margin, is
+simply **holding a typed Rust representation of 1.2M real, attribute-heavy
+products at all**: +1,626MB for the raw parsed `RealProduct` structs, then
+a further +2,926MB (nearly 2x the raw JSONL text size) to build
+`commerce_core::domain::Catalog` from them — before any index, structural
+or lexical, enters the picture. R1-E04's original framing ("commerce-core's
+RSS grew 3.76GB... a real, measured memory-architecture disadvantage")
+correctly identified a real problem but, this entry's decomposition shows,
+attributed it to the wrong layer: the disadvantage is not primarily in the
+*index representation* (`RoaringBitmap`s, hash maps over enum values) —
+it is in the underlying typed domain-object representation itself
+(`String`-heavy `AttributeMap`s, per-product/variant heap allocations,
+`BTreeMap`/`HashMap` overhead), which exists *before* `CatalogIndex::build`
+is ever called. Delegating *lexical retrieval* to Tantivy therefore cannot,
+by construction, close the dominant share of R1-E04's original gap — that
+share was never lexical-index-shaped to begin with.
+
+**A genuine, honest limitation of this specific measurement**, not
+glossed over: this binary retains the raw `products: Vec<RealProduct>`
+for the entire process lifetime (needed again later to build the Tantivy
+index), so the reported "+1,626MB raw load" and "+2,926MB Catalog build"
+figures both stay resident simultaneously rather than the raw Vec being
+freed once the typed `Catalog` is built from it. A real ingestion
+pipeline could plausibly stream the raw JSONL once, feed both the
+`Catalog`-builder and the Tantivy indexer from that one pass, and drop the
+raw `RealProduct` Vec afterward — which would not change
+`CatalogIndex`'s own ~828MB figure or Tantivy's own ~1.2GB figure (both
+measured as clean deltas *after* the raw Vec was already resident either
+way), but would very plausibly reduce the *absolute* total RSS reported
+here by close to the raw Vec's own ~1.6GB. This entry's relative findings
+(index-alone vs. domain-model-alone vs. Tantivy-alone) hold regardless;
+its absolute cumulative numbers are pipeline-shaped, not an inherent
+floor.
+
+**What this does not claim**: this does not re-measure Solr's own 175MB
+figure (R1-E04's own number, unchanged, real, and not attempted again
+here) — it decomposes `commerce_core`'s side of that comparison, which
+R1-E04 could not do at the time (Tantivy integration did not exist yet).
+It also does not claim the ~2,926MB `Catalog`-struct-build cost is
+irreducible — string interning, dense IDs, or a columnar representation
+(CLAUDE.md's own "likely physical primitives" list) remain unbenchmarked
+alternatives, exactly as R1-E04/ADR 0008 originally flagged; this entry
+narrows *where* such an optimization would need to target (the domain
+model, not primarily the bitmap index) rather than performing it.
+
+**Caveats**: single run (deterministic build/query sequence, no variance
+to characterize, matching this project's precedent for deterministic
+pipelines). RSS is a coarse, OS-level, whole-process measurement — it
+does not attribute cost to individual fields/structures the way a heap
+profiler would; the "~2,926MB for `Catalog` struct build" figure is a
+single aggregate delta, not a breakdown of which part of `Product`/`Variant`/
+`AttributeMap` contributes most. No comparison to Solr's own live-query
+RSS growth under a real 22,458-query sweep is made here (R1-E04 measured
+Solr's RSS growth from indexing, not from a full real query workload) —
+labeled as a real, structural asymmetry in what's being compared, not
+elided.
+
+**Regression check**: n/a (new, standalone measurement binary; no
+`commerce_core`/`round1-eval` production code touched by this entry).
+`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+--all-features -- -D warnings`, `cargo build --workspace --release` all
+clean.
+
+**Next question**: Issue #6's two remaining named priorities (5 and 6)
+are both now complete with real-data evidence. The commerce-core-archaeology
+workstream (Issue #5 section 12) remains blocked on external repository
+access (tracked separately, being pursued in a parallel session per
+explicit user instruction) and is the only named item in either epic's
+"Definition of done" not yet satisfied. Absent new archaeology findings
+or a new architectural requirement, the next genuine boundary is the one
+this entry itself surfaced: whether a denser domain-model representation
+(string interning / dense IDs / columnar attributes) measurably reduces
+the ~2.9GB `Catalog`-struct-build cost this entry found dominates real
+RSS — a new, evidence-driven hypothesis for a future entry, not yet
+attempted.
