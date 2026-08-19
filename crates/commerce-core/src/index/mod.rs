@@ -179,6 +179,15 @@ impl CatalogIndex {
         self.variant_ordinal.get(&variant_id).copied()
     }
 
+    /// The inverse of [`Self::ordinal_of`]: the `VariantId` a bitmap
+    /// ordinal refers to. Needed by `state::execute_with_overlay`
+    /// (Issue #8) to turn a candidate ordinal surviving structural-AND-
+    /// availability intersection back into a variant to look up and
+    /// verify, without exposing this index's internal `ordinals` vector.
+    pub fn variant_id_at(&self, ordinal: Ordinal) -> Option<VariantId> {
+        self.ordinals.get(ordinal as usize).map(|&(_, v)| v)
+    }
+
     /// The distinct `ProductId`s referenced by a set of ordinals (typically
     /// `indexed_candidates(&query.constraints)`'s output). Needed by
     /// `plan::execute_planned` (Issue #6 priority 5) to hand a structural
