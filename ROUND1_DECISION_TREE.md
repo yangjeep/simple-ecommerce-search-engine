@@ -282,3 +282,111 @@ Solr's JVM/HTTP overhead, on the exact same real catalog and judgments
 used throughout Round 1) — begins immediately following this document,
 before any further planning work, since every other narrowed-system task
 depends on confirming that bet first.
+
+---
+
+## Post-decision evidence update (Issues #7, #8, #9)
+
+Per this document's own append-only discipline: this decision
+(NARROW THE PRODUCT) stands unchanged. Nothing below reopens it. Three
+follow-on epics, each executing/stress-testing part of "the narrowed
+product" defined above, produced real evidence that refines several
+dimensions — recorded here rather than silently left implicit in three
+separate experiment logs (`docs/experiments/ISSUE7_LOG.md`,
+`REALTIME_LOG.md`, and `PHASE2_LOG.md` P2-E07-E10).
+
+### Dimension 2 (Physical advantage) — the ~36,700x Punt-path risk is now closed, and a second real fix confirmed
+
+R1-E05's ~36,700x non-selective-predicate degradation, named above as
+the physical-advantage disadvantage's sharpest edge, was **not** an open
+risk by the time Issue #7 measured it (`ISSUE7_LOG.md` I7-E01): the
+planner+Tantivy-delegate composition this document's own "narrowed
+product" item 4 already committed to (delegate lexical retrieval to
+Tantivy) already routes exactly this query shape to `Punt`, and
+reproducing R1-E05's named adversarial case through that already-built
+path lands at 1.17ms p50 — 820x faster, not a new mechanism, a missing
+regression check. Record this so it is never rediscovered as a surprise.
+A second, real, additive fix was confirmed for compound structural+
+numeric-range queries specifically (I7-E03): pre-bucketed
+`RoaringBitmap` composition for price-range constraints is 12.2-12.5x
+faster than the current binary-search-and-collect mechanism, independently
+reproduced twice.
+
+R1-E04's memory disadvantage (3.76GB `commerce-core` RSS vs. Solr's
+175MB growth) is now more precisely attributed, not resolved: I7-E02
+found a genuinely columnar attribute layout only recovers ~2.08x RSS
+reduction for this real catalog, not the originally-hoped >=5x, because
+the dominant share of `Catalog`'s footprint is real, uncompressed
+title/description/bullets text (1,372.75MB of the 2,926.16MB measured),
+not per-item object overhead — a hypothetical zero-overhead columnar
+design could not exceed ~2.13x for this dataset without adding actual
+byte-level text compression, a materially larger, separate, unattempted
+undertaking. This does not change dimension 2's verdict (the structural
+bitmap/range index itself remains fast and worth keeping) but does mean
+"columnar layout" alone is not the fix for the RSS gap this document
+flagged — compression, or continuing to lean on delegation (Tantivy's own
+mmap'd storage, confirmed by I7-E05 to reopen 5,890x-14,868x faster than
+`commerce-core`'s only option, a full rebuild) are the real paths forward.
+
+### Dimension 7 (Freshness feasibility) — no longer "under-tested" for the availability/inventory-status subset
+
+This document deferred dimension 7 as under-tested, with only R1-E01's
+~64s full-rebuild number as evidence and no real price/inventory ground
+truth in the dataset. Issue #8 (`REALTIME_LOG.md` R-E01) closes the
+*state-mutation-cost* half of that gap for the class of field CLAUDE.md
+and Issue #8 both name (fast-changing operational state — variant
+availability): a variant-scoped commerce-state overlay
+(`commerce_core::state`, in-place `RoaringBitmap` mutation, the same
+algorithmic pattern independently validated by Havenask/IndexLib
+archaeology) applies a state change in 342ns p50 against a real
+1.2M-product catalog, vs. the ~62-70s full rebuild this document's own
+"minimal overlays/sidecars" language anticipated — roughly 10^8x, correctness-
+verified at real scale (1% of real products marked OOS, exact bitmap
+match against the independently-computed complement). Two real gaps
+remain, named rather than smoothed over: the overlay has no
+durability/replay (state is lost on restart, confirmed directly), and a
+naive `RwLock` loses ~83% read throughput and ~40x writer throughput
+under concurrent read+write load. Price freshness remains genuinely
+untested — the real ESCI dataset has no price field at all, unchanged
+since R1-E01.
+
+### Item 2 of "the narrowed product" (canonicalization stage) — real, refined, more subtle than a single threshold
+
+This document's item 2 named a "candidate-canonicalization/validation
+stage" as the fix for R1-E02/E02b's recall catastrophe, without
+specifying the mechanism beyond "a validity check." Issue #9
+(`PHASE2_LOG.md` P2-E07-E09) tested three candidate mechanisms against
+real reconciled ground truth (three independent human-equivalent
+adjudication passes, 209 real candidates) and a real end-to-end
+22,458-query sweep, and found a genuinely counter-intuitive result worth
+carrying forward explicitly: a canonicalizer that classifies individual
+values *more accurately* (a deterministic heuristic, later matched by a
+model-assisted arm, both beating the shipping frequency-only gate on
+classification F1) can produce *worse* real end-to-end recall once wired
+into the actual lexicon-compilation path and measured against real
+judged queries (P2-E08: heuristic's real recall caps near 16% regardless
+of threshold, vs. frequency-only's 43% at higher thresholds, despite
+roughly doubling FIB coverage). The mechanism, as best understood: a
+value being an individually-correct structural entity is a different
+question from whether compiling it into a *hard* filter helps or hurts
+real recall, given real spelling/aliasing variation in the underlying
+field. This is a genuinely new, generalizable finding beyond brand
+vocabulary specifically, and means item 2's "a validity check" is
+correct in spirit but underspecified in a way that matters: which
+validity check, and validated against which metric (classification
+accuracy vs. real retrieval recall), are not interchangeable questions.
+Full three-arm resolution (including the model-assisted arm's real,
+if necessarily smaller-scale, end-to-end test) is tracked in
+`PHASE2_LOG.md` P2-E09/P2-E10.
+
+### What does not change
+
+Dimensions 1 (semantic usefulness), 3 (relevance), 4 (complexity
+boundary), 5 (scale), and 6 (control-plane safety) are unaffected by
+this evidence — none of Issues #7/#8/#9 tested those questions. The
+branch selection (NARROW THE PRODUCT, over ENGINEIZE/STOP/REVISE THEN
+ENGINEIZE) and "the narrowed product" definition both stand. This
+update refines *how* two of the five items in that definition (physical
+advantage's memory/latency edges, and the canonicalization stage) should
+be built next, and closes one previously-open risk (dimension 2's
+non-selective-predicate degradation) outright.
