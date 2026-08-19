@@ -1,5 +1,6 @@
 use crate::domain::{
-    effective_attributes, AttributeMap, AttributeValue, Catalog, ProductId, VariantId,
+    effective_attributes, AttributeMap, AttributeValue, Catalog, Product, ProductId, Variant,
+    VariantId,
 };
 use crate::ir::{CommerceQuery, Preference};
 
@@ -12,15 +13,20 @@ pub struct RankedHit {
     pub score: f64,
 }
 
-fn score_preferences(preferences: &[Preference], attrs: &AttributeMap) -> f64 {
+fn score_preferences(
+    preferences: &[Preference],
+    product: &Product,
+    variant: &Variant,
+    attrs: &AttributeMap,
+) -> f64 {
     preferences
         .iter()
-        .map(
-            |Preference::Boost {
-                 attribute,
-                 value,
-                 weight,
-             }| {
+        .map(|pref| match pref {
+            Preference::Boost {
+                attribute,
+                value,
+                weight,
+            } => {
                 let hit = match attrs.get(attribute) {
                     Some(AttributeValue::Enum(v)) => v == value,
                     Some(AttributeValue::MultiEnum(vs)) => vs.iter().any(|v| v == value),
@@ -32,8 +38,15 @@ fn score_preferences(preferences: &[Preference], attrs: &AttributeMap) -> f64 {
                 } else {
                     0.0
                 }
-            },
-        )
+            }
+            Preference::StructuralBoost(constraint, weight) => {
+                if constraint.matches(product, variant) {
+                    *weight
+                } else {
+                    0.0
+                }
+            }
+        })
         .sum()
 }
 
@@ -54,7 +67,7 @@ pub(super) fn execute_ranked(
             RankedHit {
                 product,
                 variant,
-                score: score_preferences(&query.preferences, &attrs),
+                score: score_preferences(&query.preferences, p, v, &attrs),
             }
         })
         .collect();

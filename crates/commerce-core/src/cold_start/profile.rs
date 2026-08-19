@@ -1,11 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use super::alias;
 use super::canonicalize::{CanonicalizationEvidence, VocabularyCanonicalizer};
 use crate::domain::{
     AttributeMap, AttributeValue, Brand, BrandId, Catalog, Category, CategoryId, Constraint,
     ProductType, ProductTypeId,
 };
-use crate::ir::{Candidate, ResolvedConstraint, SemanticLexicon, StructuralConstraint};
+use crate::ir::{Candidate, Preference, ResolvedConstraint, SemanticLexicon, StructuralConstraint};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct EnumSource {
@@ -297,6 +298,109 @@ pub fn compile_lexicon_with_brand_canonicalizer(
             )],
         );
     }
+    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    lex
+}
+
+/// Issue #6 P1-B: tests the *enforcement* mechanism around an
+/// already-trusted brand match, not which strings are trusted -- Issue #9
+/// already answered that question three independent ways
+/// (`docs/experiments/PHASE2_LOG.md` P2-E07-E10, decision: CANONICALIZATION
+/// FRONTIER IS FUNDAMENTAL). Same `min_enum_frequency` trust gate
+/// [`compile_lexicon`] uses, applied identically here, so a caller
+/// comparing this against `compile_lexicon` measures the enforcement swap
+/// alone -- the same isolation discipline
+/// [`compile_lexicon_with_brand_canonicalizer`]'s own doc comment
+/// establishes for swapping the canonicalizer instead.
+///
+/// Two independent, confidence-tiered enforcement mechanisms:
+///
+/// - **Tier 1 (hard `Constraint`, deterministic)**: trusted brand names
+///   that collapse to the same [`alias::alias_key`] (punctuation/
+///   corporate-suffix normalized -- "Nike", "Nike Inc", "Nike, Inc.") are
+///   grouped, and the compiled constraint matches *any* `BrandId` in that
+///   group ([`StructuralConstraint::BrandAny`]) instead of requiring one
+///   exact `BrandId`. A trusted name with no alias siblings behaves
+///   identically to [`compile_lexicon`]'s plain `Brand(id)`.
+/// - **Tier 2 (soft [`Preference::StructuralBoost`], fuzzy)**: a
+///   brand-shaped string in `fuzzy_candidates` that does *not* pass the
+///   trust gate on its own, but whose alias key is within
+///   `fuzzy_max_edit_distance` of a trusted group's alias key, gets a
+///   ranking-only boost toward that group instead of either a hard filter
+///   (too risky at this confidence -- a fuzzy match can be a genuinely
+///   different brand, e.g. "Nike"/"Nikon") or nothing at all (today's
+///   `compile_lexicon` behavior: the term falls through to
+///   `residual_lexical` unresolved).
+///
+/// `fuzzy_candidates` is caller-bounded (e.g. real query vocabulary)
+/// rather than every untrusted raw catalog string: fuzzy-matching all
+/// ~200K real raw brand strings (`docs/adr/0009-structural-lexical-execution-contract.md`)
+/// against every trusted group is neither necessary (most never appear in
+/// a real query) nor cheap, and this project's own precedent
+/// (`scripts/phase2/build_query_relevant_brand_sample.py`, P2-E10) already
+/// established bounding by real query relevance rather than raw catalog
+/// size. `fuzzy_max_edit_distance == 0` disables tier 2 entirely (no
+/// string is within edit distance 0 of a different string), isolating
+/// tier 1's effect alone.
+pub fn compile_lexicon_with_alias_enforcement(
+    profile: &CatalogProfile,
+    min_enum_frequency: usize,
+    fuzzy_candidates: &[String],
+    fuzzy_max_edit_distance: usize,
+) -> SemanticLexicon {
+    let mut lex = SemanticLexicon::new();
+
+    let trusted: BTreeMap<&str, BrandId> = profile
+        .brand_names
+        .iter()
+        .filter(|(name, _)| profile.brand_occurrence_count(name) >= min_enum_frequency)
+        .map(|(name, id)| (name.as_str(), *id))
+        .collect();
+
+    let mut groups: BTreeMap<String, Vec<BrandId>> = BTreeMap::new();
+    for (name, id) in &trusted {
+        groups.entry(alias::alias_key(name)).or_default().push(*id);
+    }
+
+    for name in trusted.keys() {
+        let key = alias::alias_key(name);
+        let ids = groups.get(&key).cloned().unwrap_or_default();
+        lex.insert(
+            name,
+            vec![Candidate::constraint(
+                ResolvedConstraint::Structural(StructuralConstraint::BrandAny(ids)),
+                1.0,
+            )],
+        );
+    }
+
+    if fuzzy_max_edit_distance > 0 {
+        for candidate in fuzzy_candidates {
+            let candidate_lower = candidate.to_lowercase();
+            if trusted.contains_key(candidate_lower.as_str()) {
+                continue; // already resolved as tier 1, do not downgrade it
+            }
+            let candidate_key = alias::alias_key(&candidate_lower);
+            let mut best: Option<(usize, &String)> = None;
+            for group_key in groups.keys() {
+                let d = alias::edit_distance(&candidate_key, group_key);
+                if d <= fuzzy_max_edit_distance && best.is_none_or(|(bd, _)| d < bd) {
+                    best = Some((d, group_key));
+                }
+            }
+            if let Some((_, group_key)) = best {
+                let ids = groups.get(group_key).cloned().unwrap_or_default();
+                lex.insert(
+                    &candidate_lower,
+                    vec![Candidate::preference(
+                        Preference::StructuralBoost(StructuralConstraint::BrandAny(ids), 1.0),
+                        0.5,
+                    )],
+                );
+            }
+        }
+    }
+
     compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
     lex
 }

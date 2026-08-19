@@ -207,16 +207,20 @@ fn matched_constraint_count(
 fn matched_preference_count(preferences: &[Preference], attrs: &AttributeMap) -> usize {
     preferences
         .iter()
-        .filter(
-            |Preference::Boost {
-                 attribute, value, ..
-             }| match attrs.get(attribute) {
+        .filter(|pref| match pref {
+            Preference::Boost {
+                attribute, value, ..
+            } => match attrs.get(attribute) {
                 Some(AttributeValue::Enum(v)) => v == value,
                 Some(AttributeValue::MultiEnum(vs)) => vs.iter().any(|v| v == value),
                 Some(AttributeValue::Text(t)) => t.contains(value.as_str()),
                 _ => false,
             },
-        )
+            // Issue #6 P1-B added this variant after I7-E04 (this
+            // experiment) already reached its falsified conclusion; not
+            // attribute-map-shaped, so out of scope for this mirror.
+            Preference::StructuralBoost(..) => false,
+        })
         .count()
 }
 

@@ -210,6 +210,15 @@ impl CatalogIndex {
             StructuralConstraint::Brand(id) => {
                 self.brand_bitmaps.get(id).cloned().unwrap_or_default()
             }
+            StructuralConstraint::BrandAny(ids) => {
+                let mut bm = RoaringBitmap::new();
+                for id in ids {
+                    if let Some(b) = self.brand_bitmaps.get(id) {
+                        bm |= b;
+                    }
+                }
+                bm
+            }
             StructuralConstraint::ProductType(id) => self
                 .product_type_bitmaps
                 .get(id)

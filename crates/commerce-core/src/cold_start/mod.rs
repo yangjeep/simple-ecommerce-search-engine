@@ -5,6 +5,7 @@
 //! which of those queries the derived lexicon still fails to resolve
 //! fully — a "coverage hole" the catalog data alone could not close.
 
+pub mod alias;
 mod canonicalize;
 mod generate;
 mod profile;
@@ -14,7 +15,10 @@ pub use canonicalize::{
     VocabularyCanonicalizer, VocabularyClass,
 };
 pub use generate::generate_shopper_queries;
-pub use profile::{compile_lexicon, compile_lexicon_with_brand_canonicalizer, CatalogProfile};
+pub use profile::{
+    compile_lexicon, compile_lexicon_with_alias_enforcement,
+    compile_lexicon_with_brand_canonicalizer, CatalogProfile,
+};
 
 use crate::ir::{compile, SemanticLexicon};
 

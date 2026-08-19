@@ -14,6 +14,12 @@ pub enum Preference {
         value: String,
         weight: f64,
     },
+    /// Issue #6 P1-B: a lower-confidence structural match (e.g. a brand
+    /// string only fuzzy/edit-distance-close to a trusted alias group,
+    /// `cold_start::profile::compile_lexicon_with_alias_enforcement`'s
+    /// tier 2) — real enough to rank higher, not confident enough to
+    /// filter out every candidate that fails it.
+    StructuralBoost(StructuralConstraint, f64),
 }
 
 /// A query phrase with more than one plausible reading. Per `CLAUDE.md`

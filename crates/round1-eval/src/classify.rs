@@ -163,6 +163,12 @@ pub fn product_satisfies_and(
     };
     constraints.iter().all(|c| match c {
         ResolvedConstraint::Structural(StructuralConstraint::Brand(id)) => product.brand == *id,
+        // Issue #6 P1-B (`cold_start::profile::compile_lexicon_with_alias_enforcement`):
+        // the alias-normalized enforcement tier matches any BrandId in
+        // the deterministic alias group, not one exact id.
+        ResolvedConstraint::Structural(StructuralConstraint::BrandAny(ids)) => {
+            ids.contains(&product.brand)
+        }
         ResolvedConstraint::Attribute(Constraint::Enum { attribute, value })
             if attribute == "color" =>
         {
@@ -170,8 +176,8 @@ pub fn product_satisfies_and(
             matches!(variant.attributes.get("color"), Some(AttributeValue::Enum(v)) if v == value)
         }
         // Any other constraint kind cannot appear from this real-data
-        // lexicon (only Brand/color entries exist); if one somehow did,
-        // fail closed rather than silently pass.
+        // lexicon (only Brand/BrandAny/color entries exist); if one
+        // somehow did, fail closed rather than silently pass.
         _ => false,
     })
 }
@@ -199,6 +205,9 @@ fn product_satisfies_or_within_attribute(
         match c {
             ResolvedConstraint::Structural(StructuralConstraint::Brand(id)) => {
                 brand_candidates.push(*id)
+            }
+            ResolvedConstraint::Structural(StructuralConstraint::BrandAny(ids)) => {
+                brand_candidates.extend(ids.iter().copied())
             }
             ResolvedConstraint::Attribute(Constraint::Enum { attribute, value })
                 if attribute == "color" =>
