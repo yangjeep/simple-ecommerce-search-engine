@@ -381,8 +381,23 @@ pub fn compile_lexicon_with_alias_enforcement(
                 continue; // already resolved as tier 1, do not downgrade it
             }
             let candidate_key = alias::alias_key(&candidate_lower);
+            let candidate_len = candidate_key.chars().count();
             let mut best: Option<(usize, &String)> = None;
             for group_key in groups.keys() {
+                // Levenshtein distance is always >= the length difference,
+                // so this is a correct, cheap prefilter, not an
+                // approximation -- skips the O(len_a * len_b) DP entirely
+                // for pairs that cannot possibly be close enough. This
+                // matters in practice: without it, this loop was measured
+                // taking ~2.3x longer end to end on the real 22,458-query
+                // corpus (`docs/experiments/PHASE2_LOG.md` P2-E11) purely
+                // from computing edit distances that were always going to
+                // exceed the threshold.
+                let group_len = group_key.chars().count();
+                let len_diff = candidate_len.abs_diff(group_len);
+                if len_diff > fuzzy_max_edit_distance {
+                    continue;
+                }
                 let d = alias::edit_distance(&candidate_key, group_key);
                 if d <= fuzzy_max_edit_distance && best.is_none_or(|(bd, _)| d < bd) {
                     best = Some((d, group_key));
