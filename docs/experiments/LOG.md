@@ -178,3 +178,115 @@ Gate 2: compile a representative query ("black Nike waterproof running
 shoes size 9 under $150") into a typed `Constraint` list with explicit
 ambiguity/confidence, rather than hand-constructing `Constraint`s as the
 tests currently do.
+
+---
+
+## E002 — Commerce IR compiler with explicit ambiguity (Gate 2)
+
+**Question**  
+Can a deterministic compiler turn the Issue #2 representative query into a
+typed Commerce IR (structural + attribute constraints, plus preferences)
+without collapsing genuinely ambiguous terms into a guessed resolution or
+silently discarding unrecognized terms — and does the compiled query
+remain variant-safe when executed against Gate 1's fixture?
+
+**Hypothesis**  
+A phrase-lookup compiler backed by a fixed lexicon
+(phrase -> `Vec<Candidate>`, each candidate carrying a confidence) can: (a)
+compile `"black Nike waterproof running shoes size 9 under $150"` into
+exactly the six typed constraints a human would expect (color, brand,
+waterproof, product type, size, price-under), with zero ambiguity/residual
+terms; (b) when a lexicon phrase has more than one plausible candidate,
+emit an explicit `AmbiguousSpan` rather than picking one; (c) keep
+unrecognized tokens as `residual_lexical` rather than dropping them; and
+(d) executing the compiled representative query against the Gate 1
+variant-safety fixture must still return zero matches (that fixture has no
+variant that is both black and size 9), proving the IR layer does not
+reopen the cross-variant bug Gate 1 closed.
+
+**Workload**  
+`fixtures::shoe_lexicon()` (9 entries: brand, 2 colors, waterproof, a
+2-word product-type phrase, 2 preference terms, and one deliberately
+double-mapped ambiguous term, "leather"). `fixtures::REPRESENTATIVE_QUERY`
+= the Issue #2 query verbatim. Two catalogs: the existing
+`fixtures::variant_safety_catalog()` (negative control — no variant should
+match) and a new `fixtures::representative_query_catalog()` built to
+actually contain a black/size-9/waterproof/Nike/running-shoe/$139.99
+variant (positive control).
+
+**Metric(s)**  
+Structural equality of the compiled `CommerceQuery` against a
+hand-written expected value; hit-set equality after `execute()` against
+each catalog; boolean pass/fail per adversarial case (ambiguous term,
+unrecognized brand, preference-only terms).
+
+**Decision rule**  
+Advance if all of (a)-(d) above hold with zero test failures and zero
+clippy/fmt warnings. Revise the lexicon/compiler design if any expected
+constraint is missing/extra, if the ambiguous case gets silently resolved,
+or if the residual/positive/negative execution checks fail.
+
+**Implementation**  
+`crates/commerce-core/src/ir/`: `structural.rs` (`StructuralConstraint` for
+brand/product-type/category/price, `ResolvedConstraint` wrapping it with
+`domain::Constraint`), `lexicon.rs` (`SemanticLexicon`, `Candidate`,
+`ResolvedTerm`), `query.rs` (`Preference`, `AmbiguousSpan`,
+`CommerceQuery`, `compile()`, `CommerceQuery::execute()`). Rationale for
+the two-constraint-kind split and the "no auto-resolve" ambiguity rule is
+in `docs/adr/0002-commerce-ir-compiler.md`. Test-first:
+`crates/commerce-core/tests/ir_compiler.rs` was written against this
+design (expected constraint list, ambiguous-term shape, residual-lexical
+shape) before the greedy longest-match tokenizer was finalized.
+
+**Results**  
+```
+$ cargo test --workspace --all-features
+running 6 tests (tests/ir_compiler.rs)
+test compiles_representative_query_into_expected_typed_constraints ... ok
+test representative_query_does_not_cross_variant_match ... ok
+test representative_query_matches_a_catalog_that_actually_has_it ... ok
+test ambiguous_term_is_preserved_not_silently_resolved ... ok
+test unrecognized_brand_becomes_residual_lexical_not_dropped ... ok
+test descriptive_terms_compile_as_preferences_not_hard_constraints ... ok
+test result: ok. 6 passed; 0 failed
+
+running 7 tests (tests/variant_safety.rs) ... 7 passed; 0 failed  # unchanged, still green
+$ cargo fmt --all -- --check   # exit 0
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings   # exit 0, 0 warnings
+$ cargo build --workspace --release   # exit 0
+```
+Environment: same as E000/E001 (4 vCPU Intel Xeon @2.80GHz, 15Gi RAM,
+Linux 6.18.5, rustc/cargo 1.94.1). Commit: see `git log` on
+`claude/github-issue-2-gates-puv0wb` immediately following this entry.
+
+**Interpretation**  
+Supports the hypothesis for this lexicon and this one representative
+query plus five adversarial variants of it (ambiguous term, unrecognized
+brand, preference-only terms, negative-control catalog, positive-control
+catalog). The variant-safety property survives composition with the IR
+layer because `CommerceQuery::execute` reuses the same
+"merge-then-evaluate-per-variant" shape `Catalog::search` uses; it is not
+a second, independently-written matcher that could drift out of sync. This
+does **not** yet demonstrate: (1) structural query coverage over a
+realistic query distribution — the lexicon has 9 hand-picked entries, not
+a catalog-derived vocabulary (that is Gate 4/6's job); (2) what fraction of
+real shopper queries resolve deterministically (Gate 4's explicit metric);
+(3) any ranking use of `preferences` (Gate 3); (4) performance of
+`execute()` at scale-ladder tiers beyond the Gate 0 5k-product bench — no
+index exists yet (Gate 3).
+
+**Regression check**  
+`crates/commerce-core/tests/ir_compiler.rs` and
+`crates/commerce-core/tests/variant_safety.rs`, both run in CI
+(`rust-ci.yml`) via `cargo test --workspace --all-features` on every
+push/PR.
+
+**Next question**  
+Gate 3: replace the `O(products × variants)` linear scan in both
+`Catalog::search` and `CommerceQuery::execute` with specialized physical
+indexes (bitmap structural filters, numeric/range structures, minimal
+lexical postings for `residual_lexical`) and measure whether that changes
+latency/memory at the "small" (~10k product) scale-ladder tier — the
+current implementation has never been benchmarked against an index-backed
+alternative, so there is no evidence yet that specialization beats the
+linear scan at any scale.
