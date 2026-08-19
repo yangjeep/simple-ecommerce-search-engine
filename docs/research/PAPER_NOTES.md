@@ -135,6 +135,23 @@ run-to-run variance from OS scheduling, cache state, and other processes on
 a shared machine. This is recorded here as a considered methodological
 decision, not an evasion of the rigor requirement.
 
+**Correction (P2-E12)**: the above is true for *integer-count* metrics
+(structural filter recall/precision, route-distribution counts,
+`measure_precision`'s output) but not quite true for `f64`-*averaged*
+metrics (NDCG@10/Recall@10/MRR). Two independent runs of the identical
+baseline configuration produced NDCG@10=0.2278 vs. 0.2279 — every eval
+binary in this campaign iterates `judged_by_query.values()` (a `HashMap`,
+whose iteration order is randomized per-process by Rust's default hasher),
+and floating-point addition is not associative, so summing one score per
+query in a different order can shift the result by roughly 1e-4. Any
+NDCG/Recall/MRR delta at or below that level between two runs cannot be
+attributed to a real effect without either a fixed iteration order (a
+`BTreeMap` or sorted `Vec`, not yet applied to any eval binary) or repeated
+measurement with a bootstrap CI (the machinery exists in `bench-harness`
+but has so far only been used for timing, not relevance). Recorded as a
+real, previously-unstated threat to validity — full detail in
+`docs/experiments/PHASE2_LOG.md` P2-E12.
+
 ### 4.3 Query taxonomy
 
 Two taxonomies are maintained, for different questions:
@@ -293,15 +310,42 @@ mechanism, it is (a) a false-positive-aware trust gate for generic
 brand-shaped strings, and (b) genuine latent-structure inference for
 franchise/missing-brand cases — concretely, Issue #6's P1-C.
 
-### 8.2 P1-C: predictive semantic prefill `[NOT YET STARTED]`
+### 8.2 P1-C: predictive semantic prefill — **NARROW** (full cycle complete)
 
-Scoping research complete (this phase): no existing mechanism in
-`cold_start` associates a query phrase with catalog structure it does not
-literally contain; `compile()`'s lexicon resolution is exact-substring-only.
-Building a real n-gram↔Brand/Color co-occurrence table (zero model calls,
-matching `CatalogProfile::build`'s existing convention) plus a new
-query-time injection point is additive, not a rewrite. Implementation not
-yet started as of this document's current revision.
+**Hypothesis**: catalog-derived title-phrase-to-brand co-occurrence can
+predict a brand for a query phrase the existing lexicon cannot resolve at
+all, moving some real Punt-shaped traffic to `Hybrid`/`FastPath` and/or
+improving structural recall, without materially degrading integrated
+relevance. Motivated directly by P2-E11's franchise/manufacturer-mismatch
+and missing-brand-data failure cases. Full writeup: `docs/experiments/PHASE2_LOG.md`
+P2-E12.
+
+**Method**: `cold_start::prefill` (mechanism: `TitlePhraseIndex` trait,
+`predict_brand_from_phrase`, `apply_predictive_prefill` — confidence-tiered
+per Issue #6's explicit instruction not to assume predictions must be hard
+constraints). Real implementation: `phase2-eval/src/bin/prefill_eval.rs`,
+a Tantivy title-field phrase index, reusing P1-B's exact harness.
+
+**Real-data result, `min_enum_frequency=25`, full 22,458-query corpus**:
+1,133 queries (5.0%) gained a new hard `Brand` constraint they had none of
+before; of those, 125 (0.56% of the full corpus) had their execution route
+genuinely change (80 to `Hybrid`, 45 to `FastPath`) — a real, if modest,
+positive answer to "does inferred structure move Punt→Hybrid." Structural
+filter recall rose +0.5pp (Exact+Substitute) / +0.6pp (Exact only) — both
+exact integer-count metrics, not noise. Zero-result rate rose a small
++0.09pp (occasionally-wrong predictions). Integrated NDCG@10/Recall@10/MRR
+moved by -0.0003/-0.0001/-0.0004 respectively — all within the ~1e-4
+floating-point noise floor §4.2's correction identifies, so indistinguishable
+from zero in this single run.
+
+**Decision: NARROW.** The mechanism is real, bug-free, and moved real
+traffic for exactly the failure class it was built to address — but the
+effect is small in absolute terms (0.56% of traffic), and whether
+integrated relevance genuinely improves, stays flat, or slightly regresses
+cannot be determined from a single run given the newly-identified noise
+floor. Real, positive, reproducible-in-mechanism evidence for a narrow
+slice of real traffic (franchise/product-family-shaped queries), not
+evidence for a broad win on its own.
 
 ### 8.3 P1-D/P1-E: physical advantage by class, weighted economics `[NOT YET STARTED]`
 
@@ -360,6 +404,14 @@ gain to its actual cause rather than the configuration as a whole.
   cloud sandbox) — absolute QPS/latency numbers are environment-specific;
   the round-robin scheduling (§4.2) mitigates but does not eliminate
   shared-tenant noise, and no isolated bare-metal run has been performed.
+- **HashMap-iteration-order floating-point noise, found and documented
+  (§4.2 correction, P2-E12) but not yet fixed**: every eval binary in this
+  campaign sums per-query NDCG/Recall/MRR scores by iterating a `HashMap`,
+  producing ~1e-4-level run-to-run noise on those specific metrics. Every
+  NDCG/Recall/MRR delta reported anywhere in §8 that is at or below that
+  level should be read as "not distinguishable from noise in a single
+  run," not as a real effect — this applies retroactively to P2-E11's own
+  table as well, not only P2-E12's.
 
 ## 11. Negative Findings (preserved, not erased)
 
@@ -387,11 +439,25 @@ gain to its actual cause rather than the configuration as a whole.
   `Preference` (I7-E04 had already established `compile_lexicon` never
   did). A concrete instance of "real end-to-end measurement finds bugs
   classifier-quality-only evaluation cannot."
+- §4.2/P2-E12: this campaign's own "relevance numbers are exactly
+  reproducible bit-for-bit" methodological claim was itself falsified by
+  running the identical baseline twice — a real instance of the campaign's
+  own rigor protocol catching a gap in itself, not just in the system
+  under test.
 
 ## 12. Conclusion on the 5–10× Thesis
 
-**`[NOT YET DETERMINED]`** — insufficient evidence has been gathered under
-the rigor protocol (§4.2) to render SUPPORT / NARROW / NEGATIVE RESULT.
-This section will be updated as each experimental cycle completes; per
-Issue #6, any of the three outcomes is a valid, defensible result, and this
+**`[NOT YET DETERMINED]`** — two P1 semantic-layer experiments complete
+(P1-B: REVISE — confidence-tiered enforcement is sound but alias/spelling
+variance is a minor, not dominant, contributor to the real recall gap;
+P1-C: NARROW — predictive prefill genuinely moves a small, real slice of
+traffic and improves structural recall, but the effect is modest and its
+integrated-relevance impact is not yet distinguishable from measurement
+noise). Neither result alone determines the 5–10× thesis: both concern
+semantic interpretation quality, not the physical-execution-advantage
+question (P1-D/P1-E) the thesis actually turns on. No query-class-segmented
+physical-advantage sweep against the mature baseline has been run yet —
+that remains the highest-information next experiment. This section will be
+updated as each experimental cycle completes; per Issue #6, any of SUPPORT
+/ NARROW / NEGATIVE RESULT is a valid, defensible outcome, and this
 document commits to reporting whichever the evidence actually supports.

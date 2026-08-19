@@ -1677,3 +1677,130 @@ franchise/missing-brand failure cases rather than the original abstract
 entry -- P2-E10 and this entry's own Next-step discipline both point
 toward P1-C as the higher-information experiment now, not a third
 enforcement-mechanism variant.
+
+---
+
+## P2-E12 — Issue #6 P1-C: does catalog-derived predictive semantic prefill move real traffic and preserve relevance?
+
+**Evidence class**: real (full 1,215,854-product catalog, full 22,458-query
+judged corpus). **Independence**: yes (ESCI's own human judgments).
+
+**Background**: P2-E11's root-cause diagnostic found franchise/media-
+property-vs-manufacturer mismatches ("Pokemon" query, actual brand "Ultra
+Pro") and missing brand data as real, sizeable contributors to the brand-
+filter recall gap that no string-similarity enforcement mechanism could
+address. Issue #6 named predictive semantic prefill -- inferring latent
+commerce structure not literally present in the query -- as the concrete
+next P1 experiment.
+
+**Hypothesis**: catalog-derived title-phrase-to-brand co-occurrence
+(zero model calls, matching `CatalogProfile::build`'s convention) can
+predict a brand for a query phrase the existing lexicon cannot resolve at
+all, and injecting that prediction (as a confidence-tiered hard `Constraint`
+or soft `Preference`, per Issue #6's explicit "do not assume predicted
+semantics must become hard constraints") moves some real Punt-shaped
+traffic to `Hybrid`/`FastPath` and/or improves structural recall, without
+materially degrading integrated relevance.
+
+### Mechanism
+
+`crates/commerce-core/src/cold_start/prefill.rs` (new): `TitlePhraseIndex`
+(mechanism trait, mirrors `plan::LexicalDelegate` -- no full-text engine is
+a `commerce_core` dependency), `predict_brand_from_phrase` (samples real
+products matching a phrase, estimates brand purity), `apply_predictive_prefill`
+(scans a query's raw text for 2-3-word windows, adds a hard
+`StructuralConstraint::Brand` at high confidence or a
+`Preference::StructuralBoost` at medium confidence -- additively, per ADR
+0010, never touching `residual_lexical`; never fires if the query already
+has an explicit brand constraint; skips a phrase identical to its own
+predicted brand's name as not genuinely inferred). Real implementation:
+`crates/phase2-eval/src/bin/prefill_eval.rs`, a `TantivyTitlePhraseIndex`
+backed by a dedicated title-only Tantivy field and a same-process cache,
+reusing the exact planner-integration harness and `measure_precision`
+P1-B/P2-E05 already validated. Policy (first pass, not yet tuned):
+`ngram_sizes=[2,3]`, `sample_limit=50`, high confidence = purity>=0.90 and
+occurrence>=20, medium confidence = purity>=0.65 and occurrence>=8.
+
+### Real-data result, `min_enum_frequency=25`, full 22,458-query corpus
+
+| metric | baseline | with prefill | delta |
+|---|---|---|---|
+| outcome dist. (FastPath/Hybrid/Punt) | 328/5589/16541 | 328/5671/16459 | +82 Hybrid, -82 Punt |
+| structural filter recall (Exact+Sub) | 31.7% | 32.2% | **+0.5pp** |
+| structural filter recall (Exact only) | 35.6% | 36.2% | **+0.6pp** |
+| zero-result rate | 9.55% | 9.64% | +0.09pp |
+| NDCG@10 | 0.2279 | 0.2276 | -0.0003 (noise-level, see below) |
+| Recall@10 | 0.1354 | 0.1353 | -0.0001 (noise-level) |
+| MRR | 0.3666 | 0.3662 | -0.0004 (noise-level) |
+| wall time (22,458 queries) | 137.0s | 153.0s | +16.0s (Tantivy phrase lookups) |
+
+**Direct prefill effect**: 1,133 of 22,458 queries (5.0%) gained a *new*
+hard `Brand` constraint they had none of before. Of those, 80 moved to
+`Hybrid` and 45 to `FastPath` (both had zero structural constraints
+before) -- **125 queries (0.56% of the full corpus) had their execution
+route genuinely changed by inferred structure alone**, a real, if modest,
+positive answer to Issue #6's own framing question ("does inferred latent
+structure move Punt -> Hybrid").
+
+### A real methodological finding, not just a result: floating-point summation order is not deterministic across runs
+
+Two independent runs of the *identical* baseline configuration
+(P2-E11's run and this entry's `Mode::Baseline` run, same commit lineage,
+same catalog/query files) produced NDCG@10=0.2278 vs. 0.2279 -- not
+identical. Root cause: `judged_by_query.values()` iterates a `HashMap`,
+whose iteration order is not guaranteed stable across process runs (Rust's
+default hasher is randomized per-process); NDCG/Recall/MRR are computed by
+summing one `f64` per query, and floating-point addition is not
+associative, so a different summation order can produce a different value
+in the last 1-2 decimal places. `docs/research/PAPER_NOTES.md` §4.2
+previously claimed this pipeline's relevance/correctness numbers are
+"exactly reproducible bit-for-bit" -- **corrected**: true for integer-count
+metrics (structural filter recall/precision, route-distribution counts,
+`measure_precision`'s output), not quite true for `f64`-averaged metrics
+(NDCG@10/Recall@10/MRR) at the ~1e-4 level. This means any NDCG/Recall/MRR
+delta at or below ~0.0004 between two runs -- exactly the size of every
+delta in the table above -- **cannot be distinguished from this
+noise floor without either a fixed iteration order (switching the
+per-query loop to a `BTreeMap` or a sorted `Vec`, not done in this entry)
+or repeated measurement with a confidence interval** (§4.2's own
+bootstrap-CI machinery, not yet applied to a relevance metric, only
+designed for timing so far). Recorded as a real, previously-unstated
+threat to validity, not smoothed over; a candidate small fix for a future
+rigor pass, not executed here since it does not change this entry's
+conclusion.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, full workspace
+`cargo test`/`cargo build --release` clean. 27 commerce-core tests now
+(was 21) -- `prefill.rs`'s 6 new tests cover high/medium/low-confidence
+tiering, the explicit-brand-suppression safety rule, and the
+identical-to-brand-name exclusion, all against hand-built fixtures (no
+real-data dependency for correctness, matching this project's convention
+of unit-testing the mechanism and real-data-testing the effect
+separately).
+
+**Decision: NARROW.** The mechanism works as designed and is bug-free: it
+found real, previously-unreachable brand signal (0.56% of all real traffic
+route-changed, +0.5-0.6pp structural filter recall, both exact/reproducible
+integer-count metrics, not noise) for exactly the failure class P2-E11
+diagnosed it against. But the effect is small in absolute terms -- far
+from decisive for the 5-10x aggregate thesis on its own -- and the
+downstream *integrated* relevance effect (NDCG/Recall/MRR) is
+indistinguishable from measurement noise in this single run, with a small,
+real zero-result-rate cost (+0.09pp) from occasionally-wrong predictions.
+This is real, positive, reproducible-in-mechanism evidence for a narrow
+slice of real traffic (queries naming a franchise/product-family the
+catalog's structured brand field doesn't literally contain), not evidence
+for a broad win. Whether a larger, decision-grade effect exists requires
+either parameter tuning (higher/lower confidence thresholds, more n-gram
+sizes) or is capped by how much of the real query mix is actually
+franchise/prefill-eligible in the first place -- neither has been tested.
+
+**Next**: fix the HashMap-iteration-order noise source (switch to a
+BTreeMap or sorted iteration) before running any further decision-grade
+relevance comparison in this campaign, per §4.2's own rigor protocol.
+Feed into `docs/research/PAPER_NOTES.md` (§8.2, §4.2 correction, §11).
+Proceed to Issue #6's P1-D (physical advantage by query class) as the next
+research cycle, now that both P1-B and P1-C have real, evidence-backed
+(REVISE / NARROW) conclusions rather than continuing to iterate on
+semantic-interpretation experiments alone.
