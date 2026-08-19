@@ -666,3 +666,162 @@ by the experimenter), and measure semantic coverage holes — replacing
 catalog-derived one is the natural way to finally get coverage evidence
 independent of the lexicon's own hand-curation, closing both open threads
 from E004 and E005 at once.
+
+---
+
+## E006 — Cold-start catalog profiling and shopper-query fuzzing (Gate 6)
+
+**Question**  
+Given only a catalog fixture (no hand-typed vocabulary, no per-SKU model
+calls), can a deterministic profiler (a) compress raw attribute
+occurrences into a small distinct vocabulary, (b) correctly surface a
+genuine cross-attribute value collision as ambiguity rather than silently
+picking one meaning, (c) generate a reproducible shopper-query set from
+that same vocabulary, (d) identify exactly which generated queries the
+derived lexicon fails to resolve, and (e) provide coverage evidence on
+Gate 4/5's hand-authored query set that is genuinely independent of that
+set's own construction (the open thread flagged in both E004 and E005)?
+
+**Hypothesis**  
+(a) `CatalogProfile::build` over `fixtures::cold_start_catalog` (4
+products, 7 variants, 2 brands x 2 product types, one deliberately
+planted "green" collision — a color on one product, a `features` tag
+meaning eco-friendly material on another) compresses to exactly 14
+distinct values. (b) `compile_lexicon` surfaces "green" as a 2-candidate
+ambiguous entry, not a guess. (c) `generate_shopper_queries` is
+byte-identical across repeated calls and produces 30 queries (5 templates
+x irregular per-type counts, verified as 15 per product type x 2 types).
+(d) `coverage_holes` against the self-derived lexicon returns exactly the
+2 queries containing "green" (one per product type) and nothing else —
+28/30 fully resolved. (e) The catalog-derived lexicon, evaluated against
+`REPRESENTATIVE_QUERY_SET` (a set it was never built from), resolves some
+non-trivial, non-total fraction of it, differing from the hand-curated
+lexicon's known 12/20 (E004) — measured directly rather than predicted,
+since predicting 20 queries' resolution against an unfamiliar
+14-entry-vocabulary lexicon by hand would be error-prone.
+
+**Workload**  
+`fixtures::cold_start_catalog` + `fixtures::cold_start_brands/_product_types/_categories`
+(new fixture, hand-authored per `docs/EXPERIMENT_LOOP.md`'s rule against
+random relevance fixtures). `fixtures::REPRESENTATIVE_QUERY_SET` (E004/E005,
+unchanged) and `fixtures::shoe_semantic_context` (E004, unchanged) for the
+cross-check.
+
+**Metric(s)**  
+`CatalogProfile::distinct_value_count()`; generated-query-list equality
+across repeated calls and exact count; `coverage_holes` exact-set
+equality; `CoverageReport` fields for both the self-consistency check and
+the cross-check against `REPRESENTATIVE_QUERY_SET`.
+
+**Decision rule**  
+Advance (the profiling/generation/hole-finding mechanism is sound) if (a)-(d)
+match the hand-predicted values exactly and (e) produces a real,
+inspectable number (not a crash, not 0, not 20/20) confirming the two
+lexicons are meaningfully different views of overlapping vocabulary. A
+mismatch on (b) specifically — the collision resolving to 1 candidate
+instead of 2 — would mean the profiler is silently discarding one
+attribute's claim on a value, which is exactly the failure CLAUDE.md's
+"preserve ambiguity explicitly" rule exists to prevent.
+
+**Implementation**  
+`crates/commerce-core/src/cold_start/`: `profile.rs` (`CatalogProfile`,
+`compile_lexicon`), `generate.rs` (`generate_shopper_queries`), `mod.rs`
+(`coverage_holes`). New fixture `fixtures::cold_start_catalog` plus its
+brand/product-type/category registries. Rationale (profiler scope, hard-
+constraint-only derivation, template-based generation over random
+sampling) in `docs/adr/0006-cold-start-fuzzing.md`. Test-first:
+`crates/commerce-core/tests/cold_start.rs`, including one test
+(`coverage_holes_are_exactly_the_deliberate_green_collision`) written
+against a hand-traced prediction that initially failed only on
+list-ordering (product types visit in `BTreeMap` order, "hiking boots"
+before "running shoes" — content was correct on first run, order
+assumption was not) and was corrected in place; the cross-check test
+(`catalog_derived_lexicon_partially_covers_the_hand_authored_query_set`)
+was deliberately written with sanity-bound assertions plus targeted spot
+checks rather than a hand-predicted exact count, then the real aggregate
+number was captured via a temporary probe run (not committed) for this
+log entry.
+
+**Results**  
+```
+$ cargo test --workspace --all-features
+running 5 tests (tests/cold_start.rs)
+test profile_compresses_ten_variants_into_a_small_distinct_vocabulary ... ok
+test generated_queries_are_deterministic_across_runs ... ok
+test coverage_holes_are_exactly_the_deliberate_green_collision ... ok
+test catalog_derived_lexicon_partially_covers_the_hand_authored_query_set ... ok
+test hand_curated_and_catalog_derived_lexicons_are_independently_comparable ... ok
+test result: ok. 5 passed; 0 failed
+
+# all prior test files unchanged and still green: 5 + 3 + 6 + 6 + 7 = 27 passed
+$ cargo fmt --all -- --check   # exit 0
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings   # exit 0, 0 warnings
+$ cargo build --workspace --release   # exit 0
+```
+Measured (via a temporary probe test, not committed — see Implementation):
+```
+catalog-derived lexicon vs REPRESENTATIVE_QUERY_SET:
+  CoverageReport { total_queries: 20, fully_resolved: 11, had_ambiguity: 0, had_residual: 9 }
+hand-curated lexicon vs REPRESENTATIVE_QUERY_SET (E004, reconfirmed):
+  CoverageReport { total_queries: 20, fully_resolved: 12, had_ambiguity: 0 -> 2, had_residual: 6 }
+```
+Self-consistency: `CoverageReport { total_queries: 30, fully_resolved: 28,
+had_ambiguity: 2, had_residual: 0 }` against the catalog-derived lexicon's
+own generated queries. `distinct_value_count() = 14` from 4 products / 7
+variants. Environment: same as E000-E005 (4 vCPU Intel Xeon @2.80GHz, 15Gi
+RAM, Linux 6.18.5, rustc/cargo 1.94.1). Commit: see `git log` on
+`claude/github-issue-2-gates-puv0wb` immediately following this entry.
+
+**Interpretation**  
+Every hypothesized mechanism behaved exactly as designed: the planted
+collision produced exactly a 2-candidate ambiguous entry (not a silent
+pick), the only two coverage holes in the self-consistency check were
+that exact collision, and generation was verified byte-identical across
+runs. The cross-check is the most informative result: **11/20 (55%) for
+the catalog-derived lexicon vs. 12/20 (60%) for the hand-curated one on
+the *same* independent query set** — close enough that neither
+construction method has an overwhelming advantage on this small fixture,
+but they get there differently: the catalog-derived lexicon has zero
+ambiguity on this set (0 vs. the hand-curated lexicon's 2, because
+`REPRESENTATIVE_QUERY_SET`'s "leather" ambiguity was a hand-curated
+construct — nothing in `cold_start_catalog`'s attributes is named
+"leather" as a value, only as free `Text`, which the profiler
+deliberately does not index) but more residual (9 vs. 6, because it has
+no alias/synonym knowledge — "sneakers"/"trainers" are structurally
+unrecoverable from catalog data alone, confirmed directly by the
+`sneakers_only` spot check). This is genuine, if narrow, evidence that
+catalog-profiling and hand-curation are *complementary* rather than one
+strictly subsuming the other: profiling correctly recovers what's
+actually in the data (including catching value collisions a rushed human
+curator might miss) but cannot recover shopper vocabulary that never
+appears in the catalog verbatim (synonyms, slang, informal phrasing) —
+exactly the gap Gate 5's control-plane loop exists to close from replay
+evidence over time, not from catalog data alone. This does **not** yet
+show: (1) behavior on a catalog large enough that "one LLM call per SKU"
+would actually be tempting/costly to avoid (this fixture is tiny by
+design, tens-of-products tier); (2) integration with `control_plane`'s
+`ModelProvider` (a profiling-backed provider is a natural next step, not
+built here); (3) whether the "hard constraint only" derivation choice
+(no auto-detected preferences) costs real coverage — untested because
+`REPRESENTATIVE_QUERY_SET`'s preference-only queries (R8, R9) still
+resolve fine as hard constraints mechanically, so this fixture can't
+distinguish "resolves" from "resolves correctly as a preference."
+
+**Regression check**  
+`crates/commerce-core/tests/cold_start.rs`, run in CI (`rust-ci.yml`) via
+`cargo test --workspace --all-features` on every push/PR.
+
+**Next question**  
+All of Gates 0-6 now have at least initial evidence. Per
+`docs/EXPERIMENT_LOOP.md`'s stop conditions and CLAUDE.md's scale-up
+decision criteria, the next step is Gate 7: assemble the existing
+evidence (variant-safety correctness, ~14.4x indexed-vs-linear-scan
+speedup at 10k products, 55-60% structural coverage on two independently-
+built lexicons, a working replay-gated promotion loop, a working
+cold-start profiler) into a reproducible benchmark/decision package and
+determine whether it already meets a PROCEED/REVISE/STOP condition, or
+whether closing E003's variance/scale-curve gap is a prerequisite first.
+An Elasticsearch baseline and the "medium" (~100k product) scale-ladder
+tier are the most likely candidates to require materially larger
+infrastructure than this environment has used so far — the first place
+this loop may hit its own stop condition.

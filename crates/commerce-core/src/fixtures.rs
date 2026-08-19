@@ -292,3 +292,185 @@ pub const REPRESENTATIVE_QUERY_SET: &[&str] = &[
     "wide fit running shoes",
     "trail running shoes size 10",
 ];
+
+/// A second brand and product type, used only by [`cold_start_catalog`] to
+/// give Gate 6's profiler more than one brand/product-type to derive.
+pub fn aerowalk_brand() -> Brand {
+    Brand {
+        id: BrandId(2),
+        name: "Aerowalk".to_string(),
+    }
+}
+
+pub fn hiking_boots_type() -> ProductType {
+    ProductType {
+        id: ProductTypeId(2),
+        name: "Hiking Boots".to_string(),
+    }
+}
+
+pub fn cold_start_brands() -> Vec<Brand> {
+    vec![nike_brand(), aerowalk_brand()]
+}
+
+pub fn cold_start_product_types() -> Vec<ProductType> {
+    vec![running_shoes_type(), hiking_boots_type()]
+}
+
+pub fn cold_start_categories() -> Vec<Category> {
+    vec![footwear_category()]
+}
+
+/// Gate 6's catalog fixture: two brands x two product types, hand-authored
+/// (not randomly generated — this is a relevance/coverage fixture, not a
+/// performance one, so `docs/EXPERIMENT_LOOP.md`'s "synthetic expansion...
+/// clearly separated from relevance claims" rule keeps it off a random
+/// generator). Deliberately contains one genuine cross-attribute value
+/// collision: "green" is both a `color` (the Nike hiking boot variant) and
+/// a `features` tag meaning eco-friendly material (the Aerowalk hiking
+/// boot) — a cold-start profiler that indexes raw attribute values without
+/// knowing their semantics cannot tell these apart and must surface the
+/// collision as ambiguity rather than silently picking one meaning.
+pub fn cold_start_catalog() -> Catalog {
+    let running_shoes_nike = Product {
+        id: ProductId(10),
+        product_type: ProductTypeId(1),
+        brand: BrandId(1),
+        category: CategoryId(1),
+        title: "Nike Trail Runner".to_string(),
+        attributes: attributes([
+            ("waterproof", AttributeValue::Boolean(false)),
+            ("material", AttributeValue::Text("mesh".to_string())),
+            (
+                "features",
+                AttributeValue::MultiEnum(vec!["cushioned".to_string()]),
+            ),
+        ]),
+        variants: vec![
+            Variant {
+                id: VariantId(1001),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Black".to_string())),
+                    ("size", AttributeValue::Numeric(8.0)),
+                ]),
+                price: Price::usd(9_999),
+                inventory: Inventory::in_stock(12),
+            },
+            Variant {
+                id: VariantId(1002),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Red".to_string())),
+                    ("size", AttributeValue::Numeric(9.0)),
+                ]),
+                price: Price::usd(9_999),
+                inventory: Inventory::in_stock(5),
+            },
+        ],
+    };
+    let hiking_boots_nike = Product {
+        id: ProductId(11),
+        product_type: ProductTypeId(2),
+        brand: BrandId(1),
+        category: CategoryId(1),
+        title: "Nike Summit Boot".to_string(),
+        attributes: attributes([
+            ("waterproof", AttributeValue::Boolean(true)),
+            ("material", AttributeValue::Text("leather".to_string())),
+            (
+                "features",
+                AttributeValue::MultiEnum(vec!["insulated".to_string()]),
+            ),
+        ]),
+        variants: vec![
+            Variant {
+                id: VariantId(1011),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Brown".to_string())),
+                    ("size", AttributeValue::Numeric(10.0)),
+                ]),
+                price: Price::usd(15_900),
+                inventory: Inventory::in_stock(8),
+            },
+            Variant {
+                id: VariantId(1012),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Green".to_string())),
+                    ("size", AttributeValue::Numeric(9.0)),
+                ]),
+                price: Price::usd(15_900),
+                inventory: Inventory::in_stock(3),
+            },
+        ],
+    };
+    let running_shoes_aerowalk = Product {
+        id: ProductId(12),
+        product_type: ProductTypeId(1),
+        brand: BrandId(2),
+        category: CategoryId(1),
+        title: "Aerowalk Sprint".to_string(),
+        attributes: attributes([
+            ("waterproof", AttributeValue::Boolean(true)),
+            ("material", AttributeValue::Text("synthetic".to_string())),
+            (
+                "features",
+                AttributeValue::MultiEnum(vec!["breathable".to_string()]),
+            ),
+        ]),
+        variants: vec![
+            Variant {
+                id: VariantId(1021),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Blue".to_string())),
+                    ("size", AttributeValue::Numeric(8.0)),
+                ]),
+                price: Price::usd(7_900),
+                inventory: Inventory::in_stock(20),
+            },
+            Variant {
+                id: VariantId(1022),
+                attributes: attributes([
+                    ("color", AttributeValue::Enum("Black".to_string())),
+                    ("size", AttributeValue::Numeric(10.0)),
+                ]),
+                price: Price::usd(7_900),
+                inventory: Inventory::in_stock(6),
+            },
+        ],
+    };
+    let hiking_boots_aerowalk = Product {
+        id: ProductId(13),
+        product_type: ProductTypeId(2),
+        brand: BrandId(2),
+        category: CategoryId(1),
+        title: "Aerowalk Summit Pro".to_string(),
+        attributes: attributes([
+            ("waterproof", AttributeValue::Boolean(true)),
+            ("material", AttributeValue::Text("leather".to_string())),
+            (
+                "features",
+                AttributeValue::MultiEnum(vec![
+                    "insulated".to_string(),
+                    "cushioned".to_string(),
+                    "green".to_string(),
+                ]),
+            ),
+        ]),
+        variants: vec![Variant {
+            id: VariantId(1031),
+            attributes: attributes([
+                ("color", AttributeValue::Enum("Brown".to_string())),
+                ("size", AttributeValue::Numeric(9.0)),
+            ]),
+            price: Price::usd(18_900),
+            inventory: Inventory::in_stock(4),
+        }],
+    };
+    Catalog {
+        products: vec![
+            running_shoes_nike,
+            hiking_boots_nike,
+            running_shoes_aerowalk,
+            hiking_boots_aerowalk,
+        ],
+    }
+}
