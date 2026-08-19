@@ -1375,3 +1375,114 @@ extends the existing `brand_canonicalizer_eval.rs` binary only.
 **Decision**: classification-level evidence alone is INCONCLUSIVE for a
 production decision, by this project's own established standard (P2-E08).
 Do not resolve Issue #9 on this entry -- see P2-E10.
+
+---
+
+## P2-E10 — Does the model-assisted arm's classification win survive contact with real end-to-end measurement?
+
+**Evidence class**: real. Same real catalog and full real 22,458-query
+judged set as P2-E08. The 500-brand sample and its selection criterion
+(`scripts/phase2/build_query_relevant_brand_sample.py`) are real,
+deterministic (seed=7), drawn from the real population of brands that
+could actually change a measured query outcome. Model-assisted judgments
+for the 500 sampled brands are five independent agent-labeled batches
+(100 each, `scripts/phase2/merge_model_assisted_batches.py` merges and
+order-verifies them against the sample file).
+
+**Independence**: the 500-brand sample and the real query/judgment set
+are unrelated to how the model-assisted judgments were produced.
+
+**The tractability + fairness problem this entry solves**: P2-E09 could
+only evaluate the model-assisted arm's classification accuracy against a
+209-candidate sample -- classifying the full real ~206,227-distinct-brand
+vocabulary is not tractable (would mean ~206,227 individual agent
+judgments, ruled out by CLAUDE.md's cold-start discipline and this
+environment's lack of a live model API). This entry solves it for the
+END-TO-END metric with a different technique: a brand string that is
+below threshold AND never appears in any real judged query cannot change
+any measured FIB/precision/recall number, so restricting model-assisted
+judgment to a real, tractable sample (500 of the 7,532 real
+below-threshold brands whose exact string appears in some real query)
+targets exactly the population relevant to this measurement, not an
+arbitrary subset. To keep the comparison fair against
+`FrequencyOnlyCanonicalizer` (which decides every one of the real
+~206,227 brands), `HybridModelAssistedCanonicalizer`
+(`crates/phase2-eval/src/bin/hybrid_model_assisted_fib_eval.rs`) uses the
+real model-assisted judgment for the 500 sampled brands and falls back to
+the *exact* `FrequencyOnlyCanonicalizer` decision (same threshold) for
+every other brand -- both arms decide every brand identically except the
+500 where model-assisted's real judgment is substituted in, isolating
+its causal effect.
+
+**Results** (real 1.2M-product catalog, real 22,458 queries; 311/500 =
+62.2% of the sample trusted as structural by the model-assisted arm):
+
+| threshold | arm | FIB | precision | recall_ES | recall_Exact |
+|---|---|---|---|---|---|
+| 3 | FrequencyOnly (baseline) | 41.09% | 92.5% | 9.69% | 11.22% |
+| 3 | Hybrid (500 real overrides) | 41.09% | 92.5% | 9.67% | 11.19% |
+| 10 | FrequencyOnly (baseline) | 28.47% | 91.7% | 21.07% | 24.28% |
+| 10 | Hybrid | 29.23% (+0.76pp) | 91.8% | 20.31% (**-0.76pp**) | 23.43% (**-0.85pp**) |
+| **25** | **FrequencyOnly (baseline)** | 21.30% | 90.5% | 31.74% | 35.60% |
+| **25** | **Hybrid** | 22.64% (**+1.34pp**) | 90.6% | 29.79% (**-1.95pp**) | 33.44% (**-2.16pp**) |
+| 50 | FrequencyOnly (baseline) | 16.09% | 90.3% | 39.09% | 43.41% |
+| 50 | Hybrid | 17.67% (**+1.58pp**) | 90.4% | 35.58% (**-3.51pp**) | 39.53% (**-3.88pp**) |
+
+**Interpretation**: the model-assisted arm's classification-level win
+(P2-E09) does **not** survive contact with real end-to-end measurement --
+it reproduces P2-E08's exact directional finding for
+`HeuristicCanonicalizer` (more brands trusted as hard filters -> higher
+FIB, lower real recall), at a magnitude proportional to how much of the
+real vocabulary this isolated test could actually touch (only 500 of
+~199,582 real below-threshold brands, 0.25%). At threshold=25 -- P2-E05's
+own measured real recall-peak frontier -- the 500 sampled brands' real
+model-assisted judgments alone cost 2.16 percentage points of real
+Exact-relevance recall for a 1.34-point FIB gain, with only 500/206,227
+(0.24%) of the total brand vocabulary touched. This is small in absolute
+terms because the touched population is small by necessity (a tractability
+constraint, not a claim that the *full* vocabulary's effect would stay
+this small), but the *direction and consistency* is the real finding: at
+every threshold from 10 to 50, trusting more of the real
+model-assisted-judged brands as hard filters costs more real recall than
+it gains in FIB coverage, in the same direction P2-E08 already found for
+`HeuristicCanonicalizer`'s full-vocabulary sweep, and in the same
+direction P2-E05 originally found for the raw `min_enum_frequency`
+threshold itself (lower threshold = more brands trusted = lower real
+recall, the *original* R1-E02/E02b finding this project's whole
+canonicalization workstream exists to fix). Three independent mechanisms
+now -- a raw frequency threshold, a deterministic heuristic, and a
+held-out model-assisted arm -- all show the same qualitative relationship
+between "trust more brand strings as hard filters" and "real recall goes
+down," regardless of how each mechanism decides which strings to trust or
+how accurately it classifies them in isolation.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy -p
+phase2-eval --all-targets --all-features -- -D warnings`, full workspace
+`cargo test`/`cargo build --release` all clean. No `commerce_core` file
+touched.
+
+**Decision: CANONICALIZATION FRONTIER IS FUNDAMENTAL.** Of Issue #9's
+four named decision options, this is now the best-supported by the full
+weight of P2-E05/P2-E08/P2-E09/P2-E10 together, not "REVISE AND RETEST"
+in the sense of "try a different classifier" -- three structurally
+different mechanisms (raw threshold, deterministic heuristic, model-
+assisted) all show the same directional tradeoff, which is evidence the
+tension is inherent to *how trust is enforced* (a hard structural AND
+filter on an exact-matched string, vulnerable to any real spelling/
+aliasing/formatting variation between the compiled constraint and a
+product's actual field value), not to *which values get trusted*. "MODEL-
+ASSISTED IS MATERIAL" and "HEURISTICS ARE SUFFICIENT" are both rejected
+by this same evidence -- neither wins on the metric that matters
+(real recall), despite winning on classification accuracy. The concrete,
+evidence-backed next experiment this points to is not a fourth
+canonicalization strategy: it is testing whether a *softer* enforcement
+mechanism at query-compile time -- alias-normalized/fuzzy brand matching,
+or treating a compiled brand match as a scored `Preference` rather than a
+hard `Constraint` when canonicalization confidence is not maximal -- can
+break the trend this entry, P2-E08, and P2-E05 all independently found,
+where refining *which* strings are trusted cannot.
+
+**Next**: feed into Issue #5/`ROUND1_DECISION_TREE.md` alongside Issues
+#7/#8's findings; open a follow-up issue for the soft-match/scored-
+constraint experiment this decision implies, rather than silently
+expanding Issue #9's own scope.
