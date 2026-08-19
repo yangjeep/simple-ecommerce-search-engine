@@ -539,3 +539,130 @@ proposal, no live model call per CLAUDE.md's hard rule), replay them
 against `REPRESENTATIVE_QUERY_SET` (or an expanded version of it), and
 only promote a candidate into a new `SemanticContext` version if replay
 coverage improves without regressing any previously-resolved query.
+
+---
+
+## E005 — Offline control-plane prototype: observe/propose/replay/promote (Gate 5)
+
+**Question**  
+Can an offline flow observe which terms a `SemanticContext` fails to
+resolve, request candidate mappings from a model-provider *interface*
+(never the query hot path), and promote a new context version only when
+replay evidence shows a strict, regression-free coverage improvement —
+correctly rejecting both "no proposals" and "a proposal that regresses
+even one previously-resolved query," not just rewarding aggregate
+coverage gains?
+
+**Hypothesis**  
+(a) `observe_residual_terms` run against `REPRESENTATIVE_QUERY_SET` and
+the Gate 4 lexicon reproduces exactly the 9 distinct residual terms E004's
+hand trace identified (adidas, balance, blue, fit, new, shoes, trail,
+vegan, wide), each frequency 1. (b) A `FixtureModelProvider` that proposes
+mappings for a subset of observed terms ("adidas", "blue") yields a
+candidate lexicon that `try_promote` accepts (coverage 12 -> 14 fully
+resolved, zero regressions), producing a version-2 `SemanticContext`. (c)
+A provider proposing nothing, and a provider that always declines, both
+correctly fail to promote. (d) The promotion gate itself — tested directly
+against hand-built `ReplayResult` values, independent of `compile` — must
+reject a candidate with a net aggregate gain (+3 fully resolved) if even
+one query in it regressed, proving "no regressions" is enforced per-query
+and cannot be papered over by aggregate improvement elsewhere.
+
+**Workload**  
+`fixtures::shoe_semantic_context()` (Gate 4's version-1 context) and
+`fixtures::REPRESENTATIVE_QUERY_SET` (unchanged from E004). Two real
+`FixtureModelProvider`s (one mapping adidas/blue, one empty) plus a
+hand-written `AlwaysDeclineProvider`. One hand-constructed `ReplayResult`
+pair (regression vs. regression-free) for the gate-logic unit test.
+
+**Metric(s)**  
+Exact-set equality of observed terms; `SemanticContext.version` after
+promotion; per-query `residual_lexical`/`ambiguous` emptiness
+before/after for the two newly-mapped terms; `CoverageReport.fully_resolved`
+before/after; `ReplayResult::passes_promotion_gate()` boolean outcome for
+both the real and the hand-built regression scenario.
+
+**Decision rule**  
+Advance (the mechanism is sound) if every case above resolves exactly as
+hypothesized with zero test failures: correct observation, correct
+promotion on real improvement, correct rejection on no-op and
+always-decline providers, and — the highest-value check — correct
+rejection of the hand-built net-positive-but-regressing candidate. A
+failure on that last case specifically would mean the promotion gate is
+reading aggregate coverage instead of per-query regressions, which is
+exactly the failure mode CLAUDE.md's replay-evidence rule exists to catch.
+
+**Implementation**  
+`crates/commerce-core/src/control_plane/`: `observe.rs`
+(`observe_residual_terms`, frequency-then-alphabetical deterministic
+ordering), `provider.rs` (`ModelProvider` trait, `FixtureModelProvider`),
+`replay.rs` (`ReplayResult`, `replay`, `passes_promotion_gate`), `mod.rs`
+(`propose_candidates`, `try_promote`). `SemanticLexicon` gained `Clone` so
+a candidate lexicon can be built from a copy of the baseline without
+mutating the live context. Rationale (top-level module boundary,
+residual-only scope cut, all-or-nothing batch promotion, per-query
+regression check) in `docs/adr/0005-control-plane-prototype.md`.
+Test-first: `crates/commerce-core/tests/control_plane.rs`, including a
+promotion-gate unit test built from hand-authored `CoverageReport`/
+`ReplayResult` values (not `compile` output) specifically to isolate the
+gate logic from the compiler.
+
+**Results**  
+```
+$ cargo test --workspace --all-features
+running 5 tests (tests/control_plane.rs)
+test observes_every_residual_term_from_the_representative_query_set ... ok
+test candidate_mappings_are_promoted_when_replay_improves_coverage_without_regressions ... ok
+test no_proposals_means_nothing_is_promoted ... ok
+test promotion_gate_rejects_any_regression_even_with_a_net_aggregate_gain ... ok
+test a_provider_that_always_declines_never_promotes ... ok
+test result: ok. 5 passed; 0 failed
+
+# all prior test files unchanged and still green: 3 + 6 + 6 + 7 = 22 passed
+$ cargo fmt --all -- --check   # exit 0
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings   # exit 0, 0 warnings
+$ cargo build --workspace --release   # exit 0
+```
+Environment: same as E000-E004 (4 vCPU Intel Xeon @2.80GHz, 15Gi RAM,
+Linux 6.18.5, rustc/cargo 1.94.1). Commit: see `git log` on
+`claude/github-issue-2-gates-puv0wb` immediately following this entry.
+
+**Interpretation**  
+Every hypothesized outcome held on first implementation, including the
+adversarial gate-logic case (net +3 aggregate, 1 regression -> rejected;
+same result with the regression removed -> accepted), which is the
+strongest evidence in this entry: the promotion gate demonstrably checks
+per-query outcomes, not just an aggregate number, so a candidate cannot
+"average out" a real regression. Observed-term extraction reproducing
+E004's hand trace exactly (same 9 terms, same frequencies) confirms
+`observe_residual_terms` and `compile`'s `residual_lexical` output agree,
+which they must since the former is built directly on the latter — this
+is a consistency check, not independent evidence. What this entry does
+**not** show: (1) whether a *real* model-backed `ModelProvider` would
+propose useful mappings at all — `FixtureModelProvider` is a fixed table,
+so "the pipeline accepts good proposals and rejects bad ones" is proven,
+but "where good proposals come from" is untouched, matching the gate's
+intentionally narrow scope; (2) ambiguous-span resolution (narrowing
+"leather" to one reading) — out of scope by design (see ADR 0005); (3)
+promotion-history/audit trail across multiple attempts — only a single
+promote-or-reject call is exercised per test; (4) behavior when a batch
+mixes a good and a bad proposal together (the all-or-nothing design means
+the good one is discarded too) — not exercised here, flagged as a known
+batching cost in the ADR rather than measured.
+
+**Regression check**  
+`crates/commerce-core/tests/control_plane.rs`, run in CI (`rust-ci.yml`)
+via `cargo test --workspace --all-features` on every push/PR.
+
+**Next question**  
+Two candidates remain from E003 (repeat the physical-index benchmark for
+variance/scale) and E004 (measure coverage on a query set independent of
+the lexicon's own construction). Per CLAUDE.md's priority order, "cold
+start" (priority 4) is the next unaddressed thesis question above both:
+Gate 6, given a catalog fixture, profile/compress semantic problems,
+generate shopper-like query cases from the catalog itself (not hand-typed
+by the experimenter), and measure semantic coverage holes — replacing
+`REPRESENTATIVE_QUERY_SET`'s hand-authored construction with a
+catalog-derived one is the natural way to finally get coverage evidence
+independent of the lexicon's own hand-curation, closing both open threads
+from E004 and E005 at once.

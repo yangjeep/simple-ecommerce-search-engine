@@ -39,7 +39,7 @@ impl Candidate {
 /// table. This is a Gate 2 compiler prototype, not the versioned, promoted
 /// semantic FIB Gate 4 requires: it carries no version and no promotion
 /// workflow, and is rebuilt from source on every process start.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SemanticLexicon {
     entries: BTreeMap<String, Vec<Candidate>>,
 }
