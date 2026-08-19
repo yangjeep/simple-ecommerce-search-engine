@@ -1,6 +1,8 @@
 use super::lexicon::{Candidate, ResolvedTerm, SemanticLexicon};
 use super::structural::{ResolvedConstraint, StructuralConstraint};
-use crate::domain::{effective_attributes, Catalog, Constraint, NumericOp, ProductId, VariantId};
+use crate::domain::{
+    effective_attributes, Catalog, Constraint, NumericOp, Product, ProductId, Variant, VariantId,
+};
 
 /// A soft ranking signal compiled from the query but not enforced as a
 /// hard filter. Gate 2 only compiles preferences; consuming them for
@@ -33,6 +35,20 @@ pub struct CommerceQuery {
 }
 
 impl CommerceQuery {
+    /// Whether every hard constraint holds for one specific variant's
+    /// combined attributes/structural fields. Extracted from `execute` so
+    /// `plan::execute_planned` can re-verify a delegate-returned hit against
+    /// the exact same constraint semantics `execute`'s linear scan and
+    /// `CatalogIndex::execute`'s narrow-then-verify path already use --
+    /// there must be exactly one place hard-constraint matching is defined.
+    pub fn matches_variant(&self, product: &Product, variant: &Variant) -> bool {
+        let attrs = effective_attributes(product, variant);
+        self.constraints.iter().all(|c| match c {
+            ResolvedConstraint::Attribute(constraint) => constraint.matches(&attrs),
+            ResolvedConstraint::Structural(structural) => structural.matches(product, variant),
+        })
+    }
+
     /// Evaluate every hard constraint against each variant's combined
     /// attributes/structural fields. Ambiguous spans and residual lexical
     /// terms are not enforced here: resolving them needs a lexical index
@@ -42,14 +58,7 @@ impl CommerceQuery {
         let mut matches = Vec::new();
         for product in &catalog.products {
             for variant in &product.variants {
-                let attrs = effective_attributes(product, variant);
-                let ok = self.constraints.iter().all(|c| match c {
-                    ResolvedConstraint::Attribute(constraint) => constraint.matches(&attrs),
-                    ResolvedConstraint::Structural(structural) => {
-                        structural.matches(product, variant)
-                    }
-                });
-                if ok {
+                if self.matches_variant(product, variant) {
                     matches.push((product.id, variant.id));
                 }
             }

@@ -179,6 +179,19 @@ impl CatalogIndex {
         self.variant_ordinal.get(&variant_id).copied()
     }
 
+    /// The distinct `ProductId`s referenced by a set of ordinals (typically
+    /// `indexed_candidates(&query.constraints)`'s output). Needed by
+    /// `plan::execute_planned` (Issue #6 priority 5) to hand a structural
+    /// pre-filter to a lexical delegate keyed by product id, since a
+    /// delegate such as an external text index has no concept of this
+    /// index's internal bitmap ordinals.
+    pub fn candidate_product_ids(&self, ordinals: &RoaringBitmap) -> BTreeSet<ProductId> {
+        ordinals
+            .iter()
+            .map(|ord| self.ordinals[ord as usize].0)
+            .collect()
+    }
+
     fn all_ordinals(&self) -> RoaringBitmap {
         (0..self.ordinals.len() as Ordinal).collect()
     }

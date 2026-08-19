@@ -45,6 +45,21 @@ pub struct CatalogProfile {
     /// reused across many products; a one-off data-entry mistake typically
     /// does not.
     enum_occurrence: BTreeMap<String, usize>,
+    /// How many products carry each lowercased brand name. Added by P2-E05
+    /// (`docs/experiments/PHASE2_LOG.md`) after a real-data integration run
+    /// found this project's own prior assumption wrong: `compile_lexicon`'s
+    /// doc comment claimed brand vocabulary "comes from an already-curated
+    /// registry," so it was never subject to `min_enum_frequency`
+    /// filtering the way `enum_occurrence`-backed values are. On the real
+    /// ESCI catalog, brand is populated the *same* way color was
+    /// (`round1_eval::catalog::build_catalog` interns whatever raw string
+    /// a product's source record puts in its brand field) --
+    /// 206,227 distinct real "brands," 49.4% occurring on exactly one
+    /// product, the great majority of those one-off values being seller
+    /// junk ("funny musician gifts co") rather than genuine brand names.
+    /// R1-E02/E02b's exact original failure mode, just never checked for
+    /// this specific vocabulary.
+    brand_occurrence: BTreeMap<String, usize>,
     numeric_values: BTreeMap<String, Vec<f64>>,
     price_cents: Vec<i64>,
 }
@@ -57,8 +72,11 @@ impl CatalogProfile {
         categories: &[Category],
     ) -> Self {
         let mut profile = CatalogProfile::default();
+        let mut brand_name_by_id: BTreeMap<BrandId, String> = BTreeMap::new();
         for b in brands {
-            profile.brand_names.insert(b.name.to_lowercase(), b.id);
+            let lower = b.name.to_lowercase();
+            profile.brand_names.insert(lower.clone(), b.id);
+            brand_name_by_id.insert(b.id, lower);
         }
         for pt in product_types {
             profile
@@ -70,6 +88,9 @@ impl CatalogProfile {
         }
 
         for product in &catalog.products {
+            if let Some(name) = brand_name_by_id.get(&product.brand) {
+                *profile.brand_occurrence.entry(name.clone()).or_insert(0) += 1;
+            }
             profile.index_attributes(&product.attributes);
             for variant in &product.variants {
                 profile.index_attributes(&variant.attributes);
@@ -131,6 +152,12 @@ impl CatalogProfile {
         self.enum_occurrence.get(value_lower).copied().unwrap_or(0)
     }
 
+    /// How many products carry `name_lower` (already lowercased) as their
+    /// brand. 0 if never seen.
+    pub fn brand_occurrence_count(&self, name_lower: &str) -> usize {
+        self.brand_occurrence.get(name_lower).copied().unwrap_or(0)
+    }
+
     pub fn product_type_names(&self) -> impl Iterator<Item = &str> {
         self.product_type_names.keys().map(String::as_str)
     }
@@ -183,19 +210,37 @@ impl CatalogProfile {
 ///
 /// `min_enum_frequency` is the Round 1 R1-E02/E02b canonicalization fix
 /// (`docs/experiments/ROUND1_LOG.md`, `docs/adr/0008-narrow-to-structural-planning-layer.md`):
-/// an enum/multi-enum value must have been seen at least this many times
-/// across the catalog to become a trusted lexicon entry at all. `1` means
-/// "no filtering" — every Phase 0 test fixture uses `1` and keeps its
-/// exact pre-existing behavior. Brand/product-type/category/boolean
-/// vocabulary is never filtered by this threshold: those come from an
-/// already-curated registry (`Brand`/`ProductType`/`Category`), not raw,
-/// unvalidated per-product field values — the specific failure mode this
-/// threshold targets is real-catalog enum attributes (e.g. `color`) whose
-/// raw values are frequently data-entry noise, not a genuine controlled
-/// vocabulary (R1-E01/E02's finding).
+/// a value must have been seen at least this many times across the
+/// catalog to become a trusted lexicon entry at all. `1` means "no
+/// filtering" — every Phase 0 test fixture uses `1` and keeps its exact
+/// pre-existing behavior.
+///
+/// Applies to brand names too, as of P2-E05
+/// (`docs/experiments/PHASE2_LOG.md`). This function's own prior doc
+/// comment claimed brand/product-type/category/boolean vocabulary came
+/// from "an already-curated registry" and was exempt by design — true for
+/// `ProductType`/`Category` (this project's own fixtures/ingestion define
+/// a small, deliberate registry for those), but **not** actually true for
+/// `Brand` on the real ESCI catalog: `round1_eval::catalog::build_catalog`
+/// interns brand the same way it interns raw `color` values, from
+/// whatever a source record's brand field contains, no validation.
+/// P2-E05's real-data integration run found this the hard way (badly
+/// degraded end-to-end relevance, traced to single-product "brand"
+/// candidate sets built from one-off seller-junk strings) before it was
+/// confirmed independently (206,227 distinct real "brand" strings,
+/// 49.4% occurring on exactly one product). Product-type/category remain
+/// unfiltered: nothing in this project's evidence base has shown them to
+/// have the same raw-noise problem, since the real catalog ingestion
+/// pipeline assigns every real product the same sentinel
+/// `ProductTypeId(0)`/`CategoryId(0)` rather than deriving them from a
+/// noisy per-product field at all (`round1_eval::catalog`'s own doc
+/// comment) — there is no equivalent noisy source to canonicalize away.
 pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> SemanticLexicon {
     let mut lex = SemanticLexicon::new();
     for (name, id) in &profile.brand_names {
+        if profile.brand_occurrence_count(name) < min_enum_frequency {
+            continue;
+        }
         lex.insert(
             name,
             vec![Candidate::constraint(
