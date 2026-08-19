@@ -77,6 +77,44 @@ pub trait LexicalDelegate {
     ) -> Vec<LexicalHit>;
 }
 
+/// Tuning knobs for [`plan`]/[`execute_planned`] that are not derived from
+/// the query or the catalog itself — the kind of thing a real deployment
+/// would eventually want to vary per vertical or per merchant rather than
+/// compile in as a constant. Deliberately a named, typed policy rather
+/// than bare parameters threaded through function signatures: this is the
+/// extension point a future finding (e.g. from the `searchspring/search-api`
+/// commerce-archaeology workstream, Issue #5 section 12) that turns out to
+/// be a genuine merchant-specific or vertical-specific behavior should
+/// extend — add a field here, not a new function parameter or a
+/// conditional branch in `plan`/`execute_planned`.
+///
+/// No [`Default`] impl: neither field has an evidence-backed recommended
+/// value yet (P2-E05, `docs/experiments/PHASE2_LOG.md`, found
+/// `selectivity_threshold` did not even affect routing on the real
+/// catalog once the actual root cause — unfiltered brand vocabulary —
+/// was the confound; a real default requires re-measuring against the
+/// corrected lexicon, not asserting one here ahead of that evidence).
+/// Callers must construct one explicitly.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlannerPolicy {
+    /// The maximum `structural_candidates / catalog_size` fraction still
+    /// considered "genuinely selective" (R1-E05's own vocabulary) — at or
+    /// under this, a query with a structural constraint routes to
+    /// [`ExecutionOutcome::Hybrid`]; above it, to
+    /// [`ExecutionOutcome::Punt`] (R1-E05 found non-selective structural
+    /// bitmap intersection collapses performance, so `Punt` avoids ever
+    /// materializing one).
+    pub selectivity_threshold: f64,
+    /// How large a multiple of the caller's requested `k` to ask a
+    /// [`LexicalDelegate`] to over-return, so that `execute_planned`'s
+    /// re-verification against `commerce_core`'s own constraints (which
+    /// can drop delegate hits) still leaves enough candidates to reach
+    /// `k` when that many genuinely exist. Not a correctness parameter —
+    /// verification is exact regardless of this value — only a
+    /// recall/cost tradeoff for how hard the delegate searches.
+    pub delegate_oversample: usize,
+}
+
 /// Which of the three execution outcomes a compiled query was routed to,
 /// and why (`selectivity`/`structural_candidates` explain a `Hybrid` vs.
 /// `Punt` choice; both are `None` for `FastPath`, which never computes a
@@ -103,17 +141,16 @@ pub struct PlannedQuery {
     pub selectivity: Option<f64>,
 }
 
-/// Route a compiled query to one of the three execution outcomes.
-/// `selectivity_threshold` is the maximum `candidates / catalog_size`
-/// fraction still considered "genuinely selective" (R1-E05's own
-/// vocabulary) — the caller supplies it rather than this module hardcoding
-/// a value, since the right threshold is an empirical question this
-/// module's own evaluation harness (`phase2-eval`) is what measures.
+/// Route a compiled query to one of the three execution outcomes, per
+/// `policy.selectivity_threshold` — the caller supplies the policy rather
+/// than this module hardcoding a value, since the right threshold is an
+/// empirical question this module's own evaluation harness
+/// (`phase2-eval`) is what measures.
 pub fn plan(
     query: &CommerceQuery,
     index: &CatalogIndex,
     catalog_size: usize,
-    selectivity_threshold: f64,
+    policy: &PlannerPolicy,
 ) -> PlannedQuery {
     if query.residual_lexical.is_empty() {
         return PlannedQuery {
@@ -133,7 +170,7 @@ pub fn plan(
     } else {
         candidates.len() as f64 / catalog_size as f64
     };
-    let outcome = if selectivity <= selectivity_threshold {
+    let outcome = if selectivity <= policy.selectivity_threshold {
         ExecutionOutcome::Hybrid
     } else {
         ExecutionOutcome::Punt
@@ -154,15 +191,6 @@ pub struct PlannedHit {
     pub score: f64,
 }
 
-/// How much a delegate is asked to over-return before `commerce_core`
-/// filters/truncates, so a restrictive `restrict_to` set or a handful of
-/// non-selective structural constraints don't leave `execute_planned` with
-/// fewer than `k` verified hits when more genuinely exist. Not a
-/// correctness parameter (verification is exact regardless) — only a
-/// recall/cost tradeoff for how hard the delegate searches before
-/// `commerce_core` re-checks its output.
-const DELEGATE_OVERSAMPLE: usize = 20;
-
 /// Route and execute a compiled query. `delegate` is `None` when no
 /// lexical engine is wired up at all (e.g. `commerce_core`'s own test
 /// suite, which has no Tantivy dependency): `FastPath` still works fully,
@@ -173,9 +201,10 @@ pub fn execute_planned(
     index: &CatalogIndex,
     delegate: Option<&dyn LexicalDelegate>,
     k: usize,
-    selectivity_threshold: f64,
+    policy: &PlannerPolicy,
 ) -> (PlannedQuery, Vec<PlannedHit>) {
-    let planned = plan(query, index, catalog.products.len(), selectivity_threshold);
+    let planned = plan(query, index, catalog.products.len(), policy);
+    let oversampled_limit = k * policy.delegate_oversample;
     let hits = match planned.outcome {
         ExecutionOutcome::FastPath => index
             .execute_ranked(query, catalog, k)
@@ -194,7 +223,7 @@ pub fn execute_planned(
                     d.search(
                         &query.residual_lexical,
                         Some(&restrict_to),
-                        k * DELEGATE_OVERSAMPLE,
+                        oversampled_limit,
                     )
                 })
                 .unwrap_or_default();
@@ -202,7 +231,7 @@ pub fn execute_planned(
         }
         ExecutionOutcome::Punt => {
             let raw = delegate
-                .map(|d| d.search(&query.residual_lexical, None, k * DELEGATE_OVERSAMPLE))
+                .map(|d| d.search(&query.residual_lexical, None, oversampled_limit))
                 .unwrap_or_default();
             verify_and_truncate(raw, None, query, catalog, index, k)
         }

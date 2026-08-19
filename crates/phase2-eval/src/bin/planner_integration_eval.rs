@@ -25,7 +25,9 @@ use commerce_core::cold_start::{compile_lexicon, CatalogProfile};
 use commerce_core::domain::ProductId;
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::compile;
-use commerce_core::plan::{execute_planned, ExecutionOutcome, LexicalDelegate, LexicalHit};
+use commerce_core::plan::{
+    execute_planned, ExecutionOutcome, LexicalDelegate, LexicalHit, PlannerPolicy,
+};
 use round1_eval::data::{self, EsciLabel};
 use round1_eval::{catalog, classify};
 
@@ -249,6 +251,10 @@ fn main() -> tantivy::Result<()> {
     // vocabulary too (`commerce_core::cold_start::compile_lexicon`) -- so
     // that is what this run sweeps instead.
     let selectivity_threshold = 0.05;
+    let policy = PlannerPolicy {
+        selectivity_threshold,
+        delegate_oversample: 20,
+    };
     for &min_enum_frequency in &[1usize, 5, 25, 100] {
         let lexicon = compile_lexicon(&profile, min_enum_frequency);
         let mut outcome_counts: HashMap<&str, usize> = HashMap::new();
@@ -282,7 +288,7 @@ fn main() -> tantivy::Result<()> {
                 &index,
                 Some(&delegate),
                 K,
-                selectivity_threshold,
+                &policy,
             );
             latency_samples.push(start.elapsed().as_nanos());
 

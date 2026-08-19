@@ -14,11 +14,16 @@ use commerce_core::domain::{
 };
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{CommerceQuery, ResolvedConstraint, StructuralConstraint};
-use commerce_core::plan::{execute_planned, plan, ExecutionOutcome, LexicalDelegate, LexicalHit};
+use commerce_core::plan::{
+    execute_planned, plan, ExecutionOutcome, LexicalDelegate, LexicalHit, PlannerPolicy,
+};
 
 const NIKE: BrandId = BrandId(1);
 const OTHER: BrandId = BrandId(2);
-const SELECTIVITY_THRESHOLD: f64 = 0.5;
+const TEST_POLICY: PlannerPolicy = PlannerPolicy {
+    selectivity_threshold: 0.5,
+    delegate_oversample: 20,
+};
 
 /// 11 products: exactly 1 Nike (a genuinely selective ~9% predicate) and
 /// 10 Other-brand (a deliberately non-selective ~91% predicate), so a
@@ -107,14 +112,8 @@ fn fast_path_never_calls_the_delegate() {
     );
     let delegate = MockDelegate::new(vec![]);
 
-    let (planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert_eq!(planned.outcome, ExecutionOutcome::FastPath);
     assert_eq!(planned.selectivity, None);
@@ -142,14 +141,8 @@ fn hybrid_routes_when_the_structural_predicate_is_selective() {
         score: 1.0,
     }]);
 
-    let (planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     let selectivity = planned
@@ -177,7 +170,7 @@ fn hybrid_routes_when_the_structural_predicate_is_selective() {
 fn punt_routes_when_the_structural_predicate_is_not_selective() {
     let catalog = eleven_product_catalog();
     let index = CatalogIndex::build(&catalog);
-    // Brand=Other matches 10/11 products (~91%), above SELECTIVITY_THRESHOLD.
+    // Brand=Other matches 10/11 products (~91%), above TEST_POLICY.selectivity_threshold.
     let query = query_with(
         vec![ResolvedConstraint::Structural(StructuralConstraint::Brand(
             OTHER,
@@ -189,14 +182,8 @@ fn punt_routes_when_the_structural_predicate_is_not_selective() {
         score: 1.0,
     }]);
 
-    let (planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
     let selectivity = planned.selectivity.expect(
@@ -225,14 +212,8 @@ fn punt_routes_when_there_is_no_structural_constraint_at_all() {
     let query = query_with(vec![], vec!["running", "shoes"]);
     let delegate = MockDelegate::new(vec![]);
 
-    let (planned, _hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, _hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
     assert_eq!(
@@ -265,14 +246,8 @@ fn verify_and_truncate_drops_a_delegate_hit_outside_restrict_to() {
         },
     ]);
 
-    let (planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     assert_eq!(
@@ -302,14 +277,8 @@ fn verify_and_truncate_drops_a_delegate_hit_that_fails_a_hard_constraint() {
         score: 1.0,
     }]);
 
-    let (_planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (_planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
 
     assert!(
         hits.is_empty(),
@@ -332,14 +301,8 @@ fn verify_and_truncate_respects_k() {
             .collect(),
     );
 
-    let (_planned, hits) = execute_planned(
-        &query,
-        &catalog,
-        &index,
-        Some(&delegate),
-        3,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (_planned, hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 3, &TEST_POLICY);
 
     assert_eq!(hits.len(), 3, "k must be respected after verification");
     assert_eq!(
@@ -360,14 +323,8 @@ fn no_delegate_degrades_hybrid_and_punt_to_empty_but_fast_path_still_works() {
         ))],
         vec![],
     );
-    let (planned, hits) = execute_planned(
-        &fast_path_query,
-        &catalog,
-        &index,
-        None,
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) =
+        execute_planned(&fast_path_query, &catalog, &index, None, 10, &TEST_POLICY);
     assert_eq!(planned.outcome, ExecutionOutcome::FastPath);
     assert_eq!(hits.len(), 1);
 
@@ -377,14 +334,7 @@ fn no_delegate_degrades_hybrid_and_punt_to_empty_but_fast_path_still_works() {
         ))],
         vec!["waterproof"],
     );
-    let (planned, hits) = execute_planned(
-        &hybrid_query,
-        &catalog,
-        &index,
-        None,
-        10,
-        SELECTIVITY_THRESHOLD,
-    );
+    let (planned, hits) = execute_planned(&hybrid_query, &catalog, &index, None, 10, &TEST_POLICY);
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     assert!(
         hits.is_empty(),
@@ -402,11 +352,6 @@ fn plan_alone_does_not_require_a_delegate_or_execute_anything() {
         ))],
         vec!["cushioned"],
     );
-    let planned = plan(
-        &query,
-        &index,
-        catalog.products.len(),
-        SELECTIVITY_THRESHOLD,
-    );
+    let planned = plan(&query, &index, catalog.products.len(), &TEST_POLICY);
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
 }
