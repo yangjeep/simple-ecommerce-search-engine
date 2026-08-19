@@ -102,17 +102,26 @@ fn main() {
     counts.print();
 
     let t5 = Instant::now();
-    let precision = classify::measure_precision(
+    let precision_and = classify::measure_precision(
         &ingested.catalog,
         &ingested.asin_to_product_id,
         &judgments_by_query,
         &compiled_by_query,
+        classify::AggregationRule::ExistingAnd,
+    );
+    let precision_or = classify::measure_precision(
+        &ingested.catalog,
+        &ingested.asin_to_product_id,
+        &judgments_by_query,
+        &compiled_by_query,
+        classify::AggregationRule::OrWithinAttribute,
     );
     println!(
         "precision measurement took {:.2}s",
         t5.elapsed().as_secs_f64()
     );
-    precision.print("structural_only + structural_plus_lexical queries");
+    precision_and.print("existing compiler rule (AND across every extracted value)");
+    precision_or.print("proposed fix: OR within an attribute, AND across attributes");
 
     // A handful of concrete examples per class, for qualitative
     // inspection (not itself a metric, but essential for sanity-checking

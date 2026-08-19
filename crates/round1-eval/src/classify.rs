@@ -145,12 +145,15 @@ impl ClassCounts {
 }
 
 /// Does a real product (looked up in the ingested catalog) satisfy a
-/// compiled query's *hard* constraints? Only `Brand` (Structural) and
-/// `color` (Attribute::Enum) are meaningful on this dataset — see
-/// `catalog.rs` for why product-type/category/price are sentinels and
-/// therefore never appear in a compiled query's constraints at all (no
-/// lexicon entries exist for them).
-fn product_satisfies(
+/// compiled query's *hard* constraints under the **existing compiler's**
+/// aggregation rule — every extracted constraint must hold simultaneously
+/// (AND across everything, including multiple values extracted for the
+/// same single-valued attribute). Only `Brand` (Structural) and `color`
+/// (Attribute::Enum) are meaningful on this dataset — see `catalog.rs` for
+/// why product-type/category/price are sentinels and therefore never
+/// appear in a compiled query's constraints at all (no lexicon entries
+/// exist for them).
+fn product_satisfies_and(
     catalog: &Catalog,
     product_id: ProductId,
     constraints: &[ResolvedConstraint],
@@ -171,6 +174,47 @@ fn product_satisfies(
         // fail closed rather than silently pass.
         _ => false,
     })
+}
+
+/// R1-E02's proposed remediation, tested as a hypothesis rather than
+/// assumed to help: group extracted constraints by attribute (all `Brand`
+/// values together, all `color` values together), require at least one
+/// value per group to match (OR *within* a single-valued attribute) but
+/// still require every group that was extracted at all to have a match
+/// (AND *across* attributes). This is the natural fix for the
+/// self-contradictory-conjunction failure mode found in R1-E02 (a single
+/// `color` attribute can't equal two different values at once, but the
+/// *query* may have genuinely intended either).
+fn product_satisfies_or_within_attribute(
+    catalog: &Catalog,
+    product_id: ProductId,
+    constraints: &[ResolvedConstraint],
+) -> bool {
+    let Some(product) = catalog.products.get(product_id.0 as usize) else {
+        return false;
+    };
+    let mut brand_candidates = Vec::new();
+    let mut color_candidates: Vec<&str> = Vec::new();
+    for c in constraints {
+        match c {
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(id)) => {
+                brand_candidates.push(*id)
+            }
+            ResolvedConstraint::Attribute(Constraint::Enum { attribute, value })
+                if attribute == "color" =>
+            {
+                color_candidates.push(value.as_str());
+            }
+            _ => return false,
+        }
+    }
+    let brand_ok = brand_candidates.is_empty() || brand_candidates.contains(&product.brand);
+    let color_ok = color_candidates.is_empty()
+        || {
+            let variant = &product.variants[0];
+            matches!(variant.attributes.get("color"), Some(AttributeValue::Enum(v)) if color_candidates.contains(&v.as_str()))
+        };
+    brand_ok && color_ok
 }
 
 #[derive(Debug, Default, Clone)]
@@ -249,6 +293,16 @@ impl PrecisionReport {
     }
 }
 
+/// Which aggregation rule to test — see `product_satisfies_and` (the
+/// existing compiler's actual behavior) vs.
+/// `product_satisfies_or_within_attribute` (R1-E02's proposed fix,
+/// evaluated as a hypothesis).
+#[derive(Debug, Clone, Copy)]
+pub enum AggregationRule {
+    ExistingAnd,
+    OrWithinAttribute,
+}
+
 /// For every query classified as `StructuralOnly` or
 /// `StructuralPlusLexical`, cross-reference its compiled constraints
 /// against every judged (product, label) pair for that query in the real
@@ -258,7 +312,12 @@ pub fn measure_precision(
     asin_to_product_id: &HashMap<String, ProductId>,
     judgments_by_query: &HashMap<u64, Vec<&JudgedExample>>,
     compiled_by_query: &HashMap<u64, (QueryClass, CommerceQuery)>,
+    rule: AggregationRule,
 ) -> PrecisionReport {
+    let satisfies = match rule {
+        AggregationRule::ExistingAnd => product_satisfies_and,
+        AggregationRule::OrWithinAttribute => product_satisfies_or_within_attribute,
+    };
     let mut report = PrecisionReport::default();
     for (query_id, (class, compiled)) in compiled_by_query {
         if !matches!(
@@ -283,7 +342,7 @@ pub fn measure_precision(
             if exact {
                 report.judged_exact_total += 1;
             }
-            if product_satisfies(catalog, product_id, &compiled.constraints) {
+            if satisfies(catalog, product_id, &compiled.constraints) {
                 report.filtered_products_total += 1;
                 if relevant {
                     report.filtered_relevant += 1;

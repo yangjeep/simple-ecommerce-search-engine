@@ -537,3 +537,87 @@ without hand-curation?). Both are now higher-value than proceeding
 straight to R1-E04's external baseline with an uncorrected filter
 design — but R1-E04 (Solr) doesn't depend on this compiler's filter
 semantics at all, so it proceeds in parallel rather than being blocked.
+
+---
+
+## R1-E02b — Does OR-within-attribute aggregation fix the recall failure? (hypothesis rejected)
+
+**Evidence class**: real (same catalog/queries/judgments as R1-E02).
+
+**Question**: R1-E02 found 5.0% filter recall against Exact-only real
+judgments and traced it to self-contradictory `color` conjunctions (a
+single-valued attribute required to equal two different values at once).
+The obvious fix: aggregate multiple values extracted for the *same*
+attribute with OR instead of AND (still AND *across* different
+attributes). Does this materially close the recall gap?
+
+**Hypothesis**: OR-within-attribute aggregation will substantially raise
+filter recall, since it removes the logical-impossibility failure mode
+identified in R1-E02, without materially harming precision.
+
+**Decision threshold**: "materially raise" = at least a few-fold
+improvement (e.g. 5% -> 20%+); anything smaller means the aggregation
+rule was not the dominant cause and the hypothesis should be rejected in
+favor of a deeper explanation.
+
+**Implementation**: `classify::product_satisfies_or_within_attribute`
+(new, `crates/round1-eval`, experiment-only — not a change to
+`commerce_core`): groups a compiled query's constraints by attribute
+(`Brand`, `color`), requires at least one candidate per group to match,
+still requires every group that was extracted at all to match. Measured
+head-to-head against the existing AND-everywhere rule
+(`product_satisfies_and`) on the identical 12,434 queries and their real
+judgments.
+
+**Results**:
+
+```
+                          existing (AND everywhere)   proposed (OR within attribute)
+precision (E+S)           94.5%  (8,811/9,321)         93.2%  (10,551/11,318)
+filter recall (E+S)        4.3%  (8,811/205,474)        5.1%  (10,551/205,474)
+filter recall (Exact)      5.0%  (7,770/153,945)        6.0%  (9,176/153,945)
+```
+
+**Interpretation — hypothesis rejected.** OR-within-attribute moves Exact
+recall from 5.0% to 6.0% (a 1-point absolute, ~20% relative improvement)
+while *slightly reducing* precision (94.5% -> 93.2%, since OR
+necessarily admits more candidate products, some of them wrong). This is
+nowhere near the "few-fold" threshold set before running the experiment.
+**The self-contradictory-conjunction mechanism identified in R1-E02 is
+real (it does explain some lost recall — the ~1-point gain is genuine)
+but is not the dominant cause.** The dominant cause is upstream of
+aggregation logic entirely: most of the 206,227 brand values and 169,085
+color values a naive cold-start profiler indexed from this real catalog
+are not the *actual* brand/color of the products that are genuinely
+relevant to a given query — extraction quality, not conjunction logic,
+is the bottleneck. Loosening how extracted values combine cannot recover
+recall that was never encoded in the extraction to begin with. This
+sharpens R1-E02's prescription: a **candidate canonicalization/
+validation step before indexing** (rejecting catalog field values that
+don't look like genuine categorical attribute values — e.g. "Without
+Lids", "10 Gallon", "Pencils" — before they ever become lexicon entries)
+is the fix this evidence actually points to, not a compiler-side
+aggregation change. Area 9's cold-start pipeline sketch (`raw catalog ->
+deterministic profiling -> semantic problem compression -> model/
+heuristic reasoning over compressed problems -> candidate
+canonicalization -> deterministic bulk application`) names exactly this
+missing step; Gate 6's implementation skipped straight from profiling to
+bulk lexicon construction with no canonicalization stage at all, and this
+result is the direct, measured cost of that gap.
+
+**Caveats**: single run (deterministic, no variance to characterize).
+Only tests one specific alternative aggregation rule; does not test
+canonicalization itself (a heuristic validator for "does this string look
+like a real color" was not built this round — flagged as the next
+concrete follow-up rather than spending further time on aggregation-rule
+variants that this result suggests are the wrong lever).
+
+**Regression check**: none (experiment-only code in `round1-eval`, not
+`commerce_core`; no production behavior changed).
+
+**Next question**: this closes the aggregation-rule line of inquiry
+cleanly (rejected) and points at value-canonicalization as the
+higher-value fix — noted for R1-E06 (control plane / cold start on real
+vocabulary) rather than pursued immediately, since R1-E03 (adversarial
+query stress test) and R1-E04 (external baseline) are still open and
+don't depend on resolving this.
