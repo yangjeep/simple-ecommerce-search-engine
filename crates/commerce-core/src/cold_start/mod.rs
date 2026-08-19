@@ -5,9 +5,14 @@
 //! which of those queries the derived lexicon still fails to resolve
 //! fully — a "coverage hole" the catalog data alone could not close.
 
+mod canonicalize;
 mod generate;
 mod profile;
 
+pub use canonicalize::{
+    CanonicalizationEvidence, FrequencyOnlyCanonicalizer, HeuristicCanonicalizer,
+    VocabularyCanonicalizer, VocabularyClass,
+};
 pub use generate::generate_shopper_queries;
 pub use profile::{compile_lexicon, CatalogProfile};
 
