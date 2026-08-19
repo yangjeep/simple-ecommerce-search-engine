@@ -179,3 +179,14 @@ fn top_k_ranking_orders_by_preference_score_deterministically() {
     );
     assert_eq!(ranked[2].variant, VariantId(201));
 }
+
+#[test]
+fn approximate_size_grows_with_more_indexed_data() {
+    let small = CatalogIndex::build(&variant_safety_catalog());
+    let large = CatalogIndex::build(&combined_catalog());
+    assert!(small.approximate_size_bytes() > 0);
+    assert!(
+        large.approximate_size_bytes() > small.approximate_size_bytes(),
+        "indexing more products/variants should not shrink the reported size"
+    );
+}

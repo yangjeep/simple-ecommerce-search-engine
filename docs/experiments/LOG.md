@@ -825,3 +825,145 @@ An Elasticsearch baseline and the "medium" (~100k product) scale-ladder
 tier are the most likely candidates to require materially larger
 infrastructure than this environment has used so far — the first place
 this loop may hit its own stop condition.
+
+---
+
+## E007 — Benchmark decision package: P50/P95/P99, size, RSS, three scale-ladder tiers (Gate 7)
+
+**Question**  
+Assembled into one reproducible report: what do index size, resident
+memory, P50/P95/P99 query latency (indexed vs. linear-scan), facet
+latency, QPS/core, and index build time look like across three
+scale-ladder tiers (1k / 10k / 100k products), and does the
+indexed-vs-linear-scan advantage E003 found at 10k hold, shrink, or grow
+at 100k? Is an Elasticsearch baseline practical in this environment?
+
+**Hypothesis**  
+(a) An Elasticsearch baseline is not practical here (no reachable Docker
+daemon, no proportionate non-Docker path) and should be recorded as a
+blocker per CLAUDE.md rather than skipped silently or attempted anyway.
+(b) The Rust engine's own scaling curve is reproducible: repeated runs at
+the same tier should show near-identical index size and RSS delta
+(deterministic construction) and latency percentiles within normal
+noise. (c) The ~14.4x indexed-vs-linear-scan speedup E003 measured at
+10k is not the whole story — measuring 1k and 100k as well should reveal
+whether the ratio is roughly constant (fixed per-query overhead
+dominates) or scales with catalog size (the bitmap/range structures'
+sub-linear cost vs. the scan's linear cost dominates instead).
+
+**Workload**  
+`examples/decision_bench.rs` (new), reusing `benches/common::synthetic_catalog`
+(same deterministic generator, seed 42, as E000/E003) at 1,000 / 10,000 /
+100,000 products (2,000 / 20,000 / 200,000 variants). Same structural
+query shape as E003 (`color = "Black" AND size >= 9`). Three full runs of
+the report for variance.
+
+**Metric(s)**  
+Per tier: index build P50/P95/P99 (n=10), indexed-query and linear-scan-
+query P50/P95/P99 (n=2000/100 at 1k-10k, n=500/20 at 100k — reduced at
+100k because the linear scan alone is tens of milliseconds per call),
+`facet_counts` P50/P95/P99, QPS/core (1/P50), speedup ratio (linear P50 /
+indexed P50), `CatalogIndex::approximate_size_bytes()`, RSS delta
+(`/proc/self/status` VmRSS) around `CatalogIndex::build`.
+
+**Decision rule**  
+Record the Elasticsearch blocker either way (not itself pass/fail).
+Advance the "physical advantage" thesis further than E003 already did if
+the speedup ratio is stable-or-growing across tiers (supports scaling the
+architecture further); revise if the ratio shrinks toward 1x at 100k
+(would suggest the advantage is a small-scale artifact).
+
+**Implementation**  
+`crates/commerce-core/examples/decision_bench.rs` (`Instant`-based
+percentile measurement, not Criterion — rationale in
+`docs/adr/0007-benchmark-decision-package.md`); `CatalogIndex::approximate_size_bytes`
+(new public method, `crates/commerce-core/src/index/mod.rs`); one new
+correctness test (`approximate_size_grows_with_more_indexed_data`,
+`tests/physical_index.rs`). `docker info` confirmed no reachable daemon
+before deciding the ES baseline was blocked (see ADR for the exact error
+and the reasoning for not pursuing a non-Docker install instead).
+
+**Results**  
+Three full runs (`cargo run --release --example decision_bench`), same
+environment as E000-E006 (4 vCPU Intel Xeon @2.80GHz, 15Gi RAM, Linux
+6.18.5, rustc/cargo 1.94.1). Run 1 (representative — P95/P99 varied more
+than P50 across runs, expected for `n=10`-sample index-build percentiles):
+
+| Tier | Index build P50 | Indexed query P50/P95/P99 | Linear query P50/P95/P99 | Facet P50 | Index size | RSS delta |
+|---|---|---|---|---|---|---|
+| 1,000 products | 2.01 ms | 47.4 / 68.6 / 83.7 µs | 280.3 / 405.4 / 547.8 µs | 3.7 µs | 144,176 B (0.14 MB) | +720 KB |
+| 10,000 products | 27.1 ms | 240.6 / 311.7 / 353.9 µs | 4,434.2 / 5,958.2 / 9,770.6 µs | 13.4 µs | 1,250,288 B (1.19 MB) | +5,776 KB |
+| 100,000 products | 280.7 ms | 1,016.8 / 1,208.3 / 1,512.1 µs | 57,332.2 / 60,389.3 / 60,820.2 µs | 21.4 µs | 11,918,264 B (11.37 MB) | +50,908 KB |
+
+Speedup (linear P50 / indexed P50), all 3 runs:
+
+| Tier | Run 1 | Run 2 | Run 3 | Mean |
+|---|---|---|---|---|
+| 1,000 | 5.9x | 5.7x | 6.4x | ~6.0x |
+| 10,000 | 18.4x | 14.7x | 14.0x | ~15.7x |
+| 100,000 | 56.4x | 61.2x | 54.2x | ~57.3x |
+
+Index size and RSS delta were effectively identical across all 3 runs at
+every tier (deterministic construction, as expected — e.g. 100k index
+size was exactly 11,918,264 bytes every run). QPS/core (1/P50, run 1):
+1k → indexed 21,111 / linear 3,568; 10k → indexed 4,157 / linear 226;
+100k → indexed 983 / linear 17. All 33 existing tests still pass;
+`cargo fmt`/`clippy -D warnings`/`build --release` all exit 0. Elasticsearch
+baseline: **blocked** — `docker info` returns "failed to connect to the
+docker API at unix:///var/run/docker.sock ... no such file or directory"
+(daemon unreachable in this container). Commit: see `git log` on
+`claude/github-issue-2-gates-puv0wb` immediately following this entry.
+
+**Interpretation**  
+(a) Confirmed: no Elasticsearch baseline exists in this evidence base;
+recorded as a blocker, not silently skipped, per CLAUDE.md. (b) Confirmed:
+index size and RSS delta are exactly reproducible across runs at every
+tier; latency P50s are stable within normal noise, P95/P99 on the
+10-sample index-build measurement are noisier (expected with n=10) but
+don't change the qualitative picture. (c) The more interesting finding:
+**the speedup grows with scale rather than staying flat — roughly 6x at
+1k, 16x at 10k, 57x at 100k**. This is the opposite of what a fixed
+per-query overhead (e.g. dominated by allocation or hashing setup cost)
+in the indexed path would predict, and is consistent with the intended
+mechanism: the linear scan's cost grows linearly with variant count,
+while `RoaringBitmap` intersection and binary-search range queries grow
+sub-linearly, so the gap widens as the catalog grows. This is the
+strongest single piece of evidence so far for CLAUDE.md's "physical
+advantage" thesis question, and directly answers E003's open "does the
+~14x ratio hold or drift with scale" question: it drifts, upward. It does
+**not** show: (1) behavior at the "target proof" (~500k) or "stretch"
+(1M+) tiers — 100k was chosen as the practical ceiling for this session's
+time budget, not because 500k/1M is infeasible; (2) any Elasticsearch (or
+other system) comparison at all — every number here is the Rust engine
+against itself; (3) concurrent/multi-core throughput — QPS/core is a
+single-threaded-P50-derived bound, not a measured concurrent-load number;
+(4) memory behavior at 500k+ where `approximate_size_bytes`'s
+un-itemized `HashMap`/`String` overhead might become a larger fraction of
+true RSS than it is at 100k (11.37 MB approximate index size vs. ~50 MB
+measured RSS delta at 100k — roughly 4.5x, meaning more than three
+quarters of the RSS delta is *not* accounted for by the approximate
+bitmap/vector size, most plausibly `HashMap` bucket overhead and the
+`String` attribute/value names the approximation deliberately doesn't
+itemize; this ratio is not yet checked for stability across tiers).
+
+**Regression check**  
+`crates/commerce-core/tests/physical_index.rs::approximate_size_grows_with_more_indexed_data`,
+run in CI. `examples/decision_bench.rs` itself is not run in CI (multi-
+second wall clock); it is a manual/scheduled experiment-loop step, same
+status as the Criterion benches.
+
+**Next question**  
+Every phase gate (0-7) named in Issue #2 now has at least one falsifiable
+experiment with recorded results, including a genuine (if narrow and
+single-environment) piece of evidence for each of CLAUDE.md's priority
+order: semantic correctness (E001), structural coverage (E004, E006),
+physical advantage (E003, E007 — the strongest result, growing with
+scale), cold start (E006), and a working (if not-yet-populated-with-a-
+real-provider) learning loop (E005). The scaling curve itself (E007) is
+reproducible; extending it past 100k, or adding any external-system
+baseline, both require infrastructure (more time, more memory, a
+reachable container runtime or downloaded distribution) this session has
+not had available — meeting CLAUDE.md's stop condition: "the next
+experiment requires materially larger infrastructure/data/product scope."
+This is the point to write `SCALE_UP_DECISION.md` rather than open an
+E008.

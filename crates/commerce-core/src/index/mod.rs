@@ -314,6 +314,56 @@ impl CatalogIndex {
     ) -> Vec<RankedHit> {
         rank::execute_ranked(self, query, catalog, k)
     }
+
+    /// Approximate on-heap index size in bytes (Gate 7's "index size"
+    /// metric): the sum of every `RoaringBitmap`'s
+    /// [`RoaringBitmap::serialized_size`] plus the flat byte size of the
+    /// ordinal/numeric/price vectors. This is a comparable-across-runs
+    /// estimate, not a precise allocator-level accounting — `HashMap`
+    /// bucket overhead, `String` heap allocations (attribute/value names),
+    /// and allocator bookkeeping are not itemized.
+    pub fn approximate_size_bytes(&self) -> usize {
+        let bitmap_bytes: usize = self
+            .enum_bitmaps
+            .values()
+            .map(RoaringBitmap::serialized_size)
+            .sum::<usize>()
+            + self
+                .bool_bitmaps
+                .values()
+                .map(RoaringBitmap::serialized_size)
+                .sum::<usize>()
+            + self
+                .brand_bitmaps
+                .values()
+                .map(RoaringBitmap::serialized_size)
+                .sum::<usize>()
+            + self
+                .product_type_bitmaps
+                .values()
+                .map(RoaringBitmap::serialized_size)
+                .sum::<usize>()
+            + self
+                .category_bitmaps
+                .values()
+                .map(RoaringBitmap::serialized_size)
+                .sum::<usize>()
+            + self
+                .lexical_postings
+                .values()
+                .map(RoaringBitmap::serialized_size)
+                .sum::<usize>();
+
+        let ordinals_bytes = self.ordinals.len() * std::mem::size_of::<(ProductId, VariantId)>();
+        let numeric_bytes: usize = self
+            .numeric_index
+            .values()
+            .map(|v| v.len() * std::mem::size_of::<(f64, Ordinal)>())
+            .sum();
+        let price_bytes = self.price_index.len() * std::mem::size_of::<(i64, Ordinal)>();
+
+        bitmap_bytes + ordinals_bytes + numeric_bytes + price_bytes
+    }
 }
 
 fn numeric_range(sorted: &[(f64, Ordinal)], op: NumericOp, value: f64) -> RoaringBitmap {
