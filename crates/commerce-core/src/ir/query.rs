@@ -101,7 +101,23 @@ fn apply_candidates(result: &mut CommerceQuery, phrase: &str, candidates: &[Cand
     if let [only] = candidates {
         match &only.resolved {
             ResolvedTerm::Constraint(c) => result.constraints.push(c.clone()),
-            ResolvedTerm::Preference(p) => result.preferences.push(p.clone()),
+            // Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md`): a real-data
+            // replay found that resolving a phrase to *only* a Preference
+            // consumed it exactly like a hard Constraint would -- removing
+            // it from `residual_lexical` and therefore from what a lexical
+            // delegate ever sees -- even though a Preference explicitly
+            // does not enforce anything. For a low-confidence signal (this
+            // phase's fuzzy brand match; before this phase, no candidate
+            // pool ever produced a real Preference at all, so this path
+            // was untested) that trade is strictly bad: real retrieval
+            // signal is given up for a ranking-only boost that only
+            // applies within whatever candidate set results from
+            // everything *else* in the query. A Preference is additive,
+            // not exclusive: keep the phrase searchable.
+            ResolvedTerm::Preference(p) => {
+                result.preferences.push(p.clone());
+                result.residual_lexical.push(phrase.to_string());
+            }
         }
     } else {
         result.ambiguous.push(AmbiguousSpan {

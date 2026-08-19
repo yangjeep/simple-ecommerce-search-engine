@@ -13,11 +13,30 @@ fn observes_every_residual_term_from_the_representative_query_set() {
     let observations = observe_residual_terms(REPRESENTATIVE_QUERY_SET, ctx.lexicon());
     let terms: Vec<&str> = observations.iter().map(|o| o.term.as_str()).collect();
 
-    // From tests/coverage.rs's classification: exactly these 9 terms are
-    // out-of-vocabulary across the 6 residual queries, each appearing once.
+    // Was 9 terms (E004). Now 11: Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md`
+    // P2-E11) fixed `apply_candidates` so a phrase resolving to *only* a
+    // soft `Preference` -- "cushioned", "breathable" -- also stays in
+    // `residual_lexical` (a Preference must never hide its own phrase
+    // from lexical search). `observe_residual_terms` scans exactly that
+    // field, so both now legitimately appear -- they are in-vocabulary
+    // (matched a real lexicon entry, unlike the other 9 out-of-vocabulary
+    // terms here), but this function's job is "what residual text exists
+    // to search on," which correctly includes them now.
     assert_eq!(
         terms,
-        vec!["adidas", "balance", "blue", "fit", "new", "shoes", "trail", "vegan", "wide"]
+        vec![
+            "adidas",
+            "balance",
+            "blue",
+            "breathable",
+            "cushioned",
+            "fit",
+            "new",
+            "shoes",
+            "trail",
+            "vegan",
+            "wide"
+        ]
     );
     assert!(
         observations.iter().all(|o| o.frequency == 1),
@@ -73,7 +92,11 @@ fn candidate_mappings_are_promoted_when_replay_improves_coverage_without_regress
     assert!(after_blue.residual_lexical.is_empty() && after_blue.ambiguous.is_empty());
 
     let report = commerce_core::ir::measure_coverage(REPRESENTATIVE_QUERY_SET, promoted.lexicon());
-    assert_eq!(report.fully_resolved, 14, "{report:?}"); // 12 baseline + adidas + blue
+    // Was 14 (12 baseline + adidas + blue). Baseline dropped 12 -> 10 per
+    // P2-E11 (see `observes_every_residual_term_from_the_representative_query_set`
+    // above); adidas/blue promotion still adds exactly +2 on top of
+    // whatever the baseline legitimately is.
+    assert_eq!(report.fully_resolved, 12, "{report:?}"); // 10 baseline + adidas + blue
 }
 
 #[test]

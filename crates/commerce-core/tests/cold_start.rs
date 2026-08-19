@@ -180,7 +180,17 @@ fn hand_curated_and_catalog_derived_lexicons_are_independently_comparable() {
     let hand_report = measure_coverage(REPRESENTATIVE_QUERY_SET, hand_curated.lexicon());
     let catalog_report = measure_coverage(REPRESENTATIVE_QUERY_SET, &catalog_derived);
 
-    assert_eq!(hand_report.fully_resolved, 12); // unchanged from E004
+    // Was 12 (E004). Now 10, a real, expected drop, not a regression:
+    // Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md` P2-E11) fixed
+    // `apply_candidates` so a phrase resolving to *only* a soft
+    // `Preference` stays in `residual_lexical` too (a Preference must
+    // never make a lexical delegate blind to the phrase that produced
+    // it). `measure_coverage`'s own definition of "fully resolved" (no
+    // ambiguity AND no residual) is unchanged and correct -- the two
+    // representative queries that resolve purely to preferences
+    // ("cushioned breathable running shoes" and one other) now correctly
+    // count as carrying residual text, since they legitimately do.
+    assert_eq!(hand_report.fully_resolved, 10);
     assert_ne!(
         hand_report, catalog_report,
         "the two lexicons should not resolve identically"

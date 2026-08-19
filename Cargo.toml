@@ -5,6 +5,7 @@ members = [
     "crates/round1-eval",
     "crates/phase2-eval",
     "crates/realtime-eval",
+    "crates/bench-harness",
 ]
 
 [workspace.package]

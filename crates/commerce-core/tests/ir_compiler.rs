@@ -128,5 +128,15 @@ fn descriptive_terms_compile_as_preferences_not_hard_constraints() {
     let query = compile("cushioned breathable running shoes", &shoe_lexicon());
     assert_eq!(query.preferences.len(), 2);
     assert_eq!(query.constraints.len(), 1);
-    assert!(query.residual_lexical.is_empty());
+    // Issue #6 P1-B: a Preference is a soft ranking signal, never a hard
+    // filter, so the phrase that produced it must remain searchable via
+    // the lexical residual path too -- a real-data regression (a
+    // preference-only match silently dropping real retrieval signal,
+    // `docs/experiments/PHASE2_LOG.md` P2-E11) found this the hard way
+    // when a fuzzy soft brand match started actually being exercised for
+    // the first time.
+    assert_eq!(
+        query.residual_lexical,
+        vec!["cushioned".to_string(), "breathable".to_string()]
+    );
 }

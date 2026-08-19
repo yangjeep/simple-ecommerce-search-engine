@@ -31,9 +31,20 @@ fn measured_structural_coverage_matches_the_constructed_query_set() {
     let ctx = shoe_semantic_context();
     let report = measure_coverage(REPRESENTATIVE_QUERY_SET, ctx.lexicon());
 
+    // Was fully_resolved=12/had_residual=6/fraction=0.6 (E004). Issue #6
+    // P1-B (`docs/experiments/PHASE2_LOG.md` P2-E11) fixed
+    // `ir::query::apply_candidates` so a phrase resolving to *only* a
+    // soft `Preference` also stays in `residual_lexical` -- a Preference
+    // must never make a lexical delegate blind to the phrase that
+    // produced it (found via a real-data relevance regression, not
+    // hypothesized). Two of `REPRESENTATIVE_QUERY_SET`'s queries resolve
+    // purely to preference-only terms and correctly carry residual text
+    // now, moving from "fully resolved" to "had residual." This is a
+    // real, intended behavior change, not test drift -- `measure_coverage`'s
+    // own "no ambiguity AND no residual" definition is unchanged.
     assert_eq!(report.total_queries, 20);
-    assert_eq!(report.fully_resolved, 12, "{report:?}");
+    assert_eq!(report.fully_resolved, 10, "{report:?}");
     assert_eq!(report.had_ambiguity, 2, "{report:?}");
-    assert_eq!(report.had_residual, 6, "{report:?}");
-    assert!((report.fraction_fully_resolved() - 0.6).abs() < 1e-9);
+    assert_eq!(report.had_residual, 8, "{report:?}");
+    assert!((report.fraction_fully_resolved() - 0.5).abs() < 1e-9);
 }
