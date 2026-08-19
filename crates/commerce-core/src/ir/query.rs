@@ -65,6 +65,16 @@ impl CommerceQuery {
 // would hide disjunction queries' mishandling rather than surface it.
 const STOPWORDS: &[&str] = &["a", "the", "for", "with", "in", "and", "to", "of", "on"];
 
+// Round 1 R1-E03/P2-E04 (docs/experiments/ROUND1_LOG.md,
+// docs/experiments/PHASE2_LOG.md): a phrase immediately following one of
+// these must not become a positive constraint/preference (see the
+// negation-handling block in `compile` below). Includes the split forms
+// `split_whitespace` produces for common contractions ("aren't" stays one
+// token; "don't"/"doesn't"/"isn't" likewise).
+const NEGATION_WORDS: &[&str] = &[
+    "not", "no", "without", "non", "aren't", "isn't", "don't", "doesn't",
+];
+
 fn parse_money(token: Option<&str>) -> Option<i64> {
     let token = token?;
     let digits = token.strip_prefix('$').unwrap_or(token);
@@ -126,6 +136,35 @@ pub fn compile(text: &str, lexicon: &SemanticLexicon) -> CommerceQuery {
                 i += 2;
                 continue;
             }
+        }
+
+        // Round 1 R1-E03 (docs/experiments/ROUND1_LOG.md): the compiler
+        // used to treat every recognized phrase as an unconditional
+        // positive assertion, so "not red" compiled to a REQUIRED red
+        // constraint -- the exact opposite of stated intent, the single
+        // most severe correctness defect that round found. A negation
+        // marker immediately before a recognized phrase must never let
+        // that phrase become a hard constraint or preference; the safest
+        // correct behavior with no negated-constraint representation in
+        // the domain model yet is to surface the phrase as residual (seen,
+        // deliberately not resolved) rather than silently drop it or
+        // resolve it positively.
+        if NEGATION_WORDS.contains(&tokens[i].as_str()) {
+            let after = i + 1;
+            let mut consumed = 1;
+            if after < tokens.len() {
+                let window_cap = max_window.min(tokens.len() - after);
+                for window in (1..=window_cap).rev() {
+                    let phrase = tokens[after..after + window].join(" ");
+                    if lexicon.resolve(&phrase).is_some() {
+                        result.residual_lexical.push(phrase);
+                        consumed = 1 + window;
+                        break;
+                    }
+                }
+            }
+            i += consumed;
+            continue;
         }
 
         let window_cap = max_window.min(tokens.len() - i);

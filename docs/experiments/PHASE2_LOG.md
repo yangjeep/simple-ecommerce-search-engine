@@ -535,3 +535,152 @@ real data. The remaining priorities — R1-E03's compiler fixes
 (disjunction/negation), and the structural-plus-delegated-Tantivy
 integration design — are the next highest-value items; both are
 independent subsystems from what P2-E02/P2-E03 touched.
+
+---
+
+## P2-E04 — Fixing negation inversion: R1-E03's most severe correctness bug
+
+**Evidence class**: hand-authored (the 10 R1-E03 adversarial queries,
+re-run verbatim against the fix, plus 2 new deterministic
+`commerce-core` regression tests) and real (the full 22,458-query
+corpus, to check for real-data regressions). **Independence**: the
+adversarial queries are the brief's own verbatim examples, unrelated to
+this fix's implementation; the real-data check reuses the same real ESCI
+corpus every other real-data entry in this project has used.
+
+**Question**: R1-E03 found the compiler doesn't fail safely on negation —
+"Nike shoes not red" compiled to a **required** `color=Red` constraint,
+the exact opposite of stated intent, and R1-E03 named this "the single
+most severe correctness defect" found in the whole round, because it
+produces a confidently wrong answer, not merely an incomplete one. Issue
+#6 priority 4 calls for exactly this fix, gated by R1-E03's own
+10-query adversarial suite as the regression test. Does a minimal,
+well-scoped negation-marker fix eliminate the bug without a) requiring a
+full negated-constraint representation in the domain model (a much larger
+change, deliberately deferred, matching R1-E03's own "don't rush a
+second, differently-shaped bug into the same session" reasoning) or b)
+regressing anything on real data?
+
+**Hypothesis**: detecting a small set of negation markers ("not", "no",
+"without", "non", and the un-split contractions "aren't"/"isn't"/
+"don't"/"doesn't") immediately before a phrase that would otherwise
+resolve, and routing that phrase to `residual_lexical` instead of
+emitting a constraint or preference for it (whether the phrase was
+single-candidate or ambiguous), eliminates the specific inversion bug
+while keeping every other R1-E03 finding (disjunction, scope-
+sufficiency, numeric words, units, ranges) exactly as recorded —
+deliberately not attempting those in the same change, since each is an
+independent, larger design question R1-E03 already flagged as needing
+its own dedicated pass.
+
+**Decision threshold**: binary on the adversarial suite — "Nike shoes not
+red" (or an equivalent negated query) must no longer emit a positive
+constraint for the negated term, and must not turn `residual_lexical`
+into a silent drop (the term must remain visible, just unresolved). On
+real data: no material regression in Semantic FIB rate, ambiguity rate,
+precision, or filter recall relative to P2-E02's threshold=1 baseline
+(R1-E06's stopword-fixed unfiltered lexicon) — a "fixed a severe
+correctness bug" result that quietly made real coverage or precision
+worse would need its own follow-up investigation before being called a
+clean win.
+
+**Implementation**  
+`crates/commerce-core/src/ir/query.rs`: a new `NEGATION_WORDS` const and
+a negation-handling block in `compile`'s token loop, inserted before the
+general phrase-matching block (same position as the existing `size`/
+`under`/`over` special cases). On a negation marker: look ahead for the
+longest phrase match starting immediately after it (same greedy-longest-
+window rule the rest of the compiler already uses); if found, push it to
+`residual_lexical` instead of calling `apply_candidates` (so it can never
+become a constraint or preference, ambiguous or not); if not found, the
+marker is simply consumed like a stopword and the following token(s) are
+evaluated normally on the next loop iteration. Two new `commerce-core`
+regression tests (`crates/commerce-core/tests/ir_compiler.rs`) pin the
+fix directly against `fixtures::shoe_lexicon`: one proves a
+single-candidate negated phrase ("not red") no longer becomes a
+constraint; a second proves an *ambiguous* negated phrase ("aren't
+leather", Phase 0's own planted `leather` collision) is suppressed the
+same way, not merely handled for the simple case. All 40 pre-existing
+tests pass unmodified (grep confirmed no existing Phase 0 test asserts
+behavior for any of the negation-marker strings this change touches).
+
+**Results**
+
+```
+R1-E03's 10 adversarial queries, re-run verbatim against the fix
+(crates/round1-eval/src/bin/adversarial_ir.rs, unmodified):
+
+  "Nike shoes not red"
+    before (R1-E03): constraints=[Brand(Nike), color=Red]  <- WRONG (required red)
+    after  (this fix): constraints=[Brand(Nike)]  residual=["shoes","red"]  <- FIXED
+
+  "dress shoes that aren't leather"
+    before (R1-E03): ambiguous=["leather"]  (safe only by coincidence, per R1-E03's own note)
+    after  (this fix): ambiguous=[]  residual=[...,"leather"]  <- now safe BY DESIGN
+
+  (the other 8 queries, including "black or navy running shoes" [disjunction,
+  still unfixed by design] and "black size 9" [scope-sufficiency, still
+  unfixed by design], are unchanged from R1-E03's recorded output)
+
+commerce-core: 40 -> 42 tests, all green (2 new, all else unchanged).
+
+Real-data check (22,458 real queries, threshold=1 unfiltered lexicon,
+same setup as P2-E02's threshold=1 row):
+
+                       FIB rate  ambig rate  punt rate  precision  recall_ES  recall_Exact
+  P2-E02 (pre-fix)       55.4%      38.4%       2.5%      94.5%       4.3%        5.0%
+  post-negation-fix      55.2%      38.0%       2.5%      94.4%       4.4%        5.1%
+
+  (same small, consistent direction at every canonicalization threshold
+  tested, e.g. threshold=25 recall_Exact: 11.2% -> 11.5%)
+```
+
+**Interpretation — confirmed, and a clean win on both axes.** The
+adversarial trace shows the fix does exactly what it was built to do:
+"Nike shoes not red" no longer asserts a required red constraint (the
+single most severe bug found in Round 1), and the "aren't leather" case
+is now safe for the *right* reason (detected negation) rather than by
+accident (a planted ambiguity collision that happened to also be
+negated). The real-data check answers the "did fixing a correctness bug
+quietly cost something" question directly: it did not — FIB rate and
+ambiguity both move down by roughly 0.2-0.4 points (consistent with a
+small number of real queries that used to confidently-but-wrongly
+resolve now correctly falling through to residual/ambiguous-free
+resolution instead), while precision holds essentially flat and recall
+improves slightly at every threshold tested. This is the expected shape
+for a correctness fix that removes wrong positive resolutions: a little
+less illusory "coverage," a little more real recall — the same direction
+(if a smaller magnitude) as P2-E02's canonicalization fix, and for the
+same underlying reason: removing a source of incorrect confident
+resolution.
+
+**What this does not fix**: R1-E03's other two findings remain exactly
+as recorded — disjunction ("black or navy") still silently narrows to
+one option, and the scope-sufficiency gap ("black size 9" resolving with
+full confidence despite no product-type signal) is untouched. Both
+require larger, independent design work (disjunction needs an
+alternation representation the Commerce IR doesn't have yet; scope-
+sufficiency needs a "does this resolution have enough signal to trust"
+check that's a different kind of gate than anything built so far) —
+deliberately not attempted in this entry, consistent with R1-E03's own
+reasoning against rushing multiple structural changes into one pass.
+
+**Caveats**: the negation-marker list (8 entries) is a minimal,
+literature-free heuristic covering exactly the forms seen in R1-E03's
+adversarial examples and R1-E02's real diagnostic output ("without" from
+"#4 pads without wings") — not validated against a broader negation-
+detection benchmark, and multi-word negation phrases ("is not", "does
+not" as two separate tokens rather than a contraction) are not handled
+(only single-token markers are). Single deterministic run for both the
+adversarial trace and the real-data check (no variance to characterize).
+
+**Regression check**: `commerce-core` test suite: 42/42 green.
+`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+--all-features -- -D warnings`, `cargo build --workspace --release` all
+clean.
+
+**Next question**: Issue #6's remaining priorities are the structural-
+plus-delegated-Tantivy integration design (priority 5) and the memory-
+representation follow-up (priority 6) — both larger, architecture-level
+tasks appropriate for the epic's continued execution rather than a
+single further checkpoint in this session.

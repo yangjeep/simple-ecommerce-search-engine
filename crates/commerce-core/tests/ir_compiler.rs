@@ -79,6 +79,50 @@ fn unrecognized_brand_becomes_residual_lexical_not_dropped() {
     assert!(query.ambiguous.is_empty());
 }
 
+/// Round 1 R1-E03's single most severe finding, fixed and pinned: "not
+/// red" used to compile to a REQUIRED red constraint (the exact opposite
+/// of stated intent). It must instead resolve everything else normally
+/// and put "red" in `residual_lexical`, never as a positive constraint.
+#[test]
+fn negation_prevents_the_negated_phrase_from_becoming_a_positive_constraint() {
+    let query = compile("Nike running shoes not red", &shoe_lexicon());
+    assert_eq!(
+        query.constraints,
+        vec![
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(
+                commerce_core::domain::BrandId(1)
+            )),
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(
+                commerce_core::domain::ProductTypeId(1)
+            )),
+        ],
+        "no color=Red constraint must be present: {:?}",
+        query.constraints
+    );
+    assert!(query.ambiguous.is_empty());
+    assert_eq!(query.residual_lexical, vec!["red".to_string()]);
+}
+
+/// The same fix must also suppress an *ambiguous* phrase, not just a
+/// single-candidate one -- "leather" is Phase 0's deliberately ambiguous
+/// collision; negated, it must not appear as an ambiguous span either.
+#[test]
+fn negation_suppresses_an_ambiguous_phrase_instead_of_flagging_it_ambiguous() {
+    let query = compile("running shoes that aren't leather", &shoe_lexicon());
+    assert_eq!(
+        query.constraints,
+        vec![ResolvedConstraint::Structural(
+            StructuralConstraint::ProductType(commerce_core::domain::ProductTypeId(1))
+        )]
+    );
+    assert!(
+        query.ambiguous.is_empty(),
+        "negated \"leather\" must not surface as ambiguous: {:?}",
+        query.ambiguous
+    );
+    assert!(query.residual_lexical.contains(&"leather".to_string()));
+}
+
 #[test]
 fn descriptive_terms_compile_as_preferences_not_hard_constraints() {
     let query = compile("cushioned breathable running shoes", &shoe_lexicon());
