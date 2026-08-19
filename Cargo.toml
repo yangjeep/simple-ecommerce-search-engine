@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["crates/commerce-core"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+publish = false
+
+[profile.release]
+lto = true
+codegen-units = 1
