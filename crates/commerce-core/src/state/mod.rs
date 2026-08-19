@@ -201,7 +201,22 @@ impl CommerceStateOverlay {
             if lower_tier || same_tier_and_older {
                 return ApplyOutcome::Stale;
             }
-            let unchanged = prev.availability == delta.availability
+            // `authority` must be part of this comparison, not just the
+            // payload -- caught by this module's own adversarial
+            // concurrent-convergence test (see
+            // `concurrent_multi_writer_multi_reader_converges_and_never_observes_corrupted_state`)
+            // and isolated by
+            // `authoritative_confirmation_of_an_already_correct_observed_guess_must_still_promote_authority`:
+            // an Authoritative delta that happens to confirm an already-
+            // correct Observed-tier payload is a real state change (the
+            // tracked *authority* tier changes, even though availability/
+            // inventory do not) and must not be reported Idempotent --
+            // doing so skipped updating `self.tracked`, silently leaving
+            // the authority tier un-promoted, so a later Observed-tier
+            // delta could still wrongly override what should have been a
+            // locked-in authoritative fact.
+            let unchanged = prev.authority == delta.authority
+                && prev.availability == delta.availability
                 && prev.inventory_units == delta.inventory_units
                 && delta.observed_at <= prev.observed_at;
             if unchanged {
@@ -634,5 +649,296 @@ mod tests {
             Some(Availability::InStock),
             "20 rapid alternating updates must converge to exactly the last one applied (i=20, even -> InStock)"
         );
+    }
+
+    /// RED evidence, found via the concurrency test below, isolated to a
+    /// minimal single-threaded reproduction: an `Authoritative` delta
+    /// whose payload happens to already match the currently-tracked
+    /// `Observed` state (a real, plausible case -- e.g. a reconciliation
+    /// job confirms what a beacon had already guessed correctly) is
+    /// wrongly classified `Idempotent` by the `unchanged` fast path, which
+    /// compares only availability/inventory/observed_at -- NOT authority.
+    /// Because `Idempotent` returns before `self.tracked` is updated, the
+    /// authority upgrade is silently dropped: `tracked.authority` stays
+    /// `Observed` even though an authoritative confirmation was just
+    /// accepted. A subsequent `Observed`-tier delta with a *different*
+    /// payload is then wrongly accepted (compared against the never-
+    /// promoted `Observed` tier instead of the true `Authoritative` one),
+    /// overriding a state that should have been locked in. This single-
+    /// threaded reproduction exists so the bug is provable independent of
+    /// any concurrency/timing question -- it is a pure precedence-logic
+    /// defect.
+    #[test]
+    fn authoritative_confirmation_of_an_already_correct_observed_guess_must_still_promote_authority(
+    ) {
+        let catalog = product_x();
+        let index = CatalogIndex::build(&catalog);
+        let mut overlay = CommerceStateOverlay::build(&index, &catalog);
+
+        // Step 1: an Observed-tier guess, OutOfStock.
+        overlay.apply(
+            &index,
+            &VariantStateDelta {
+                product_id: ProductId(1),
+                variant_id: VariantId(101),
+                availability: Availability::OutOfStock,
+                inventory_units: None,
+                observed_at: 10,
+                source: "beacon".to_string(),
+                authority: Authority::Observed,
+            },
+        );
+        assert_eq!(
+            overlay.availability(VariantId(101)),
+            Some(Availability::OutOfStock)
+        );
+
+        // Step 2: an Authoritative reconciliation that happens to CONFIRM
+        // the same OutOfStock payload, with an observed_at that is not
+        // newer. This must be recognized as an authority upgrade -- the
+        // tracked state's authority must become Authoritative -- even
+        // though the payload itself did not change.
+        let confirm_outcome = overlay.apply(
+            &index,
+            &VariantStateDelta {
+                product_id: ProductId(1),
+                variant_id: VariantId(101),
+                availability: Availability::OutOfStock, // same payload as tracked
+                inventory_units: None,
+                observed_at: 5, // older than the tracked observed_at=10
+                source: "platform-reconciliation".to_string(),
+                authority: Authority::Authoritative,
+            },
+        );
+        assert_eq!(
+            confirm_outcome,
+            ApplyOutcome::Applied,
+            "an authority upgrade is a real state change (to the tracked authority tier) even \
+             when the availability payload happens to already match -- it must not be reported \
+             as Idempotent, which would silently drop the upgrade"
+        );
+
+        // Step 3: a later, ordinary Observed-tier delta with a NEWER
+        // observed_at, disagreeing with the now-authoritative state. This
+        // must be rejected as Stale -- the authority upgrade from step 2
+        // must have taken effect, not been silently lost.
+        let downgrade_outcome = overlay.apply(
+            &index,
+            &VariantStateDelta {
+                product_id: ProductId(1),
+                variant_id: VariantId(101),
+                availability: Availability::InStock,
+                inventory_units: None,
+                observed_at: 20, // newer than everything so far
+                source: "beacon".to_string(),
+                authority: Authority::Observed,
+            },
+        );
+        assert_eq!(
+            downgrade_outcome,
+            ApplyOutcome::Stale,
+            "a merely-observed signal, however recent, must not override a confirmed \
+             authoritative state -- if this is Applied instead, the authority upgrade in step 2 \
+             was silently dropped"
+        );
+        assert_eq!(
+            overlay.availability(VariantId(101)),
+            Some(Availability::OutOfStock),
+            "the authoritatively-confirmed state must still be in effect"
+        );
+    }
+
+    /// Issue #8's own named correctness case, "concurrent reads during
+    /// mutation," was previously only exercised for throughput/latency
+    /// (`crates/realtime-eval/src/bin/variant_state_overlay_eval.rs`), not
+    /// asserted as a correctness property -- a real gap, closed here with
+    /// two properties a real concurrent deployment actually needs:
+    ///
+    /// 1. **Convergence is order-independent.** `apply`'s precedence rule
+    ///    (authority tier, then `observed_at`) is designed to be a
+    ///    commutative, associative, idempotent merge -- the same shape as
+    ///    a last-writer-wins CRDT register. Applying the exact same
+    ///    multiset of deltas for many variants through many concurrent
+    ///    writer threads racing on one `RwLock`-protected overlay, in an
+    ///    unpredictable interleaving, must converge to the exact same
+    ///    final state as applying that multiset sequentially in a fixed
+    ///    order -- proven here against a real sequential "oracle" run, not
+    ///    merely inspected.
+    /// 2. **No torn/corrupted reads.** Reader threads run continuously
+    ///    throughout the concurrent writer burst; every value they observe
+    ///    must be a real, valid `Availability`. This is structurally
+    ///    guaranteed by Rust's type system plus `RwLock`'s mutual
+    ///    exclusion (a writer holds `&mut self` only while holding the
+    ///    write lock, so a reader can never observe a partially-applied
+    ///    delta) -- asserted explicitly here as documented, verified
+    ///    behavior rather than left as an implicit assumption.
+    #[test]
+    fn concurrent_multi_writer_multi_reader_converges_and_never_observes_corrupted_state() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::{Arc, RwLock};
+        use std::thread;
+
+        const N_VARIANTS: usize = 100;
+        const DELTAS_PER_VARIANT: u64 = 200;
+
+        let variant_ids: Vec<VariantId> = (0..N_VARIANTS as u64).map(VariantId).collect();
+        let catalog = Catalog {
+            products: variant_ids
+                .iter()
+                .map(|&vid| Product {
+                    id: ProductId(vid.0),
+                    product_type: ProductTypeId(1),
+                    brand: BrandId(1),
+                    category: CategoryId(1),
+                    title: format!("Product {}", vid.0),
+                    attributes: attributes([]),
+                    variants: vec![Variant {
+                        id: vid,
+                        attributes: attributes([]),
+                        price: Price::usd(1_000),
+                        inventory: Inventory::in_stock(1),
+                    }],
+                })
+                .collect(),
+        };
+        let index = CatalogIndex::build(&catalog);
+
+        // A fixed, deterministic multiset of deltas per variant: a mix of
+        // Observed and Authoritative tiers with a scrambled (non-monotonic
+        // in generation order) observed_at sequence, so "highest
+        // observed_at wins, but Authoritative always beats Observed" is
+        // genuinely exercised, not trivially satisfied by generation
+        // order.
+        let mut all_deltas: Vec<VariantStateDelta> = Vec::new();
+        for &vid in &variant_ids {
+            for i in 0..DELTAS_PER_VARIANT {
+                let observed_at = (i.wrapping_mul(37).wrapping_add(vid.0.wrapping_mul(7)))
+                    % (DELTAS_PER_VARIANT * 2);
+                let authority = if i % 5 == 0 {
+                    Authority::Authoritative
+                } else {
+                    Authority::Observed
+                };
+                let availability = if i % 2 == 0 {
+                    Availability::InStock
+                } else {
+                    Availability::OutOfStock
+                };
+                all_deltas.push(VariantStateDelta {
+                    product_id: ProductId(vid.0),
+                    variant_id: vid,
+                    availability,
+                    inventory_units: None,
+                    observed_at,
+                    source: "concurrency-test".to_string(),
+                    authority,
+                });
+            }
+        }
+
+        // Oracle: apply the exact same deltas sequentially, single-
+        // threaded, in generation order, and record each variant's
+        // expected final availability. Because the precedence rule is
+        // designed to be order-independent, this is a valid reference
+        // regardless of what order the concurrent run actually applies
+        // deltas in.
+        let mut oracle_overlay = CommerceStateOverlay::build(&index, &catalog);
+        for delta in &all_deltas {
+            oracle_overlay.apply(&index, delta);
+        }
+        let expected: HashMap<VariantId, Availability> = variant_ids
+            .iter()
+            .map(|&vid| (vid, oracle_overlay.availability(vid).unwrap()))
+            .collect();
+
+        // Concurrent run: reorder the SAME deltas into a different,
+        // deterministic-but-non-sequential order (so the physical
+        // application order genuinely differs from the oracle's), then
+        // stride 8 writer threads across that order so deltas for the same
+        // variant land on different threads and race against each other in
+        // real, unpredictable wall-clock interleaving.
+        let mut shuffled = all_deltas.clone();
+        shuffled.sort_by_key(|d| d.variant_id.0.wrapping_mul(2654435761) ^ d.observed_at);
+
+        let shared = Arc::new(RwLock::new(CommerceStateOverlay::build(&index, &catalog)));
+        let index_arc = Arc::new(index);
+        let work: Arc<Vec<VariantStateDelta>> = Arc::new(shuffled);
+        let stop = Arc::new(AtomicBool::new(false));
+
+        let writer_handles: Vec<_> = (0..8)
+            .map(|t: usize| {
+                let shared = Arc::clone(&shared);
+                let index_arc = Arc::clone(&index_arc);
+                let work = Arc::clone(&work);
+                thread::spawn(move || {
+                    let mut i = t;
+                    while i < work.len() {
+                        let mut guard = shared.write().expect("writer lock");
+                        guard.apply(&index_arc, &work[i]);
+                        drop(guard);
+                        i += 8;
+                    }
+                })
+            })
+            .collect();
+
+        let reader_handles: Vec<_> = (0..4)
+            .map(|_| {
+                let shared = Arc::clone(&shared);
+                let stop = Arc::clone(&stop);
+                let reader_variant_ids = variant_ids.clone();
+                thread::spawn(move || {
+                    let mut reads = 0usize;
+                    while !stop.load(Ordering::Relaxed) {
+                        for &vid in &reader_variant_ids {
+                            let guard = shared.read().expect("reader lock");
+                            let value = guard.availability(vid);
+                            drop(guard);
+                            assert!(
+                                matches!(
+                                    value,
+                                    Some(Availability::InStock)
+                                        | Some(Availability::OutOfStock)
+                                        | Some(Availability::Backorder)
+                                ),
+                                "read during concurrent mutation must always observe a real, \
+                                 valid state, got {value:?}"
+                            );
+                            reads += 1;
+                        }
+                    }
+                    reads
+                })
+            })
+            .collect();
+
+        for h in writer_handles {
+            h.join().expect("writer thread panicked");
+        }
+        stop.store(true, Ordering::Relaxed);
+        let mut total_reads = 0usize;
+        for h in reader_handles {
+            total_reads += h.join().expect("reader thread panicked");
+        }
+        assert!(
+            total_reads > 0,
+            "reader threads must have actually run concurrently with the writers, not merely \
+             raced to completion before any read happened"
+        );
+
+        let final_overlay = Arc::try_unwrap(shared)
+            .unwrap_or_else(|_| panic!("all threads joined, overlay must be uniquely owned"))
+            .into_inner()
+            .expect("no poisoned lock");
+        for &vid in &variant_ids {
+            assert_eq!(
+                final_overlay.availability(vid),
+                Some(expected[&vid]),
+                "variant {vid:?}: concurrent multi-writer application (arbitrary interleaving) \
+                 must converge to the exact same final state as sequential oracle application -- \
+                 the precedence rule must be a true order-independent merge, not merely \
+                 'usually right'"
+            );
+        }
     }
 }

@@ -204,3 +204,58 @@ generic "it works" claim. Must also address the multi-field
 non-atomicity finding above: our design should decide explicitly whether
 a variant-state delta is single-field (naturally atomic) or needs its own
 consistency guarantee, not inherit Havenask's gap silently.
+
+## Follow-up: can a real Havenask update-latency/TPS number actually be obtained in this environment?
+
+Finding 4 above established that Havenask's own published material has no
+credible number for this (only two conflicting marketing one-liners). The
+open question this leaves is whether an *independent* measurement is
+obtainable here, rather than relying on absence-of-evidence from
+Havenask's own docs alone. This was genuinely attempted, not assumed
+impossible, matching R1-E04's own precedent ("Docker being unavailable is
+not sufficient reason to skip the baseline. Try native/JVM distributions,
+CI runners, another environment, or a standalone service.").
+
+**What was checked**:
+- Havenask's own `README.md` documents exactly one supported distribution
+  path: `docker pull registry.cn-hangzhou.aliyuncs.com/havenask/ha3_runtime:latest`.
+  No prebuilt binary release, no native/JVM alternative package, no
+  standalone benchmark tool independent of the full server image.
+- `docker info` on this environment: the `docker` client binary and
+  `dockerd` binary both exist, but `/var/run/docker.sock` does not, and
+  the daemon is not running (`failed to connect to the docker API...
+  no such file or directory`) — consistent with an unprivileged sandbox
+  that cannot run a container runtime.
+- Even setting the daemon aside: `registry.cn-hangzhou.aliyuncs.com` is
+  unreachable through this environment's outbound proxy (`curl` to its
+  v2 API endpoint returns `CONNECT tunnel failed, response 403`) — a
+  second, independent blocker beyond the missing daemon.
+- Building from source: the repository is a `bazel`-based build
+  (`WORKSPACE`, `bazel/BUILD`) for a large-scale distributed C++ system
+  (real production scale per its own README: "hundreds of billions of
+  data records... millions of QPS"). `bazel` is not installed in this
+  environment, and building it plus the full dependency graph
+  (`third_party/` lists JVM, HDFS, and many other heavyweight
+  dependencies) from scratch is a materially larger undertaking than
+  R1-E04's Solr build (a single JVM `.tgz`, already itself the largest
+  external-baseline effort in this project) — not attempted, given both
+  the Docker path's double failure and the scale mismatch.
+
+**Conclusion**: this is a genuine, concrete external blocker, not an
+assumption. A real, independently-measured Havenask update-latency/TPS
+number is not obtainable in this environment. The comparison this issue
+asks for ("benchmark generic Havenask update cost against a specialized
+overlay") therefore remains **algorithmic/mechanistic, not
+head-to-head-quantitative**, on the Havenask side specifically: Findings
+1-2 establish *what* Havenask's in-place mechanism does (a single raw
+pointer write / bitmap bit-flip, immediately visible, no reopen/flush/
+reindex) with source-level precision, which is sufficient to establish
+that our own overlay (Issue #8's `commerce_core::state`,
+`docs/experiments/REALTIME_LOG.md` R-E01) implements the *same
+algorithmic pattern* — so the real, quantified numbers R-E01 measured
+(342ns p50 `apply()`, ~2.6M updates/sec sustained) are evidence that this
+pattern class performs at the expected order of magnitude, corroborated
+by (not independently re-verified against) Havenask's own architecture,
+not proof that our specific Rust implementation matches Havenask's
+specific C++ implementation's exact number. This distinction is recorded
+explicitly so it is never mistaken for a real head-to-head benchmark.

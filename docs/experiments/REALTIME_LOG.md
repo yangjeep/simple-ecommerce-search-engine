@@ -142,3 +142,107 @@ written.
 **Next**: feed this into Issue #5/`ROUND1_DECISION_TREE.md` alongside
 Issue #7's synthesis; open follow-up issues for the two named gaps rather
 than silently expanding Issue #8's scope.
+
+---
+
+## R-E02 — Adversarial concurrent-convergence testing finds and fixes a real precedence-logic bug
+
+**Evidence class**: hand-authored (deterministic unit tests; no real-data
+component — this entry is about correctness logic, not scale).
+
+**Independence**: n/a (a correctness proof, not a comparative measurement).
+
+**Background**: Issue #8 names "concurrent reads during mutation" as one
+of its required correctness cases, and "correctness for product-level vs
+variant-level availability" under concurrent load as a benchmark
+dimension. R-E01's real-data benchmark exercised concurrent reads+writes
+for *throughput/latency*, but did not specifically *assert* correctness
+invariants during that concurrent run — a real gap, closed here.
+
+**Hypothesis**: `CommerceStateOverlay::apply`'s precedence rule (authority
+tier, then `observed_at`) is designed to behave like a last-writer-wins
+CRDT register — a commutative, associative, idempotent merge. If that
+design intent actually holds, applying the same multiset of deltas
+through many concurrent writer threads racing on one `RwLock`-protected
+overlay, in an unpredictable real interleaving, must converge to the
+exact same final state as applying that multiset sequentially in a fixed
+order.
+
+**Implementation**: `crates/commerce-core/src/state/mod.rs`'s test module
+gained
+`concurrent_multi_writer_multi_reader_converges_and_never_observes_corrupted_state`:
+100 variants, 200 deltas each (20,000 total) with a scrambled, per-variant
+non-monotonic `observed_at` sequence (an affine bijection mod 400, so
+distinct `observed_at` values per variant, deliberately mixing
+`Authority::Observed`/`Authoritative`), applied through 8 concurrent
+writer threads (striding a shuffled work order, so physical application
+order genuinely differs from generation order) plus 4 continuously-reading
+threads, compared against a real sequential "oracle" run of the identical
+delta multiset.
+
+**Result — RED, a real bug, not a test artifact**: the first run failed —
+variant 26's concurrent-run final state (`InStock`) diverged from the
+oracle's (`OutOfStock`). Isolated to a minimal, hand-authored,
+single-threaded reproduction
+(`authoritative_confirmation_of_an_already_correct_observed_guess_must_still_promote_authority`):
+`apply`'s `unchanged` fast path compared only
+`availability`/`inventory_units`/`observed_at` against the tracked state
+— **not `authority`**. An `Authoritative` delta that happens to confirm
+an already-correct `Observed`-tier payload (a real, plausible case — a
+reconciliation job confirms what a beacon had already guessed right) was
+therefore misclassified `Idempotent`, which returns *before*
+`self.tracked` is updated — silently dropping the authority *upgrade*
+even though the payload matched. A later `Observed`-tier delta with a
+different payload was then wrongly accepted, because it was compared
+against the never-promoted `Observed` tier instead of the true
+`Authoritative` one — a real, production-relevant correctness bug: a
+confirmed-authoritative fact could be silently overridden by a later
+mere observation, exactly the failure mode `Authority`'s own design
+intent (and the already-passing
+`authoritative_reconciliation_overrides_an_observed_guess_regardless_of_timestamp`
+test) was supposed to rule out — just not in this specific
+payload-already-matches shape.
+
+**Fix**: `unchanged` now also requires `prev.authority == delta.authority`
+— an authority-tier change is always a real state change (`Applied`),
+even when the availability/inventory payload happens to be identical.
+Minimal, one added boolean comparison, no change to the O(1) cost profile
+R-E01 measured (same hashmap lookup, same at-most-one bitmap bit flip).
+
+**Validation**: the minimal reproduction and the full 20,000-delta
+concurrent-convergence test both pass after the fix; the concurrent test
+was re-run 5 additional times (real thread scheduling varies run to run)
+with no failures. Full workspace regression
+(`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+--all-features -- -D warnings`, `cargo test --workspace --all-features`,
+`cargo build --workspace --release`) clean — 16 `commerce-core` tests now
+(was 14), all passing.
+
+**Interpretation**: this is exactly the "adversarial review" step
+CLAUDE.md's loop calls for doing its job — R-E01's own correctness
+evidence (7 unit tests, all still valid and still passing) was real but
+incomplete: every existing test exercised authority/observed_at/payload
+changing *together*, never the specific case of an authority upgrade
+with an *unchanged* payload. A more adversarial, larger-scale,
+randomized-interleaving test found a real gap none of the hand-picked
+scenarios happened to cover. This does not change R-E01's PROCEED
+decision or its measured performance numbers (the fix is logic-only, on
+the already-fast O(1) path) — it strengthens the correctness case the
+PROCEED decision rests on, and is recorded as a genuine finding, not
+smoothed into R-E01's original entry after the fact (append-only, per
+this log's own discipline).
+
+**Havenask-relevance note**: Finding 5 in
+`docs/research/havenask-realtime-update-archaeology.md` already flagged
+that Havenask's own in-place update path has **no cross-field
+transaction** for a single document's multi-field update — a related but
+distinct correctness gap (this project's own bug was a same-field,
+cross-delta precedence defect, not a cross-field atomicity one). Neither
+this project's fix nor Havenask's own documented gap resolves the other;
+both are recorded as real, independent correctness-adjacent findings for
+this class of mutable-state mechanism.
+
+**Decision: PROCEED stands, strengthened.** The bug is fixed, verified,
+and the precedence rule is now confirmed (not merely designed) to be a
+true order-independent merge under real concurrent, randomized-order
+application at 20,000-delta scale.
