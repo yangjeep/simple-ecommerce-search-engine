@@ -1,58 +1,60 @@
-# C Search Engine Project
+# Commerce-Native Search Engine
 
-A simple search engine implementation in C that demonstrates indexing and document search capabilities.
+Experimental Rust search engine exploring a **semantic forwarding plane + learned control plane** for ecommerce retrieval.
 
-## Backend Architecture
+This repository intentionally starts from a narrower world model than a generic document search engine. Products, variants, product types, brands, categories, prices, inventory, availability, and typed commerce attributes are first-class concepts. Known commerce semantics should compile into deterministic structural retrieval; lexical search handles residual uncertainty; model-assisted reasoning belongs primarily in an offline control plane that learns and validates semantic routes before compiling them into the fast path.
 
-The search engine's backend is powered by a generalized trie (GTrie) data structure, which efficiently stores and retrieves indexed terms. The GTrie implementation provides:
+## Status
 
-- Fast prefix-based searching capabilities
-- Memory-efficient storage of terms through shared prefixes
-- Full UTF-8 support for international character sets
-- Integrated posting lists for document references
-- In-memory storage with serialization support
+Research prototype / architecture experiment. The previous C/GTrie implementation remains in git history but is not the target architecture.
 
-Each node in the GTrie can store a UTF-8 codepoint and maintains:
-- Links to child nodes (supporting full Unicode range)
-- A posting list containing document references
-- A flag indicating if the node represents the end of a word
+The active experiment is tracked in **GitHub Issue #2**.
 
-The GTrie is complemented by LMDB for persistent storage, allowing the search index to be saved and loaded between sessions efficiently.
+## Core questions
 
+The project is intended to measure, not assume:
 
-## Prerequisites
+- What fraction of realistic ecommerce queries can be resolved structurally without general model inference?
+- What should the typed Commerce IR contain?
+- Which commerce concepts must be first-class versus extensible attributes?
+- Can product/variant-aware structural retrieval be both more correct and cheaper than generic document matching?
+- What semantic FIB representation gives a useful memory/latency tradeoff?
+- Can catalog profiling + semantic fuzzing produce a useful cold-start context without one LLM call per SKU?
+- Can unresolved queries safely teach a versioned fast path through replay and promotion gates?
+- At what scale does a single-node immutable/mmap-oriented serving model stop being the right default?
 
-- CMake (version 3.14 or higher)
-- C compiler (gcc/clang)
-- Git
+## Initial scope
 
-## Building and Testingthe Project
+The prototype should remain deliberately narrow:
 
-1. Clone the repository:
+- Rust
+- single node
+- read-heavy serving
+- Product / Variant aware
+- typed attributes
+- canonical IDs and aliases
+- bitmap-based structural filtering
+- numeric/range filtering
+- minimal lexical postings
+- facets
+- top-K ranking
+- versioned compiled semantic context
+- deterministic test and benchmark fixtures
 
+Distributed coordination, generic document DSL compatibility, production multi-tenancy, HA, and elaborate UI are non-goals until measurements justify them.
 
-```bash
-git clone https://github.com/yourusername/search-engine.git
-```
+## Autonomous experiment workflow
 
-2. Navigate to the project directory:
+Long-running coding sessions must follow [`CLAUDE.md`](CLAUDE.md) and [`docs/EXPERIMENT_LOOP.md`](docs/EXPERIMENT_LOOP.md).
 
-```bash
-cd search-engine
-```
+The project advances through measured experiment gates rather than a feature roadmap. Failed hypotheses are expected artifacts and must remain in the experiment log.
 
-3. Build the project using CMake:
+## Target decision
 
-```bash
-mkdir build
-cd build
-cmake ..
-make
-```
-4. Run the index writer tool - index_writer takes expanded key value pairs and writes them to a binary index file in gtrie format
+The current epic ends with `SCALE_UP_DECISION.md` containing one of:
 
-```bash
-cd build/bin    
-./index_writer -i <path_to_key_value_pair_file> -o <path_to_output_index_file>
-```
+- **PROCEED** — evidence supports scaling the architecture and workload;
+- **REVISE** — core idea remains useful but a measured assumption needs redesign;
+- **STOP** — the commerce-native specialization does not provide enough advantage to justify further scale-up.
 
+Success is a defensible decision backed by reproducible data, not a large codebase.
