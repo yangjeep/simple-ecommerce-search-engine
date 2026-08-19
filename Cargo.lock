@@ -345,6 +345,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "round1-eval"
+version = "0.1.0"
+dependencies = [
+ "commerce-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

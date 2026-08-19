@@ -4,6 +4,10 @@
 Cargo.lock.bak
 *.profraw
 
+# Round 1: large downloaded datasets and external baseline binaries.
+# Reproducible from docs/experiments/ROUND1_LOG.md, never committed.
+/dataset_cache/
+
 # Editor/IDE specific files
 .vscode/
 .idea/
