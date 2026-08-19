@@ -290,3 +290,131 @@ latency/memory at the "small" (~10k product) scale-ladder tier — the
 current implementation has never been benchmarked against an index-backed
 alternative, so there is no evidence yet that specialization beats the
 linear scan at any scale.
+
+---
+
+## E003 — Physical indexes vs. linear scan (Gate 3)
+
+**Question**  
+Does replacing the `O(products × variants)` linear scan with bitmap
+structural filters, numeric/range structures, exact-id hash lookup, and
+narrow-then-verify text handling measurably reduce query latency at the
+"small" (~10k product) scale-ladder tier, without changing which
+documents match (i.e. without any correctness regression versus the
+linear-scan ground truth)?
+
+**Hypothesis**  
+A `CatalogIndex` built once from a `Catalog` — dense `u32` ordinals,
+`roaring::RoaringBitmap` per `(attribute, value)` and per structural id,
+sorted `(value, ordinal)` vectors with binary search for numeric/price
+ranges — will (a) return byte-identical hit sets to
+`CommerceQuery::execute`/`Catalog::search` for every query in the existing
+Gate 1/2 fixture set, including a `Constraint::Text` clause that isn't
+bitmap-indexable and must be verified against the narrowed candidate set
+rather than dropped or approximated, and (b) answer a representative
+two-clause structural+numeric query meaningfully faster than the linear
+scan on a 10k-product synthetic catalog, at some index-build cost that is
+worth stating explicitly rather than hidden.
+
+**Workload**  
+Correctness: existing fixtures (`variant_safety_catalog`,
+`representative_query_catalog`, their union) plus every constraint
+combination already exercised in `tests/variant_safety.rs` /
+`tests/ir_compiler.rs`, re-run through both `CatalogIndex::execute` and
+`CommerceQuery::execute` for equality. Performance:
+`benches/common/synthetic_catalog(10_000)` — 10,000 products, 2 variants
+each (20,000 variants total), deterministic (`ChaCha8Rng::seed_from_u64(42)`,
+same generator Gate 0 used at 5k), queried with `color = "Black" AND size
+>= 9` (the same clause shape as the Gate 0 baseline bench, now run through
+both execution paths for direct comparison).
+
+**Metric(s)**  
+Hit-set equality (correctness, boolean pass/fail); Criterion wall-clock
+latency distribution (P50-ish "time" estimate Criterion reports) for
+`CatalogIndex::build`, linear-scan query, and indexed query; ratio of
+linear-scan latency to indexed latency as the physical-advantage signal.
+
+**Decision rule**  
+Advance (physical indexing is worth keeping and extending in Gate 7) if
+every equality check passes AND the indexed query is meaningfully faster
+(not noise-level) than the linear scan at 10k products. Revise if
+correctness diverges on any case (index is wrong, not just slow) or if
+the speedup is negligible relative to build cost at this scale (would
+suggest the linear scan is fine until a much larger tier).
+
+**Implementation**  
+`crates/commerce-core/src/index/`: `mod.rs` (`CatalogIndex`, `build`,
+`indexed_candidates`, `execute`, `facet_counts`, exact `lookup_variant`/
+`lookup_product`), `rank.rs` (`execute_ranked`, preference scoring). Design
+rationale (ordinals as the physical join key, RoaringBitmap choice,
+narrow-then-verify for `Text`, facets/ranking as read-only views over the
+same `execute` machinery) in `docs/adr/0003-physical-indexes.md`. Test-first:
+`crates/commerce-core/tests/physical_index.rs` asserts index/linear-scan
+equivalence, exact-id lookup, facet counts against a known catalog, and
+deterministic top-K ranking, before the benchmark was written.
+`benches/common/mod.rs` factors the Gate 0 synthetic-catalog generator out
+so `benches/index_bench.rs` and `benches/catalog_bench.rs` share it
+without duplicating the generator (the `tests/common/` idiom applied to
+`benches/`, not auto-discovered as its own bench target).
+
+**Results**  
+```
+$ cargo test --workspace --all-features
+running 6 tests (tests/physical_index.rs) ... 6 passed; 0 failed
+running 6 tests (tests/ir_compiler.rs) ... 6 passed; 0 failed   # unchanged
+running 7 tests (tests/variant_safety.rs) ... 7 passed; 0 failed # unchanged
+$ cargo fmt --all -- --check   # exit 0
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings   # exit 0, 0 warnings
+$ cargo build --workspace --release   # exit 0
+
+$ cargo bench --package commerce-core --bench index_bench
+index_build_10k_products_2_variants     time: [23.247 ms 23.547 ms 23.930 ms]
+query_linear_scan_10k_products_2_variants   time: [3.4540 ms 3.5066 ms 3.5623 ms]
+query_indexed_10k_products_2_variants       time: [242.21 µs 243.13 µs 244.14 µs]
+
+$ cargo bench --package commerce-core --bench catalog_bench   # unchanged shape, still passes
+catalog_search_5k_products_2_variants   time: [1.4332 ms 1.4415 ms 1.4542 ms]
+```
+Environment: same as E000-E002 (4 vCPU Intel Xeon @2.80GHz, 15Gi RAM,
+Linux 6.18.5, rustc/cargo 1.94.1). Single run, not yet repeated for
+variance (see Limitations below). Commit: see `git log` on
+`claude/github-issue-2-gates-puv0wb` immediately following this entry.
+
+**Interpretation**  
+At 10k products / 20k variants, the indexed query (≈243µs) is roughly
+**14.4x faster** than the linear scan (≈3.51ms) for a two-clause
+structural+numeric query. The one-time index build (≈23.5ms) amortizes
+after roughly `23.5ms / (3.51ms - 0.24ms) ≈ 7.2` queries against the same
+index — i.e. any workload issuing more than a handful of queries against
+one catalog snapshot comes out ahead. This is the first quantitative
+support in this repository for "specialized physical structures reduce
+cost at useful scale" (CLAUDE.md's Physical advantage priority), not just
+"the code compiles and is variant-safe." It does **not** yet show: (1)
+memory/RSS of the index vs. the un-indexed catalog (Gate 7 metric, not
+measured here); (2) behavior at the "medium" (~100k) or "target proof"
+(~500k) scale-ladder tiers — 14.4x at 10k is not a claim about the curve's
+shape at 100x that size, especially since `RoaringBitmap` intersection
+cost and hash-map lookup cost both scale differently than a flat scan
+does; (3) build time or query latency for queries dominated by the
+narrow-then-verify `Text` path (not benchmarked separately — only
+correctness-checked); (4) variance — each Criterion number above is one
+run's estimate, not repeated across multiple process invocations to
+separate signal from machine noise, which `docs/EXPERIMENT_LOOP.md`'s
+benchmark rules ask for and this entry does not yet satisfy.
+
+**Regression check**  
+`crates/commerce-core/tests/physical_index.rs`, run in CI (`rust-ci.yml`)
+via `cargo test --workspace --all-features` on every push/PR. Benchmarks
+are not run in CI (Criterion needs a stable machine for meaningful
+numbers); they are a manual/scheduled experiment-loop step per
+`docs/EXPERIMENT_LOOP.md`.
+
+**Next question**  
+Two candidates, both smaller than a new gate: (a) repeat this benchmark 3+
+times and at an additional size point (e.g. 1k and 50k) to establish
+whether the ~14x ratio holds or drifts with scale, addressing the
+variance/scale-curve limitation above; (b) wire `residual_lexical` into
+`CatalogIndex::execute` so a query with unresolved text actually
+intersects `lexical_postings`, which today are built but never read by
+any query path. Gate 4 proper (versioned/compiled semantic FIB with a
+promotion workflow) is the next full gate once one of these is resolved.
