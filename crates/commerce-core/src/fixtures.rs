@@ -86,8 +86,11 @@ pub fn usd(cents: i64) -> Price {
 pub const REPRESENTATIVE_QUERY: &str = "black Nike waterproof running shoes size 9 under $150";
 
 /// A small, deterministic semantic lexicon for the shoe catalog fixtures.
-/// This is the Gate 2 compiler prototype's semantic context, not the
-/// versioned/compiled FIB Gate 4 requires (no version, no promotion gate).
+/// Wrapped as a versioned [`crate::ir::SemanticContext`] by
+/// [`shoe_semantic_context`] for Gate 4; on its own this is still just the
+/// Gate 2 compiler prototype's raw lexicon, hand-curated rather than
+/// compiled from catalog profiling (Gate 6) or promoted via replay
+/// evidence (Gate 5).
 pub fn shoe_lexicon() -> SemanticLexicon {
     let mut lex = SemanticLexicon::new();
     lex.insert(
@@ -132,6 +135,25 @@ pub fn shoe_lexicon() -> SemanticLexicon {
         vec![Candidate::constraint(
             ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
             1.0,
+        )],
+    );
+    // Aliases resolving to the same canonical ProductTypeId (Gate 4:
+    // "aliases/canonical IDs"). Confidence is lower than the canonical
+    // phrase because these are informal synonyms, not the catalog's own
+    // vocabulary; a single candidate still resolves deterministically
+    // (see ir::query::compile's doc comment on how ambiguity is decided).
+    lex.insert(
+        "sneakers",
+        vec![Candidate::constraint(
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
+            0.9,
+        )],
+    );
+    lex.insert(
+        "trainers",
+        vec![Candidate::constraint(
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
+            0.9,
         )],
     );
     lex.insert(
@@ -218,3 +240,55 @@ pub fn representative_query_catalog() -> Catalog {
         products: vec![product],
     }
 }
+
+/// The Gate 2/4 lexicon wrapped as a versioned, compiled semantic context.
+/// Version 1: hand-curated (not derived from catalog profiling — that is
+/// Gate 6's cold-start job).
+pub fn shoe_semantic_context() -> crate::ir::SemanticContext {
+    crate::ir::SemanticContext::new(
+        1,
+        "hand-curated shoe lexicon (Gate 2/4 prototype)",
+        shoe_lexicon(),
+    )
+}
+
+/// A hand-authored, deterministic stand-in for a "representative ecommerce
+/// query set" (Gate 4: "measure what fraction ... resolves without model
+/// inference"). Every query uses only vocabulary [`shoe_lexicon`] does or
+/// deliberately does not know about, split into three known-outcome
+/// groups so the coverage measurement in `tests/coverage.rs` can assert
+/// exact expected counts rather than an unverified fraction:
+///
+/// - queries 0-11 (12): fully resolvable (every token maps to a
+///   constraint/preference/stopword, or is covered by the "sneakers"/
+///   "trainers" aliases resolving to the same canonical product type);
+/// - queries 12-13 (2): contain "leather", the lexicon's deliberately
+///   ambiguous term (see [`shoe_lexicon`]);
+/// - queries 14-19 (6): contain at least one token absent from the
+///   lexicon entirely (an unmodeled brand, an unmodeled color, informal
+///   phrasing), so they must fall back to `residual_lexical`.
+pub const REPRESENTATIVE_QUERY_SET: &[&str] = &[
+    // Fully resolvable.
+    "black Nike waterproof running shoes size 9 under $150",
+    "red running shoes size 8",
+    "Nike running shoes under $100",
+    "waterproof running shoes",
+    "black running shoes over $50",
+    "size 9 running shoes",
+    "Nike black running shoes",
+    "cushioned running shoes",
+    "breathable waterproof running shoes",
+    "red Nike sneakers under $200",
+    "black trainers",
+    "running shoes for the waterproof black size 9 nike",
+    // Ambiguous ("leather").
+    "leather running shoes",
+    "black leather trainers",
+    // Residual (out-of-vocabulary brand/color/informal terms).
+    "Adidas running shoes",
+    "blue running shoes",
+    "New Balance waterproof shoes",
+    "vegan running shoes",
+    "wide fit running shoes",
+    "trail running shoes size 10",
+];

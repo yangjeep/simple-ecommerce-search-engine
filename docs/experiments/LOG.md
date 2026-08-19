@@ -418,3 +418,124 @@ variance/scale-curve limitation above; (b) wire `residual_lexical` into
 intersects `lexical_postings`, which today are built but never read by
 any query path. Gate 4 proper (versioned/compiled semantic FIB with a
 promotion workflow) is the next full gate once one of these is resolved.
+
+Chosen next: per CLAUDE.md's priority order, "structural coverage"
+(priority 2) outranks "physical advantage" (priority 3, already given an
+initial answer in E003) and "physical advantage" has no unresolved
+correctness question, only unresolved variance/scale — so E004 measures
+coverage now and defers repeating the E003 benchmark.
+
+---
+
+## E004 — Versioned semantic context + structural coverage measurement (Gate 4)
+
+**Question**  
+What fraction of a representative ecommerce query set resolves
+deterministically (zero ambiguity, zero unmodeled/residual terms) against
+a small, versioned, hand-curated semantic context — and does adding
+alias/canonical-ID resolution (a shopper synonym like "sneakers" or
+"trainers" instead of the catalog's own "running shoes") actually land on
+the identical typed constraint as the canonical phrase, rather than a
+near-miss?
+
+**Hypothesis**  
+(a) `ir::SemanticContext` can wrap the Gate 2 lexicon with version +
+provenance metadata and support one-or-more phrases per canonical
+resolution (aliases) without changing how ambiguity is decided (candidate
+count still, not confidence — ADR 0002's rule). (b) On a 20-query
+fixture constructed with a known-exact classification per query (12
+resolvable, 2 ambiguous, 6 residual — see `fixtures::REPRESENTATIVE_QUERY_SET`'s
+doc comment), `measure_coverage` reproduces exactly that classification,
+i.e. this is a real measurement of the implemented compiler, not a
+hand-picked number.
+
+**Workload**  
+`fixtures::shoe_semantic_context()` (the Gate 2 `shoe_lexicon`, now with
+two added alias entries — "sneakers"/"trainers" -> the same
+`ProductTypeId(1)` "running shoes" resolves to, confidence 0.9 vs. the
+canonical phrase's 1.0 — wrapped as `SemanticContext { version: 1, ... }`).
+`fixtures::REPRESENTATIVE_QUERY_SET`: 20 hand-authored queries, built and
+hand-traced token-by-token against the lexicon before running the test
+(see the ADR for the classification and the trace method).
+
+**Metric(s)**  
+`CoverageReport { total_queries, fully_resolved, had_ambiguity,
+had_residual }` and `fraction_fully_resolved()`; alias equivalence
+(`compile(alias) == compile(canonical_phrase)` on `.constraints`).
+
+**Decision rule**  
+Advance (the context/coverage mechanism is sound) if `measure_coverage`'s
+output matches the fixture's designed-in classification exactly (12/2/6)
+and alias resolution matches the canonical phrase's constraints exactly.
+A mismatch would mean either the classification was mis-designed or
+`compile`/`measure_coverage` has a bug — either way, revise before trusting
+the 60% number as evidence of anything.
+
+**Implementation**  
+`crates/commerce-core/src/ir/context.rs` (`SemanticContext`),
+`crates/commerce-core/src/ir/coverage.rs` (`CoverageReport`,
+`measure_coverage`). `fixtures::shoe_lexicon` gained two alias entries;
+`fixtures::shoe_semantic_context` and `fixtures::REPRESENTATIVE_QUERY_SET`
+are new. Rationale in `docs/adr/0004-semantic-context-and-coverage-metric.md`.
+Test-first: `crates/commerce-core/tests/coverage.rs` encodes the exact
+expected counts (12/2/6, fraction 0.6) that a hand trace of all 20 queries
+through `compile`'s greedy-longest-match algorithm predicted, before
+running the test to check the prediction.
+
+**Results**  
+```
+$ cargo test --workspace --all-features
+running 3 tests (tests/coverage.rs)
+test semantic_context_carries_version_and_source ... ok
+test aliases_resolve_to_the_same_canonical_id_as_the_canonical_phrase ... ok
+test measured_structural_coverage_matches_the_constructed_query_set ... ok
+test result: ok. 3 passed; 0 failed
+
+# all prior test files unchanged and still green: 7 + 6 + 6 = 19 passed
+$ cargo fmt --all -- --check   # exit 0
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings   # exit 0, 0 warnings
+$ cargo build --workspace --release   # exit 0
+```
+Measured coverage: `total_queries=20, fully_resolved=12, had_ambiguity=2,
+had_residual=6` → **fraction_fully_resolved = 0.60**. Environment: same as
+E000-E003 (4 vCPU Intel Xeon @2.80GHz, 15Gi RAM, Linux 6.18.5, rustc/cargo
+1.94.1). Commit: see `git log` on `claude/github-issue-2-gates-puv0wb`
+immediately following this entry.
+
+**Interpretation**  
+The hand trace and the implementation agree exactly (12/2/6, first try, no
+correction needed), so `measure_coverage` is measuring what it claims to
+measure, and alias resolution genuinely lands on the same canonical
+constraint as the phrase it's a synonym for. The 60% figure itself is
+**not** evidence about real-world ecommerce query coverage: the query set
+was constructed by hand from the same 9-entry lexicon being measured
+against, deliberately split roughly 60/10/30 to produce a legible worked
+example, not sampled from any real or synthetic shopper query
+distribution. What this entry actually establishes is narrower and still
+useful: (1) the mechanism (context + alias + coverage measurement) works
+as designed with no bugs found on first implementation; (2) a
+single-digit-entry hand-curated lexicon predictably leaves a large
+residual share (30% here) once queries use *any* vocabulary outside what
+was curated (an unmodeled brand, an unmodeled color, informal phrasing
+like "wide fit") — which is exactly the gap Gate 6's catalog-profiling
+cold start is supposed to close, now with a concrete mechanism
+(`measure_coverage`) ready to evaluate it against. This does **not** yet
+show: (1) coverage on a query set independent of the lexicon's own
+construction (the obvious next-level test); (2) coverage on a
+catalog-derived (rather than hand-curated) lexicon (Gate 6); (3) any
+promotion/replay evidence for *changing* context versions (Gate 5 —
+`SemanticContext.version` exists but nothing yet reads or compares it).
+
+**Regression check**  
+`crates/commerce-core/tests/coverage.rs`, run in CI (`rust-ci.yml`) via
+`cargo test --workspace --all-features` on every push/PR.
+
+**Next question**  
+Gate 5: prototype the offline control-plane flow — observe
+`residual_lexical`/`ambiguous` output from queries run through a
+`SemanticContext`, propose candidate semantic mappings for the
+highest-frequency unresolved terms (deterministic/fixture-driven
+proposal, no live model call per CLAUDE.md's hard rule), replay them
+against `REPRESENTATIVE_QUERY_SET` (or an expanded version of it), and
+only promote a candidate into a new `SemanticContext` version if replay
+coverage improves without regressing any previously-resolved query.
