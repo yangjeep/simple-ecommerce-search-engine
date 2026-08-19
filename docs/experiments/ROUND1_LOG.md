@@ -951,3 +951,109 @@ this entry's relevance-ranking-gap finding, a natural Area 10 follow-up
 comparison — would be high-value future work, flagged for
 `ROUND1_SCALE_UP_DECISION.md` rather than attempted under this round's
 remaining time budget.
+
+---
+
+## R1-E05 — Adversarial physical workloads: the worst case is ~36,700x the best case
+
+**Evidence class**: real (1,215,854-product catalog, same as R1-E01).
+
+**Question**: Area 6 asks for a *named* adversarial benchmark suite,
+reported independently rather than hidden in an aggregate — specifically
+"`Text` narrow-then-verify where the candidate set remains almost the
+entire catalog" and "high-cardinality facets." How bad, in absolute and
+relative terms, are these cases at real 1.2M-product scale, next to a
+query the index is designed for?
+
+**Hypothesis**: a query with *no* structural/attribute predicate at all
+(only a `Text` constraint) forces `indexed_candidates()` to return every
+ordinal in the catalog (nothing to intersect), so `execute()`'s
+narrow-then-verify step degenerates to a full linear scan — the exact
+`O(products)` cost profile Gate 3's physical index exists to avoid. This
+should be dramatically slower than a query with a real selective
+predicate, by orders of magnitude, not merely "somewhat slower."
+Similarly, computing facet counts over the *entire* catalog for an
+attribute with 175k+ distinct real values (color) should be
+measurably expensive, since it does one bitmap intersection per distinct
+value.
+
+**Decision threshold**: report the absolute numbers and the ratio to a
+same-scale, realistic selective baseline (brand=Nike alone, 6,165 of
+1,215,854 products, i.e. a real, moderately-selective single-brand
+filter — not a cherry-picked best case). No pass/fail; the ratio itself
+is the finding, and CLAUDE.md's own instruction ("no silent caps... never
+hide worst-case results inside aggregate latency") is the standard being
+met here, not a specific number.
+
+**Implementation**: `crates/round1-eval/src/bin/adversarial_physical.rs`.
+Case 1: `Constraint::Text { attribute: "description", contains:
+"waterproof" }` alone (no `Structural`/other `Attribute` constraint).
+Case 2: `CatalogIndex::facet_counts("color", &all_ordinals)` — the full
+catalog as the candidate set, the worst case for that API (a caller with
+a genuinely narrowed candidate set would pass a smaller bitmap). Case 3
+(baseline): `StructuralConstraint::Brand(nike)` alone.
+
+**Results** (same environment as R1-E01-E04):
+
+```
+Case 1 — unnarrowed Text scan (no structural predicate):
+  p50=961.23ms  p95=991.56ms  p99=1006.87ms  (n=30, hits=14,839, full 1,215,854-product scan every call)
+
+Case 2 — high-cardinality facet (color, full catalog as candidates, 175,292 distinct values):
+  single call: 374.20ms
+  repeated (n=10): p50=279.80ms  p95=403.46ms  p99=403.46ms
+
+Case 3 — baseline: single moderately-selective structural filter (brand=Nike, 6,165/1,215,854 = 0.5%):
+  p50=0.0262ms  p95=0.0409ms  p99=0.0566ms  (n=2000)
+
+Ratios (p50 vs. Case 3 baseline):
+  Case 1 / Case 3:  ~36,700x
+  Case 2 / Case 3:  ~10,700x  (repeated) / ~14,300x (single call)
+```
+
+**Interpretation — hypothesis confirmed, and the magnitude is the real
+finding.** A single unnarrowed `Text` query costs **~961 milliseconds**
+at this scale — meaning a single CPU core could serve at most ~1 such
+query per second, an unusable latency for interactive commerce search by
+any normal standard, and this is not a rare or contrived case: R1-E02
+classified `lexical_dominant` and `unresolved_punt` queries at a combined
+6.2% of the real query set, and any `structural_plus_lexical` query whose
+structural half doesn't narrow the candidate set much (common, given
+R1-E02b's finding that many extracted constraints are spurious) hits the
+same cost profile even when classified as "resolved." Full-catalog
+faceting is nearly as bad (280-374ms). Both numbers directly validate
+Gate 3/Phase 0's own architecture bias in reverse: the bitmap/range index
+gives a large, real advantage *only* when a query has a genuinely
+selective structural predicate to narrow on first (Case 3, sub-30-
+microsecond) — remove that predicate, and the same data structure
+provides **no advantage at all** over what a naive linear scan would
+cost, because that is, mechanically, exactly what it falls back to. This
+is the sharpest confirmation yet of the framing Phase 0's own
+`SCALE_UP_DECISION.md` already flagged as the "strongest useful
+conclusion" available to this kind of architecture: **the physical
+advantage is real but strictly workload-class-conditional, and the two
+classes it does *not* help with (broad lexical, high-cardinality facets)
+are common in real query traffic, not edge cases.**
+
+**Caveats**: single-threaded, single-query measurements (no concurrent
+load); `hits=14,839` for Case 1 is a real number, not artificially
+inflated to make the case look worse than it is (a common English word
+in real product descriptions genuinely does match over 1% of the
+catalog). `Constraint::Text` uses `str::contains` (substring match, no
+tokenization/stemming) — a real inverted-token index for the `Text`
+narrow-then-verify path (the `lexical_postings` structure `CatalogIndex`
+already builds but no query path reads yet, per Gate 3's own ADR 0003)
+would very plausibly close most of this gap; not built or benchmarked
+this round, flagged as the highest-value concrete follow-up from this
+entry specifically.
+
+**Regression check**: none (measurement-only binary, no `commerce_core`
+changes).
+
+**Next question**: whether wiring `lexical_postings` into the `Text`
+execution path (Gate 3 built the structure, no query path uses it) would
+close most of the Case 1 gap is now the single most concrete, cheaply-
+testable follow-up experiment this round has produced — noted for
+`ROUND1_SCALE_UP_DECISION.md`'s "what would be built next" section rather
+than attempted here, since R1-E06 (control plane / cold start) is still
+open.
