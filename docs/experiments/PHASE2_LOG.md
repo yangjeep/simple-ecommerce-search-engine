@@ -1276,5 +1276,102 @@ compiled constraint generalizes across real spelling/aliasing variation
 in the underlying field, not just whether the *canonical* value itself is
 a real entity" is a new, generalizable finding beyond just brand
 vocabulary.
-attempted.
-attempted.
+
+---
+
+## P2-E09 — Where does a third, model-assisted canonicalizer arm land, at the classification level?
+
+**Evidence class**: real. Same 209-candidate corpus and reconciled
+3-pass ground truth as P2-E07.
+
+**Independence**: the model-assisted arm is a fourth, independently-run
+agent pass over the same 209 candidates -- held out of the ground-truth
+reconciliation itself (which uses only the three passes that produced
+`brand_adjudication_ground_truth.jsonl`), so it is scored here as a
+genuine system under test, not one of its own raters. **Not independent
+in the stronger sense that threatens validity**, though, and this is
+carried forward from the rubric's own disclosure, not glossed over: this
+arm and every ground-truth-forming pass are produced by the same
+underlying model family in this environment -- no distinct-vendor model
+or human panel was available. Every number below is qualified by that.
+
+**Question**: P2-E07 asked whether `HeuristicCanonicalizer` beats the
+shipping frequency-only gate at the classification task. Does a
+model-assisted arm (an independent offline agent pass, using only the
+same bounded catalog evidence a deterministic heuristic gets) do better
+still?
+
+**Implementation**: a fourth agent pass (independent run, same rubric/
+corpus, explicitly framed as the system-under-test rather than a
+ground-truth labeler) produced
+`dataset_cache/export/brand_adjudication_model_assisted.json`.
+`crates/phase2-eval/src/bin/brand_canonicalizer_eval.rs` was extended
+with a `ModelAssistedCanonicalizer` (a `VocabularyCanonicalizer`
+implemented as a fixed per-candidate lookup, since this arm's real-world
+form is a compiled offline artifact — the same shape as
+`control_plane::provider::ModelProvider`'s propose/replay/promote
+pattern — not a callable general-vocabulary mechanism) and scored
+alongside the two deterministic arms.
+
+**Results** (209 real candidates, 156/209 = 74.6% ground truth positive):
+
+| arm | precision | recall | F1 |
+|---|---|---|---|
+| FrequencyOnlyCanonicalizer (best: threshold=1) | 74.6% | 100.0% | 85.5% |
+| HeuristicCanonicalizer (best: threshold=3) | 87.8% | 92.3% | **90.0%** |
+| **Model-assisted (fixed, no threshold)** | **84.6%** | **98.7%** | **91.1%** |
+
+Exact 5-class agreement with ground truth (not just the binary
+trusted-as-structural collapse): 151/209 = 72.2%.
+
+Accuracy by ground-truth confidence tier (all three arms at their
+threshold=25 configuration for the deterministic two, since that is
+where the classification-vs-recall tension in P2-E08 was sharpest):
+
+| tier | n | FrequencyOnly | Heuristic | Model-assisted |
+|---|---|---|---|---|
+| unanimous | 135 | 31.1% | 88.1% | **91.9%** |
+| majority | 71 | 40.8% | 73.2% | **77.5%** |
+| no_majority | 3 | 66.7% | 33.3% | 0.0% |
+
+**Interpretation**: at the classification level, the model-assisted arm
+is the best of the three -- highest F1, highest accuracy on both the
+unanimous and majority confidence tiers (the `no_majority` tier is only 3
+candidates, too small to read anything into a 0/3 vs 1/3 difference).
+This is a real, measured result, not assumed.
+
+**The critical caveat, stated as prominently as the win**: P2-E08 already
+demonstrated, on this exact project, that a canonicalizer which wins
+decisively on this exact classification-level metric
+(`HeuristicCanonicalizer` beat `FrequencyOnlyCanonicalizer` on both
+precision and recall here) can *still* produce substantially worse real
+end-to-end retrieval recall once wired into `compile_lexicon` and
+measured against the real 22,458-query judged set. This entry's model-
+assisted result must not be read as "therefore model-assisted is the
+answer" on the strength of this table alone -- CLAUDE.md's own
+instruction ("do not claim an architectural win from microbenchmarks
+alone when end-to-end evidence is available") applies with extra force
+here, precisely because this project's own prior entry already showed
+that instinct to be wrong once.
+
+**A concrete, disclosed scope limitation, not an oversight**: unlike
+`FrequencyOnlyCanonicalizer`/`HeuristicCanonicalizer` (both cheap,
+deterministic code that runs over the full real ~206,227-distinct-brand
+vocabulary in milliseconds), the model-assisted arm's real form is
+per-value agent judgments -- classifying the full real vocabulary would
+mean ~206,227 individual judgments, which CLAUDE.md's own cold-start
+discipline ("do not perform one LLM call per SKU/value at scale") and
+this environment's lack of a live, cheap model API both rule out. This
+entry's 209-candidate result is therefore classification-level evidence
+only. A follow-up entry (P2-E10) runs a real, if smaller-scale,
+end-to-end test on a real sample of the vocabulary that could actually
+change a measured query outcome.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, `cargo test
+--workspace --all-features` all clean. No production code changed --
+extends the existing `brand_canonicalizer_eval.rs` binary only.
+
+**Decision**: classification-level evidence alone is INCONCLUSIVE for a
+production decision, by this project's own established standard (P2-E08).
+Do not resolve Issue #9 on this entry -- see P2-E10.
