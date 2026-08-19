@@ -107,7 +107,7 @@ fn main() {
     println!(
         "=== Evidence-backed provider: {} of the top {} residual terms are real catalog brand names ===",
         mappings.len(),
-        observations.len().min(usize::MAX)
+        observations.len()
     );
     for (term, _) in mappings.iter().take(15) {
         println!("  {term}");
