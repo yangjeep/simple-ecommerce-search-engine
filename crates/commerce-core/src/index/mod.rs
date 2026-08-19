@@ -31,6 +31,7 @@ pub struct CatalogIndex {
     ordinals: Vec<(ProductId, VariantId)>,
     variant_location: HashMap<VariantId, (usize, usize)>,
     product_location: HashMap<ProductId, usize>,
+    variant_ordinal: HashMap<VariantId, Ordinal>,
 
     enum_bitmaps: HashMap<(String, String), RoaringBitmap>,
     enum_values: HashMap<String, BTreeSet<String>>,
@@ -45,7 +46,13 @@ pub struct CatalogIndex {
     lexical_postings: HashMap<String, RoaringBitmap>,
 }
 
-fn tokenize(text: &str) -> impl Iterator<Item = String> + '_ {
+/// Split text into lowercased alphanumeric tokens. Public so callers that
+/// need to look tokens up against [`CatalogIndex::lexical_and_candidates`]/
+/// [`CatalogIndex::lexical_or_candidates`] tokenize identically to how the
+/// index itself tokenized catalog text at build time (Round 1 R1-E07,
+/// `docs/experiments/ROUND1_LOG.md`) — a mismatched tokenizer would make any
+/// comparison meaningless.
+pub fn tokenize(text: &str) -> impl Iterator<Item = String> + '_ {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
         .map(str::to_lowercase)
@@ -66,6 +73,7 @@ impl CatalogIndex {
                 let ord = idx.ordinals.len() as Ordinal;
                 idx.ordinals.push((product.id, variant.id));
                 idx.variant_location.insert(variant.id, (p_idx, v_idx));
+                idx.variant_ordinal.insert(variant.id, ord);
 
                 idx.brand_bitmaps
                     .entry(product.brand)
@@ -158,6 +166,17 @@ impl CatalogIndex {
     pub fn lookup_product<'c>(&self, catalog: &'c Catalog, id: ProductId) -> Option<&'c Product> {
         let &p_idx = self.product_location.get(&id)?;
         Some(&catalog.products[p_idx])
+    }
+
+    /// The bitmap ordinal assigned to `variant_id` at build time, if it
+    /// exists in this index. Needed by any external caller that wants to
+    /// test membership of a specific variant against a bitmap returned by
+    /// `indexed_candidates`/`lexical_and_candidates`/`lexical_or_candidates`
+    /// without re-running a full query (e.g. Round 1 R1-E07's cross-
+    /// reference against real relevance judgments,
+    /// `docs/experiments/ROUND1_LOG.md`).
+    pub fn ordinal_of(&self, variant_id: VariantId) -> Option<Ordinal> {
+        self.variant_ordinal.get(&variant_id).copied()
     }
 
     fn all_ordinals(&self) -> RoaringBitmap {
@@ -273,6 +292,48 @@ impl CatalogIndex {
             }
         }
         hits
+    }
+
+    /// Whole-word token lookup against `lexical_postings`, requiring every
+    /// token to be present (AND). This is a *different* matching paradigm
+    /// from `Constraint::Text`/`execute()`'s substring containment on one
+    /// named attribute: `lexical_postings` is attribute-agnostic (built
+    /// from every `Text` attribute plus the product title) and exact-token,
+    /// not substring — "water" will not match a stored token "waterproof"
+    /// here the way `Constraint::Text{contains:"water"}` would via
+    /// substring. No query path (`execute`/`compile`) uses this; it exists
+    /// so Round 1 R1-E07 (`docs/experiments/ROUND1_LOG.md`) can measure
+    /// whether the postings structure Gate 3 already built is a viable
+    /// fast-candidate-retrieval primitive, independent of ranking.
+    pub fn lexical_and_candidates(&self, tokens: &[String]) -> RoaringBitmap {
+        let mut acc: Option<RoaringBitmap> = None;
+        for token in tokens {
+            let bm = self
+                .lexical_postings
+                .get(token)
+                .cloned()
+                .unwrap_or_default();
+            acc = Some(match acc {
+                Some(existing) => existing & bm,
+                None => bm,
+            });
+        }
+        acc.unwrap_or_default()
+    }
+
+    /// Same token index as [`CatalogIndex::lexical_and_candidates`], but
+    /// requiring only at least one token to be present (OR) — the
+    /// candidate-generation shape a real lexical/BM25 engine uses before
+    /// ranking narrows results, rather than requiring every query token to
+    /// appear verbatim.
+    pub fn lexical_or_candidates(&self, tokens: &[String]) -> RoaringBitmap {
+        let mut acc = RoaringBitmap::new();
+        for token in tokens {
+            if let Some(bm) = self.lexical_postings.get(token) {
+                acc |= bm;
+            }
+        }
+        acc
     }
 
     /// Facet counts for one attribute over an arbitrary candidate set

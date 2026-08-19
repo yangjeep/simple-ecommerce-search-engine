@@ -1236,5 +1236,196 @@ prioritized (R1-E01 through R1-E06) now have real evidence. The
 remaining open items are the ones each entry already flagged as concrete
 follow-ups (wiring `lexical_postings` into `Text` execution per R1-E05;
 a precision-aware promotion gate per this entry; class-stratified Solr
-relevance comparison per R1-E04) rather than new open questions — this
-is the point to write `ROUND1_SCALE_UP_DECISION.md`.
+relevance comparison per R1-E04) rather than new open questions.
+
+Issue #5 supersedes the original Round 1 brief with a required
+`ROUND1_DECISION_TREE.md` deliverable (four branches: ENGINEIZE / REVISE
+THEN ENGINEIZE / NARROW THE PRODUCT / STOP) and explicitly asks whether
+"Tantivy/Lucene/OpenSearch as the lexical primitive... beats building a
+custom lexical engine." R1-E05 already flagged the single most
+concrete, cheaply-testable experiment that bears directly on that
+question — wiring the already-built `lexical_postings` structure into a
+real retrieval path — so it is attacked next, before the decision tree
+is written, rather than left as a flagged-but-unattempted follow-up.
+
+---
+
+## R1-E07 — Token-postings retrieval is fast and has real recall headroom; the missing piece is ranking, not retrieval
+
+**Evidence class**: real (same 1,215,854-product catalog and 22,458-query
+real judgment set as R1-E01/E02/E04/E05).
+
+**Question**: R1-E05 found a `Constraint::Text` substring narrow-then-verify
+query with no structural predicate costs ~961ms at 1.2M-product scale
+(~36,700x a selective structural filter) because it degenerates to a full
+linear scan. Gate 3 already builds `lexical_postings` (a whole-word
+token -> `RoaringBitmap` inverted index, populated from title +
+description + bullets) but no query path has ever read it. Would routing
+lexical retrieval through that already-built structure instead of
+substring scanning close most of R1-E05's gap — and, separately, is the
+underlying real text data informative enough for token-based retrieval to
+find the genuinely relevant products at all, independent of whether a
+ranking mechanism exists to present them usefully?
+
+**Hypothesis**: (a) Token-postings lookup (`RoaringBitmap` intersection/
+union, no scan) will be several orders of magnitude faster than R1-E05's
+961ms substring scan, because it is genuine inverted-index retrieval
+rather than a full catalog walk. (b) `Constraint::Text`'s substring-
+containment semantics are architecturally distinct from `lexical_postings`'s
+whole-word-token semantics ("water" matches "waterproof" by substring but
+not by token) — this is a real design fork, not a drop-in replacement, so
+this experiment measures token-based retrieval as an independent
+candidate-generation mechanism, not a modification to `execute()`'s
+existing, correctness-tested `Text` path. (c) A strict AND-of-query-tokens
+lookup will be too narrow (real queries' words frequently don't all appear
+verbatim in one product's title/description/bullets, mirroring R1-E02's
+structural over-constraining problem in a new form); an OR-of-query-tokens
+lookup will recover much higher recall, but the recall/precision tradeoff
+of doing that with **no ranking mechanism at all** (`commerce_core` has
+none, per R1-E04) is the real thing worth measuring, since OR without
+ranking is not usable retrieval, only a candidate pool.
+
+**Decision threshold**: latency — report the real multiplier against
+R1-E05's baseline, no a-priori target. Recall — report AND-mode and
+OR-mode separately, explicitly labeled as an unranked, no-top-K-cutoff
+upper bound (not comparable to Solr's ranked Recall@10 without that
+caveat, per this log's own evidence-class rules). The sharpest test:
+report candidate-set size (fraction of the catalog returned) alongside
+recall, because a retriever that returns most of the catalog achieves
+high recall trivially and that would be a hollow, not a supporting,
+result.
+
+**Implementation**  
+`commerce_core::index::CatalogIndex` gains two new public methods,
+additive only, zero behavior change to any existing query path:
+`lexical_and_candidates`/`lexical_or_candidates` (token-exact
+intersection/union over the existing `lexical_postings` map), plus
+`ordinal_of` (an existing gap: no public way to map a `VariantId` to its
+bitmap ordinal for external candidate-set membership tests) and a `pub`
+`tokenize` function (so callers tokenize identically to how the index
+tokenized catalog text at build time — a mismatched tokenizer would make
+any comparison meaningless). Three new regression tests in
+`tests/physical_index.rs` covering token-vs-substring semantics
+(`"synth"` must not match a stored `"synthetic"` token the way
+`Constraint::Text{contains:"synth"}`'s substring check would),
+AND-is-a-subset-of-OR, and `ordinal_of` round-tripping. All 33 prior
+Phase 0 tests plus these 3 new ones pass; no existing test's expected
+output changed. `crates/round1-eval/src/bin/lexical_postings_eval.rs`:
+for every one of the 22,458 real distinct queries, tokenize (matching
+the index's own tokenizer), call both `lexical_and_candidates` and
+`lexical_or_candidates`, time each call, and cross-reference the
+resulting bitmap against that query's real ESCI judgments (via
+`ordinal_of`) for recall/zero-result/candidate-size measurement.
+
+**Results** (same environment as R1-E01-E06; single run per mode, all
+22,458 real queries):
+
+```
+Latency (one call per real query, n=22,458):
+  AND-mode: p50=0.0647ms  p95=0.3160ms  p99=0.5104ms
+  OR-mode:  p50=0.1444ms  p95=0.7081ms  p99=0.9991ms
+  (R1-E05 baseline: unnarrowed substring Text scan p50=961.23ms)
+
+Achievable (unranked, no top-K cutoff) candidate-set recall:
+  AND-mode: zero-result rate=15.1% (3,395/22,458)
+            recall vs Exact+Substitute=34.4% (127,938/372,402)
+            recall vs Exact only=42.7% (118,556/277,348)
+  OR-mode:  zero-result rate=0.5% (105/22,458)
+            recall vs Exact+Substitute=91.6% (341,091/372,402)
+            recall vs Exact only=93.2% (258,572/277,348)
+
+Candidate-set size (how wide is the net?):
+  AND-mode: p50=19 (0.002% of catalog)  p95=1,221 (0.100%)  p99=5,294 (0.435%)
+  OR-mode:  p50=91,692 (7.541% of catalog)  p95=942,210 (77.494%)  p99=1,012,852 (83.304%)
+```
+
+**Interpretation**
+
+(a) **Confirmed, decisively.** OR-mode token-postings lookup: p50=0.144ms
+vs. R1-E05's 961.23ms substring scan — a **~6,660x** speedup (AND-mode:
+~14,860x). This is not a marginal win; it is the difference between an
+unusable (<1.1 QPS/core) operation and a trivially cheap one, at the same
+1.2M-product real scale. The `lexical_postings` structure Gate 3 built and
+no query path ever read turns out to be exactly the fix R1-E05 predicted
+it would be.
+
+(b) **Confirmed and material.** These two indexes answer genuinely
+different questions (substring-containment on one named attribute vs.
+whole-word-token union/intersection across all indexed text) — swapping
+one in for the other inside `execute()` without addressing that mismatch
+would silently change what counts as a match (a real correctness risk
+this entry deliberately avoids by adding new methods rather than
+modifying `Constraint::Text`'s existing, test-verified semantics).
+
+(c) **Confirmed, and this is the most information-dense finding of the
+entry.** AND-mode is too strict — 15.1% zero-result rate, only ~35-43%
+recall — a real-query analogue of R1-E02/E02b's structural
+over-constraining problem, this time in free text: shoppers' words
+frequently don't all appear verbatim in one product's title/description/
+bullets. OR-mode looks dramatically better in isolation (91.6%/93.2%
+recall, 0.5% zero-result rate) — comfortably beating even Solr's own
+ranked Recall@10 of 0.1811 on the recall axis alone — **but the
+candidate-set-size numbers show this is a hollow win, not a real one**:
+OR-mode's median candidate set is **91,692 products, 7.5% of the entire
+catalog**, and its p95 is **942,210 products, 77.5% of the catalog**. A
+retrieval mechanism that answers most real queries with "here are
+somewhere between 20,000 and 940,000 products" has not solved retrieval
+in any sense a shopper would recognize — it has simply cast a net wide
+enough that the genuinely relevant item is almost always *somewhere*
+inside it, which is a mathematically unsurprising consequence of union-
+ing postings for common English words, not evidence of retrieval quality.
+
+**The real conclusion this experiment supports, sharper than R1-E04's
+"no ranking mechanism exists" finding**: raw token-based *candidate
+retrieval* is not `commerce_core`'s weak point — it is fast (sub-
+millisecond at 1.2M-product scale) and, per the OR-mode recall number,
+the underlying real text genuinely does contain the signal needed to find
+relevant products for the overwhelming majority of real queries. **The
+weak point is entirely downstream: converting a wide, mostly-irrelevant
+candidate set into a small, useful, ranked top-K.** That is a scoring/
+ranking problem (term weighting, document-length normalization, field
+boosts, something in the BM25 family, at minimum), not a data-structure
+or indexing problem — and it is exactly the piece Apache Lucene (and by
+extension Solr, and Tantivy, its closest Rust-native equivalent) has
+spent two decades making both fast and good, which is a large share of
+why Solr's *untuned, out-of-the-box* NDCG@10 (0.305, R1-E04) still beats
+anything `commerce_core` can produce today (0.0 — no ranking exists for
+its lexical path at all). This localizes the "build vs. delegate"
+question the Issue #5 brief poses more precisely than any earlier entry:
+the retrieval primitive (inverted token index, postings intersection/
+union) is cheap to build correctly and is not the differentiating,
+hard-to-replicate part of a mature search engine; the ranking function is.
+
+**Caveats**: single run per mode (deterministic pipeline — index and
+query set are both fixed, so repeated runs would reproduce identically;
+no variance to characterize unlike R1-E01's build-time timing). Recall
+here is explicitly an *unranked, no-cutoff* ceiling — a real serving path
+would need to cap results at some top-K, at which point OR-mode's
+measured recall would collapse toward whatever a ranking function (which
+does not exist) chooses to keep, so this number should not be read as
+"achievable in production," only as "the ceiling ranking would have to
+work with." Token-postings lookup timing here measures only the
+`RoaringBitmap` operations in isolation (no catalog/attribute lookups,
+no verification pass) — a fair comparison to R1-E05's Case 1, which also
+measured a single operation category in isolation, but not a full
+end-to-end query cost. `AND`/`OR` are the only two combination rules
+tested; a real BM25-style scorer would not use either in isolation
+(it uses OR-shaped candidate generation, scored and truncated) — this
+experiment measures the two boundary cases to characterize the
+recall/candidate-size tradeoff space, not to propose either as a
+shipped retrieval mode.
+
+**Regression check**: `commerce-core`'s test suite grew from 33 to 36
+tests (3 new: token-vs-substring semantics, AND-subset-of-OR, `ordinal_of`
+round-trip), all green; no existing test's expected output changed
+(`lexical_and_candidates`/`lexical_or_candidates`/`ordinal_of`/`tokenize`
+are additive, read-only accessors over structures `CatalogIndex::build`
+already populated — `execute()`'s existing narrow-then-verify `Text` path
+is untouched). Verified via `cargo test --workspace --all-features`,
+`cargo clippy --workspace --all-targets --all-features -- -D warnings`,
+`cargo fmt --all -- --check`, `cargo build --workspace --release`.
+
+**Next question**: this closes the round's experiment backlog with a
+materially sharper picture than R1-E01 through R1-E06 alone would have
+supported for the "build vs. delegate" question Issue #5 poses — this is
+the point to write `ROUND1_DECISION_TREE.md`.

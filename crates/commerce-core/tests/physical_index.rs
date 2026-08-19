@@ -103,6 +103,22 @@ fn text_only_query_narrows_then_verifies_correctly() {
 }
 
 #[test]
+fn ordinal_of_round_trips_with_lexical_and_candidates() {
+    let catalog = combined_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let synthetic_hits = index.lexical_and_candidates(&["synthetic".to_string()]);
+    let ordinal = index
+        .ordinal_of(VariantId(201))
+        .expect("variant 201 exists in the fixture");
+    assert!(
+        synthetic_hits.contains(ordinal),
+        "the variant known to carry \"synthetic\" in its material text must be in the token index's own ordinal space"
+    );
+    assert!(index.ordinal_of(VariantId(999_999)).is_none());
+}
+
+#[test]
 fn exact_id_lookup_finds_the_right_product_and_variant() {
     let catalog = variant_safety_catalog();
     let index = CatalogIndex::build(&catalog);
@@ -178,6 +194,47 @@ fn top_k_ranking_orders_by_preference_score_deterministically() {
         "the third variant only matches one preference term: {ranked:?}"
     );
     assert_eq!(ranked[2].variant, VariantId(201));
+}
+
+#[test]
+fn lexical_token_candidates_are_exact_token_not_substring() {
+    // Round 1 R1-E07: lexical_postings is attribute-agnostic, whole-word
+    // token matching, deliberately different from Constraint::Text's
+    // per-attribute substring semantics. "synthetic" is a real token in
+    // representative_query_catalog's "material" attribute ("Synthetic
+    // mesh"); "synth" is a substring of it but not a stored token, so it
+    // must find nothing via the token index even though a substring-based
+    // Text constraint would match "synthetic".
+    let catalog = combined_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let hits = index.lexical_and_candidates(&["synthetic".to_string()]);
+    assert_eq!(
+        hits.len(),
+        1,
+        "expected exactly one variant tagged synthetic"
+    );
+
+    let no_hits = index.lexical_and_candidates(&["synth".to_string()]);
+    assert!(
+        no_hits.is_empty(),
+        "a token index must not substring-match \"synth\" against the stored token \"synthetic\""
+    );
+
+    // "synthetic" (representative_query_catalog's material, "synthetic
+    // mesh") and "knit" (variant_safety_catalog's material, "mesh knit")
+    // never co-occur in the same variant's indexed text: AND must be
+    // empty, OR must be the (non-empty) union of both products' variants.
+    let and_disjoint = index.lexical_and_candidates(&["synthetic".to_string(), "knit".to_string()]);
+    let or_union = index.lexical_or_candidates(&["synthetic".to_string(), "knit".to_string()]);
+    assert!(
+        and_disjoint.is_empty(),
+        "synthetic and knit never co-occur in one variant's text"
+    );
+    assert!(
+        !or_union.is_empty() && or_union.len() > and_disjoint.len(),
+        "OR must be a proper superset of AND when the tokens are disjoint"
+    );
 }
 
 #[test]
