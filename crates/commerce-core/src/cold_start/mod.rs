@@ -8,6 +8,7 @@
 pub mod alias;
 mod canonicalize;
 mod generate;
+mod prefill;
 mod profile;
 
 pub use canonicalize::{
@@ -15,6 +16,10 @@ pub use canonicalize::{
     VocabularyCanonicalizer, VocabularyClass,
 };
 pub use generate::generate_shopper_queries;
+pub use prefill::{
+    apply_predictive_prefill, predict_brand_from_phrase, PrefillPolicy, PrefillPrediction,
+    TitlePhraseIndex,
+};
 pub use profile::{
     compile_lexicon, compile_lexicon_with_alias_enforcement,
     compile_lexicon_with_brand_canonicalizer, CatalogProfile,
