@@ -9,8 +9,18 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use commerce_core::domain::Constraint;
 use commerce_core::index::CatalogIndex;
+use commerce_core::ir::{CommerceQuery, ResolvedConstraint, StructuralConstraint};
 use round1_eval::{catalog, data, profile};
+
+fn percentile_us(sorted_ns: &[u128], p: f64) -> f64 {
+    if sorted_ns.is_empty() {
+        return 0.0;
+    }
+    let idx = ((sorted_ns.len() as f64 - 1.0) * p).round() as usize;
+    sorted_ns[idx] as f64 / 1000.0
+}
 
 fn current_rss_kb() -> Option<u64> {
     let status = fs::read_to_string("/proc/self/status").ok()?;
@@ -106,4 +116,53 @@ fn main() {
         "bytes/product (index only, approx): {:.1}",
         index.approximate_size_bytes() as f64 / ingested.catalog.products.len() as f64
     );
+
+    // Find the real BrandId for "nike" (normalized) so the query below is
+    // the exact same brand+color pair scripts/round1/solr_bench.py filters
+    // on, at the exact same real 1.2M-product scale.
+    if let Some(nike) = ingested
+        .brands
+        .iter()
+        .find(|b| b.name == "nike")
+        .map(|b| b.id)
+    {
+        let query = CommerceQuery {
+            constraints: vec![
+                ResolvedConstraint::Structural(StructuralConstraint::Brand(nike)),
+                ResolvedConstraint::Attribute(Constraint::Enum {
+                    attribute: "color".to_string(),
+                    value: "Black".to_string(),
+                }),
+            ],
+            ..CommerceQuery::default()
+        };
+        let mut samples = Vec::with_capacity(2000);
+        for _ in 0..2000 {
+            let start = Instant::now();
+            std::hint::black_box(index.execute(
+                std::hint::black_box(&query),
+                std::hint::black_box(&ingested.catalog),
+            ));
+            samples.push(start.elapsed().as_nanos());
+        }
+        samples.sort_unstable();
+        println!();
+        println!("=== In-process structural filter latency: brand=Nike AND color=Black (same pair as scripts/round1/solr_bench.py) ===");
+        println!(
+            "  p50={:.1}us  p95={:.1}us  p99={:.1}us  (n=2000, hits={})",
+            percentile_us(&samples, 0.5),
+            percentile_us(&samples, 0.95),
+            percentile_us(&samples, 0.99),
+            index.execute(&query, &ingested.catalog).len()
+        );
+        println!("  NOTE: this is an in-process function call, no HTTP/serialization overhead.");
+        println!(
+            "  Solr's benchmark (scripts/round1/solr_bench.py) measures HTTP round-trip via a"
+        );
+        println!("  Python client, which includes network stack + JSON overhead the Rust number");
+        println!("  does not — see docs/experiments/ROUND1_LOG.md R1-E04 for why these are NOT");
+        println!("  a clean apples-to-apples comparison as measured, only a directional one.");
+    } else {
+        println!("brand 'nike' not found in this catalog subset — skipping structural filter latency probe");
+    }
 }

@@ -777,3 +777,177 @@ finding (Solr has no equivalent "silently invert negation" failure mode
 since it doesn't attempt structural extraction from free text at all;
 this is a place where the comparison may cut in Solr's favor on
 correctness grounds even before considering ranking quality).
+
+---
+
+## R1-E04 — External baseline: Apache Solr on the same real catalog
+
+**Evidence class**: real (same 1,215,854-product catalog and real ESCI
+test queries/judgments as R1-E01/E02). Baseline system: Apache Solr
+9.10.1 / Lucene 9.12.3 — see "Dataset and baseline acquisition" above for
+why Solr rather than Elasticsearch/OpenSearch.
+
+**Question**: on identical real data, how does a competently configured
+generic Lucene-based search server compare to `commerce_core` on index
+size, memory footprint, build time, query latency, and — critically,
+since neither round has measured this yet — actual retrieval relevance
+against real human judgments?
+
+**Hypothesis**: (a) Solr's index will be larger on disk than
+`commerce_core`'s approximate in-memory index size but its live JVM RSS
+will grow far less than that on-disk size, because Lucene's segment
+files are memory-mapped rather than fully loaded — a direct, measurable
+instance of the "immutable/mmap-friendly bundle" architecture bias
+CLAUDE.md names as a goal `commerce_core` has not yet built. (b) Given
+R1-E02's finding that the structural filter only fires for 55.4% of real
+queries and, even then, achieves only ~5% recall against real relevant
+products, Solr's generic lexical relevance ranking — which requires no
+commerce-specific vocabulary at all — will answer a *materially larger*
+fraction of real queries with *at least* a plausible top-10 result list.
+
+**Decision threshold**: (a) is a specific, falsifiable memory-model
+claim — either Solr's RSS growth is a small fraction of its on-disk
+index size or it isn't. (b) — no a-priori numeric threshold was set for
+Solr's own NDCG/Recall/MRR (there's no existing benchmark run on this
+exact catalog+query combination to calibrate against); the number is
+reported and compared structurally (zero-result rate, coverage) against
+what R1-E02 already measured for the Rust engine, since that comparison
+doesn't need an external calibration point.
+
+**Implementation**  
+Schema (Solr Schema API, `commerce_bench` core): `title`/`description`/
+`bullets` as `text_general` (standard tokenizer + lowercase + stopword
+analysis — Solr's default competent full-text config, not hand-crippled);
+`brand`/`color` as `string` (exact-match, for filtering — matching what
+`commerce_core`'s `Brand`/color `Enum` structural constraints do); a
+copied `all_text` field for broad lexical queries. `scripts/round1/solr_index.py`:
+bulk JSON indexing via Solr's standard `/update/json/docs` HTTP endpoint
+in 5,000-document batches — the standard way real systems ingest into
+Solr, not a synthetic fast-path. `scripts/round1/solr_bench.py`: three
+query classes matching what `commerce_core`'s benchmarks measure (exact
+ID lookup, brand+color structural filter, broad lexical) plus
+NDCG@10/Recall@10/MRR/zero-result-rate against 1,000 randomly sampled
+real ESCI test queries (edismax query parser — the standard choice for
+free-text user queries precisely because it tolerates the special
+characters real queries contain, e.g. `#`, `$`, `"`, unlike the default
+Lucene query parser, which errored on the first attempt with the strict
+parser; not a workaround unique to this benchmark).
+
+**Results** (environment: same machine as R1-E01/E02/E03; Solr JVM:
+OpenJDK 21, default heap):
+
+```
+Indexing (1,215,854 real products, identical catalog.jsonl as commerce-core):
+  Solr (HTTP bulk JSON, 5k-doc batches):  321.1s wall clock, includes network+JSON overhead
+  commerce-core (in-process, R1-E01):      59.8-63.9s (no I/O/serialization overhead — not apples-to-apples)
+
+Index footprint:
+  Solr on-disk index:                     1.9 GB
+  Solr JVM RSS:                           799 MB (empty core) -> 974 MB (indexed) = +175 MB
+  commerce-core approximate index size:   259 MB (bitmaps/vectors only)
+  commerce-core total RSS (catalog+index):3.76 GB (R1-E01)
+
+Query latency, brand="Nike" AND color="Black" (numFound/hits=460, both systems agree):
+  Solr, HTTP round-trip via Python:       p50=1486us  p95=1808us  p99=2078us  (n=2000)
+  Solr, server-reported QTime (warm):     0-5 ms (i.e. sub-millisecond; Solr reports whole ms only)
+  commerce-core, in-process:              p50=12.4us  p95=16.0us  p99=32.0us  (n=2000)
+
+Other Solr query classes (HTTP round-trip):
+  exact_id_lookup:    p50=1475us  p95=1909us  p99=2593us
+  broad_lexical:      p50=2288us  p95=2896us  p99=3223us
+
+Relevance (1,000 real sampled test queries, edismax against all_text, real ESCI judgments):
+  zero-result rate:   0.2%  (2/1000)
+  NDCG@10:            0.3052
+  Recall@10:          0.1811
+  MRR:                0.4910
+```
+
+**Interpretation**
+
+(a) **Confirmed, starkly.** Solr's on-disk index (1.9 GB) is roughly
+**7.3x larger** than `commerce-core`'s approximate index (259 MB), yet
+Solr's live process memory grew by only 175 MB indexing it — while
+`commerce-core`'s RSS grew by 3.76 GB holding a *smaller* logical index
+plus its catalog. Put differently: Solr can serve this entire 1.2M-
+product catalog while keeping under 1 GB of live JVM heap, relying on
+the OS page cache and mmap'd segments for the rest; `commerce-core`, as
+currently built, must hold the full catalog and index resident in heap
+to serve a single query. This is exactly the gap CLAUDE.md's own
+"Architecture bias" section flags as a hypothesis to test ("immutable/
+mmap-friendly index bundles where the experiment justifies it") — this
+experiment is the first evidence in either round that it doesn't just
+sound good in principle, a mature, competent implementation of that
+principle (Lucene) delivers a measured, large, real advantage over the
+current in-memory-only design at exactly the 1.2M-product scale this
+round targeted.
+
+(b) **Confirmed, and combined with R1-E02 this is the single most
+complete piece of comparative evidence in this round.** Solr answers
+essentially every real query with a plausible result: 0.2% zero-result
+rate, NDCG@10 of 0.305 (a normal, credible figure for a large real
+retrieval benchmark using out-of-the-box lexical ranking with no
+commerce-specific tuning at all — not cherry-picked or hand-tuned).
+`commerce_core`'s structural filter, by contrast, only ever activates on
+55.4% of real queries (R1-E02) and when it does, retains only ~5% of the
+genuinely relevant products for that query (R1-E02/E02b) — meaning on a
+strict apples-to-apples "does this system return the shopper something
+useful" test, **Solr's default, untuned lexical relevance ranking
+currently outperforms the commerce-native structural path on real data,
+for the query classes both systems can actually answer.**
+
+**What this experiment cannot claim**: query latency is *not* a clean
+comparison as measured — Solr's number includes an HTTP round-trip
+through a Python client (confirmed via Solr's own server-reported
+`QTime`, which was 0-5ms for the identical warm-cache query, i.e. the
+~1.5ms measured by the Python client is overwhelmingly network/
+serialization overhead, not Lucene query execution). The honest
+statement is: both systems answer this structural query in the
+sub-millisecond-to-low-single-digit-millisecond range; a precise
+multiplier between them is not supportable from data collected this
+way, and re-measuring Solr with an in-process JVM client (SolrJ) or
+`commerce_core` behind an equivalent HTTP layer would be needed for a
+real number. This is flagged rather than glossed over: an earlier draft
+of this entry would have reported a "120x" figure directly from the raw
+numbers above, which the QTime cross-check shows is not a defensible
+claim.
+
+`commerce_core` has no relevance-ranking mechanism for free text at all
+— `CatalogIndex::execute` returns an unordered set from hard filters,
+and `execute_ranked` only reorders by a small hand/profile-derived
+`Preference` list, not a text-similarity score. This means NDCG/Recall/
+MRR literally cannot be computed for `commerce_core` on the
+`lexical_dominant`/`structural_plus_lexical` query classes today — not
+"scored lower," but architecturally absent. This is itself a major,
+previously-unrecorded gap: any real deployment of this architecture
+would need *some* ranking mechanism for the queries structural retrieval
+doesn't fully resolve, and neither Phase 0 nor Round 1 (until this
+entry) had established that this gap even existed, let alone how large
+it is.
+
+**Caveats**: build-time and query-latency comparisons mix in-process
+Rust measurements against HTTP-mediated Solr measurements — real but
+methodologically asymmetric; noted above rather than presented as clean
+numbers. Solr's schema/analyzers are standard, competent defaults, not
+tuned for this catalog specifically (no synonym lists, no custom
+similarity function, no field boosting) — plausibly a stronger baseline
+than what's measured here is achievable with real tuning effort, which
+was out of scope for this round. The 1,000-query relevance sample is
+random (`seed=42`), not stratified by R1-E02's query classes; a
+class-stratified relevance comparison (does Solr do especially well/
+poorly on the same queries the Rust engine classifies as
+`unresolved_punt`?) is a natural, cheap follow-up not built this round.
+
+**Regression check**: none (external system, not part of this repo's
+CI). `scripts/round1/solr_index.py`/`solr_bench.py` are reproducible
+given a running Solr instance with the documented schema.
+
+**Next question**: R1-E05 (adversarial physical workloads on the real
+index) and R1-E06 (control plane / cold start on real vocabulary,
+directly informed by R1-E02b's canonicalization finding) remain. Given
+this entry's relevance-ranking-gap finding, a natural Area 10 follow-up
+— building even a minimal BM25-style scorer for `commerce_core`'s
+`Text` narrow-then-verify path and re-running this exact relevance
+comparison — would be high-value future work, flagged for
+`ROUND1_SCALE_UP_DECISION.md` rather than attempted under this round's
+remaining time budget.
