@@ -1486,3 +1486,194 @@ where refining *which* strings are trusted cannot.
 #7/#8's findings; open a follow-up issue for the soft-match/scored-
 constraint experiment this decision implies, rather than silently
 expanding Issue #9's own scope.
+
+---
+
+## P2-E11 — Issue #6 P1-B: does confidence-tiered enforcement (alias-normalized hard Constraint, fuzzy soft Preference) beat exact-match, and why (or why not)?
+
+**Evidence class**: real (full 1,215,854-product catalog, full 22,458-query
+judged corpus, every cell). **Independence**: yes (ESCI's own human
+judgments; the enforcement mechanism under test has no influence on how a
+judgment was assigned).
+
+**Background**: P2-E10's decision -- CANONICALIZATION FRONTIER IS
+FUNDAMENTAL -- named the concrete next experiment: not a fourth
+canonicalization strategy, but a *softer enforcement mechanism* at
+query-compile time. Issue #6's reorientation named this explicitly as the
+next P1 priority and explicitly forbade another canonicalization arm.
+
+**Hypothesis**: P2-E10's own stated root cause is "real spelling/aliasing/
+formatting variation between the compiled constraint and a product's actual
+field value." If that is the dominant driver, a confidence-tiered
+enforcement mechanism -- deterministic alias-normalized hard matching for
+already-trusted brand strings that share an identity after corporate-
+suffix/punctuation stripping (tier 1), plus a fuzzy, edit-distance-bounded
+soft `Preference` for otherwise-untrusted brand-shaped query terms (tier
+2) -- should recover real recall lost to that variation, without
+collapsing `FastPath`/`Hybrid` route coverage.
+
+### Mechanism
+
+`crates/commerce-core/src/cold_start/alias.rs` (new): `alias_key` (strip
+punctuation, then repeatedly strip *trailing* corporate/legal-suffix
+tokens -- "nike, inc." / "nike inc" / "nike" all key to "nike," conservative
+by construction, never touches a non-trailing token) and `edit_distance`
+(standard Levenshtein, char-based). `ir::StructuralConstraint::BrandAny(Vec<BrandId>)`
+(new, generalizes `Brand(BrandId)` to alias-group membership) and
+`ir::Preference::StructuralBoost(StructuralConstraint, f64)` (new,
+ranking-only). `cold_start::profile::compile_lexicon_with_alias_enforcement`:
+same `min_enum_frequency` trust gate `compile_lexicon` uses (isolates the
+enforcement variable alone), groups trusted names by `alias_key` for tier
+1, and fuzzy-matches a caller-bounded candidate pool (real query
+vocabulary, not all ~206K raw catalog strings) against trusted groups for
+tier 2.
+
+### RED: a real relevance regression, found by the harness this experiment reused rather than assumed away
+
+First full-corpus run (`crates/phase2-eval/src/bin/alias_enforcement_eval.rs`,
+reusing P2-E05's exact planner-integration harness and P2-E07-E10's own
+`measure_precision`): `alias_fuzzy` (tier 1 + tier 2) **regressed**
+relevance at `min_enum_frequency=25` versus `baseline` (exact match) --
+NDCG@10 0.2278 -> 0.2095, Recall@10 0.1354 -> 0.1248, zero-result rate
+9.55% -> 10.09% -- and took 2.3x longer (126s -> 286s for the same 22,458
+queries).
+
+Root-caused, not shrugged off: `ir::query::apply_candidates` consumed a
+phrase resolving to *only* a `Preference` exactly like a hard `Constraint`
+would -- removing it from `residual_lexical`, and therefore from what a
+lexical delegate ever searches on -- even though a `Preference` explicitly
+enforces nothing. This code path had never been exercised before: I7-E04
+found `compile_lexicon` never emitted a real `Preference` candidate at any
+threshold, so this bug existed but was silently unreachable until tier 2
+became the first real caller to produce one. A query whose *only* real
+signal was a fuzzy tier-2 match lost that signal from lexical retrieval
+entirely, in exchange for a ranking-only boost applied to whatever
+(usually worse) candidate set resulted from searching without it -- a real,
+production-relevant defect, caught by exactly the kind of end-to-end
+measurement (not classifier-quality-in-isolation) this phase's own
+instructions demanded.
+
+**Fix**: `apply_candidates` now keeps a preference-resolved phrase in
+`residual_lexical` too. This also closes a related latent bug, found while
+fixing this one, not yet exploited by real data: `plan::plan` treats an
+entirely empty compiled query (no constraints, empty `residual_lexical`)
+as `FastPath`, which then ranks the *entire* catalog -- a preference-only
+query with nothing else used to hit exactly that shape. Cascading fixture
+updates in four existing test files
+(`cold_start.rs`/`control_plane.rs`/`coverage.rs`/`ir_compiler.rs`), each
+with a comment tracing the new expected number back to this fix.
+
+### GREEN: fix validated on the full real corpus, both thresholds
+
+| min_enum_frequency | mode | NDCG@10 | Recall@10 | MRR | zero-result | outcome dist. (FastPath/Hybrid/Punt) | wall time |
+|---|---|---|---|---|---|---|---|
+| 25 | baseline | 0.2278 | 0.1354 | 0.3666 | 9.55% | 328/5589/16541 | 136.0s |
+| 25 | alias_only | 0.2278 | 0.1354 | 0.3666 | 9.55% | 328/5589/16541 | 133.5s |
+| 25 | alias_fuzzy | 0.2279 | 0.1355 | 0.3668 | 9.42% | 325/5588/16545 | 135.8s |
+| 100 | baseline | 0.2704 | 0.1611 | 0.4328 | 2.93% | 104/2847/19507 | 107.4s |
+| 100 | alias_only | 0.2704 | 0.1611 | 0.4328 | 2.93% | 104/2847/19507 | 107.5s |
+| 100 | alias_fuzzy | 0.2704 | 0.1611 | 0.4328 | 2.93% | 104/2845/19509 | 107.1s |
+
+The regression is gone -- `alias_fuzzy` is now statistically indistinguishable
+from (threshold 100) or marginally better than (threshold 25) baseline, at
+comparable wall time (the length-difference edit-distance prefilter added
+in the same cycle, `cold_start/profile.rs`, cut the fuzzy tier's own
+lexicon-build cost from +2.3x back to parity, since Levenshtein distance is
+always >= the length difference and most candidate/group pairs can never
+qualify).
+
+**But**: `alias_only` (tier 1) is **byte-for-byte identical** to `baseline`
+at *both* thresholds -- zero measured effect, not a small one, reproduced
+twice. `alias_fuzzy`'s own gain over baseline (+0.0001 NDCG@10 at
+threshold 25, +0.0000 at threshold 100) is noise-level, not a real win.
+
+### Follow-up: why is the effect negligible, when P2-E10's own stated root cause was spelling/aliasing/formatting variation?
+
+`crates/phase2-eval/src/bin/brand_recall_gap_diagnostic.rs` (new): for every
+`StructuralOnly`/`StructuralPlusLexical` query with a compiled `Brand`
+constraint, every judged-**Exact** product that fails that constraint is
+classified by whether the product's actual brand string is alias-identical
+to the constraint's brand (tier 1's territory), fuzzy-close
+(`edit_distance(alias_key) <= 2`, tier 2's territory), or neither.
+
+**Real result, full corpus**:
+
+| bucket | rows (one per failing judged-Exact product) | distinct queries |
+|---|---|---|
+| alias-identical | 31 | (tier 1 measured zero effect anyway -- consistent) |
+| fuzzy-close (<=2) | 191 | 114 combined with alias-identical |
+| neither | 20,201 | 2,398 |
+
+Alias/spelling variance explains **~1.1% of rows, ~4.5% of distinct
+queries** -- P2-E10's own root-cause hypothesis was directionally real but
+quantitatively minor on this catalog. The dominant ~95% ("neither") is not
+one phenomenon; manual inspection of a query-deduplicated sample surfaces
+at least four distinct, structurally different causes, most of which no
+string-similarity enforcement mechanism could fix:
+
+1. **Generic English words mis-recognized as brands** ("case," "zoom,"
+   "head," "drop," "tops," "king," "duck," "cd") -- common nouns/adjectives
+   that coincidentally appear as noisy, unvalidated "brand" field values on
+   >= the trust threshold's worth of products, but do not function as a
+   brand identifier in the query's actual intent ("phone *case*," "duck
+   *boots*," "drop-in oven"). A canonicalization false-*positive* problem
+   -- the mirror image of Issue #9's false-negative-shaped findings, not
+   an enforcement-semantics problem at all.
+2. **Sub-brand/product-line naming** ("Dove" vs. "Dove Men + Care,"
+   "Milwaukee" vs. "Milwaukee Electric Tool") -- genuinely the *same*
+   parent brand family, but a qualifier/product-line suffix, not a
+   corporate-legal suffix or a misspelling, so neither `alias_key` nor a
+   small edit-distance bound catches it. The one pattern here that *is* a
+   plausible, well-scoped enforcement-layer fix not yet tried: a
+   containment/prefix check (does one alias key start with the other as a
+   whole word) rather than edit distance.
+3. **Franchise/media-property vs. manufacturer mismatch** ("Rick and
+   Morty" vs. "lytool," "Kinetic Sand" vs. "National Geographic,"
+   "Pokemon" vs. "Ultra Pro") -- the query names a franchise/concept the
+   catalog's structured brand field never contains at all (it holds the
+   licensed manufacturer instead). No string-similarity mechanism can
+   bridge this; it needs real entity-relationship knowledge. This is
+   concretely what Issue #6's P1-C (predictive semantic prefill) is
+   positioned to investigate next.
+4. **Missing brand field** ("Savage Arms," "Bosch" -> `<no brand>`) -- the
+   real product simply has no brand data; no enforcement-tier change fixes
+   an absent field.
+5. **Genuinely different/competing or aftermarket-compatible brand**
+   ("Ifixit" vs. "Goof Off," "Fitbit" vs. "KingAcc" charger, "RCA" vs.
+   "RFAdapter") -- arguably *correct* exclusion by a strict brand filter;
+   ESCI's own "Exact" label can reflect strong product-type/functional
+   match despite a genuinely different manufacturer (`round1_eval::classify`'s
+   own doc comment already flagged this exact tension for "Substitute").
+   Not a defect to fix, a labeling nuance to keep in mind when reading any
+   brand-filter recall number as if 100% were the correct ceiling.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, full workspace
+`cargo test`/`cargo build --release` clean throughout (including after the
+`apply_candidates` fix and its four cascading fixture updates). 21
+commerce-core tests now covering the new mechanism (`alias.rs`'s 5,
+`ir_compiler.rs`'s updated preference-residual assertion) plus every
+existing test still green with corrected, explained expected values.
+
+**Decision: REVISE.** The confidence-tiered enforcement *mechanism* is
+sound and now bug-free (validated: fixes the exact regression it caused,
+twice-reproduced null effect for tier 1, negligible-but-not-negative
+effect for tier 2). It is not, however, where the real leverage is on this
+catalog: alias/spelling variance is a real but minor (~1-5%) contributor to
+the recall gap, not the dominant one P2-E10's own framing suggested. This
+sharpens, rather than reverses, P2-E10's finding -- "enforcement semantics,
+not recognition quality" was correct as far as it goes, but the *next*
+lever is not a better string-matching enforcement mechanism; it is (a) a
+false-positive-aware trust gate for generic/ambiguous brand-shaped strings
+(item 1), and (b) genuine latent-structure inference for franchise/missing-
+brand cases (items 3-4) -- exactly Issue #6's P1-C.
+
+**Next**: feed into `docs/research/PAPER_NOTES.md` (§8.1, §11) and
+`ROUND1_DECISION_TREE.md`; proceed to Issue #6's P1-C (predictive semantic
+prefill) as the next research cycle, now concretely motivated by real
+franchise/missing-brand failure cases rather than the original abstract
+"air force 1 -> Nike" example alone. The sub-brand containment idea (item
+2) is recorded as a small, well-scoped follow-up, not pursued in this
+entry -- P2-E10 and this entry's own Next-step discipline both point
+toward P1-C as the higher-information experiment now, not a third
+enforcement-mechanism variant.

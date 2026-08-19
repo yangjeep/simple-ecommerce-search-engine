@@ -229,7 +229,7 @@ lexical execution-contract design (`FastPath`/`Hybrid`/`Punt`,
 
 ## 8. Experimental Results
 
-### 8.1 P1-B: confidence-tiered brand enforcement `[IN PROGRESS]`
+### 8.1 P1-B: confidence-tiered brand enforcement — **REVISE** (full cycle complete)
 
 **Hypothesis**: alias-normalized hard matching (tier 1) and/or a fuzzy soft
 `Preference` (tier 2) preserve more real recall than Issue #9's exact-BrandId
@@ -239,37 +239,59 @@ hard match, without collapsing route coverage to `Punt`-only.
 P2-E05's exact planner-integration harness and P2-E07–E10's own
 `measure_precision` structural-recall function. Three modes (`baseline`,
 `alias_only`, `alias_fuzzy`) × two trust thresholds (`min_enum_frequency`
-∈ {25, 100}), full 22,458-query real replay per cell.
+∈ {25, 100}), full 22,458-query real replay per cell. Full writeup:
+`docs/experiments/PHASE2_LOG.md` P2-E11.
 
-**Preliminary real-data result** (min_enum_frequency=25, single run, not yet
-repeated under the §4.2 protocol — see caveat below):
+**RED → GREEN, a real bug, not a modeling artifact**: the first run
+measured `alias_fuzzy` *regressing* relevance (NDCG@10 0.2278→0.2095,
+Recall@10 0.1354→0.1248) and running 2.3× slower. Root cause:
+`ir::query::apply_candidates` removed a phrase from `residual_lexical` when
+it resolved to *only* a soft `Preference`, hiding it from the lexical
+delegate entirely for a ranking-only boost in return — a real,
+production-relevant defect the fuzzy tier was the first real caller to
+expose (I7-E04 had already found no candidate pool ever produced a real
+`Preference` before this phase). Fixed (`apply_candidates` now keeps the
+phrase in `residual_lexical` too); a length-difference edit-distance
+prefilter also closed the 2.3× slowdown. Four existing test files needed
+cascading, explained fixture updates.
 
-| mode | outcome dist. | filter recall (Exact+Sub) | filter recall (Exact) | NDCG@10 | Recall@10 | p50 |
-|---|---|---|---|---|---|---|
-| baseline | Hybrid 5589 / FastPath 328 / Punt 16541 | 31.7% | 35.6% | 0.2278 | 0.1354 | 2.37ms |
-| alias_only | *identical to baseline* | *identical* | *identical* | *identical* | *identical* | 2.38ms |
-| alias_fuzzy | running — see limitation below | — | — | — | — | — |
+**Final real-data result, both thresholds, post-fix**:
 
-**Real, unplanned finding**: at `min_enum_frequency=25`, tier 1
-(deterministic alias-normalization) produced **byte-for-byte identical**
-routing and relevance numbers to the exact-BrandId baseline. This means, at
-this threshold, no two *already-trusted* real brand strings in this catalog
-actually share a deterministic alias key (no `Brand`/`Brand Inc`/`Brand, Inc.`
-pair both independently clearing the frequency-25 trust gate) — a real
-negative result for tier 1 alone at this threshold, not a bug (`StructuralConstraint::BrandAny`
-is unit-tested and behaves identically to `Brand` for singleton groups by
-construction). Whether this holds at `min_enum_frequency=100` or is an
-artifact of this specific threshold is part of what the in-progress run is
-checking.
+| min_enum_frequency | mode | NDCG@10 | Recall@10 | zero-result | wall time |
+|---|---|---|---|---|---|
+| 25 | baseline | 0.2278 | 0.1354 | 9.55% | 136.0s |
+| 25 | alias_only | 0.2278 | 0.1354 | 9.55% | 133.5s |
+| 25 | alias_fuzzy | 0.2279 | 0.1355 | 9.42% | 135.8s |
+| 100 | baseline / alias_only / alias_fuzzy | 0.2704 (all three) | 0.1611 (all three) | 2.93% (all three) | ~107s each |
 
-**Known limitation, live**: the `alias_fuzzy` cell is taking materially
-longer than `baseline`/`alias_only` (minutes, not the ~126s/cell those two
-took) on this run — under investigation (§10) rather than reported as a
-final number. This preliminary table is explicitly **not** decision-grade:
-it is a single run, not the ≥30-repetition, bootstrap-CI-backed measurement
-§4.2 requires for an architecture decision. It is recorded here as an
-honest snapshot of an in-progress cycle, per this document's own "no
-marketing conclusions" rule.
+Tier 1 is **byte-for-byte identical** to baseline at both thresholds — a
+reproduced, robust null result. Tier 2's gain over baseline is noise-level
+(+0.0001 NDCG@10 at best). Neither tier meaningfully moves relevance, route
+coverage, or candidate-set reduction.
+
+**Root-cause follow-up** (`crates/phase2-eval/src/bin/brand_recall_gap_diagnostic.rs`):
+classified every judged-Exact product that fails a compiled brand filter.
+Alias/spelling variance (tier 1+2's entire territory) explains only ~1.1%
+of failing rows / ~4.5% of distinct affected queries. The dominant ~95%
+splits into at least four distinct causes, manually inspected on a
+query-deduplicated real sample: (1) generic English words mis-recognized as
+brands ("case," "zoom," "head," "king," "duck" — a canonicalization
+false-*positive* problem, the mirror of Issue #9's false-negative framing);
+(2) sub-brand/product-line naming ("Dove" vs. "Dove Men + Care" — same
+parent brand, needs containment matching, not edit distance); (3)
+franchise/media-property vs. licensed-manufacturer mismatch ("Pokemon" vs.
+"Ultra Pro" — no string-similarity mechanism can bridge this, it needs real
+entity-relationship knowledge); (4) missing brand field entirely. A fifth
+pattern (genuinely different/compatible-aftermarket brand) is arguably
+*correct* strict-filter behavior, not a defect.
+
+**Decision: REVISE.** The mechanism is sound and bug-free, but P2-E10's own
+"spelling/aliasing/formatting variation" framing was directionally correct
+and quantitatively minor on this real catalog. This sharpens rather than
+reverses P2-E10: the next lever is not a better string-matching enforcement
+mechanism, it is (a) a false-positive-aware trust gate for generic
+brand-shaped strings, and (b) genuine latent-structure inference for
+franchise/missing-brand cases — concretely, Issue #6's P1-C.
 
 ### 8.2 P1-C: predictive semantic prefill `[NOT YET STARTED]`
 
@@ -287,12 +309,22 @@ Depends on §8.1/§8.2 landing on a defensible enforcement/prefill
 configuration first, per the staged-elimination discipline (§4.4) — no
 QueryClass9-segmented physical-advantage sweep has been run yet.
 
-## 9. Ablations `[NOT YET STARTED]`
+## 9. Ablations
 
-Planned once a promising configuration exists: remove/replace one component
-at a time (predictive prefill, structural narrowing, alias normalization,
-soft `Preference`, confidence-aware routing) to attribute any observed gain
-to its actual cause rather than the configuration as a whole.
+**P1-B**: `alias_only` vs. `alias_fuzzy` vs. `baseline` (§8.1) is itself a
+tier-by-tier ablation (tier 1 alone, tier 1+2, neither) — result: neither
+tier's removal/addition changes the outcome measurably, which is itself the
+finding (§11). The root-cause diagnostic (`brand_recall_gap_diagnostic.rs`)
+goes further than a component ablation: rather than just measuring that the
+mechanism doesn't help, it attributes *why* by classifying real failing
+cases into causal buckets — a form of error analysis this campaign will
+reuse for future negative/marginal results rather than stopping at "no
+effect."
+
+Remaining ablations planned once a promising configuration exists
+elsewhere: remove/replace one component at a time (predictive prefill,
+structural narrowing, confidence-aware routing) to attribute any observed
+gain to its actual cause rather than the configuration as a whole.
 
 ## 10. Limitations / Threats to Validity
 
@@ -313,13 +345,17 @@ to its actual cause rather than the configuration as a whole.
   untestable, not tested-and-negative; §4.4's matrix marks these explicitly
   rather than omitting them silently.
 - **A latent planner edge case, found while building the P1-B enforcement
-  work, not yet fixed**: `plan::plan` treats an entirely empty compiled
+  work — fixed as a side effect of the P2-E11 `apply_candidates` fix, not
+  independently verified**: `plan::plan` treats an entirely empty compiled
   query (`residual_lexical.is_empty()` with zero constraints) as `FastPath`,
   which then ranks the *entire* catalog. A query that resolves to *only* a
-  soft `Preference` (P1-B tier 2's fuzzy match, when the matched token is
-  the query's only token) hits exactly this shape. Recorded here rather
-  than silently patched into an in-flight experiment; real-data impact not
-  yet measured.
+  soft `Preference` used to hit exactly this shape; since a
+  preference-resolved phrase now always stays in `residual_lexical`
+  (P2-E11), that specific trigger no longer occurs, but the underlying
+  `plan::plan` behavior (empty query -> `FastPath` -> rank everything) is
+  itself unchanged and could still be reached by some other path not yet
+  identified. No dedicated regression test was added for `plan::plan`
+  itself.
 - **This session's benchmark machine is shared/virtualized** (4 vCPU Xeon,
   cloud sandbox) — absolute QPS/latency numbers are environment-specific;
   the round-robin scheduling (§4.2) mitigates but does not eliminate
@@ -336,10 +372,21 @@ to its actual cause rather than the configuration as a whole.
   and in the course of falsifying it, found `compile_lexicon` never emitted
   a real `Preference` candidate at any threshold — ranking had zero real
   signal prior to this phase's `Preference::StructuralBoost` work.
-- §8.1 (this phase, preliminary): alias-normalization tier 1 alone produced
-  **zero measurable effect** at `min_enum_frequency=25` on this real
-  catalog — recorded as a real negative result for that specific cell, not
-  smoothed over.
+- §8.1/P2-E11 (this phase, final): alias-normalized hard matching (tier 1)
+  produced **zero measurable effect**, reproduced identically at both
+  `min_enum_frequency` thresholds tested — not a preliminary result, a
+  robust null finding. Fuzzy soft matching (tier 2) is bug-fixed and
+  correct but its real-data gain is noise-level. Root-caused: alias/
+  spelling variance explains only ~1-5% of real brand-filter recall
+  misses; P2-E10's own framing of the dominant cause was directionally
+  right but quantitatively minor.
+- §8.1/P2-E11: a real production defect existed, silently unreachable,
+  in code that predates this phase — `ir::query::apply_candidates`
+  removing a `Preference`-only phrase from `residual_lexical`. Found only
+  because tier 2 was the first real caller to ever produce a non-trivial
+  `Preference` (I7-E04 had already established `compile_lexicon` never
+  did). A concrete instance of "real end-to-end measurement finds bugs
+  classifier-quality-only evaluation cannot."
 
 ## 12. Conclusion on the 5–10× Thesis
 
