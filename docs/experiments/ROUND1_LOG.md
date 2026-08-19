@@ -1057,3 +1057,184 @@ testable follow-up experiment this round has produced — noted for
 `ROUND1_SCALE_UP_DECISION.md`'s "what would be built next" section rather
 than attempted here, since R1-E06 (control plane / cold start) is still
 open.
+
+---
+
+## R1-E06 — Control plane on real vocabulary: the promotion gate cannot tell a real fix from a nonsensical one
+
+**Evidence class**: real (real catalog-derived lexicon, real 22,458-query
+corpus). One deliberate `commerce_core` fix applied and measured
+mid-entry (see below).
+
+**Question**: Area 8's central question — does the Gate 5 replay-gated
+promotion loop, run against *real* unresolved vocabulary rather than
+Phase 0's tiny fixture, actually reduce punt rate without a precision
+cost? And, separately, Area 9's cold-start question: does profiling this
+real catalog produce a real, useful compression, and is there low-hanging
+brand/vocabulary fruit left to promote?
+
+**Hypothesis**: (a) the top real unresolved terms will be dominated by
+either genuine missing vocabulary or, plausibly, compiler gaps (stopwords)
+rather than exotic long-tail terms. (b) A provider that only proposes
+mappings backed by real catalog evidence (i.e. the term is itself a real
+brand name) will find few-to-no candidates, since R1-E01/E02 already
+established brand vocabulary is thoroughly indexed and the remaining gap
+is product-type/category, which this dataset cannot supply evidence for
+at all. (c) **Control experiment**: a provider proposing a single
+deliberately nonsensical mapping (the most frequent residual term ->
+an unrelated Boolean constraint) should be *rejected* by the promotion
+gate, per the brief's own instruction ("if punt rate falls only because
+the model guesses aggressively, reject the approach") — this is
+structured as a test of the *gate itself*, not of the provider.
+
+**Decision threshold**: (c) is the sharpest test in this entry: if the
+nonsensical-mapping control experiment is accepted, that is a direct,
+falsifying finding about the promotion gate's safety property as
+currently defined (aggregate coverage improvement + zero per-query
+regression), independent of whatever a real provider would or wouldn't
+propose.
+
+**Implementation**: `crates/round1-eval/src/bin/control_plane_real.rs`.
+Reuses `commerce_core::control_plane`/`cold_start` entirely unmodified.
+`observe_residual_terms` against the real catalog-derived lexicon (Gate
+6) and the real 22,458-query corpus. An "evidence-backed" provider
+proposes a `Brand` mapping for a residual term only if that exact
+normalized string is a real brand name in the catalog (deliberately
+*not* proposing color mappings, given R1-E01/E02's finding that the
+color field itself is frequently non-categorical noise — proposing more
+mappings into an already-noisy field would confound this experiment). A
+second, deliberately naive provider proposes exactly one mapping: the
+single most frequent residual term -> `Boolean { attribute: "waterproof",
+value: true }`, chosen specifically because it has no plausible
+connection to the term.
+
+**A real, evidence-backed fix applied mid-experiment**: the initial run's
+top residual terms were `and`(443), `to`(171), `of`(170), ... `on`(98) —
+common English function words, not missing vocabulary. `commerce_core`'s
+`STOPWORDS` list (`crates/commerce-core/src/ir/query.rs`) only contained
+`["a", "the", "for", "with", "in"]`; these four were simply never added.
+Fixed by adding `"and"`, `"to"`, `"of"`, `"on"` to `STOPWORDS`
+(**deliberately not** `"or"` — R1-E03 found "or" being silently dropped
+would *hide* the disjunction-mishandling bug rather than surface it, so
+it stays visible in `residual_lexical`). Verified via `cargo test
+--workspace --all-features`: all 33 Phase 0 tests still pass (pure
+addition to a stopword list, no behavior change to any existing test's
+queries). This is recorded as part of this entry, not a separate one,
+because it was discovered and fixed *in service of* this experiment
+(the top-residual-terms observation is a control-plane "observe" step
+output) — an illustration of the control-plane loop doing its job
+(surfacing a real, fixable gap) even before any lexicon promotion ran.
+
+**Results**:
+
+```
+Before the stopword fix:
+  Baseline coverage: fully_resolved=4,462/22,458 (19.9%), ambiguous=8,630, residual=14,688
+  Top residual terms: and(443), to(171), of(170), shirts(136), wall(125), watch(111), gifts(101), on(98), ...
+
+After the stopword fix (genuine, safe improvement):
+  Baseline coverage: fully_resolved=4,539/22,458 (20.2%), ambiguous=8,630, residual=14,514
+  -> +77 queries (0.3 points), zero semantic risk: dropping "and"/"to"/"of"/"on" cannot
+     change what any query means, only remove noise from residual_lexical.
+  Top residual terms now: shirts(136), wall(125), watch(111), gifts(101), clothes(84),
+     chair(83), year(74), door(68), decorations(63), ipad(57), room(57), covers(55), ...
+     (9,081 distinct residual terms total — overwhelmingly generic product-type/category
+     words: shirts, chair, watch, rings, belt, sandals, shoe — not brand names.)
+
+Evidence-backed brand provider: 0 of the top 9,081 residual terms are real catalog brand
+  names -> 0 proposals -> promotion correctly REJECTED (candidate == baseline, 0 regressions).
+
+Control experiment — naive unfounded guess ("shirts" -> waterproof=true):
+  Promotion: ACCEPTED -> version 2
+  fully_resolved: v1=4,539 (20.2%) -> v2=4,581 (20.4%)  [+42 queries]
+```
+
+**Interpretation**
+
+(a) **Confirmed, and led to a real fix.** The top unresolved terms were
+compiler gaps (missing stopwords), not vocabulary gaps — worth stating
+plainly since it means part of what looked like a "coverage problem" in
+R1-E02 was actually a much cheaper "data-cleaning oversight" problem.
+The genuine fix moved real coverage by +77 queries (+0.3 points) with
+zero risk, because removing a function word from consideration can never
+change a query's meaning.
+
+(b) **Confirmed.** Zero of 9,081 real residual terms are catalog brand
+names once stopwords are handled — consistent with R1-E01/E02's finding
+that brand vocabulary is already thoroughly captured and the dominant
+remaining gap is product-type/category, which this dataset has no
+ground truth for at all (R1-E01). This also means Area 9's specific
+"does ProductType-sensitive normalization help (the '16 inch' example)"
+question is **not testable on this dataset** — there is no product-type
+field to be sensitive to. Recorded as a real limitation, not
+sidestepped.
+
+(c) **Confirmed, and this is the single most important finding of
+R1-E06 — arguably of the whole round, because it is about the safety of
+the *mechanism* itself, not about any one provider's judgment.** The
+promotion gate accepted a mapping from the word "shirts" (initially
+"and") to an unrelated `waterproof=true` boolean constraint, producing a
+coverage improvement (+42 queries, comparable in magnitude to the
+genuine stopword fix's +77) that looks, from the gate's own reported
+signals (`fully_resolved` up, `regressions: []`), indistinguishable from
+a real fix. **The mechanism explains why this is not a fluke but a
+structural property of the current gate design**: `regressions` is
+defined as "a query that was fully resolved before and is not fully
+resolved after." A term with *zero* prior lexicon entries, by
+definition, could never have been part of any previously-fully-resolved
+query's successful resolution (any query containing it was already
+`residual`, hence not fully resolved). Therefore **adding a mapping for
+any never-before-seen term is unconditionally regression-free under this
+gate's definition, regardless of whether the mapping means anything at
+all.** The gate correctly enforces "don't break what already works" but
+has no signal at all for "is the new thing correct" — it checks
+syntactic coverage (ambiguous/residual counts), not semantic correctness
+against any ground truth. This is precisely the failure mode the Round 1
+brief names explicitly: *"If it falls only because the model guesses
+aggressively, reject the approach."* Per that instruction: **the
+current promotion-gate design, taken alone, is rejected as a sufficient
+safety mechanism for real-world use** — it is necessary (a real fix
+must still pass it) but not sufficient (a fake fix passes identically).
+Gate 5's Phase 0 tests (E005) never caught this because Phase 0's
+`FixtureModelProvider` only ever proposed genuinely plausible mappings
+("adidas" -> a real brand) — there was no adversarial-provider test in
+either round until this one.
+
+**What this does not motivate as an immediate fix**: closing this gap
+properly needs a *semantic* validation signal the current architecture
+doesn't have — e.g. replaying against held-out relevance judgments (this
+round's real ESCI data could supply exactly that: promote only if
+precision on a held-out judged sample doesn't drop) rather than the
+purely syntactic coverage check `measure_coverage` provides today. This
+is a real architectural change to the promotion criterion, not a small
+patch, so — consistent with R1-E03's decision not to rush a fix under
+time pressure — it is recorded as the required next step for the control
+plane rather than attempted here.
+
+**Caveats**: single provider design tested for the adversarial case (one
+nonsensical mapping); a provider proposing many simultaneously-nonsensical
+mappings was not tested, though the same mathematical argument
+(regression-free-by-construction for any never-seen term) applies
+regardless of count. The evidence-backed provider's "propose brand
+matches only" design is conservative by construction and cannot by
+itself demonstrate a *positive* real promotion — that would need either
+a richer provider (e.g. proposing product-type inferences, which this
+dataset can't ground-truth) or a different real dataset with product-
+type data.
+
+**Regression check**: `commerce-core`'s 33 Phase 0 tests, re-run and
+green after the stopword change. No new automated regression test
+guards the promotion-gate finding itself (an adversarial-provider test
+in `commerce-core/tests/control_plane.rs` proving the gate rejects a
+nonsensical mapping would be a natural, cheap addition — flagged, not
+built this round, since the honest current answer is that the gate does
+*not* reject it, so such a test would need to encode a *future*, not-yet-
+built precision-aware gate to be meaningful).
+
+**Next question**: all six Round 1 experiment areas the backlog
+prioritized (R1-E01 through R1-E06) now have real evidence. The
+remaining open items are the ones each entry already flagged as concrete
+follow-ups (wiring `lexical_postings` into `Text` execution per R1-E05;
+a precision-aware promotion gate per this entry; class-stratified Solr
+relevance comparison per R1-E04) rather than new open questions — this
+is the point to write `ROUND1_SCALE_UP_DECISION.md`.

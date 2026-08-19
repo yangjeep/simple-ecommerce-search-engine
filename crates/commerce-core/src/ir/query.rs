@@ -58,7 +58,12 @@ impl CommerceQuery {
     }
 }
 
-const STOPWORDS: &[&str] = &["a", "the", "for", "with", "in"];
+// "and"/"to"/"of"/"on" added per Round 1 R1-E06 (docs/experiments/ROUND1_LOG.md):
+// the top real unresolved terms across a real 22,458-query corpus were
+// overwhelmingly these four function words, not missing vocabulary.
+// "or" is deliberately NOT included — see R1-E03: dropping it silently
+// would hide disjunction queries' mishandling rather than surface it.
+const STOPWORDS: &[&str] = &["a", "the", "for", "with", "in", "and", "to", "of", "on"];
 
 fn parse_money(token: Option<&str>) -> Option<i64> {
     let token = token?;
