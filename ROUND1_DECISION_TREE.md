@@ -355,29 +355,38 @@ since R1-E01.
 This document's item 2 named a "candidate-canonicalization/validation
 stage" as the fix for R1-E02/E02b's recall catastrophe, without
 specifying the mechanism beyond "a validity check." Issue #9
-(`PHASE2_LOG.md` P2-E07-E09) tested three candidate mechanisms against
-real reconciled ground truth (three independent human-equivalent
-adjudication passes, 209 real candidates) and a real end-to-end
-22,458-query sweep, and found a genuinely counter-intuitive result worth
-carrying forward explicitly: a canonicalizer that classifies individual
-values *more accurately* (a deterministic heuristic, later matched by a
-model-assisted arm, both beating the shipping frequency-only gate on
-classification F1) can produce *worse* real end-to-end recall once wired
-into the actual lexicon-compilation path and measured against real
-judged queries (P2-E08: heuristic's real recall caps near 16% regardless
-of threshold, vs. frequency-only's 43% at higher thresholds, despite
-roughly doubling FIB coverage). The mechanism, as best understood: a
-value being an individually-correct structural entity is a different
-question from whether compiling it into a *hard* filter helps or hurts
-real recall, given real spelling/aliasing variation in the underlying
-field. This is a genuinely new, generalizable finding beyond brand
-vocabulary specifically, and means item 2's "a validity check" is
-correct in spirit but underspecified in a way that matters: which
-validity check, and validated against which metric (classification
-accuracy vs. real retrieval recall), are not interchangeable questions.
-Full three-arm resolution (including the model-assisted arm's real,
-if necessarily smaller-scale, end-to-end test) is tracked in
-`PHASE2_LOG.md` P2-E09/P2-E10.
+(`PHASE2_LOG.md` P2-E07-E10, now complete) tested all three named
+candidate mechanisms — a raw frequency threshold, a deterministic
+heuristic, and a model-assisted arm — against real reconciled ground
+truth (three independent human-equivalent adjudication passes, 209 real
+candidates) and full real end-to-end replay (all 22,458 real judged
+queries, plus a real, fairness-controlled 500-brand sample for the
+model-assisted arm's own end-to-end test, since classifying the full
+~206K-brand vocabulary with an agent is not tractable). **Final decision:
+CANONICALIZATION FRONTIER IS FUNDAMENTAL** (one of Issue #9's four named
+options, GitHub comment on issue #9 records the full reasoning). All
+three mechanisms — regardless of how confidently or accurately each
+classifies individual brand strings in isolation — show the *same*
+directional tradeoff once wired into the real query path: trusting more
+strings as hard filters increases FIB coverage but *decreases* real
+recall against Exact/Substitute-judged relevant products (P2-E08:
+heuristic's real recall caps near 14-16% regardless of threshold vs.
+frequency-only's 43% at higher thresholds, despite roughly doubling FIB
+coverage; P2-E10: a real, isolated 500-brand model-assisted sample
+reproduces the same direction at proportionally smaller magnitude). The
+mechanism, now well-supported by three independent, structurally
+different canonicalizers converging on the same result: the tension is
+inherent to enforcing trust as a *hard* structural AND filter on an
+exact-matched string — vulnerable to real spelling/aliasing/formatting
+variation between a compiled constraint and a product's actual field
+value — not to which values get trusted or how accurately they're
+classified. This means item 2's "a validity check" was correct in spirit
+but the wrong lever: refining *which* strings pass validation cannot
+fix a problem inherent to *how* trust is enforced. The concrete next
+experiment this points to is a softer enforcement mechanism (alias-
+normalized/fuzzy matching, or a scored `Preference` instead of a hard
+`Constraint` when confidence isn't maximal) — recorded as a follow-up,
+not attempted here.
 
 ### What does not change
 
