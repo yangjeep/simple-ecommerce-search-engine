@@ -14,7 +14,7 @@ pub use canonicalize::{
     VocabularyCanonicalizer, VocabularyClass,
 };
 pub use generate::generate_shopper_queries;
-pub use profile::{compile_lexicon, CatalogProfile};
+pub use profile::{compile_lexicon, compile_lexicon_with_brand_canonicalizer, CatalogProfile};
 
 use crate::ir::{compile, SemanticLexicon};
 

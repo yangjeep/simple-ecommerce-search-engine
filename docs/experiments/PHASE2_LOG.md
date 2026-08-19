@@ -1075,3 +1075,206 @@ this entry itself surfaced: whether a denser domain-model representation
 the ~2.9GB `Catalog`-struct-build cost this entry found dominates real
 RSS — a new, evidence-driven hypothesis for a future entry, not yet
 attempted.
+
+---
+
+## P2-E07 — Does a deterministic heuristic canonicalizer beat the shipping frequency-only brand gate, measured against real reconciled ground truth?
+
+**Evidence class**: real. The 209-candidate corpus
+(`dataset_cache/export/brand_adjudication_corpus.jsonl`,
+`scripts/phase2/build_brand_adjudication_corpus.py`, deterministic,
+seed=7) samples real excluded/near-frontier brand vocabulary from the
+real 1,215,854-product ESCI catalog, per bucket (singleton/low/mid/
+near_threshold + 9 calibration high-frequency brands).
+
+**Independence**: ground truth (`dataset_cache/export/brand_adjudication_ground_truth.jsonl`,
+`scripts/phase2/reconcile_brand_adjudication.py`) is reconciled from
+**three independent labeling passes** (separate agent runs, no shared
+context, per `docs/research/brand-adjudication-rubric.md`'s protocol):
+3/3 agreement -> unanimous (135/209, 64.6%); 2/3 -> majority (71/209,
+34.0%); 0/3 (three distinct labels) -> the ground truth label is itself
+`ambiguous_insufficient_evidence` (3/209, 1.4%). Pairwise raw agreement
+between passes: 73.7%, 83.7%, 70.3% — real, imperfect, human-adjudication-
+grade agreement, not silently smoothed to 100%. The two deterministic
+canonicalizers scored here are independent of how the ground truth was
+produced (pure code, no relationship to the labeling passes).
+
+**Question**: `docs/research/brand-adjudication-rubric.md`'s five-class
+taxonomy defines "safe to trust as a structural hard-filter entry"
+(`VocabularyClass::trusted_as_structural`). Does `HeuristicCanonicalizer`
+(word-count/marketing-word-blocklist/shape/title-prefix-consistency
+scoring, `commerce_core::cold_start::canonicalize`) classify candidates
+into that binary decision more accurately than `FrequencyOnlyCanonicalizer`
+(the literal shipping `min_enum_frequency` gate, wrapped unmodified)?
+
+**Implementation**: `crates/phase2-eval/src/bin/brand_canonicalizer_eval.rs`
+scores both canonicalizers' `trusted_as_structural()` output against the
+reconciled ground truth's positive classes
+(`canonical_known_entity_or_alias` + `legitimate_new_entity`, 156/209 =
+74.6% of the corpus), sweeping the same threshold set P2-E05 used.
+
+**Results** (precision/recall/F1 of the binary trusted-as-structural decision):
+
+| threshold | FreqOnly prec/recall/F1 | Heuristic prec/recall/F1 |
+|---|---|---|
+| 1 | 74.6% / 100.0% / 85.5% | 75.5% / 96.8% / 84.8% |
+| 3 | 85.4% / 75.0% / 79.9% | 87.8% / 92.3% / 90.0% |
+| 10 | 91.4% / 47.4% / 62.4% | 91.8% / 86.5% / 89.1% |
+| **25** (P2-E05's measured recall-peak frontier) | **85.7% / 15.4% / 26.1%** | **92.2% / 83.3% / 87.5%** |
+| 50 | 100.0% / 5.8% / 10.9% | 93.5% / 82.7% / 87.8% |
+
+At threshold=25, accuracy by ground-truth confidence tier: on the 135
+unanimous-agreement candidates, `FrequencyOnlyCanonicalizer` is right
+31.1% of the time vs. `HeuristicCanonicalizer`'s 88.1% — the heuristic's
+advantage is not an artifact of contested/low-confidence cases; it wins
+decisively on the candidates humans agreed on most.
+
+**Interpretation**: at every threshold from 3 upward, the heuristic beats
+frequency-only on *both* precision and recall for the classification task
+— not a precision/recall tradeoff, an unambiguous win on this specific
+metric. At threshold=25, frequency-only's recall collapses to 15.4%
+(matching the "catastrophic FastPath coverage loss" this project already
+knew the raw gate causes) while the heuristic holds 83.3% recall at
+*higher* precision than frequency-only achieves at any threshold. See
+P2-E08 below for whether this classification-level win survives contact
+with real end-to-end retrieval measurement — it does not, in the way this
+result alone would predict.
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, `cargo test
+--workspace --all-features`, `cargo build --workspace --release` all
+clean. New crate dependency: `serde`/`serde_json` added to `phase2-eval`
+(round1-eval's existing loaders don't re-export their own serde
+dependency transitively).
+
+---
+
+## P2-E08 — Does the classification-level win (P2-E07) survive contact with real end-to-end FIB/precision/recall measurement?
+
+**Evidence class**: real. Same 1,215,854-product real catalog and the
+full real 22,458-query judged set (not a 1,000-query sample), reusing
+`round1_eval::classify`'s existing FIB/precision/recall machinery
+unmodified — identical measurement to P2-E02/P2-E05, so the numbers are
+directly comparable.
+
+**Independence**: yes — the real ESCI query/judgment set is unrelated to
+and was not used to build either canonicalizer.
+
+**Question**: CLAUDE.md: "Do not claim an architectural win from
+microbenchmarks alone when end-to-end evidence is available." P2-E07
+measured heuristic-vs-frequency-only accuracy against a 209-candidate
+adjudication corpus — a proxy. Does swapping `HeuristicCanonicalizer` for
+`FrequencyOnlyCanonicalizer` in the actual cold-start lexicon-compilation
+path recover real Semantic FIB coverage without sacrificing the real
+precision/recall this project has measured since R1-E02?
+
+**Implementation**: `commerce_core::cold_start::compile_lexicon_with_brand_canonicalizer`
+(new, `crates/commerce-core/src/cold_start/profile.rs`) — identical to
+the shipping `compile_lexicon` for every field except brand vocabulary,
+where inclusion is decided by a pluggable `VocabularyCanonicalizer`
+instead of the raw `min_enum_frequency` count. Enum-value (color/size/
+etc.) filtering is deliberately left on the same raw-threshold gate in
+both arms in this experiment, because the adjudication ground truth only
+covers brand vocabulary — isolating exactly the one variable P2-E07
+measured. `crates/phase2-eval/src/bin/canonicalizer_fib_eval.rs` runs
+both arms (plus a sanity arm confirming `FrequencyOnlyCanonicalizer`
+routed through the new function reproduces `compile_lexicon`'s numbers
+exactly, which it does at every threshold tested) against the real full
+query set.
+
+**Results** (real 1.2M-product catalog, real 22,458 queries):
+
+| threshold | arm | FIB | ambig | punt | precision | recall_ES | recall_Exact |
+|---|---|---|---|---|---|---|---|
+| 3 | FrequencyOnly | 41.1% | 39.8% | 3.2% | 92.5% | 9.7% | 11.2% |
+| 3 | Heuristic | 44.5% | 39.3% | 3.0% | 93.0% | 8.3% | 9.6% |
+| 10 | FrequencyOnly | 28.5% | 34.1% | 3.8% | 91.7% | 21.1% | 24.3% |
+| 10 | Heuristic | 41.4% | 33.3% | 3.3% | 92.4% | 12.2% | 14.2% |
+| **25** | **FrequencyOnly** | 21.3% | 22.3% | 4.4% | 90.5% | **31.7%** | **35.6%** |
+| **25** | **Heuristic** | **45.3%** | 21.5% | 3.4% | 91.7% | 13.8% | 15.8% |
+| 50 | FrequencyOnly | 16.1% | 16.5% | 4.5% | 90.3% | **39.1%** | **43.4%** |
+| 50 | Heuristic | 48.6% | 15.9% | 3.4% | 91.6% | 13.2% | 15.1% |
+
+(P2-E02 baseline, threshold=1/unfiltered: FIB=55.4%, precision=94.5%,
+recall_ES=4.3%, recall_Exact=5.0%.)
+
+**Interpretation — a real, counter-intuitive negative finding, recorded
+in full rather than smoothed over**: `HeuristicCanonicalizer` delivers
+exactly what P2-E07 predicted on FIB coverage — roughly double the
+FrequencyOnlyCanonicalizer's FIB rate at every threshold >=10, and it
+climbs *with* the threshold instead of collapsing the way frequency-
+only's does (frequency-only trades FIB for recall as threshold rises;
+heuristic's FIB keeps rising too). Precision is essentially a wash
+(heuristic slightly higher at every threshold). But **real recall against
+actual Exact/Substitute-labeled relevant products is substantially
+*worse* under the heuristic at every threshold tested, and gets
+dramatically worse at higher thresholds** (at threshold=50: 43.4% ->
+15.1%, a 65% relative recall loss) — the opposite of what P2-E07's
+classification-level result would predict, since the heuristic classifies
+individual brand strings *more* accurately than frequency-only against
+real human ground truth at every threshold tested.
+
+The mechanism, as best understood from the data (not directly
+instrumented, stated as an inference): a brand value being an
+individually *correct* structural entity (P2-E07's question) is not the
+same question as whether compiling it into a *hard* structural filter
+helps or hurts a specific real query's recall. `min_enum_frequency`'s
+recall-rises-with-threshold behavior (already known since P2-E05) is
+itself evidence that trusting *more* brand strings as hard filters
+increases the rate at which a query gets routed through a wrong or
+overly narrow structural constraint — a real product's actual brand
+string not exactling matching the compiled value (aliasing, casing,
+punctuation variants the canonicalizer doesn't merge) causes the hard
+filter to wrongly exclude it. `HeuristicCanonicalizer` trusts
+*more* low-frequency values than frequency-only does at any given
+threshold (that is precisely its design goal and P2-E07's measured
+win) — which means more queries get routed through additional hard
+filters, reproducing and amplifying the same recall-suppressing dynamic,
+even though each individual classification is more accurate in
+isolation.
+
+This is exactly the case CLAUDE.md's "do not claim a win from
+microbenchmarks alone" rule anticipates: P2-E07 alone would have
+supported "HEURISTICS ARE SUFFICIENT, ship it." P2-E08 shows the real
+downstream metric this project has tracked since R1-E02 (recall against
+real Exact-labeled relevant products) moves in the *opposite* direction.
+Both results are true and both are reported; neither is discarded because
+it's inconvenient.
+
+**Regression check**: sanity arm (`FrequencyOnlyCanonicalizer` routed
+through the new generic function) reproduces `compile_lexicon`'s exact
+FIB/ambig/punt/precision/recall numbers at every threshold tested,
+confirming the refactor (`compile_lexicon` now delegates its
+non-brand-vocabulary logic to a shared `compile_non_brand_lexicon`
+helper) preserved production behavior exactly. `cargo fmt --all --
+--check`, `cargo clippy --workspace --all-targets --all-features -- -D
+warnings`, `cargo test --workspace --all-features`, `cargo build
+--workspace --release` all clean.
+
+**Decision: REVISE, not ship.** Neither `FrequencyOnlyCanonicalizer` nor
+`HeuristicCanonicalizer` as currently specified is an unconditional win:
+frequency-only tops out around 43% real recall (at threshold=50, with
+correspondingly low 16% FIB coverage) while heuristic tops out around
+45% FIB coverage but caps near 16% real recall regardless of threshold.
+The two mechanisms are optimizing genuinely different things (individual-
+value classification accuracy vs. real query-level retrieval recall), and
+neither this experiment nor P2-E05 has yet tested a design that targets
+recall directly rather than as a downstream side effect of a threshold or
+classification decision. A third arm (model-assisted canonicalization,
+Issue #9's remaining named baseline) is running independently as of this
+entry and will be appended once complete — but this result already
+establishes that "does the canonicalizer classify brand strings
+correctly" and "does trusting its output as a hard filter help real
+retrieval" are two different questions this project must keep measuring
+separately, not conflate.
+
+**Next**: append the model-assisted arm's results once its independent
+agent run completes; write Issue #9's final decision note against all
+three arms; feed this finding into Issue #5/`ROUND1_DECISION_TREE.md` —
+"a structural hard filter's value depends on how confidently its
+compiled constraint generalizes across real spelling/aliasing variation
+in the underlying field, not just whether the *canonical* value itself is
+a real entity" is a new, generalizable finding beyond just brand
+vocabulary.
+attempted.
+attempted.

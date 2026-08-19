@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use super::canonicalize::{CanonicalizationEvidence, VocabularyCanonicalizer};
 use crate::domain::{
     AttributeMap, AttributeValue, Brand, BrandId, Catalog, Category, CategoryId, Constraint,
     ProductType, ProductTypeId,
@@ -249,6 +250,62 @@ pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> S
             )],
         );
     }
+    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    lex
+}
+
+/// Issue #9: identical to [`compile_lexicon`] for every field except
+/// brand, where inclusion is decided by a pluggable [`VocabularyCanonicalizer`]
+/// (`docs/research/brand-adjudication-rubric.md`'s five-class taxonomy)
+/// instead of the raw `min_enum_frequency` occurrence-count gate. Isolates
+/// exactly the one variable Issue #9's real adjudication corpus/ground
+/// truth actually covers -- brand vocabulary -- so a caller comparing this
+/// against `compile_lexicon` measures the canonicalizer swap alone.
+/// Enum-value canonicalization was not adjudicated and stays on the same
+/// raw-threshold gate here as `compile_lexicon` uses, via the same
+/// `min_enum_frequency` parameter.
+///
+/// `representative_titles` is a caller-supplied lookup (a handful of
+/// titles per lowercased brand name, the same bounded evidence shape
+/// `CanonicalizationEvidence` requires) rather than something this
+/// function derives itself: `CatalogProfile` does not retain per-value
+/// product titles (Gate 6's whole point is compressing a catalog into
+/// counts/keys, not retaining per-SKU data), so the caller (which still
+/// has the ingested `Catalog`) must provide it.
+pub fn compile_lexicon_with_brand_canonicalizer(
+    profile: &CatalogProfile,
+    min_enum_frequency: usize,
+    canonicalizer: &dyn VocabularyCanonicalizer,
+    representative_titles: impl Fn(&str) -> Vec<String>,
+) -> SemanticLexicon {
+    let mut lex = SemanticLexicon::new();
+    for (name, id) in &profile.brand_names {
+        let titles = representative_titles(name);
+        let evidence = CanonicalizationEvidence {
+            value: name,
+            occurrence_count: profile.brand_occurrence_count(name),
+            representative_titles: &titles,
+        };
+        if !canonicalizer.classify(&evidence).trusted_as_structural() {
+            continue;
+        }
+        lex.insert(
+            name,
+            vec![Candidate::constraint(
+                ResolvedConstraint::Structural(StructuralConstraint::Brand(*id)),
+                1.0,
+            )],
+        );
+    }
+    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    lex
+}
+
+fn compile_non_brand_lexicon(
+    profile: &CatalogProfile,
+    min_enum_frequency: usize,
+    lex: &mut SemanticLexicon,
+) {
     for (name, id) in &profile.product_type_names {
         lex.insert(
             name,
@@ -302,5 +359,4 @@ pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> S
             .collect();
         lex.insert(value_lower, candidates);
     }
-    lex
 }
