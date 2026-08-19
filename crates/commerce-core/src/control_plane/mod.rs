@@ -4,10 +4,15 @@
 //! serve a query. See `docs/adr/0005-control-plane-prototype.md`.
 
 mod observe;
+mod precision;
 mod provider;
 mod replay;
 
 pub use observe::{observe_residual_terms, Observation};
+pub use precision::{
+    check_precision, FixtureJudgmentOracle, Judgment, PrecisionCheck, PrecisionGateFailure,
+    PrecisionOracle, PromotionRejection,
+};
 pub use provider::{FixtureModelProvider, ModelProvider, Proposal};
 pub use replay::{replay, ReplayResult};
 
@@ -49,6 +54,49 @@ pub fn try_promote(
     let result = replay(queries, context.lexicon(), &candidate_lexicon);
     if accepted.is_empty() || !result.passes_promotion_gate() {
         return Err(result);
+    }
+    Ok(SemanticContext::new(
+        context.version + 1,
+        new_source,
+        candidate_lexicon,
+    ))
+}
+
+/// The same observe -> propose -> replay loop as [`try_promote`], plus a
+/// second, independent gate: every query the candidate lexicon newly
+/// resolves must also pass a [`PrecisionOracle`] check, not merely improve
+/// coverage. Round 1 R1-E06 (`docs/experiments/ROUND1_LOG.md`) found
+/// `try_promote`'s coverage-only gate structurally cannot reject a
+/// nonsensical mapping for any previously-unseen term — this is the fix,
+/// additive (does not change `try_promote`'s existing behavior/tests) so
+/// existing callers that don't have judgment evidence available keep
+/// working exactly as before.
+pub fn try_promote_with_precision(
+    context: &SemanticContext,
+    queries: &[&str],
+    provider: &dyn ModelProvider,
+    oracle: &dyn PrecisionOracle,
+    min_precision: f64,
+    new_source: &'static str,
+) -> Result<SemanticContext, PromotionRejection> {
+    let (candidate_lexicon, accepted) = propose_candidates(context, queries, provider);
+    let result = replay(queries, context.lexicon(), &candidate_lexicon);
+    if accepted.is_empty() || !result.passes_promotion_gate() {
+        return Err(PromotionRejection::CoverageGateFailed(result));
+    }
+    let precision = check_precision(
+        &result.newly_resolved,
+        &candidate_lexicon,
+        oracle,
+        min_precision,
+    );
+    if !precision.passes() {
+        return Err(PromotionRejection::PrecisionGateFailed(Box::new(
+            PrecisionGateFailure {
+                replay: result,
+                precision,
+            },
+        )));
     }
     Ok(SemanticContext::new(
         context.version + 1,

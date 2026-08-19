@@ -153,7 +153,7 @@ impl ClassCounts {
 /// why product-type/category/price are sentinels and therefore never
 /// appear in a compiled query's constraints at all (no lexicon entries
 /// exist for them).
-fn product_satisfies_and(
+pub fn product_satisfies_and(
     catalog: &Catalog,
     product_id: ProductId,
     constraints: &[ResolvedConstraint],
