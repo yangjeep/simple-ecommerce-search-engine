@@ -246,3 +246,26 @@ this class of mutable-state mechanism.
 and the precedence rule is now confirmed (not merely designed) to be a
 true order-independent merge under real concurrent, randomized-order
 application at 20,000-delta scale.
+
+---
+
+## Issue #8 closeout — follow-up issues opened for the two named gaps
+
+R-E01's "Next" line said to open follow-up issues for the two named
+completeness gaps rather than silently expand Issue #8's scope. Done:
+
+- **Issue #11** — replace `std::sync::RwLock` with a finer-grained
+  concurrency primitive (R-E01's ~83% read-throughput / ~40x
+  writer-throughput regression under concurrent load), gated on passing
+  R-E02's 20,000-delta concurrent-convergence correctness test against
+  whatever primitive replaces it.
+- **Issue #12** — durability/replay for `CommerceStateOverlay` (state is
+  lost on process restart), pointing at the Havenask
+  `OperationLogReplayer`/WAL pattern already documented in
+  `docs/research/havenask-realtime-update-archaeology.md` as prior art.
+
+Both are linked as sub-issues of #8. Issue #8 itself is considered
+evidence-complete (Havenask archaeology done, mechanism implemented,
+benchmarked, and correctness-proven at real scale including under
+adversarial concurrent load) — these two follow-ups are deliberately
+separate scope, not reopenings of #8.
