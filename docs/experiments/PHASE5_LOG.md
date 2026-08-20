@@ -335,6 +335,80 @@ expected, disclosed consequence — bigger real groups have proportionally
 more missing-brand documents, more casing duplicates, and more
 tied-count boundary collisions, not a sign of a new correctness defect.
 
+## P5-E03 (concurrency sub-experiment) — native's per-request cost is so low that concurrency isn't where its advantage comes from
+
+P5-E00/E01/E02 measured single-threaded latency only. A real deployment
+serves concurrent traffic, so `crates/phase5-eval/src/bin/
+p5e03_concurrency_sweep.rs` asks a distinct question: does native's
+aggregate *throughput* scale with concurrency the way production traffic
+needs it to, and how does it compare to Solr's own concurrent handling?
+`CatalogIndex` has no interior mutability (every field is a plain
+`HashMap`/`Vec`/`RoaringBitmap`), so it is naturally `Sync` -- one
+`Arc<CatalogIndex>` is shared read-only across OS threads with zero
+synchronization beyond `Arc`'s own refcount. Workload: the simplest real
+operation (filter-only, "how many products match this real brand/color"),
+over a real, seeded mix of 25 brand + 25 color values, cycled by each
+worker thread for a fixed 3-second window per concurrency level (1, 2, 4,
+8). Raw artifacts: `docs/research/artifacts/p5e03_concurrency_run1/`.
+
+**Adversarial check before trusting the numbers**: the first pass measured
+native throughput of 3.9-11.4 *million* requests/sec -- suspiciously high,
+and the timing loop discarded `run_one(q)`'s return value without using
+it, which combined with this workspace's `lto = true, codegen-units = 1`
+release profile raised a real risk of the compiler eliminating the whole
+computation as dead code. Wrapped the call in `std::hint::black_box` and
+reran: native throughput stayed in the same **million-requests/sec order
+of magnitude** (2.96M/5.17M/10.63M/10.65M at 1/2/4/8 workers, vs.
+3.91M/5.50M/11.42M/8.06M before) -- confirming the first pass was measuring
+real work, not a compiler no-op. The black_box-verified numbers are used
+below as canonical.
+
+**Result**:
+
+| workers | native throughput (req/s) | native p50 | solr throughput (req/s) | solr p50 |
+|---|---|---|---|---|
+| 1 | 2,955,349 | 0.0001ms | 1,675 | 0.56ms |
+| 2 | 5,165,724 | 0.0002ms | 3,775 | 0.48ms |
+| 4 | 10,629,837 | 0.0001ms | 4,952 | 0.71ms |
+| 8 | 10,647,767 | 0.0001ms | 6,215 | 1.15ms |
+
+Native's per-request cost (~100-300ns) exactly corroborates P5-E00's own
+single-threaded filter measurements (0.0001-0.0015ms) -- internally
+consistent with prior evidence, not a new anomaly. **Native's single
+thread alone (2.96M req/s) already exceeds Solr's best observed
+throughput at 8 concurrent workers (6,215 req/s) by ~476x**; comparing
+each side's best observed number across both runs, the gap ranges
+**~460x-1,780x**. This is the headline, cross-run-robust finding.
+
+**Differential scaling shape (this container has 4 real CPUs -- disclosed
+in the binary's own output)**: native scales roughly 2.7-3.6x from 1->4
+workers (sub-linear versus the 4x core count, plausibly due to the shared
+`AtomicU64` request counter every worker thread increments every single
+request -- a real cache-line contention point in the *benchmark harness
+itself*, not in `CatalogIndex`, not further isolated here and flagged for
+follow-up). Beyond 4 workers (oversubscribing 4 cores), native's behavior
+was **not reproducible run-to-run**: pass 1 showed throughput regressing
+(11.4M -> 8.06M), pass 2 showed it holding flat (10.63M -> 10.65M) --
+an honest disclosure that the oversubscribed-regime shape is noisy at this
+measurement duration (3s) and hardware, not a clean monotonic story either
+way. Solr, by contrast, scaled *consistently upward* across both runs at
+every level through 8 workers (no regression) -- because each Solr request
+costs real network + JVM time (0.5-3.5ms), so concurrent in-flight
+requests overlap I/O wait even past the physical core count, unlike
+native's CPU-bound sub-microsecond work which has no I/O to overlap.
+
+**Interpretation**: concurrency is not where native's real-world advantage
+would come from -- a single native thread already dwarfs Solr's own best
+multi-threaded throughput by two-and-a-half to three orders of magnitude
+for this operation. The open, undecided question this raises for
+`PHASE5_DECISION.md` is what to make of an advantage this large: whether
+it reflects a genuine architectural difference worth scaling up, or
+whether it is partly an artifact of comparing an in-process Rust
+computation against an HTTP+JVM round trip on the same box (a fairness
+question distinct from the Stage A tuning already audited, since no
+realistic Solr configuration changes the fact that it is a networked
+service). Recorded as an open risk, not resolved here.
+
 ## Experiment index
 
 - **P5-E00** — real Brand/Color workload generation from actual catalog
@@ -348,13 +422,24 @@ tied-count boundary collisions, not a sign of a new correctness defect.
 - **P5-E02** — commerce-native execution + first real comparison:
   substantially answered already by P5-E00's own measurements (this
   experiment's scope folds into P5-E00/E01 rather than duplicating them).
-- **P5-E03** — Stage B saturation/breakpoint campaign. Facet-cardinality
-  sub-experiment done: crossover characterized as a ~9,000-12,000-candidate
-  transition band (not a sharp point — shifted between two runs), 11/12
-  observed count "mismatches" traced to ground truth and confirmed as three
-  already-understood, non-bug mechanisms (no-brand-field sentinel facet
-  semantics, n-way casing consolidation, cascading top-50 boundary
-  effects), none affecting the timing result. Remaining Stage B dimensions
-  (catalog scale, selectivity, sort diversity, concurrency, cache
-  temperature under a wider query mix, mutation/churn) not yet started.
-  (next)
+- **P5-E03** — Stage B saturation/breakpoint campaign.
+  - Facet-cardinality sub-experiment done: crossover characterized as a
+    ~9,000-12,000-candidate transition band (not a sharp point — shifted
+    between two runs), 11/12 observed count "mismatches" traced to ground
+    truth and confirmed as three already-understood, non-bug mechanisms
+    (no-brand-field sentinel facet semantics, n-way casing consolidation,
+    cascading top-50 boundary effects), none affecting the timing result.
+  - Concurrency sub-experiment done: native's single-thread throughput
+    (millions of req/s, black_box-verified against dead-code elimination)
+    beats Solr's best 8-worker throughput by ~460-1,780x; native scales
+    sub-linearly with cores then behaves inconsistently under
+    oversubscription (disclosed, not smoothed over), Solr scales
+    consistently but from a vastly lower base (I/O-bound vs CPU-bound).
+    Left as an open, unresolved question for `PHASE5_DECISION.md`: how much
+    of this gap is architectural vs. an in-process-vs-networked-service
+    fairness artifact.
+  - Remaining Stage B dimensions (catalog scale, selectivity, sort
+    diversity, cache temperature under a wider query mix, mutation/churn —
+    the last likely blocked by native having no incremental-update API at
+    all, a real architectural gap worth stating plainly rather than
+    building one ad hoc) not yet started. (next)
