@@ -136,12 +136,194 @@ vs-product-name collisions, mutually incompatible implied facts, stale/
 withdrawn rules); explicit KEEP/REJECT/BOUNDED verdict; raw artifacts
 preserved under `docs/research/artifacts/p4e{NN}_run1/`.
 
+## P4-E00 — `ImplicationRule`/`ImplicationTable` type + RED-first tests
+
+**Evidence class**: mechanism only, unit-tested (no real data needed for
+the type itself).
+
+New `commerce_core::control_plane::implication` module:
+`ImplicationRule { trigger, implies: Vec<ResolvedConstraint>, provenance,
+confidence, status }` and a compiled `ImplicationTable` that only ever
+stores `Promoted` rules -- `ImplicationTable::compile` silently drops any
+`Candidate`/`Withdrawn` rule at construction, so the online serving path
+(`apply_implications`) is structurally incapable of applying an
+unvalidated or retracted rule, mirroring
+`control_plane::provider::ModelProvider`'s own "enforced by where it's
+called from" discipline. `apply_implications` reuses
+`cold_start::prefill::apply_predictive_prefill`'s established safety rule
+(never override an explicit Brand/BrandAny constraint) and adds a second,
+Issue #16-required one: if two matched triggers in the same query imply
+different Brand values, abstain entirely rather than guessing.
+
+8 RED-first tests: normal application; a never-promoted candidate rule
+never applies; a withdrawn rule never applies (even after having been
+promoted); explicit-brand suppression; brand-disagreement abstention;
+brand-agreement across two triggers applies normally; no match; an empty
+table short-circuits. 35/35 `commerce-core` tests pass (27 pre-existing +
+8 new).
+
+**Decision**: KEEP the mechanism (type only, no real-data verdict yet).
+Next: P4-E01's offline propose/replay/promote pipeline.
+
+## P4-E01 — offline propose/replay/promote: a first, small, real, zero-false-positive Brand-implication result
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, a real Tantivy title-only index built fresh
+for candidate proposal). No new Solr querying: reuses P3-E06's
+already-persisted `whole_corpus_solr_ndcg.csv` for every query's own real
+Solr score, exactly like P3-E08–E17 do.
+
+**Hypothesis** (stated in this log before implementation, per this
+project's autonomy contract): among queries Issue #14's admission
+mechanisms currently reject, a nonzero, real, safe subset can be
+converted to admission-eligible by adding one offline-proposed,
+replay-validated, promoted Brand-implication fact derived from real
+title-phrase-to-brand co-occurrence, without exceeding Issue #14's RQ2
+budgets or showing a categorically worse false-positive rate than Phase
+3's own worst KEPT mechanism (15.35%, P3-E05 at unlimited cap).
+
+**Method**: `phase4-eval::bin::p4e01_implication_propose_replay_promote`.
+
+1. **Baseline** (fixed, held constant across baseline and treatment): all
+   three existing admission mechanisms at P3-E16's own promoted
+   `<=2.0%`-budget three-way operating point (`structural_cap=2,
+   anchored_cap=20, single_token_cap=10`) -- 1,303 baseline-admitted,
+   21,155 baseline-rejected, exactly matching P3-E16's own reported 1,303
+   admitted/5.80% coverage figure (a direct cross-check that this
+   experiment's admission replication is correct).
+2. **Propose**: scan every baseline-rejected query's raw text for
+   2-3-word windows (74,305 unique phrases found); for each, compute
+   `cold_start::prefill::predict_brand_from_phrase` against a real
+   title-only Tantivy index over this same catalog (built fresh, 4-5s).
+   A phrase becomes a `Candidate` rule if it clears a purity/occurrence
+   threshold and is not simply the predicted brand's own name (P1-C's
+   existing rule, reused).
+3. **Replay**: for each candidate rule independently, apply it alone (a
+   solo `ImplicationTable`) to every query whose raw text contains its
+   trigger, check admission at the same fixed caps, and for every
+   newly-admitted query execute natively and score NDCG@10/Recall@10/MRR
+   against the real ESCI judgments, comparing to that query's persisted
+   real Solr score.
+4. **Promote**: a rule promotes only if it recovers >=1 query and its own
+   false-positive rate (native NDCG==0 while Solr found >=1 relevant
+   result, P3-E05/E09's own definition) does not exceed 15.35%.
+5. **Combined measurement**: apply every promoted rule together (so
+   `apply_implications`'s cross-trigger abstention logic is exercised,
+   not just each rule in isolation).
+
+### A real bug self-caught before trusting the first result: the missing-brand-field sentinel
+
+The first real run (thresholds purity>=0.9/occurrence>=20, matching
+`prefill_eval.rs`'s own real-run tier) promoted 24 rules -- inspecting
+the promoted-rule report before trusting it (this project's own "actively
+try to kill every favorable result" discipline) found **7 of the 24
+(29%) were spurious**: phrases like "james patterson", "romantic
+comedy", "thriller series", "kindle unlimited" all "implied" `BrandId(0)`
+-- `round1_eval::catalog::build_catalog`'s own sentinel for "this real
+product has no brand field at all" (`brand.unwrap_or(BrandId(0))`).
+Generic book/media phrases are overwhelmingly common in exactly this
+unbranded slice of the real catalog, so they scored a spuriously high
+"purity" toward the sentinel -- asserting `Brand=BrandId(0)` is not a
+genuine trigger-implies-brand fact, it means "this phrase correlates with
+missing brand data." This is the same real-catalog data-quality hazard
+P2-E15/P3-E02 already found for diaper products' missing `size`
+attribute, recurring here for a different field. Fixed by excluding
+`BrandId(0)` from candidate proposals outright; rerunning confirmed the
+fix (0/16 promoted rules were the sentinel afterward, at the tight
+threshold). **This risk is not necessarily unique to this experiment**:
+`cold_start::prefill`'s own already-shipped `predict_brand_from_phrase`
+(P1-C, NARROW verdict) calls the identical function and has no such
+exclusion either -- flagged as an unresolved risk below, not retroactively
+re-audited here (out of this phase's scope per "do not re-run superseded
+historical work").
+
+### Result — a small, sensitivity-checked, zero-false-positive real coverage gain
+
+| candidate thresholds | candidates generated | promoted | newly admitted | coverage (% of whole corpus) | native NDCG (mean) | Solr NDCG (mean, same subset) | false positives | isolated marginal degradation | combined degradation (stacked on P3-E16's 1.98%) |
+|---|---|---|---|---|---|---|---|---|---|
+| purity>=0.9, occurrence>=20 (tight, matches `prefill_eval.rs`'s own real-run tier) | 314 | 16 | 17 | 0.08% | 0.4411 | 0.6050 | 0/17 (0.00%) | 0.0531% relative | 2.04% relative |
+| purity>=0.8, occurrence>=10 (loose) | 813 | 108 | 85 | 0.38% | 0.5769 | 0.6841 | 0/85 (0.00%) | 0.174% relative | 2.16% relative |
+
+Both threshold points share the same qualitative shape: **zero false
+positives** (every admitted query where native NDCG=0, Solr also found no
+relevant result -- native never uniquely failed where Solr succeeded),
+but a real, substantial per-query ranking-quality gap on the admitted
+subset (native NDCG meaningfully below Solr's own NDCG on the identical
+queries) -- the same "no ranking signal" pattern (`execute_ranked` has no
+signal when `query.preferences` is empty, P2-E17's original finding)
+every lexical-narrowing-based admission mechanism in this campaign has
+shown. **Isolated (measured the way every other Phase 3 mechanism is
+measured, i.e. against the pure-Solr-only background, not stacked on an
+already-tight baseline), implications' own marginal contribution clears
+every RQ2 budget by a wide margin at both threshold points** (0.05%/0.17%
+relative, versus a 2% budget). It is only when **stacked on top of
+P3-E16's own already-tight `<=2.0%`-budget three-way baseline** (itself
+sitting at 1.98%, per P3-E17's own finding that this exact point's CI
+already crosses 2%) that the combined total (2.04%/2.16%) nudges over the
+nominal 2% line -- the identical "a mechanism whose own isolated
+measurement clears budget comfortably can still push a shared budget over
+when combined with an already-near-the-edge baseline" pattern P3-E10
+first demonstrated.
+
+The loose-threshold sweep recovers 5x the coverage (85 vs 17 admitted)
+at a comparable, still-tiny isolated cost, with no new false positives
+and no recurrence of the sentinel-brand pattern (verified directly against
+the promoted-rule report) -- adopted as this phase's default going
+forward. A representative sample of promoted rules at this threshold:
+"north face"->a real apparel brand, "la roche"/"la roche posay"/"roche
+posay"->a consistent real skincare brand across all three phrasings,
+"fisher price"->a real toy brand, "porter cable"->a real power-tools
+brand, "bowers wilkins"->a real audio brand, "dr browns"->a real baby
+brand -- every one a genuine, real-catalog-grounded product-line/model-to-
+brand fact, not a string coincidence.
+
+**Decision**: **KEEP the propose/replay/promote mechanism and the
+sentinel-exclusion fix; the mechanism produces real, zero-false-positive
+implication rules from real data.** The *combined-with-P3-E16's-baseline*
+operating point (0.38% additional coverage, pushing total degradation
+from 1.98% to 2.16%) is a genuine, small, marginal-over-budget result --
+disclosed plainly, not smoothed over, matching P3-E16/E17's own honest
+framing rather than either overstating success or hiding the overshoot.
+Per Issue #16's own success criteria, this is not yet a "statistically/
+reproducibly meaningful increase" at whole-workload scale (0.38% of
+94.20% currently-rejected traffic), but it *is* the first mechanism in
+this entire research campaign (Phase 3 and Phase 4 alike) whose own
+false-positive rate on newly-admitted real queries is genuinely zero --
+qualitatively different from every lexical-narrowing mechanism measured
+before it, all of which showed some nonzero false-positive rate.
+
+**Unresolved risk, not closed here**: `cold_start::prefill`'s
+already-shipped `predict_brand_from_phrase` (used by P1-C, NARROW
+verdict) has no `BrandId(0)`-sentinel exclusion. Whether this materially
+affected P1-C's own P2-E12 numbers is untested -- out of this phase's
+scope to re-audit (Issue #18's "do not re-run superseded historical work"
+), but worth a human decision on whether to revisit.
+
+Raw artifacts: `docs/research/artifacts/p4e01_run1/` (both threshold
+runs' logs, the loose-threshold run's `rule_report.csv`/
+`per_query_report.csv`).
+
+**Next**: P4-E02 hardens the loose-threshold propose/replay/promote
+pipeline's output into `commerce_core` (an `admit_with_implications`-style
+composition, or wiring `apply_implications` as a pre-admission enrichment
+step callers are expected to run), with its own RED-first tests. P4-E03
+runs Issue #16's full required adversarial-safety list (wrong-brand
+over-constraint, ambiguous product-family names, merchant-specific naming
+conflicts, generic-word/product-name collisions, mutually incompatible
+facts, stale/withdrawn rules) as dedicated fixture tests, since this
+real-data run already surfaced one real adversarial case (the sentinel
+brand) organically rather than needing a synthetic fixture to find it.
+
 ## Experiment index
 
 - **P4-E00** — `ImplicationRule`/`ImplicationTable` type, compiled lookup,
-  RED-first tests. (next)
+  RED-first tests. KEEP.
 - **P4-E01** — offline propose (real title-phrase-brand co-occurrence,
   reusing `cold_start::prefill`) + historical replay validation + promote.
+  KEEP the mechanism; small, real, zero-false-positive coverage gain,
+  marginally over budget only when stacked on P3-E16's own already-tight
+  baseline.
 - **P4-E02** — wire promoted implications ahead of the existing admission
   mechanisms; full real-corpus measurement against Issue #14's frontier.
+  (next)
 - **P4-E03** — adversarial safety tests per Issue #16's required list.
