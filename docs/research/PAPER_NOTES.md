@@ -347,11 +347,68 @@ floor. Real, positive, reproducible-in-mechanism evidence for a narrow
 slice of real traffic (franchise/product-family-shaped queries), not
 evidence for a broad win on its own.
 
-### 8.3 P1-D/P1-E: physical advantage by class, weighted economics `[NOT YET STARTED]`
+### 8.3 P1-D/P1-E: physical advantage by class, weighted economics — **NEGATIVE RESULT** (full cycle complete)
 
-Depends on §8.1/§8.2 landing on a defensible enforcement/prefill
-configuration first, per the staged-elimination discipline (§4.4) — no
-QueryClass9-segmented physical-advantage sweep has been run yet.
+**Setup**: `crates/phase2-eval/src/bin/p1d_physical_advantage_eval.rs`
+measures commerce-native (`plan::execute_planned`) against a live, fresh,
+same-environment Apache Solr 9.10.1 (re-indexed with the real catalog)
+and an embedded Tantivy-standalone baseline (P2-E01's validated-
+equivalent-relevance engine), across all 9 `QueryClass9` classes, on the
+full real 22,458-query judged corpus. Per class: single-pass correctness
+(NDCG@10/Recall@10/MRR/zero-result-rate, up to 200 real queries,
+`BTreeMap`-ordered to avoid the §4.2 HashMap-noise floor) and a separate
+repeated-measurement latency phase (20 queries × 30 reps/method,
+interleaved via `bench_harness::round_robin_schedule`, bootstrap CIs for
+the commerce-native-vs-baseline diff).
+
+**Five real bugs found and fixed across the experiment loop** (each
+root-caused, fixed with the smallest correct change, RED-first regression
+test, full quality gate) before any number could be trusted:
+`docs/experiments/PHASE2_LOG.md` P2-E13 (an unconditional full-catalog
+attribute merge costing ~1078ms per FastPath query; Solr filtering
+against a completely unpopulated `brand_lower` schema field), P2-E14 (the
+compiler ANDing two independently-resolved, mutually-exclusive `Brand`
+constraints together — e.g. "harry potter lego" compiling to
+`Brand(Harry Potter) AND Brand(Lego)`, impossible for any real product),
+P2-E15 (the same defect generalized to attribute-level `Constraint::Enum`
+— "skeleton toy" → `color=Skeleton AND color=Toy`), and P2-E16 (an
+adversarial-review workflow finding the harness's own *latency*
+measurement of Solr was silently hitting Solr's unpopulated `_text_`
+default field — a guaranteed-zero-hit lookup — instead of the real
+edismax/`all_text` query the correctness loop already used; plus a
+correctness-neutral fix removing a 20x-oversampled delegate call for
+`lexical_first`, the single largest real-traffic class, where an empty
+constraint list can never reject a delegate hit).
+
+**Final, adversarially-reviewed result** (P2-E17), traffic-weighted by
+each class's real query-count share of the full 22,458-query corpus:
+
+| class | traffic share | CN vs. Solr mean latency |
+|---|---|---|
+| structural_exact_entity | 0.68% | **87x faster** |
+| variant_scoped_structural | 0.13% | **105x faster** |
+| range_plus_structural | 0.01% | 18x *slower* (n=2, no traffic weight) |
+| structural_plus_lexical_residual | 14.48% | 2.9x slower |
+| structural_plus_semantic_residual | 0.25% | 3.8x slower |
+| lexical_first | 36.84% | 3.0x slower |
+| ambiguous_punt | 22.29% | 3.4x slower |
+| long_tail_noisy | 25.31% | 2.7x slower |
+
+**Weighted whole-workload economics: commerce-native ~2.3-3.0x SLOWER
+than Solr** (median-/mean-weighted respectively) — against Issue #6's
+5-10x-*faster* north star. Every one of the six classes representing more
+than 0.1% of real traffic (99.19% of the corpus) individually shows
+commerce-native slower than Solr; its only wins are confined to two
+classes totaling 0.81% of traffic, and — per a dedicated relevance-
+guardrail audit tracing the mechanism to source (`execute_ranked` never
+computes a nonzero score because the shipping baseline lexicon never
+populates `query.preferences`) — those wins carry a real, uncorrected
+relevance cost (NDCG@10 -31.5%, MRR -58% relative to Solr on
+`structural_exact_entity`), not a clean win on both axes.
+
+Full class-by-class table, the adversarial review's seven-question
+checklist, and threats to validity: `docs/experiments/PHASE2_LOG.md`
+P2-E17. Raw artifacts: `docs/research/artifacts/p1d_run5/`.
 
 ## 9. Ablations
 
@@ -369,6 +426,23 @@ Remaining ablations planned once a promising configuration exists
 elsewhere: remove/replace one component at a time (predictive prefill,
 structural narrowing, confidence-aware routing) to attribute any observed
 gain to its actual cause rather than the configuration as a whole.
+
+**P1-D**: the adversarial review's `hybrid_overhead_rootcause` audit is
+itself an ablation-by-source-reading rather than a re-run: it isolated
+which piece of `Hybrid`/`Punt`'s cost is (a) a confirmed harness
+measurement bug (P2-E16's broken Solr latency query — fixed and
+re-measured, narrowing the ratio from ~4.05x to ~3.01x mean-weighted),
+(b) a genuinely fixable core inefficiency (`delegate_oversample` applied
+even when no constraint could ever reject a hit — fixed, same-run
+re-measurement not separately isolated from (a) since both fixes shipped
+together), and (c) a delegate-implementation limitation not yet fixed or
+ablated (`TantivyDelegate`'s `TermSetQuery`-based `restrict_to`,
+undermining `Hybrid`'s narrowing benefit for `structural_plus_lexical_residual`/
+`structural_plus_semantic_residual`, 14.7% of traffic combined) — flagged
+as an open risk, not measured in isolation this cycle. A true ablation
+disentangling (a)+(b)'s combined effect, or measuring (c)'s standalone
+cost via a bitmap-based delegate restriction, remains future work if this
+architecture is revisited.
 
 ## 10. Limitations / Threats to Validity
 
@@ -411,7 +485,44 @@ gain to its actual cause rather than the configuration as a whole.
   NDCG/Recall/MRR delta reported anywhere in §8 that is at or below that
   level should be read as "not distinguishable from noise in a single
   run," not as a real effect — this applies retroactively to P2-E11's own
-  table as well, not only P2-E12's.
+  table as well, not only P2-E12's. (P1-D's own binary, `p1d_physical_advantage_eval.rs`,
+  fixed this specific noise source by using `BTreeMap`-ordered iteration
+  throughout — a real methodological correction carried forward from
+  P2-E12's own finding, not repeated in P1-D's numbers.)
+- **P1-D's latency samples are 20 unique queries per class, repeated 30
+  times each — not 30 independent draws from the class's real
+  population**, and the correctness/latency samples are a deterministic
+  "smallest-N-by-native-ESCI-query-id" selection, not random or
+  stratified (found by the P2-E17 adversarial review's `fairness_audit`
+  agent). This covers as little as ~2.4-6% of the four classes that carry
+  >99% of real traffic. The bootstrap CIs are therefore tighter-looking
+  than the true query-to-query variance across each class's full
+  population would support; the *direction* of every finding is
+  corroborated by Solr's own correctness-loop `avg_server_qtime` (computed
+  over a separate, larger, though still non-random, 200-query sample),
+  but the *exact* traffic-weighted multiplier (~2.3-3.0x slower) should be
+  read as a defensible estimate, not a tight confidence interval, until a
+  random/stratified, larger-N re-run is performed.
+- **`plan::plan`'s `FastPath` route has no selectivity safeguard**, unlike
+  `Hybrid`/`Punt` (which explicitly gate on `selectivity <=
+  policy.selectivity_threshold`): a real query in `range_plus_structural`
+  (n=2, 0.01% of traffic) resolved to a large, non-selective candidate
+  set and showed commerce-native's single worst P1-D latency (mean
+  ~30ms), slower than both baselines — a genuine, source-verified signal
+  that `structural_exact_entity`/`variant_scoped_structural`'s dramatic
+  wins (87-105x) may be a property of this corpus's favorable samples for
+  those two classes specifically, not a general architectural guarantee.
+  Currently negligible traffic weight; not fixed this cycle (P2-E17).
+- **The reference `TantivyDelegate` used throughout P1-D turns `Hybrid`'s
+  `restrict_to` into a per-query Lucene `TermSetQuery`** over the full
+  narrowed candidate set (up to ~60K terms for
+  `structural_plus_lexical_residual`), which the P2-E17 adversarial review
+  found undermines much of the "narrow first is cheap" cost advantage
+  `Hybrid` is meant to realize. This is a limitation of this benchmark's
+  reference delegate implementation, not of `commerce_core::plan` itself
+  (the `LexicalDelegate` trait boundary is respected), but it means the
+  measured `Hybrid`-path cost may not reflect what a production-grade,
+  bitmap/doc-id-set-based delegate restriction could achieve.
 
 ## 11. Negative Findings (preserved, not erased)
 
@@ -444,20 +555,72 @@ gain to its actual cause rather than the configuration as a whole.
   running the identical baseline twice — a real instance of the campaign's
   own rigor protocol catching a gap in itself, not just in the system
   under test.
+- §8.3/P2-E17 (P1-D/P1-E, final): **the whole-engine 5-10x QPS/$ thesis is
+  a negative result on this real catalog/query corpus.** Commerce-native's
+  structural/hybrid architecture is dramatically faster (87-105x) on two
+  query classes totaling under 1% of real traffic, and consistently
+  slower (2.7-3.8x) on the six classes totaling 99.19% of real traffic
+  that reach `Hybrid`/`Punt`. Traffic-weighted, commerce-native is
+  ~2.3-3.0x *slower* than mature Solr, not 5-10x faster. This is not a
+  benchmark artifact masking a real win: the review found and fixed a
+  real, severe measurement bug that was making Solr's baseline look
+  artificially fast (P2-E16), and the negative result *survived and
+  narrowed* after that correction rather than disappearing — a stronger
+  form of evidence than a single favorable-looking number would have
+  been. The two classes that do win physically also carry a real,
+  uncorrected relevance cost (§8.3), so even the narrow win is not a clean
+  one as currently implemented.
+- §8.3/P2-E17: this campaign's own real-world dataset (Amazon ESCI) has
+  no structured `product_type`/`category`/price data at all (P2-E14),
+  which is itself why `selective_multi_attribute_structural` — one of
+  Issue #6's original 9 named query classes — is empty on real data: not
+  because commerce-native fails at it, but because no real query in this
+  corpus can even be classified into it once the compiler correctly
+  refuses to fabricate a second structural entity constraint from noise.
+  A materially different real catalog with genuine multi-entity
+  structured data remains untested and could change this specific
+  finding, though not the broader Hybrid/Punt result (which does not
+  depend on `product_type`/`category` at all).
 
 ## 12. Conclusion on the 5–10× Thesis
 
-**`[NOT YET DETERMINED]`** — two P1 semantic-layer experiments complete
-(P1-B: REVISE — confidence-tiered enforcement is sound but alias/spelling
-variance is a minor, not dominant, contributor to the real recall gap;
-P1-C: NARROW — predictive prefill genuinely moves a small, real slice of
-traffic and improves structural recall, but the effect is modest and its
-integrated-relevance impact is not yet distinguishable from measurement
-noise). Neither result alone determines the 5–10× thesis: both concern
-semantic interpretation quality, not the physical-execution-advantage
-question (P1-D/P1-E) the thesis actually turns on. No query-class-segmented
-physical-advantage sweep against the mature baseline has been run yet —
-that remains the highest-information next experiment. This section will be
-updated as each experimental cycle completes; per Issue #6, any of SUPPORT
-/ NARROW / NEGATIVE RESULT is a valid, defensible outcome, and this
-document commits to reporting whichever the evidence actually supports.
+**NEGATIVE RESULT**, on this real catalog (1,215,854-product Amazon ESCI)
+and real query corpus (22,458 human-judged queries), reached via the
+campaign's full required discipline: fair, same-environment baselines
+(Solr and Tantivy); repeated measurement with bootstrap CIs; a stable
+9-class query taxonomy reported per-class and traffic-weighted; five real
+bugs found, root-caused, and fixed with RED-first regression tests before
+trusting any number (P2-E13–P2-E16); and a 4-agent adversarial review
+that independently reproduced the headline weighted-economics number,
+audited baseline fairness, audited the relevance guardrail, and
+root-caused the dominant-traffic-class slowdown — which is precisely how
+it caught the one bug (a broken Solr latency measurement) that would have
+made the negative result look more severe than reality, and *narrowed*
+the finding rather than reversed it.
+
+Three P1 semantic-layer/physical-execution results are now complete:
+**P1-B** (REVISE — confidence-tiered enforcement is a sound mechanism, but
+alias/spelling variance is a minor, not dominant, contributor to the real
+recall gap), **P1-C** (NARROW — predictive prefill genuinely moves a
+small, real slice of traffic and improves structural recall, modest
+effect, integrated-relevance impact not distinguishable from measurement
+noise), and **P1-D/P1-E** (NEGATIVE RESULT — see above). None of the
+three individually reverses another: P1-B/P1-C concern semantic
+interpretation quality on the Punt/Hybrid path, which P1-D independently
+found to be the traffic-dominant, economically-decisive path and to be
+*slower* than the mature baseline regardless of semantic-layer quality —
+improving semantic interpretation further cannot, by itself, close a gap
+that is currently dominated by execution-path overhead (embedded delegate
+call cost, `TermSetQuery`-based restriction, HTTP-boundary-controlled-for
+but still real per-query cost), not by classification accuracy.
+
+The campaign's decision discipline (KEEP/REVISE/DELEGATE/P2/STOP) applied
+to the whole-engine thesis: closest to **STOP** — evidence, produced
+under this campaign's own rigor bar and adversarially checked, makes a
+5-10x commerce-vertical advantage implausible on real ecommerce workloads
+resembling this one, absent an architecturally different execution path
+for the traffic-dominant Hybrid/Punt classes (a cheaper delegate-
+restriction mechanism, and/or a materially different real catalog with
+richer structured data than this one has). This is reported as the
+evidence supports it, per Issue #6's explicit instruction that any of
+SUPPORT/NARROW/NEGATIVE RESULT is a valid, defensible outcome.
