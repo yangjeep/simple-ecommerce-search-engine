@@ -2034,7 +2034,7 @@ mechanism. `variant_scoped_structural`'s remaining zero-result rate is a
 genuine, class-level finding about this real catalog's attribute data
 quality -- not a commerce-native-specific defect (Solr fails on the same
 real queries for the same reason) and not fixable by more compiler logic.
-Recorded as negative evidence, feeding into P2-E16's final class-by-class
+Recorded as negative evidence, feeding into P2-E17's final class-by-class
 verdict and `docs/research/PAPER_NOTES.md` §10/§11.
 
 **Next**: re-run the full P1-D sweep with all three fixes applied as the
@@ -2044,3 +2044,360 @@ traded away, does it survive repeated runs, which classes create the
 advantage, what is the weighted advantage under the real query mix, what
 would falsify the conclusion) before writing the class-by-class and
 traffic-weighted verdict.
+
+## P2-E16 — Issue #6 P1-D: adversarial review finds the harness's own Solr *latency* measurement was broken
+
+**Evidence class**: real (same full catalog/corpus as P2-E13-E15), plus a
+4-agent adversarial-review workflow tasked with independently re-deriving
+the traffic-weighted economics, auditing the harness for fairness issues,
+auditing the relevance guardrail, and root-causing why commerce-native's
+Hybrid/Punt path measured slower than Solr -- run against the corrected
+(P2-E13/E14/E15) sweep's raw log, before treating its ~3.5-4.1x-slower
+traffic-weighted result as this campaign's answer.
+
+**What the review confirmed**: the `weighted_economics` and
+`fairness_audit` agents *independently* re-derived the same ~3.5-4.1x
+(median/mean) slower ratio from the raw log (agreement to 3-4 significant
+figures via two different methods -- hand computation and an independent
+re-implementation), and both flagged the same class-uniformity evidence:
+every one of the six populated query classes representing >0.1% of real
+traffic (99.19% of the corpus) individually showed commerce-native slower
+than Solr, while its only wins (~39-49x faster) were confined to two
+classes totaling 0.81% of traffic.
+
+**What the review found wrong -- a severe, previously-unnoticed harness
+bug**: two independent agents (`fairness_audit` and
+`hybrid_overhead_rootcause`), working from different angles, converged on
+the same defect. The harness's *latency* sub-experiment measured Solr via
+
+```rust
+solr_search(&solr_base_url, text, &[], K)
+```
+
+-- the raw query text as `q`, an **empty** `fq`, bypassing
+`solr_query_for()`'s edismax/`all_text`/brand-color-`fq` construction
+entirely -- in both the warmup loop and the timed measurement loop. The
+*correctness* sub-experiment, a few dozen lines earlier in the same file,
+correctly builds `(q, fq)` via `solr_query_for()`. Root cause (confirmed
+by reading `dataset_cache/solr/solr-9.10.1`'s own `solrconfig.xml`/
+`managed-schema.xml`, then live-verified against the running Solr core):
+Solr's `<str name="df">_text_</str>` makes `_text_` the default search
+field for an unqualified `q`, but the schema's only `copyField`s target
+`all_text`, not `_text_` -- so `_text_` holds zero indexed content across
+all 1,215,854 documents. Every "solr latency" measurement in every prior
+P1-D run was timing a guaranteed-zero-hit lookup against an empty field,
+not real search work. Live reproduction against the exact running Solr
+core:
+
+```text
+q=running+shoes           (broken)  -> numFound=0,     time_total≈0.002s
+q={!edismax qf=all_text}running+shoes (fixed) -> numFound=57808, time_total≈0.032s
+```
+
+This explains why Solr's reported latency was suspiciously flat
+(~1-2ms, sd 0.2-0.5ms) across every query class regardless of difficulty
+in P2-E13/E14/E15's runs, while commerce-native/Tantivy showed wide,
+class-dependent spread that actually tracked real work -- and it directly
+means the prior ~3.5-4.1x-slower number, while independently reproduced
+twice, was measured against an artificially-fast, not-really-searching
+Solr baseline and cannot be trusted as a final figure.
+
+**Fix**: factored the brand/color extraction the correctness loop already
+did inline into `extract_brand_color()`; the latency sub-experiment now
+precomputes the same `solr_query_for()` `(q, fq)` for every query in the
+latency sample *before* the timed loop -- symmetric with how
+commerce-native's own `compile()` cost is excluded from its timed block
+via `compiled_cache` (an intentional, disclosed asymmetry the
+`fairness_audit` agent separately flagged as small and favoring
+commerce-native, concentrated in the negligible-traffic FastPath classes),
+not a new one.
+
+**A second, independently-evidenced (and independently fixable)
+inefficiency** the same review surfaced, in `commerce_core::plan` itself
+rather than the harness: `execute_planned`'s `Punt` branch asked the
+delegate for `k * delegate_oversample` (200) results even when
+`query.constraints` is empty -- exactly `lexical_first`'s shape (36.8% of
+all real traffic, 100% `Punt`-via-no-constraint). `CommerceQuery::matches_variant`'s
+`.all()` over an empty constraint list is vacuously true for every hit,
+so no delegate hit can ever be rejected on constraint grounds there, and
+oversampling cannot change which `k` hits end up returned -- only force
+the delegate (a real Tantivy `TopDocs` collection plus per-hit stored-
+field fetches) to do 20x more work for an identical result. **Fixed**:
+`execute_planned` now only applies `delegate_oversample` when
+`query.constraints` is non-empty (`Hybrid`, and `Punt`-via-non-
+selectivity, both of which have real constraints that can reject a
+delegate hit and genuinely need the headroom).
+
+**RED-first**: `crates/commerce-core/tests/plan.rs` adds
+`punt_with_no_constraints_at_all_asks_the_delegate_for_exactly_k_not_the_oversampled_limit`
+(failed against the pre-fix code: delegate called with `limit=200`, not
+`10`), and extends the existing `Hybrid`/`Punt`-via-non-selectivity tests
+to assert they still correctly request the oversampled limit. Quality
+gate green: fmt, clippy `-D warnings`, full workspace test suite, release
+build.
+
+**Other issues the review found and explicitly did *not* treat as
+blocking** (recorded as threats to validity, `docs/research/PAPER_NOTES.md`
+§10, not further "fixed" this cycle): the correctness/latency query
+samples are a deterministic "smallest-N-by-native-ESCI-query-id"
+selection, not random or stratified, covering as little as ~2.4-6% of the
+four classes that carry >99% of real traffic; every per-class latency
+distribution/bootstrap CI is built from only 20 unique queries x 30 reps
+(repeated measurement of the same 20 query shapes, not 30 independent
+real queries), which understates true query-to-query variance; `FastPath`
+has no selectivity safeguard at all (unlike `Hybrid`/`Punt`, which
+explicitly gate on `selectivity <= policy.selectivity_threshold|`) --
+`range_plus_structural`'s single sampled non-selective query shows
+commerce-native's worst latency in the entire log (mean ~30ms, actually
+slower than both baselines), a real, source-verified warning that
+`FastPath`'s dramatic wins may be a property of this corpus's favorable
+`structural_exact_entity`/`variant_scoped_structural` samples rather than
+a general architectural guarantee -- currently negligible traffic weight
+(0.01%) but a genuine open risk; and the harness's own `TantivyDelegate`
+reference implementation turns `Hybrid`'s `restrict_to` into a per-query
+`TermSetQuery` over the full narrowed candidate set (up to ~60K terms),
+undermining some of the narrowing's own cost advantage -- a delegate-
+implementation limitation, not a `commerce_core::plan` defect (the trait
+boundary is respected), but relevant to any real deployment wanting to
+realize `Hybrid`'s full benefit.
+
+**Corrected traffic-weighted result** (re-running with both fixes,
+commit after this entry): weighted commerce-native mean latency dropped
+from ~6.98ms/~1.72ms (Solr) to ~6.16ms/~2.05ms -- Solr's weighted mean
+roughly *doubled* (1.72ms -> 2.05ms) once it started doing real work,
+narrowing the ratio from ~4.05x to **~3.01x slower** (mean-weighted) and
+from ~3.52x to **~2.31x slower** (median-weighted). The qualitative
+conclusion -- commerce-native slower than Solr on every class representing
+material real traffic -- survives this correction; the magnitude
+meaningfully narrows. See P2-E17 for the full corrected class-by-class
+results and final decision.
+
+**Decision**: methodology-correction entry (a second one this campaign,
+after P2-E13) -- "if a benchmark methodology problem is discovered, fix
+the methodology first," including when the flawed measurement happens to
+favor the baseline rather than commerce-native. Proceed to P2-E17 for the
+corrected, adversarially-reviewed final verdict.
+
+## P2-E17 — Issue #6 P1-D/P1-E final result: physical advantage by query class, traffic-weighted economics, and decision
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, live local Solr, 3 independent full-corpus
+sweeps across this experiment's debugging cycle -- P2-E13/14/15's
+corrected run, and this entry's final P2-E16-corrected run -- all with
+the same 9-class taxonomy, `bench_harness`-driven 30-rep/method repeated
+measurement, and bootstrap CIs). Commit at time of this run:
+the P2-E16 fix commit.
+
+### Class-by-class result (final, corrected numbers)
+
+| class | real n | traffic share | outcome | CN mean latency | Solr mean latency | CN/Solr ratio | CN NDCG@10 | Solr NDCG@10 | zero-result (CN / Solr) |
+|---|---|---|---|---|---|---|---|---|---|
+| structural_exact_entity | 153 | 0.68% | FastPath | 0.0172ms | 1.499ms | **87x faster** | 0.161 | 0.235 | 0% / 0% |
+| selective_multi_attribute_structural | 0 | 0% | -- | N/A on this dataset (no real product_type/category data; see P2-E14) | | | | | |
+| variant_scoped_structural | 30 | 0.13% | FastPath | 0.0148ms | 1.559ms | **105x faster** | 0.014 | 0.035 | 66.7% / 56.7% |
+| range_plus_structural | 2 | 0.01% | FastPath | 30.27ms | 1.660ms | **18x SLOWER** | 0.000 | 0.000 | 0% / 0% |
+| structural_plus_lexical_residual | 3253 | 14.48% | Hybrid | 11.72ms | 3.997ms | **2.9x slower** | 0.082 | 0.075 | 30.5% / 30.0% |
+| structural_plus_semantic_residual | 57 | 0.25% | Hybrid | 6.29ms | 1.660ms | **3.8x slower** | 0.114 | 0.114 | 21.1% / 21.1% |
+| lexical_first | 8274 | 36.84% | Punt | 5.93ms | 1.954ms | **3.0x slower** | 0.276 | 0.277 | 1.0% / 0.5% |
+| ambiguous_punt | 5005 | 22.29% | mixed | 6.35ms | 1.877ms | **3.4x slower** | 0.130 | 0.128 | 5.5% / 5.0% |
+| long_tail_noisy | 5684 | 25.31% | mixed | 3.33ms | 1.229ms | **2.7x slower** | 0.171 | 0.173 | 4.5% / 2.5% |
+
+(All bootstrap CIs for the commerce_native-vs-solr latency diff exclude
+zero in every populated class except the n=2 `range_plus_structural`
+row, per `docs/research/artifacts/p1d_run5/full_run_output.log`.)
+
+### Traffic-weighted whole-workload economics
+
+Weighting each class's mean/median latency by its real query-count share
+of the full 22,458-query corpus (Python re-derivation, cross-checked by
+the adversarial-review workflow's independent implementation, agreeing to
+4 significant figures):
+
+- **Mean-weighted**: commerce-native 6.158ms vs. Solr 2.045ms -> **~3.01x SLOWER**.
+- **Median-weighted**: commerce-native 3.871ms vs. Solr 1.679ms -> **~2.31x SLOWER**.
+
+Against Issue #6's north-star target of roughly **5-10x FASTER**, this is
+a clear, corrected, adversarially-reviewed **negative result on the
+weighted whole-workload measure**, not a narrow miss. The uniformity is
+the strongest part of the evidence, not the aggregate ratio alone: every
+one of the six populated classes representing more than 0.1% of real
+traffic (99.19% of the corpus) individually shows commerce-native slower
+than Solr, by 2.7x-3.8x depending on class. Commerce-native's only wins
+(87x, 105x faster) are confined to two classes totaling 0.81% of real
+traffic on this real catalog/query corpus.
+
+### The FastPath wins are real, but not "free" -- a relevance guardrail failure
+
+The adversarial review's `relevance_guardrail_audit` traced the exact
+mechanism: `commerce_core::index::rank::execute_ranked` only computes a
+nonzero score when `query.preferences` is non-empty; the shipping
+baseline lexicon (`compile_lexicon`, used throughout this benchmark) never
+emits a real `Preference` (confirmed at the source level: the only path
+that ever does is `compile_lexicon_with_alias_enforcement`'s fuzzy tier-2
+brand match, which this benchmark does not use). So for every real query
+in `structural_exact_entity`/`variant_scoped_structural`, `execute_ranked`
+scores every hit `0.0` and the final sort falls through entirely to the
+`(product_id, variant_id)` tie-break -- FastPath's "top 10" is the first
+10 matching products in ascending, ingestion-order `ProductId`, with
+**zero relevance signal applied**. This directly explains
+`structural_exact_entity`'s NDCG@10 gap (0.161 vs. Solr's 0.235, a 31.5%
+relative loss) and an even larger MRR gap (0.153 vs. 0.361, -58% relative,
+since MRR is most sensitive to first-hit rank, which is essentially
+random under ID-order truncation). `variant_scoped_structural`'s already-
+poor NDCG (0.014) is a compound effect: the 66.7% zero-result rate is
+genuine catalog data-quality noise (P2-E15's diagnostic; Solr suffers a
+similar 56.7% rate on the same real queries for the same underlying
+reason, Tantivy 0%), but the ~33% of queries that *do* find a match are
+also arbitrarily ID-ordered rather than ranked, plausibly explaining why
+commerce-native's NDCG is still ~2.4x worse than Solr's even on the
+shared zero-result problem. **Verdict**: for both FastPath-eligible
+classes, "5-10x faster without materially degrading relevance" is not
+supported by this evidence -- relevance *is* materially degraded. This is
+a real, fixable engineering gap (a default ranking signal -- even a
+simple catalog-derived proxy -- could be added to FastPath without
+touching routing), not evidence that structural exact-match retrieval can
+never be both fast and relevant, but as measured at this commit it is a
+cost bundled with the speed win, not a pure win on both axes.
+
+### Final adversarial-review checklist (per Issue #6's own requirement)
+
+1. **Could the speedup be a benchmark artifact?** Partially, for the
+   FastPath wins: some of the 87-105x multiplier is inflated by comparing
+   an in-process Rust call against Solr's HTTP+JSON round trip. Controlling
+   for that via Solr's own reported server-side `avg_server_qtime`
+   (0.83-0.97ms across these classes) rather than full wall-clock, the
+   advantage is still ~50-90x -- large and real even after removing the
+   HTTP-boundary confound. For the Hybrid/Punt "slower" result: the
+   original ~3.5-4.1x figure *was* partly a benchmark artifact (P2-E16's
+   broken Solr latency measurement); corrected, a real, smaller (~2.3-3.0x)
+   gap remains, independently reproduced across the debugging cycle's
+   three full-corpus runs.
+2. **Are baselines fair?** Yes, after P2-E16's fix: the same fresh,
+   same-environment Solr instance measured with a matching query
+   construction in both the correctness and latency sub-experiments; the
+   Tantivy-standalone baseline reuses P2-E01's already-validated-
+   equivalent-relevance engine. Residual, smaller asymmetries remain
+   (documented, not blocking): commerce-native's own query-compile cost is
+   excluded from its timed block the same way Solr's/Tantivy's per-query
+   parsing is not -- small and favoring commerce-native, concentrated in
+   the negligible-traffic FastPath classes.
+3. **Are we trading relevance for speed?** Yes, for the FastPath classes
+   specifically (above) -- a real, disqualifying-for-a-clean-win finding.
+   The Hybrid/Punt classes show comparable (not better, not
+   catastrophically worse) relevance to Solr, so the "slower" result there
+   is not offset by a relevance win either.
+4. **Does it survive repeated runs?** The qualitative direction (FastPath
+   dramatically faster on two negligible-traffic classes; Hybrid/Punt
+   consistently slower on the traffic-dominant classes) held across three
+   independent full-corpus sweeps (P2-E13/14/15's run and this entry's
+   P2-E16-corrected run), each with 30-rep/method bootstrap CIs excluding
+   zero. A real limitation, explicitly not hidden: the underlying latency
+   samples are only 20 unique queries per class, repeated 30 times each
+   -- not 30 independent draws from the class's full real population (up
+   to 8274 queries) -- so the *exact* multiplier carries more uncertainty
+   than the tight-looking CIs suggest. The direction is corroborated by
+   Solr's own correctness-loop `avg_server_qtime` (computed over the
+   larger, though still non-random, 200-query correctness sample),
+   pointing the same way.
+5. **Which classes create the advantage?** `structural_exact_entity` and
+   `variant_scoped_structural`, both 100% `FastPath`, together 183 of
+   22,458 real queries (0.81%). `selective_multi_attribute_structural` is
+   empty on this dataset (P2-E14). `range_plus_structural` is *not* an
+   advantage (n=2, commerce-native 18x slower, a real warning sign --
+   see below).
+6. **What is the weighted advantage under a realistic mix?** ~2.3-3.0x
+   **SLOWER**, not 5-10x faster, using this real dataset and its real
+   query-class distribution.
+7. **What would falsify this conclusion?** (a) A real catalog with genuine
+   structured `product_type`/`category`/price data (this Amazon ESCI
+   export has none -- P2-E14's finding) could populate
+   `selective_multi_attribute_structural` and shift real traffic further
+   into FastPath-eligible shapes; this real dataset cannot test that.
+   (b) Fixing FastPath's missing ranking signal would make the two
+   current wins "clean," though they would still be <1% of traffic on
+   *this* dataset. (c) A bitmap/doc-id-set-based `Hybrid` delegate
+   restriction (instead of the harness's reference `TantivyDelegate`'s
+   per-query `TermSetQuery`, which the review flagged as undermining
+   `Hybrid`'s own narrowing advantage) could narrow the gap for the 14.7%
+   of traffic in `structural_plus_lexical_residual`/
+   `structural_plus_semantic_residual`. (d) A random/stratified re-sample
+   with a much larger per-class N would tighten the exact multiplier's
+   confidence interval, though is unlikely to reverse the direction given
+   the already-observed uniformity across all six dominant-traffic
+   classes.
+
+### `range_plus_structural`'s 18x-slower result: a real, unresolved architectural risk, not noise to ignore
+
+`plan()` (`crates/commerce-core/src/plan/mod.rs`) routes to `FastPath`
+purely on `query.residual_lexical.is_empty()`, with **no check on how
+large the resulting structural candidate set is** -- unlike `Hybrid`/
+`Punt`, which explicitly gate on `selectivity <= policy.selectivity_threshold`
+specifically to avoid materializing-and-sorting a non-selective candidate
+set (R1-E05's own finding, restated in this module's doc comment).
+`execute_ranked`/`CatalogIndex::execute` then unconditionally builds a
+`Vec` over every matching candidate and fully sorts it (`O(n log n)`, not
+a partial-select) before truncating to `k`. `range_plus_structural`'s two
+real queries happened to resolve to a large, non-selective candidate set,
+and commerce-native's FastPath latency (mean 30.27ms, one measurement
+running to 96ms in an earlier run) was worse than *both* baselines --
+exactly the "materialize + fully sort a huge candidate set" cost pattern
+`Hybrid`/`Punt`'s selectivity gate exists to avoid, but with no such
+avoidance available to `FastPath`. With n=2 this specific number carries
+~0% weight in the traffic-weighted aggregate and does not change the
+reported ratios either way, but it is a legitimate, source-verified
+signal that `structural_exact_entity`/`variant_scoped_structural`'s
+dramatic wins may be a property of this corpus's favorable samples for
+those two classes, not a general architectural guarantee that *every*
+FastPath query is cheap. Recorded as an open risk, not fixed this cycle
+(no failing real query volume currently justifies the smallest-correct-fix
+discipline; would need either a `FastPath`-side selectivity check or
+real data showing this matters at more than 0.01% of traffic).
+
+### Decision: **NEGATIVE RESULT** for Issue #6's whole-engine 5-10x thesis, on this real catalog/query corpus
+
+Per the campaign's own stop-condition framework: "after reasonable
+permutations and ablations, mature Solr/Lucene/Tantivy execution erases
+the weighted advantage ... preserve the evidence and write the negative
+result clearly." That is what this entry does. Five real, distinct bugs
+were found and fixed across P2-E13-E16 (an unconditional full-catalog
+attribute merge, an unpopulated Solr schema field used for correctness,
+a compiler defect ANDing mutually-exclusive brand constraints, the same
+defect generalized to attribute-level `Enum` constraints, and a broken
+Solr latency measurement plus a real delegate-oversample inefficiency) --
+each investigated to root cause, fixed with the smallest correct change,
+and validated with a RED-first regression test, exactly per this
+campaign's engineering discipline. After all five fixes, the result is
+not a universal 5-10x win, narrowed to a smaller-but-still-decisive win,
+or a wash: it is that commerce-native's structural/hybrid architecture is
+**dramatically faster (87-105x) on <1% of real traffic, with a real,
+uncorrected relevance cost on that same slice, and consistently slower
+(2.7-3.8x) on the 99%+ of real traffic that reaches `Hybrid`/`Punt`**,
+where an embedded lexical delegate call is added on top of (not instead
+of) structural planning, at comparable relevance to a single mature Solr
+call. The traffic-weighted whole-workload economics is
+**~2.3-3.0x SLOWER than Solr, not 5-10x faster**.
+
+This does not mean the structural retrieval mechanism itself is wrong --
+`FastPath`'s per-query cost really is two to three orders of magnitude
+below Solr's when a query resolves entirely to structural constraints and
+that structural predicate is selective. It means: (a) this real dataset's
+actual query mix does not contain enough of that query shape for the win
+to matter economically; (b) the current implementation does not realize
+`Hybrid`'s intended narrowing benefit due to a delegate-implementation
+limitation (`TermSetQuery` over a large candidate set); and (c) even the
+classes that do win physically do not yet win on relevance. None of these
+are contradicted by anything found this cycle -- they are exactly what
+was measured, after real, adversarially-verified debugging effort, not
+before it.
+
+**Next**: update Issue #6 and `docs/research/PAPER_NOTES.md` (§8.3, §9
+ablations, §10 limitations, §11 negative findings, §12 conclusion) with
+this result. Given the campaign's decision discipline (KEEP/REVISE/
+DELEGATE/P2/STOP), P1-D's own verdict is closest to **STOP** for the
+whole-engine thesis as currently measured on this dataset -- but Issue #6
+spans P1-A through P1-F, and P1-B/P1-C's own REVISE/NARROW verdicts (soft
+enforcement mechanism sound but small effect; predictive prefill narrow
+but real) are independent of this result and do not need to be
+re-litigated here. The campaign-level synthesis belongs in Issue #6's
+own update and a `SCALE_UP_DECISION.md`-style final artifact, not
+repeated in this log.
