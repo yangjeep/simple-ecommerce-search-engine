@@ -1804,3 +1804,243 @@ Proceed to Issue #6's P1-D (physical advantage by query class) as the next
 research cycle, now that both P1-B and P1-C have real, evidence-backed
 (REVISE / NARROW) conclusions rather than continuing to iterate on
 semantic-interpretation experiments alone.
+
+## P2-E13 — Issue #6 P1-D: building the physical-advantage-by-class harness, and two real bugs the first real run found
+
+**Evidence class**: real (full 1,215,854-product catalog, full 22,458-query
+judged corpus, a fresh live local Apache Solr 9.10.1 instance re-indexed
+with the same real catalog -- `dataset_cache/solr/solr-9.10.1`, not Docker,
+not a stale prior run's numbers).
+
+**Hypothesis**: for each of the 9 real-query structural-shape classes
+(`round1_eval::query_taxonomy::QueryClass9`), commerce-native structural/
+hybrid execution shows a measurable, statistically defensible physical
+advantage (throughput, latency percentiles, candidate-set size) over
+Solr and an embedded Tantivy-standalone baseline on some subset of
+classes, without materially degrading relevance/correctness -- and the
+traffic-weighted aggregate across the real query mix indicates whether
+that advantage plausibly supports Issue #6's 5-10x north star.
+
+### Infrastructure
+
+New `crates/phase2-eval/src/bin/p1d_physical_advantage_eval.rs`: for each
+class, a single-pass correctness phase (up to 200 real queries: NDCG@10/
+Recall@10/MRR against real ESCI judgments, `BTreeMap`-ordered iteration
+throughout to avoid the HashMap-iteration-order floating-point noise
+P2-E12 found) and a separate repeated-measurement latency phase (20
+queries x 30 reps/method, methods interleaved via
+`bench_harness::round_robin_schedule`, `bench_harness::Distribution` +
+`bootstrap_ci_diff_of_means` for the headline commerce-native-vs-baseline
+comparison). Three methods per query: commerce-native (`plan::execute_planned`),
+an embedded Tantivy-standalone baseline (whole raw query text, no
+structural involvement at all -- P2-E01's validated-equivalent-relevance
+engine), and the live Solr instance over HTTP (`ureq`).
+
+### First real run: two genuine bugs, not architectural signal
+
+The first full sweep produced two results severe enough to investigate
+before trusting any of the numbers around them, per this campaign's own
+rule ("if a benchmark methodology problem is discovered, fix the
+methodology first"):
+
+**Bug 1 -- `execute_ranked` costing ~1078ms for a single non-selective
+FastPath query.** `commerce_core::index::rank::execute_ranked` computed
+`effective_attributes` (a per-candidate `HashMap` merge/clone) for *every*
+candidate returned by a FastPath query, unconditionally -- even though
+`compile_lexicon` (this project's own shipping baseline lexicon, I7-E04)
+never emits a real `Preference`, so `query.preferences` is empty on
+essentially every real query, and the merged attributes were computed
+only to feed a `score_preferences` call that returns `0.0` regardless,
+without ever reading them. Fixed by skipping the merge entirely when
+`query.preferences.is_empty()`; behavior is byte-identical (every score
+`0.0`, same deterministic `(product_id, variant_id)` tie-break), proven by
+a new regression test
+(`ranking_with_no_preferences_still_returns_every_candidate_score_zero_and_deterministically_ordered`,
+`crates/commerce-core/tests/physical_index.rs`). Real measured effect:
+`structural_exact_entity`'s commerce-native latency dropped from ~1078ms
+to ~0.02ms (see P2-E16's final numbers) -- roughly five orders of
+magnitude, entirely wasted work removed.
+
+**Bug 2 -- Solr's `brand`/`color` filters against a completely
+unpopulated field.** The harness originally filtered structural brand/
+color constraints against `brand_lower`, a Solr schema field. Direct curl
+queries against the live Solr instance
+(`q=brand_lower:*` -> 0 hits across all 1,215,854 documents; a facet
+query on `brand_lower` returned an empty facet list) confirmed it is a
+schemaless-mode artifact `scripts/round1/solr_index.py` never actually
+populates (it only ever sets `doc["brand"]`), producing a 100%
+zero-result Solr baseline for `structural_exact_entity` and
+`selective_multi_attribute_structural` -- an artifact of the eval
+harness, not evidence about Solr's real capability. Fixed by
+`case_insensitive_field_regex`, a case-insensitive Lucene `RegexpQuery`
+against the real, raw-cased `brand`/`color` fields (`solr.StrField`, no
+case-folding analyzer) -- verified correct via direct curl testing before
+porting to Rust (`brand:/[Nn][Ii][Kk][Ee]/` -> 6165 matches vs. exact
+`brand:Nike` -> 6160, the extra 5 being genuine case variants
+`commerce_core`'s own trim+lowercase brand identity already merges, so
+this is the *fair* filter, not a weaker one).
+
+**Regression check**: `cargo fmt --all -- --check`, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings`, full workspace
+`cargo test --workspace --all-features`, `cargo build --workspace
+--release` clean after each fix.
+
+**Decision**: methodology-correction entry, not yet a class-level
+decision -- proceed to re-run with both fixes applied (P2-E14 found a
+third real bug in that very re-run before any class's numbers could be
+trusted as final; see below).
+
+## P2-E14 — Issue #6 P1-D: the compiler ANDed mutually-exclusive same-entity constraints together
+
+**Evidence class**: real (same full catalog/corpus as P2-E13).
+
+**Background**: the corrected re-run (P2-E13's fixes applied) showed
+`selective_multi_attribute_structural` at 100% zero-result for
+commerce-native (22/22 real queries), `NDCG@10=0.0000`, against Tantivy's
+`NDCG@10=0.476` on the *identical* queries -- a suspiciously total
+failure, not a narrow-selectivity effect (22/22 real queries all
+returning literally nothing is implausible as a coincidence).
+
+**Root cause**, confirmed with a real-data diagnostic
+(`crates/phase2-eval/src/bin/selective_multi_attribute_diagnostic.rs`):
+this harness passes empty `product_types`/`categories` slices to
+`CatalogProfile::build` (the real Amazon ESCI catalog has no such field --
+`round1_eval::catalog`'s documented `UNKNOWN_PRODUCT_TYPE`/
+`UNKNOWN_CATEGORY` sentinel), so the *only* structural entity type the
+lexicon can ever emit is `Brand`. All 22 real queries in this class --
+e.g. "harry potter lego", "sega genesis", "hot wheels jeep", "funko pop
+avengers" -- independently resolved two (or three) different phrases to
+two different `Brand` ids, and `ir::query::compile` hard-ANDed them
+together. A product has exactly one brand, so
+`Brand(Harry Potter) AND Brand(Lego)` is not a narrow query, it is a
+guaranteed-empty one for every real product -- a real compiler defect,
+not evidence about structural execution's physical cost.
+
+**Fix**: `ir::query::apply_candidates` now tracks which single-valued
+"entity slot" (`Brand`/`BrandAny`, `ProductType`, `Category`) each hard
+structural constraint occupies. The first phrase to claim a slot keeps
+its hard constraint (matching the compiler's existing leftmost/
+longest-match-first bias); a later phrase that would conflict with an
+already-filled slot falls back to residual free text instead of a
+second, mutually-exclusive hard constraint -- this project's own
+established structural-narrows/lexical-ranks-residual contract
+(`docs/adr/0010`), not a new mechanism. Identical repeated matches (e.g.
+"nike nike shoes") are correctly treated as a harmless no-op, not a
+conflict.
+
+**RED-first**: `crates/commerce-core/tests/ir_compiler.rs` adds
+`conflicting_same_slot_entity_constraints_do_not_get_and_ed_together`
+(failed against the pre-fix code, reproducing the real bug shape --
+`"nike adidas running shoes"` compiling to both brands ANDed) and
+`identical_repeated_entity_matches_are_not_treated_as_a_conflict` (guards
+the no-op case). Quality gate green: fmt, clippy `-D warnings`, full
+workspace test suite (no regressions in any crate), release build.
+
+**Direct measured effect of the fix**: re-running the corrected harness,
+`selective_multi_attribute_structural` dropped to **n=0** -- every one of
+the 22 previously-misclassified real queries reclassified into a
+different taxonomy class once the second, conflicting brand phrase
+correctly fell to residual text instead of a hard constraint. This is
+itself a finding, not just a bug fix: on this real catalog, once the
+compiler defect is removed, there are **no real queries that genuinely
+warrant two or more distinct structural entity constraints together** --
+not because commerce-native fails at this class, but because the
+catalog's only real, per-product-diverse structural entity dimension is
+brand (product type and category are both unpopulated sentinels in this
+ingestion). Recorded honestly as a dataset limitation, matching this
+harness's own pre-existing doc comment ("Solr's `product_type`/
+`category`/price fields do not exist in this real catalog ... reported
+honestly as such, not fabricated").
+
+**Decision**: REVISE (compiler defect, fixed) for the mechanism;
+`selective_multi_attribute_structural` itself becomes **N/A on this
+dataset** rather than a class with a measurable verdict -- proceed to
+P2-E15 to check whether the same shape recurs elsewhere before treating
+the corrected run as final.
+
+## P2-E15 — Issue #6 P1-D: the same bug generalizes to attribute-level `Enum` constraints, and the remaining zero-result cases are catalog data quality
+
+**Evidence class**: real (same full catalog/corpus as P2-E13/P2-E14).
+
+**Background**: after P2-E14's fix, `variant_scoped_structural` still
+showed 68.8% zero-result for commerce-native (22/32 real queries) *and*
+53.1% for Solr (17/32) -- both exact-match systems struggling on the same
+real queries -- while Tantivy (free-text, no structural involvement) was
+0%. That signature (both structural/exact-match systems fail, lexical
+does not) reads differently from P2-E14's compiler bug and needed its own
+diagnostic before concluding anything.
+
+**Diagnostic**: `crates/phase2-eval/src/bin/variant_scoped_diagnostic.rs`
+prints, for each real `variant_scoped_structural` query with zero
+commerce-native hits, the compiled constraints and -- for every real
+judged-relevant product -- its actual attribute values for the
+constrained attribute name(s). This surfaced two distinct root causes:
+
+1. **A recurrence of the same guaranteed-empty-AND bug, one level down.**
+   "skeleton toy" independently resolved "skeleton" and "toy" to two
+   *different* `color` values and hard-ANDed them
+   (`color=Skeleton AND color=Toy`), which no variant can ever satisfy
+   since `AttributeValue::Enum` is single-valued per attribute name --
+   exactly the same shape as "harry potter lego", just on a
+   `Constraint::Enum` instead of a structural entity. **Fixed** by
+   generalizing P2-E14's `EntitySlot` into `SingleValuedSlot`, adding an
+   `Attribute(String)` case keyed by attribute name for `Constraint::Enum`
+   (deliberately *excluding* `Constraint::MultiEnumContains`, which is
+   multi-valued by design -- a variant can legitimately carry several
+   tags/features at once, so two different tag matches should still
+   combine). Same first-wins/residual-fallback mechanism, no new code
+   path. RED-first:
+   `conflicting_same_attribute_enum_constraints_do_not_get_and_ed_together`
+   (`crates/commerce-core/tests/ir_compiler.rs`, using the existing
+   `shoe_lexicon` fixture's two color values, "black red running
+   shoes"). Quality gate green: fmt, clippy `-D warnings`, full workspace
+   test suite, release build.
+
+2. **Genuine catalog data-quality noise, not a bug** -- the diagnostic's
+   remaining zero-result cases, left as negative evidence rather than
+   chased further:
+   - **Color-vocabulary granularity mismatch**: "moss tile" compiles to
+     `color=Moss`, but real judged-relevant products carry `color=Green`,
+     `Juniper`, `Blackcoffee`, `"2"`, `"M"`; "pumpkin chapstick" compiles
+     to `color=Pumpkin` against relevant products' `Pumpkin Spice`,
+     `Non-tinted`, or no color at all. The catalog's raw `color` field is
+     visibly populated with non-color garbage values in places (`"2"`,
+     `"M"`), consistent with this project's already-established brand-
+     vocabulary-noise finding (Issue #6 point 3), now confirmed to extend
+     to the `color` attribute.
+   - **A garbage value trusted as real signal**: "playstation 1" compiled
+     to `Brand(PlayStation) AND color="1"` -- the trailing "1" (a console
+     generation number) spuriously matched a real but nonsensical
+     `color="1"` lexicon entry that had cleared the `min_enum_frequency`
+     trust gate, because occurrence-frequency alone cannot distinguish a
+     genuine controlled-vocabulary value from noise that happens to recur
+     >=25 times across 1.2M real products.
+   - **Attribute entirely absent, not mismatched**: "luvs size 3" and
+     "ring size 4" both compile a numeric `size` constraint, but every
+     real judged-relevant product for both queries has *no* `size`
+     attribute in its `effective_attributes()` map at all -- these
+     product categories (diapers, rings) simply don't carry structured
+     size data in this ingestion, so any numeric size constraint is
+     unsatisfiable regardless of value.
+   - **A recurrence of the already-known brand-exact-match gap**:
+     "nintendo poster" has real relevant products with `color="Poster"`
+     matching *exactly*, yet `matches_query=false` -- the `Brand(Nintendo)`
+     half is failing, the same real-brand-string-vs-compiled-identity gap
+     P2-E11 already diagnosed and found not worth chasing further with
+     string-similarity mechanisms.
+
+**Decision**: REVISE (compiler defect generalized and fixed) for the
+mechanism. `variant_scoped_structural`'s remaining zero-result rate is a
+genuine, class-level finding about this real catalog's attribute data
+quality -- not a commerce-native-specific defect (Solr fails on the same
+real queries for the same reason) and not fixable by more compiler logic.
+Recorded as negative evidence, feeding into P2-E16's final class-by-class
+verdict and `docs/research/PAPER_NOTES.md` §10/§11.
+
+**Next**: re-run the full P1-D sweep with all three fixes applied as the
+final, stable measurement; adversarially review the result (could a
+speedup be a benchmark artifact, are baselines fair, is relevance being
+traded away, does it survive repeated runs, which classes create the
+advantage, what is the weighted advantage under the real query mix, what
+would falsify the conclusion) before writing the class-by-class and
+traffic-weighted verdict.

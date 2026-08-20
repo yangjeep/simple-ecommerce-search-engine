@@ -1,0 +1,123 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+building Tantivy index...
+Tantivy index built in 14.8s
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries loaded
+  [manifest] experiment=p1d_physical_advantage method=commerce_native_vs_tantivy_vs_solr commit=89ba94d47e31 dirty=false host=vm cpus=4 os=linux seed=7 warmup=5 reps=30
+  [manifest] dataset=dataset_cache/export/catalog.jsonl (size=1520400382b_mtime=1787114566)  query_set=dataset_cache/export/queries.jsonl (size=41184952b_mtime=1787114572)
+  [manifest] config={"correctness_sample_per_class":200,"latency_reps_per_method":30,"latency_sample_per_class":20,"min_enum_frequency":25,"selectivity_threshold":0.05,"solr_available":true,"solr_base_url":"http://localhost:8983/solr/commerce_bench"}
+  [manifest] commerce-native structural index RSS: 5383.7 MB
+  [manifest] combined (structural + Tantivy) process RSS: 6038.5 MB
+  [manifest] Solr process RSS (pid 3772): 1095.2 MB
+
+=== class=structural_exact_entity === 153 real queries in class, sampling 153 for correctness
+  outcome distribution (commerce-native): {"FastPath": 153}
+    commerce_native      n=153   NDCG@10=0.1607 Recall@10=0.0996 MRR=0.1532 zero_result=0/153 (0.0%) avg_candidates=1215854
+    tantivy_standalone   n=153   NDCG@10=0.2181 Recall@10=0.1128 MRR=0.3367 zero_result=0/153 (0.0%) avg_candidates=40783
+    solr                 n=153   NDCG@10=0.2346 Recall@10=0.1243 MRR=0.3610 zero_result=0/153 (0.0%) avg_candidates=144 avg_server_qtime=0.96ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=0.0195ms sd=0.0149ms | p10=0.0098 p25=0.0118 p50=0.0171 p75=0.0209 p90=0.0291 p95=0.0346 p99=0.0736 | min=0.0056 max=0.0889ms
+  tantivy_standalone: n=30 mean=1.3304ms sd=3.5183ms | p10=0.0853 p25=0.1069 p50=0.1538 p75=0.4636 p90=1.6844 p95=8.1614 p99=14.5322 | min=0.0725 max=15.1911ms
+  solr: n=30 mean=0.7661ms sd=0.1814ms | p10=0.6272 p25=0.6669 p50=0.7135 p75=0.7826 p90=0.9745 p95=1.1366 p99=1.3553 | min=0.5801 max=1.4142ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-1.3109 ci=[-2.6892, -0.3096] excludes_zero=true
+  bootstrap CI (commerce_native - solr), ms: diff=-0.7466 ci=[-0.8149, -0.6877] excludes_zero=true
+
+=== class=selective_multi_attribute_structural === n=0 (no real queries classified into this class)
+
+=== class=variant_scoped_structural === 30 real queries in class, sampling 30 for correctness
+  outcome distribution (commerce-native): {"FastPath": 30}
+    commerce_native      n=30    NDCG@10=0.0144 Recall@10=0.0048 MRR=0.0381 zero_result=20/30 (66.7%) avg_candidates=1215854
+    tantivy_standalone   n=30    NDCG@10=0.1894 Recall@10=0.1053 MRR=0.3046 zero_result=0/30 (0.0%) avg_candidates=162322
+    solr                 n=30    NDCG@10=0.0349 Recall@10=0.0160 MRR=0.0722 zero_result=17/30 (56.7%) avg_candidates=27 avg_server_qtime=1.50ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=0.0190ms sd=0.0090ms | p10=0.0105 p25=0.0140 p50=0.0171 p75=0.0211 p90=0.0290 p95=0.0333 p99=0.0451 | min=0.0050 max=0.0487ms
+  tantivy_standalone: n=30 mean=1.3183ms sd=1.7189ms | p10=0.1861 p25=0.2513 p50=0.6704 p75=1.1901 p90=3.9606 p95=5.0135 p99=6.4152 | min=0.1398 max=6.7409ms
+  solr: n=30 mean=0.9335ms sd=0.2267ms | p10=0.7260 p25=0.7801 p50=0.8812 p75=0.9948 p90=1.2041 p95=1.2942 p99=1.5945 | min=0.6722 max=1.6877ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-1.2993 ci=[-1.9642, -0.7674] excludes_zero=true
+  bootstrap CI (commerce_native - solr), ms: diff=-0.9145 ci=[-0.9978, -0.8384] excludes_zero=true
+
+=== class=range_plus_structural === 2 real queries in class, sampling 2 for correctness
+  outcome distribution (commerce-native): {"FastPath": 2}
+    commerce_native      n=2     NDCG@10=0.0000 Recall@10=0.0000 MRR=0.0000 zero_result=0/2 (0.0%) avg_candidates=1215854
+    tantivy_standalone   n=2     NDCG@10=0.0000 Recall@10=0.0000 MRR=0.0000 zero_result=0/2 (0.0%) avg_candidates=296298
+    solr                 n=2     NDCG@10=0.0000 Recall@10=0.0000 MRR=0.0000 zero_result=0/2 (0.0%) avg_candidates=213812 avg_server_qtime=10.50ms
+  --- latency, 30 reps/method, n_queries=2 ---
+  commerce_native: n=30 mean=44.0173ms sd=17.5362ms | p10=32.2007 p25=32.7800 p50=41.1940 p75=42.8893 p90=57.2691 p95=91.1187 p99=95.5071 | min=32.0327 max=96.4139ms
+  tantivy_standalone: n=30 mean=3.4027ms sd=0.7812ms | p10=2.5426 p25=2.5996 p50=3.3883 p75=4.1739 p90=4.3843 p95=4.4508 p99=4.5922 | min=2.4778 max=4.6300ms
+  solr: n=30 mean=1.6528ms sd=0.2618ms | p10=1.2677 p25=1.5449 p50=1.7325 p75=1.8381 p90=1.8746 p95=1.9181 p99=1.9700 | min=0.8630 max=1.9872ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=40.6147 ci=[34.9423, 47.5059] excludes_zero=true
+  bootstrap CI (commerce_native - solr), ms: diff=42.3645 ci=[36.7521, 49.2989] excludes_zero=true
+
+=== class=structural_plus_lexical_residual === 3253 real queries in class, sampling 200 for correctness
+  outcome distribution (commerce-native): {"Hybrid": 198, "Punt": 2}
+    commerce_native      n=200   NDCG@10=0.0822 Recall@10=0.0482 MRR=0.1264 zero_result=61/200 (30.5%) avg_candidates=12722
+    tantivy_standalone   n=200   NDCG@10=0.2549 Recall@10=0.1422 MRR=0.4354 zero_result=0/200 (0.0%) avg_candidates=443335
+    solr                 n=200   NDCG@10=0.0749 Recall@10=0.0432 MRR=0.1246 zero_result=60/200 (30.0%) avg_candidates=519 avg_server_qtime=1.69ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=11.1755ms sd=11.0895ms | p10=0.4622 p25=3.4466 p50=7.0923 p75=12.9330 p90=28.2062 p95=29.8641 p99=35.1999 | min=0.2793 max=37.3767ms
+  tantivy_standalone: n=30 mean=16.7109ms sd=14.1843ms | p10=3.1406 p25=4.8295 p50=13.2396 p75=28.4684 p90=34.4410 p95=41.7628 p99=49.1110 | min=2.0363 max=50.0435ms
+  solr: n=30 mean=1.4908ms sd=0.2799ms | p10=1.0605 p25=1.3630 p50=1.5813 p75=1.6875 p90=1.7264 p95=1.7489 p99=1.8579 | min=0.8134 max=1.9010ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-5.5353 ci=[-11.7809, 0.8865] excludes_zero=false
+  bootstrap CI (commerce_native - solr), ms: diff=9.6848 ci=[5.8885, 13.7568] excludes_zero=true
+
+=== class=structural_plus_semantic_residual === 57 real queries in class, sampling 57 for correctness
+  outcome distribution (commerce-native): {"Hybrid": 53, "Punt": 4}
+    commerce_native      n=57    NDCG@10=0.1145 Recall@10=0.0681 MRR=0.2140 zero_result=12/57 (21.1%) avg_candidates=85586
+    tantivy_standalone   n=57    NDCG@10=0.1928 Recall@10=0.1153 MRR=0.3418 zero_result=0/57 (0.0%) avg_candidates=377301
+    solr                 n=57    NDCG@10=0.1139 Recall@10=0.0702 MRR=0.2101 zero_result=12/57 (21.1%) avg_candidates=6268 avg_server_qtime=1.75ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=6.0049ms sd=4.6090ms | p10=0.4854 p25=2.6309 p50=4.1825 p75=10.6156 p90=11.7534 p95=13.2561 p99=15.7668 | min=0.3697 max=16.4016ms
+  tantivy_standalone: n=30 mean=6.7175ms sd=9.2572ms | p10=1.2477 p25=1.3400 p50=1.7639 p75=9.4475 p90=11.4297 p95=25.6008 p99=37.9165 | min=0.9972 max=38.7751ms
+  solr: n=30 mean=1.3611ms sd=0.3184ms | p10=0.9411 p25=1.1306 p50=1.3308 p75=1.6322 p90=1.7788 p95=1.8100 p99=1.9096 | min=0.7990 max=1.9422ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-0.7126 ci=[-4.6151, 2.7207] excludes_zero=false
+  bootstrap CI (commerce_native - solr), ms: diff=4.6438 ci=[3.0735, 6.2780] excludes_zero=true
+
+=== class=lexical_first === 8274 real queries in class, sampling 200 for correctness
+  outcome distribution (commerce-native): {"Punt": 200}
+    commerce_native      n=200   NDCG@10=0.2761 Recall@10=0.1547 MRR=0.4437 zero_result=2/200 (1.0%) avg_candidates=1215854
+    tantivy_standalone   n=200   NDCG@10=0.2765 Recall@10=0.1554 MRR=0.4442 zero_result=2/200 (1.0%) avg_candidates=150641
+    solr                 n=200   NDCG@10=0.2765 Recall@10=0.1534 MRR=0.4429 zero_result=1/200 (0.5%) avg_candidates=113471 avg_server_qtime=1.91ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=6.9417ms sd=7.4740ms | p10=1.6026 p25=2.5778 p50=5.2356 p75=6.5132 p90=10.8227 p95=27.6027 p99=28.2572 | min=0.2204 max=28.4372ms
+  tantivy_standalone: n=30 mean=11.3342ms sd=12.2333ms | p10=0.7994 p25=4.0758 p50=8.9630 p75=11.4981 p90=24.0322 p95=43.1316 p99=45.5350 | min=0.3218 max=46.4945ms
+  solr: n=30 mean=2.3927ms sd=4.3468ms | p10=0.9909 p25=1.3618 p50=1.5143 p75=1.6757 p90=1.7683 p95=4.4917 p99=19.5363 | min=0.7934 max=24.8055ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-4.3924 ci=[-9.6734, 0.4254] excludes_zero=false
+  bootstrap CI (commerce_native - solr), ms: diff=4.5491 ci=[1.6463, 7.7509] excludes_zero=true
+
+=== class=ambiguous_punt === 5005 real queries in class, sampling 200 for correctness
+  outcome distribution (commerce-native): {"FastPath": 1, "Hybrid": 59, "Punt": 140}
+    commerce_native      n=200   NDCG@10=0.1293 Recall@10=0.0708 MRR=0.2278 zero_result=11/200 (5.5%) avg_candidates=857222
+    tantivy_standalone   n=200   NDCG@10=0.2410 Recall@10=0.1295 MRR=0.4552 zero_result=0/200 (0.0%) avg_candidates=425820
+    solr                 n=200   NDCG@10=0.1276 Recall@10=0.0686 MRR=0.2295 zero_result=10/200 (5.0%) avg_candidates=111836 avg_server_qtime=1.93ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=7.4613ms sd=5.2049ms | p10=3.1009 p25=3.8343 p50=5.0771 p75=10.3735 p90=16.2137 p95=17.7440 p99=19.2142 | min=1.1268 max=19.4035ms
+  tantivy_standalone: n=30 mean=17.8464ms sd=9.3659ms | p10=6.3640 p25=9.2802 p50=19.0548 p75=21.1547 p90=29.0430 p95=33.6988 p99=37.6909 | min=3.8681 max=38.4116ms
+  solr: n=30 mean=1.4904ms sd=0.3380ms | p10=0.9311 p25=1.2981 p50=1.6005 p75=1.6990 p90=1.8101 p95=1.8253 p99=1.9912 | min=0.7534 max=2.0544ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-10.3850 ci=[-14.1379, -6.5184] excludes_zero=true
+  bootstrap CI (commerce_native - solr), ms: diff=5.9709 ci=[4.2155, 7.8327] excludes_zero=true
+
+=== class=long_tail_noisy === 5684 real queries in class, sampling 200 for correctness
+  outcome distribution (commerce-native): {"Hybrid": 44, "Punt": 156}
+    commerce_native      n=200   NDCG@10=0.1703 Recall@10=0.0989 MRR=0.3152 zero_result=9/200 (4.5%) avg_candidates=948440
+    tantivy_standalone   n=200   NDCG@10=0.2331 Recall@10=0.1297 MRR=0.4401 zero_result=3/200 (1.5%) avg_candidates=377356
+    solr                 n=200   NDCG@10=0.1730 Recall@10=0.1011 MRR=0.3156 zero_result=5/200 (2.5%) avg_candidates=191886 avg_server_qtime=8.02ms
+  --- latency, 30 reps/method, n_queries=20 ---
+  commerce_native: n=30 mean=4.4342ms sd=2.5720ms | p10=1.8740 p25=2.4367 p50=3.6363 p75=6.2287 p90=7.8149 p95=9.3051 p99=9.6692 | min=0.3327 max=9.7856ms
+  tantivy_standalone: n=30 mean=4.6190ms sd=3.1645ms | p10=0.5211 p25=2.6831 p50=4.0031 p75=6.7691 p90=9.3937 p95=9.7969 p99=11.1524 | min=0.3384 max=11.6050ms
+  solr: n=30 mean=1.1148ms sd=0.2365ms | p10=0.8644 p25=0.9179 p50=1.0847 p75=1.3054 p90=1.4364 p95=1.4670 p99=1.5836 | min=0.7300 max=1.6303ms
+  bootstrap CI (commerce_native - tantivy_standalone), ms: diff=-0.1848 ci=[-1.5834, 1.2662] excludes_zero=false
+  bootstrap CI (commerce_native - solr), ms: diff=3.3194 ci=[2.4118, 4.2582] excludes_zero=true
+
+=== traffic-weighted aggregate (across all classified+sampled real queries) ===
+  commerce_native      n=1042 weighted NDCG@10=0.1565
+  tantivy_standalone   n=1042 weighted NDCG@10=0.2410
+  solr                 n=1042 weighted NDCG@10=0.1668
+  commerce_native (all classes pooled): n=240 mean=10.0092ms sd=15.6202ms | p10=0.0156 p25=0.1875 p50=4.1565 p75=10.4063 p90=32.3291 p95=41.7083 p99=74.9488 | min=0.0050 max=96.4139ms
+  tantivy_standalone (all classes pooled): n=240 mean=7.9099ms sd=10.2629ms | p10=0.2456 p25=1.2455 p50=3.9274 p75=10.1946 p90=21.2432 p95=31.6713 p99=45.2042 | min=0.0725 max=50.0435ms
+  solr (all classes pooled): n=240 mean=1.4003ms sd=1.6049ms | p10=0.7424 p25=0.9063 p50=1.3165 p75=1.6448 p90=1.7785 p95=1.8476 p99=2.0282 | min=0.5801 max=24.8055ms
+
+artifacts written to dataset_cache/p1d_artifacts

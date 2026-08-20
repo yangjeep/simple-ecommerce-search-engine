@@ -1,0 +1,25 @@
+{
+  "experiment": "p1d_physical_advantage",
+  "method": "commerce_native_vs_tantivy_vs_solr",
+  "commit_sha": "89ba94d47e311d6de44e683926191572414bf0bc",
+  "git_dirty": false,
+  "hostname": "vm",
+  "cpu_count": 4,
+  "os": "linux",
+  "dataset_path": "dataset_cache/export/catalog.jsonl",
+  "dataset_fingerprint": "size=1520400382b_mtime=1787114566",
+  "query_set_path": "dataset_cache/export/queries.jsonl",
+  "query_set_fingerprint": "size=41184952b_mtime=1787114572",
+  "config": {
+    "correctness_sample_per_class": 200,
+    "latency_reps_per_method": 30,
+    "latency_sample_per_class": 20,
+    "min_enum_frequency": 25,
+    "selectivity_threshold": 0.05,
+    "solr_available": true,
+    "solr_base_url": "http://localhost:8983/solr/commerce_bench"
+  },
+  "seed": 7,
+  "warmup": 5,
+  "reps": 30
+}
