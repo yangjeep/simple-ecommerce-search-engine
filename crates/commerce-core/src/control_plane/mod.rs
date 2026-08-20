@@ -3,11 +3,15 @@
 //! *evolve* a [`crate::ir::SemanticContext`] between deployments, not to
 //! serve a query. See `docs/adr/0005-control-plane-prototype.md`.
 
+mod implication;
 mod observe;
 mod precision;
 mod provider;
 mod replay;
 
+pub use implication::{
+    apply_implications, ImplicationRule, ImplicationTable, RuleProvenance, RuleStatus,
+};
 pub use observe::{observe_residual_terms, Observation};
 pub use precision::{
     check_precision, FixtureJudgmentOracle, Judgment, PrecisionCheck, PrecisionGateFailure,
