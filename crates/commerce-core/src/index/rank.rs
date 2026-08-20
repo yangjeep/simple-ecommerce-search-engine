@@ -56,18 +56,35 @@ pub(super) fn execute_ranked(
     catalog: &Catalog,
     k: usize,
 ) -> Vec<RankedHit> {
+    // Issue #6 P1-D (`docs/experiments/PHASE2_LOG.md` P2-E13): a real-data
+    // benchmark measured this function costing ~1078ms for a single
+    // FastPath query against the real 1.2M-product catalog, entirely from
+    // computing `effective_attributes` (a per-candidate HashMap merge/
+    // clone) for every one of ~1.2M candidates -- even though `compile_lexicon`
+    // (this project's own shipping baseline lexicon, I7-E04) never emits a
+    // real `Preference`, so `query.preferences` is empty on essentially
+    // every real query, and the merged attrs are computed only to feed a
+    // `score_preferences` call that would have returned `0.0` regardless,
+    // without ever reading them. Skip the merge entirely in that case --
+    // behavior is identical (score is always `0.0` either way), just
+    // without the wasted allocation.
     let mut scored: Vec<RankedHit> = index
         .execute(query, catalog)
         .into_iter()
         .map(|(product, variant)| {
-            let (p, v) = index
-                .lookup_variant(catalog, variant)
-                .expect("execute() only returns ids that exist in this catalog");
-            let attrs = effective_attributes(p, v);
+            let score = if query.preferences.is_empty() {
+                0.0
+            } else {
+                let (p, v) = index
+                    .lookup_variant(catalog, variant)
+                    .expect("execute() only returns ids that exist in this catalog");
+                let attrs = effective_attributes(p, v);
+                score_preferences(&query.preferences, p, v, &attrs)
+            };
             RankedHit {
                 product,
                 variant,
-                score: score_preferences(&query.preferences, p, v, &attrs),
+                score,
             }
         })
         .collect();

@@ -23,16 +23,20 @@
 //!    baseline comparison.
 //!
 //! Fairness notes (see `docs/research/PAPER_NOTES.md` for the full
-//! threats-to-validity writeup): Solr's `brand`/`color` fields hold the
-//! *raw* per-record casing (`scripts/round1/solr_index.py`); this harness
-//! filters on `brand_lower` (Solr's own lowercased multivalued field) to
-//! match `commerce_core`'s own trim+lowercase brand identity exactly --
-//! not `brand`, which would be a *weaker*, unfairly-disadvantaged filter
-//! for Solr. Solr's `product_type`/`category`/price fields do not exist
-//! in this real catalog (documented sentinel-value limitation carried
-//! since R1-E01) so `SelectiveMultiAttribute`/`RangeStructural` classes
-//! are expected to be empty or near-empty on real data -- reported
-//! honestly as such, not fabricated.
+//! threats-to-validity writeup, and `case_insensitive_field_regex`'s doc
+//! comment for a real bug this harness's first run found and fixed):
+//! Solr's `brand`/`color` fields hold the *raw* per-record casing
+//! (`scripts/round1/solr_index.py`, `solr.StrField`, no case-folding
+//! analyzer), so this harness filters via a case-insensitive whole-field
+//! regex query to match `commerce_core`'s own trim+lowercase brand/color
+//! identity exactly -- not a single exact-case `brand:"Nike"` query,
+//! which would be a *weaker*, unfairly-disadvantaged filter for Solr that
+//! misses real casing variants `commerce_core` correctly merges. Solr's
+//! `product_type`/`category`/price fields do not exist in this real
+//! catalog (documented sentinel-value limitation carried since R1-E01) so
+//! `SelectiveMultiAttribute`/`RangeStructural` classes are expected to be
+//! empty or near-empty on real data -- reported honestly as such, not
+//! fabricated.
 //!
 //! Usage: cargo run --release -p phase2-eval --bin p1d_physical_advantage_eval
 //!        [catalog.jsonl] [queries.jsonl] [solr_base_url] [index_dir]
@@ -149,10 +153,48 @@ fn percent_encode(s: &str) -> String {
     out
 }
 
-/// Escapes Lucene/Solr query-syntax special characters inside a quoted
-/// phrase value.
-fn escape_solr_phrase(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"")
+/// Builds a Lucene `RegexpQuery` pattern that matches `s` case-
+/// insensitively, anchored to the *entire* field value (Lucene's regex
+/// queries on a `StrField`/`strings` field are implicitly whole-term-
+/// anchored, confirmed directly against this run's own Solr instance:
+/// `brand:/[Nn][Ii][Kk][Ee]/` returns exactly the ASCII-case variants of
+/// "Nike," not substring matches like "Nike Inc").
+///
+/// **Why this exists at all** (P2-E13, `docs/experiments/PHASE2_LOG.md`):
+/// this harness originally filtered on a field named `brand_lower`,
+/// assumed to be a Solr-side lowercased copy field. Verified directly
+/// against the running Solr core: `brand_lower` is a schema artifact with
+/// **zero indexed values** across all 1,215,854 documents -- every query
+/// against it returns 0 hits, which is exactly why every Solr number in
+/// the first P1-D run that touched a brand/color filter was catastrophically
+/// wrong (100% zero-result for pure structural classes). Solr's real
+/// `brand`/`color` fields hold the *raw*, per-record casing
+/// (`scripts/round1/solr_index.py`) with no case-folding analyzer
+/// (`solr.StrField`, exact match only) -- a regex built from the already-
+/// lowercased `commerce_core::domain::Brand::name` (itself the
+/// trim+lowercase-normalized identity `round1_eval::catalog::build_catalog`
+/// assigns a `BrandId` by) reproduces `commerce_core`'s own case-
+/// insensitive brand-identity grouping exactly, which neither the empty
+/// `brand_lower` field nor a single exact-case `brand:"Nike"` query would
+/// (the latter would miss real "NIKE"/"nike" casing variants that
+/// `commerce_core` correctly treats as the same brand).
+fn case_insensitive_field_regex(s: &str) -> String {
+    const REGEX_METACHARS: &str = "\\.?+*|{}[]()\"#@&<>~^$/";
+    let mut out = String::with_capacity(s.len() * 4);
+    for c in s.chars() {
+        if c.is_ascii_alphabetic() {
+            out.push('[');
+            out.push(c.to_ascii_lowercase());
+            out.push(c.to_ascii_uppercase());
+            out.push(']');
+        } else if REGEX_METACHARS.contains(c) {
+            out.push('\\');
+            out.push(c);
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 struct SolrResult {
@@ -197,22 +239,24 @@ fn solr_search(base_url: &str, q: &str, fq: &[String], rows: usize) -> Option<So
 
 /// Builds `(q, fq)` for a query, matching the *shape* a real commerce Solr
 /// deployment would use for this class: structural signal (when this
-/// dataset actually has it -- brand via `brand_lower`, color via `color`)
-/// goes to `fq` (filter query, matching commerce-native's hard-constraint
-/// semantics), free text goes to `q` via `edismax` over `all_text`
-/// (matching Tantivy's own full-text scope).
+/// dataset actually has it -- brand/color, both via a case-insensitive
+/// whole-field regex against Solr's raw `brand`/`color` fields, see
+/// `case_insensitive_field_regex`'s doc comment for why) goes to `fq`
+/// (filter query, matching commerce-native's hard-constraint semantics),
+/// free text goes to `q` via `edismax` over `all_text` (matching
+/// Tantivy's own full-text scope).
 fn solr_query_for(
     query_text: &str,
     residual_lexical: &[String],
-    brand_lower: Option<&str>,
+    brand: Option<&str>,
     color: Option<&str>,
 ) -> (String, Vec<String>) {
     let mut fq = Vec::new();
-    if let Some(b) = brand_lower {
-        fq.push(format!("brand_lower:\"{}\"", escape_solr_phrase(b)));
+    if let Some(b) = brand {
+        fq.push(format!("brand:/{}/", case_insensitive_field_regex(b)));
     }
     if let Some(c) = color {
-        fq.push(format!("color:\"{}\"", escape_solr_phrase(c)));
+        fq.push(format!("color:/{}/", case_insensitive_field_regex(c)));
     }
     let text = if residual_lexical.is_empty() {
         query_text.to_string()
@@ -631,16 +675,13 @@ fn main() -> tantivy::Result<()> {
 
             // solr
             if solr_available {
-                let brand_lower = compiled.constraints.iter().find_map(|c| match c {
+                let brand = compiled.constraints.iter().find_map(|c| match c {
                     commerce_core::ir::ResolvedConstraint::Structural(
                         commerce_core::ir::StructuralConstraint::Brand(id),
-                    ) => brand_name_by_id.get(id).map(|s| s.to_lowercase()),
+                    ) => brand_name_by_id.get(id).cloned(),
                     commerce_core::ir::ResolvedConstraint::Structural(
                         commerce_core::ir::StructuralConstraint::BrandAny(ids),
-                    ) => ids
-                        .first()
-                        .and_then(|id| brand_name_by_id.get(id))
-                        .map(|s| s.to_lowercase()),
+                    ) => ids.first().and_then(|id| brand_name_by_id.get(id)).cloned(),
                     _ => None,
                 });
                 let color = compiled.constraints.iter().find_map(|c| match c {
@@ -652,7 +693,7 @@ fn main() -> tantivy::Result<()> {
                 let (q, fq) = solr_query_for(
                     text,
                     &compiled.residual_lexical,
-                    brand_lower.as_deref(),
+                    brand.as_deref(),
                     color.as_deref(),
                 );
                 if let Some(sr) = solr_search(&solr_base_url, &q, &fq, K) {

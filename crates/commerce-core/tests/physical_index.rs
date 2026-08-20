@@ -196,6 +196,51 @@ fn top_k_ranking_orders_by_preference_score_deterministically() {
     assert_eq!(ranked[2].variant, VariantId(201));
 }
 
+/// Issue #6 P1-D (`docs/experiments/PHASE2_LOG.md` P2-E13): `execute_ranked`
+/// was changed to skip the per-candidate `effective_attributes` merge
+/// entirely when `query.preferences` is empty (found via a real ~1078ms
+/// full-catalog-rank cost on the real 1.2M-product catalog). The fast
+/// path must produce byte-for-byte the same result the old always-merge
+/// code did: every score is `0.0` regardless (no preference can ever
+/// match with an empty preference list), so ordering must still fall
+/// back to the deterministic `(product_id, variant_id)` tie-break.
+#[test]
+fn ranking_with_no_preferences_still_returns_every_candidate_score_zero_and_deterministically_ordered(
+) {
+    let catalog = combined_catalog();
+    let index = CatalogIndex::build(&catalog);
+    // "running shoes" resolves to a structural/attribute constraint with
+    // no descriptive terms at all, so query.preferences is empty -- the
+    // exact real-query shape (a fully-resolved structural query, no
+    // residual, no Preference) that exposed the real cost.
+    let query = compile("running shoes", &shoe_lexicon());
+    assert!(
+        query.preferences.is_empty(),
+        "test premise: this query must have no preferences: {query:?}"
+    );
+
+    let ranked = index.execute_ranked(&query, &catalog, 10);
+    assert_eq!(
+        ranked.len(),
+        3,
+        "expected all three variants as candidates: {ranked:?}"
+    );
+    assert!(
+        ranked.iter().all(|hit| hit.score == 0.0),
+        "every score must be exactly 0.0 with no preferences to match: {ranked:?}"
+    );
+    let ids: Vec<(ProductId, VariantId)> = ranked
+        .iter()
+        .map(|hit| (hit.product, hit.variant))
+        .collect();
+    let mut expected = ids.clone();
+    expected.sort();
+    assert_eq!(
+        ids, expected,
+        "with every score tied at 0.0, order must be the deterministic (product_id, variant_id) tie-break: {ranked:?}"
+    );
+}
+
 #[test]
 fn lexical_token_candidates_are_exact_token_not_substring() {
     // Round 1 R1-E07: lexical_postings is attribute-agnostic, whole-word
