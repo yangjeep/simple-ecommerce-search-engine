@@ -1,0 +1,22 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running `target/release/p3e07_bootstrap_ci`
+loading whole-corpus Solr baseline from "docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv"...
+  22458 queries loaded
+loading structurally-eligible queries from "docs/research/artifacts/p3e02_run1/eligible_queries_raw.csv"...
+  185 structurally-eligible queries loaded
+loading structurally-anchored lexically-narrowed eligible queries from "docs/research/artifacts/p3e05_run1/eligible_queries_raw.csv"...
+  1557 anchored-lexical eligible queries loaded
+
+whole-workload pure-Solr-only baseline NDCG@10: 0.2335 (sanity check: matches P3-E02/E03/E05/E06's 0.2335)
+
+=== budget<=1.0% promoted point: structural_cap=250, anchored_lexical_cap=1 ===
+  admitted: 404/22458 (1.80% coverage) -- 5000 paired bootstrap resamples, alpha=0.05
+  whole-workload NDCG: point=0.2319, 95% CI=[0.2281, 0.2358]
+  degradation vs. Solr-only (baseline - policy): point=0.0016 (0.67% relative), 95% CI=[0.0012, 0.0020] (0.51%, 0.84% relative)
+  CI excludes zero: true (a CI including zero would mean this degradation is not statistically distinguishable from no degradation at all, at this corpus size)
+
+=== budget<=2.0% promoted point: structural_cap=50, anchored_lexical_cap=20 ===
+  admitted: 1192/22458 (5.31% coverage) -- 5000 paired bootstrap resamples, alpha=0.05
+  whole-workload NDCG: point=0.2290, 95% CI=[0.2252, 0.2328]
+  degradation vs. Solr-only (baseline - policy): point=0.0045 (1.92% relative), 95% CI=[0.0039, 0.0050] (1.68%, 2.16% relative)
+  CI excludes zero: true (a CI including zero would mean this degradation is not statistically distinguishable from no degradation at all, at this corpus size)

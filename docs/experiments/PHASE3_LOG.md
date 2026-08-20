@@ -702,3 +702,69 @@ promoted operating points -- (structural=250, anchored=1) for a <=1%
 budget, (structural=50, anchored=20) for a <=2% budget; (b) the
 pure-lexical-only population's own further segmentation (P3-E05's
 deferred idea); (c) Issue #16/#17 as queued, orthogonal coverage levers.
+
+## P3-E07 — bootstrap confidence intervals for the promoted operating points; a real determinism bug caught by running it twice
+
+**Evidence class**: real, but requires no new Solr querying -- pure
+resampling arithmetic over already-persisted per-query data
+(P3-E02's/P3-E05's `eligible_queries_raw.csv`, P3-E06's
+`whole_corpus_solr_ndcg.csv`).
+
+**Hypothesis/motivation**: every prior Phase 2/3 relevance/coverage
+number has been a single deterministic point estimate (correctly so, per
+`bench_harness`'s own documented methodology -- these numbers have no
+run-to-run variance to bound). But the *aggregate* whole-workload NDCG is
+itself a statistic over a finite 22,458-query sample of a larger
+real-traffic population, and the user's own instructions ask for
+bootstrap confidence intervals on promoted headline results -- not yet
+supplied for P3-E05/P3-E06's numbers.
+
+**Method**: `p3e07_bootstrap_ci`. A *paired* percentile bootstrap (not
+`bench_harness::bootstrap_ci_diff_of_means`, which is for two
+*independent* sample sets): each of the two promoted operating points
+((structural=250, anchored=1) and (structural=50, anchored=20)) gets one
+length-22,458 array pairing each query's combined-policy score with its
+own Solr score, so each of 5,000 resamples draws the *same* query indices
+for both quantities, correctly propagating their correlation.
+
+**A real bug, caught by running the binary twice and diffing the
+output**: the first implementation built its per-query array via
+`solr_ndcg.keys().copied().collect()` -- `HashMap`'s default hasher is
+randomized per-process, so the array order (and therefore which query
+lands at which index the seeded RNG later draws) silently differed
+between runs, breaking the "deterministic given seed" reproducibility
+this project's own bootstrap convention requires. Fixed by sorting the
+qid list before building the arrays. Confirmed fixed by running the
+binary twice more and diffing: byte-identical output past the cargo
+build-status lines. Full gate green: fmt, clippy `-D warnings`, workspace
+test suite, release build.
+
+### Result
+
+| operating point | coverage | whole-workload NDCG (95% CI) | degradation, relative (95% CI) | CI excludes zero |
+|---|---|---|---|---|
+| budget<=1.0% (structural=250, anchored=1) | 1.80% | 0.2319 [0.2281, 0.2358] | 0.67% [0.51%, 0.84%] | yes |
+| budget<=2.0% (structural=50, anchored=20) | 5.31% | 0.2290 [0.2252, 0.2328] | 1.92% [1.68%, 2.16%] | yes |
+
+Point estimates exactly match P3-E06's own reported numbers (sanity
+check passed). Both degradations are **statistically distinguishable
+from zero** -- the relevance cost is small, but real, not noise. **A
+genuinely important nuance, not smoothed over**: at the budget<=2.0%
+operating point, the *point estimate* (1.92%) clears the 2% budget, but
+the **upper bound of its 95% CI (2.16%) does not** -- a resampled draw
+of this exact query population could plausibly show a degradation
+slightly over the nominal 2% target. This is exactly the kind of result
+Issue #14 asks to be "actively tried to break": the point estimate alone
+would have read as a clean pass; the CI reveals the margin is thinner
+than it looks. The budget<=1.0% operating point has no such issue --
+even its CI's upper bound (0.84%) stays comfortably under 1%.
+
+**Decision**: KEEP both operating points as promoted, but state the
+budget<=2.0% point's real margin precisely rather than rounding it up to
+"clears comfortably": it clears on point estimate, sits right at the
+edge under resampling uncertainty. A future paper-grade replication
+should either accept this margin explicitly or choose a marginally
+tighter cap pair for a 2% claim with more headroom (e.g. a smaller
+`anchored_lexical_cap` than 20, trading some coverage for margin).
+
+Raw artifacts: `docs/research/artifacts/p3e07_run1/`.

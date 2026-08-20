@@ -205,7 +205,16 @@ fn main() {
 
     for &(label, structural_cap, anchored_cap) in operating_points {
         println!("\n=== {label}: structural_cap={structural_cap}, anchored_lexical_cap={anchored_cap} ===");
-        let qids: Vec<u64> = solr_ndcg.keys().copied().collect();
+        // Sorted, not raw HashMap iteration order: HashMap's default
+        // hasher is randomized per-process, so an unsorted collect here
+        // would feed a different array order into the seeded RNG on
+        // every run, silently breaking the "deterministic given seed"
+        // reproducibility this project's own bootstrap convention
+        // requires (bench_harness::bootstrap_ci_diff_of_means's own doc
+        // comment states this explicitly) -- caught by running this
+        // binary twice and comparing output before trusting it.
+        let mut qids: Vec<u64> = solr_ndcg.keys().copied().collect();
+        qids.sort_unstable();
         let mut policy_values = Vec::with_capacity(total);
         let mut baseline_values_paired = Vec::with_capacity(total);
         let mut admitted = 0usize;
