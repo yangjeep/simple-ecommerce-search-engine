@@ -611,6 +611,177 @@ only, no persisted CSV), `p3e12_run1/`.
 mechanism targeting the 98.2% of tractable ambiguous queries this
 experiment found blocked by co-occurring residual text.
 
+**SUPERSEDED NOTICE (see P3-E15 below)**: P3-E13's own reported result
+(native execution beating the Solr baseline on this exact population)
+was a Solr-baseline-construction artifact, confirmed and corrected in
+P3-E14/P3-E15. Preserved below in full, unedited, per this project's own
+"do not erase evidence because an approach was abandoned" rule -- the
+corrected verdict is REJECT, not the KEEP-shaped result P3-E13 originally
+reported.
+
+## P3-E13 — combined ambiguity+lexical mechanism: real coverage found, but see P3-E15 -- the Solr comparison was unfair
+
+**Evidence class**: real, whole-workload -- no live Solr querying (reuses
+P3-E06's already-persisted whole-corpus Solr baseline, exactly as P3-E12
+did). **This is precisely the reused baseline P3-E14/P3-E15 found unfair
+for this population -- see the superseded notice above and P3-E15's own
+entry before drawing any conclusion from the numbers below.**
+
+**Hypothesis**: composing frequency-based ambiguity resolution (P3-E12)
+with lexical narrowing on whatever residual remains (P3-E03/P3-E05/P3-E09's
+own machinery), rather than requiring residual to already be empty,
+recovers real coverage from the 98.2% of tractable ambiguous queries
+P3-E12 could not reach.
+
+**Method**: `p3e13_ambiguous_plus_lexical_eval`. Same tractable-query
+identification as P3-E12, but instead of requiring `residual_lexical`
+empty after resolving the ambiguous span, applies the identical
+out-of-vocabulary check and guaranteed-empty-combination rejection
+`admit_lexically_narrowed` already established, AND-narrowing the
+frequency-resolved structural candidate set by the residual's own
+tokens. Sweeps the same frequency-ratio threshold as P3-E12 at the same
+fixed 250-candidate cap.
+
+### Originally reported result (now known to be built on an unfair Solr comparison)
+
+1,173/5,005 (23.44%) ambiguous-rejected queries tractable -- of these,
+1,144 had non-empty residual text safely lexically narrowed (the
+population P3-E12 could not reach at all). At ratio>=1: 1,110 admitted
+(4.94% of the whole corpus), **native NDCG (0.1212) reported as *higher*
+than Solr NDCG on the same subset (0.1110)** -- the first and only
+"native beats Solr" result in the entire Phase 3 campaign, clearing
+every relevance budget including the strictest 0.0%.
+
+**This result triggered the audit that produced P3-E14/P3-E15.** A
+result this surprising, on a population this small and specific,
+against a shared/reused baseline, warranted exactly the "actively try to
+kill every favorable result" scrutiny Issue #14/#18 both call for --
+scrutiny that found the result did not survive a fair comparison. See
+P3-E15 for the corrected numbers and final verdict: **REJECT**, not
+KEEP. The variant-correctness re-verification (0 violations) and the
+mechanism's own logic remain valid; only the *Solr comparison* this
+entry's KEEP-shaped numbers depended on was wrong.
+
+Raw artifacts (preserved as originally measured, superseded, not
+deleted): `docs/research/artifacts/p3e13_run1/` -- note this directory
+does not exist as a separate copy; P3-E13 was measured but its own
+artifacts were not separately persisted to `docs/research/artifacts/`
+before the audit began (only `dataset_cache/p3e13_artifacts/`, ephemeral
+build output). The original run's console output is quoted here in full
+and is the complete record of what was originally reported.
+
+## P3-E14 — Solr-baseline fairness audit: triggered by P3-E13, resolved by direct measurement
+
+See the dedicated write-up above, in-place, at the point in this log
+where the audit was actually run (immediately following P3-E10's entry).
+Summary for continuity: confirmed P3-E05/E06/E10's KEEP verdicts stand
+(the same gap exists in that population but at only 2.26% incidence, in
+a KEEP-favorable direction); found the *same* bug is far more severe for
+the ambiguous-query population specifically (98.23% of it loses its own
+ambiguous span's words from Solr's `q=` entirely); rejected a naive
+"full query_text" fix (would double-count Brand/color signal already in
+`fq` for P3-E05/E06/E07/E10's own population) in favor of a surgical fix
+recovering only ambiguous-span words and no-`fq`-substitute-constraint
+words. P3-E15 applies that surgical fix to P3-E13's exact population.
+
+## P3-E15 — KEEP the audit methodology, REJECT the mechanism: corrected baseline reverses P3-E13's result completely
+
+**Evidence class**: real, whole-workload, fresh live-Solr querying (not
+reused -- P3-E14's own finding was specifically that the *reused*
+baseline was unfair for this population, so reuse was not an option
+here).
+
+**Hypothesis**: recomputing Solr's baseline with the ambiguous span's
+own words restored (the surgical fix P3-E14's adversarial review
+recommended: `q` = `residual_lexical.join(" ")` plus each ambiguous
+span's own original text, leaving Brand/color `fq`-only exactly as
+today -- no blanket full-text swap, no new double-counting bias) will
+show Solr performing meaningfully better on this population, and likely
+reverse P3-E13's "native beats Solr" finding.
+
+**Method**: `p3e15_ambiguous_plus_lexical_corrected_eval`. Fresh
+whole-corpus Solr pass (213.1s, 22,458 queries) using the corrected
+query construction; identical admission/execution logic to P3-E13
+otherwise, so the *only* variable that changed is the Solr comparison.
+
+### Result — complete reversal, exactly as hypothesized
+
+| ratio>= | admitted | coverage | native NDCG | Solr NDCG (corrected) | ndcg delta | whole-workload degradation (relative) |
+|---|---|---|---|---|---|---|
+| 1 | 1,110 | 4.94% | 0.1212 | 0.2700 (was 0.1110) | **-0.1488** (was +0.0102) | +0.0074 (2.91% relative) |
+| 20 | 853 | 3.80% | 0.1289 | 0.2751 | -0.1462 | +0.0056 (2.20% relative) |
+| 50 | 194 | 0.86% | 0.1277 | 0.2745 | -0.1467 | +0.0013 (0.51% relative) |
+| 100 | 71 | 0.32% | 0.0971 | 0.2756 | -0.1786 | +0.0006 (0.24% relative) |
+
+Corrected whole-workload pure-Solr-only baseline: NDCG@10 = **0.2544**
+(P3-E06's uncorrected baseline was 0.2335 -- restoring dropped words can
+only help Solr, and it did, by a real, measurable amount corpus-wide,
+confirming the underlying gap was real, not a rounding artifact). Native
+execution's own NDCG is *unchanged* from P3-E13 (0.1212 at ratio>=1, as
+it must be -- native execution never depended on how Solr's query was
+built). The entire swing is on the Solr side, exactly where the bug
+lived. **Every coverage point that matters (>=3.8% coverage) now shows
+real degradation exceeding Issue #14's 2% budget** -- RQ2 budget
+calibration: only `ratio_threshold>=50` (0.86% coverage, negligible)
+narrowly clears the tightest budgets. This is the same "no ranking
+signal" pattern every other lexical-narrowing-without-precision-anchor
+mechanism in this campaign has shown (P3-E03's own REJECT), not an
+exception to it -- P3-E13's apparent exception was the bug, not a real
+result.
+
+**A broader, campaign-wide implication, stated plainly**: every other
+Phase 3 experiment's "% relative to whole-corpus Solr baseline" figures
+were computed against the *uncorrected* 0.2335 mean. Per P3-E14's own
+algebra (whole-workload degradation's raw numerator depends only on the
+admitted subset, never the shared denominator), using the corrected,
+higher 0.2544 mean would make every one of those *other* experiments'
+reported relative-degradation percentages **smaller**, not larger --
+P3-E02/E03/E05/E06/E07/E09/E10's own published percentages are, if
+anything, conservative overestimates of the true relative degradation,
+not underestimates. This is a second, independent confirmation that
+those verdicts are safe: not only is the absolute gap tiny where it
+exists (P3-E14), but the shared denominator correction itself only ever
+helps their case.
+
+**Decision**: **KEEP the audit methodology and this corrected
+measurement; REJECT P3-E13's combined ambiguity+lexical mechanism** as
+actually evaluated. The mechanism's own logic, tests, and correctness
+re-verification remain valid (0 variant-correctness violations, same as
+before) -- what fails is the same missing-ranking-signal problem
+documented since P2-E17 and confirmed again here once Solr is judged
+fairly. Do not harden this mechanism into `commerce_core`. Preserve
+P3-E13's original numbers, in full, as documented negative-turned-corrected
+evidence -- exactly the kind of anomaly this project's own discipline
+exists to catch before it becomes a false paper claim.
+
+**Process lesson, worth stating for its own sake**: this is the clearest
+demonstration in the whole campaign of why "actively try to kill every
+favorable result" is not a formality. A single surprising number (native
+beating Solr, something no other experiment in 15 entries had shown)
+was investigated rather than celebrated, traced to a real, specific,
+mechanistically-understood bug in shared infrastructure, fixed
+surgically (not with a blanket change that would have introduced a new
+bias elsewhere), and the correction was itself adversarially reviewed
+before being trusted. The eventual verdict (REJECT) is less exciting
+than the original (KEEP, first-ever native-beats-Solr result) but is the
+true one.
+
+Raw artifacts: `docs/research/artifacts/p3e15_run1/`.
+
+**Next**: continue Issue #14's mining loop with this corrected
+understanding. The ambiguous-query rejection reason (22.29% of traffic)
+remains largely unaddressed after P3-E11-E15's work -- both the
+frequency-resolution-alone mechanism (P3-E12, BOUNDED/negligible) and
+the combined lexical-narrowing mechanism (P3-E13, now REJECTED) failed
+to recover meaningful safe coverage from it. Per Issue #18's own
+"isolate whether fundamental, data-quality-specific, benchmark-specific,
+or implementation-specific" framing: the limitation here is fundamental
+to this admission family (no ranking signal, and ambiguity resolution
+alone doesn't supply one) -- a real ranking/precision signal (Issue
+#16's learned semantic implications) is the natural remaining lever for
+this rejection reason, not further narrow-casting within the same
+token/frequency-based toolkit this phase has now exhausted for it.
+
 ## P3-E04 — diagnostic: structural+lexical queries have a meaningfully better relevance profile than pure-lexical-only
 
 **Evidence class**: real, but a diagnostic only -- reuses P3-E03's
