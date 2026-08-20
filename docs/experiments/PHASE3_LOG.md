@@ -859,6 +859,93 @@ be evaluated there rather than re-litigated here); (d) per Issue #18's
 stated execution order, once #14's mining loop is judged exhausted or
 bounded, proceed to #16/#17/#9/#7/#11/#12 in the stated priority.
 
+## P3-E10 — three-way combined Pareto frontier: additivity confirmed exactly, best grid point 3.04% coverage within the 2% budget
+
+**Evidence class**: real, whole-workload -- no new Solr querying (pure
+re-aggregation of P3-E02's/P3-E05's/P3-E06's already-persisted per-query
+CSVs, plus a re-derivation of the single-token population from P3-E03's
+CSV using the identical filter P3-E08/P3-E09 established).
+
+**Hypothesis**: P3-E09 established a third mechanism, disjoint from both
+prior KEPT mechanisms. Per P3-E06's own discipline ("three isolated
+'clears budget' results do not automatically imply their sum clears
+budget when combined"), the three-way combined system needs its own
+direct measurement, not an assumption from the three pairwise-disjoint
+isolated results.
+
+**Method**: `p3e10_three_way_combined_frontier`. Explicitly asserts
+pairwise disjointness across all three eligible populations (185
+structural, 1,557 anchored-lexical, 824 single-token-lexical) before
+computing any combined number -- **confirmed: 0 overlap in all three
+pairwise checks**. Sweeps a representative 2x2x2 grid (`structural_cap`
+in {50, 250}, `anchored_lexical_cap` in {1, 20}, `single_token_cap` in
+{20, 200,000} -- each mechanism's own two most information-dense cap
+values from its own prior budget calibration).
+
+### Result
+
+| structural cap | anchored cap | single-token cap | combined coverage | degradation (relative) |
+|---|---|---|---|---|
+| 50 | 1 | 20 | 2.68% | 0.94% |
+| 250 | 1 | 20 | 3.04% | 1.07% |
+| 50 | 1 | 200,000 | 5.10% | 2.27% |
+| 50 | 20 | 20 | 6.55% | 2.31% |
+| 250 | 1 | 200,000 | 5.46% | 2.40% |
+| 250 | 20 | 20 | 6.92% | 2.44% |
+| 50 | 20 | 200,000 | 8.97% | 3.64% |
+| 250 | 20 | 200,000 | 9.34% | 3.77% |
+
+**A precise internal-consistency check, not just a plausibility check**:
+because the three admitted sets are disjoint by construction, whole-
+workload degradation should be *exactly* additive across each
+mechanism's own isolated-measurement degradation at the same cap.
+Verified directly: P3-E06's own isolated (structural=250, anchored=1)
+point measured degradation +0.0016; P3-E09's own isolated
+(single_token=20) point measured +0.0009; their sum, 0.0025, matches
+this experiment's (250, 1, 20) combined point *exactly*. This is real
+evidence the combined-coverage arithmetic is correct, not merely
+internally plausible.
+
+Within this grid, only the two points with `anchored_cap=1` and
+`single_token_cap=20` clear the 2% budget: (50, 1, 20) at 0.94%
+relative degradation / 2.68% coverage, and **(250, 1, 20) at 1.07%
+relative degradation / 3.04% coverage** -- the best coverage this grid
+found while staying under budget, meaningfully more than P3-E06's own
+best two-way point at a comparable budget (1.80% coverage at 0.67%).
+Every grid point using `single_token_cap=200,000` (near-saturation of
+that population) pushes combined degradation over 2%, confirming that
+even a mechanism whose own *isolated* unlimited-cap measurement clears
+budget comfortably (P3-E09: 1.76% relative alone) can combine with
+others to exceed a shared budget -- exactly why this direct combined
+measurement, not an assumption from isolated results, is required.
+
+**Decision**: KEEP the three-way combined system and this measurement
+methodology. Real, disjoint, additive combined coverage of up to 9.34%
+is now established (though only up to ~3% within the 2% budget on this
+specific grid); a finer cap search around `anchored_cap` in [1,20] and
+`single_token_cap` in [20, a few hundred] would likely find a combined
+point closer to the true Pareto-optimal frontier under the 2% budget
+than this coarse 8-point grid did, since the additive relationship makes
+the tradeoff surface exactly characterizable from each mechanism's own
+already-measured per-cap degradation without further Solr querying.
+
+Raw artifacts: `docs/research/artifacts/p3e10_run1/`.
+
+**Cumulative Issue #14 status after P3-E00-E10**: three independently-
+KEPT, disjoint, real admission mechanisms exist (structural exact-match,
+structurally-anchored lexical narrowing, single-token lexical
+narrowing), combined coverage 3-9% depending on operating point and
+budget, RQ4 (P50 shift) still requires >50% coverage and remains far
+out of reach with these three mechanisms alone. The dominant remaining
+rejection reason by volume that has *not yet* been mined at all in this
+campaign is **ambiguous queries (22.29% of all real traffic, P3-E01)** --
+the second-largest rejection reason after unresolved residual, and a
+structurally distinct failure mode (a resolved phrase with multiple
+candidate interpretations, not a resolution failure). Per Issue #18's
+"keep mining the highest-volume rejected class" mandate, this is the
+next candidate worth a diagnostic pass before Issue #14's mining loop
+can be honestly described as exhausted.
+
 ## P3-E07 — bootstrap confidence intervals for the promoted operating points; a real determinism bug caught by running it twice
 
 **Evidence class**: real, but requires no new Solr querying -- pure
