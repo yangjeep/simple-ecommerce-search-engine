@@ -226,3 +226,43 @@ pub fn execute_lexically_narrowed(
 ) -> Vec<crate::index::RankedHit> {
     index.execute_ranked_narrowed_by(query, narrow_by, catalog, k)
 }
+
+/// Issue #14 P3-E03/P3-E05: `admit_lexically_narrowed` measured on the
+/// *entire* `UnresolvedResidual` population was REJECTed on real data --
+/// every swept cap failed every one of Issue #14's four relevance
+/// budgets, because independent per-token presence-in-title verification
+/// is a weak precision signal with no ranking function behind it
+/// (`docs/experiments/PHASE3_LOG.md` P3-E03). A follow-up diagnostic
+/// (P3-E04) found the failure was not uniform: queries that *also* carry
+/// an existing structural constraint (`query.constraints` non-empty)
+/// alongside the residual text showed a consistently smaller NDCG delta
+/// and a 2-3x lower false-positive rate than pure-lexical-only queries --
+/// the structural half acts as an independent precision anchor, the same
+/// kind P3-E02 found tolerates having no ranking signal reasonably well.
+/// P3-E05's real-corpus + live-Solr measurement confirmed this: at
+/// `max_lexical_narrowed_candidates=20`, this restricted policy reaches
+/// 4.94% whole-corpus coverage while staying within Issue #14's 2%
+/// relevance budget -- roughly 6x P3-E02's entire structural-only
+/// coverage (0.81%).
+///
+/// This function is the hardened, tested version of that policy: unlike
+/// `admit_lexically_narrowed`, which admits a pure-lexical-only query
+/// just as readily as one with an existing structural constraint, this
+/// rejects outright (`None`) whenever `query.constraints` is empty --
+/// never falling back to "safely narrows on tokens alone," which is
+/// exactly the case P3-E03 measured and rejected. Everything else is
+/// unchanged from `admit_lexically_narrowed`; this exists so a future
+/// caller cannot accidentally reproduce P3-E03's rejected behavior by
+/// calling the wrong function, matching this module's own pattern of
+/// encoding a safety boundary in the type/function contract rather than
+/// leaving it to caller discipline.
+pub fn admit_structurally_anchored_lexical(
+    query: &CommerceQuery,
+    index: &CatalogIndex,
+    max_lexical_narrowed_candidates: usize,
+) -> Option<(RoaringBitmap, u64)> {
+    if query.constraints.is_empty() {
+        return None;
+    }
+    admit_lexically_narrowed(query, index, max_lexical_narrowed_candidates)
+}

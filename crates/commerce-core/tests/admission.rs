@@ -4,8 +4,8 @@
 //! `tests/plan.rs`'s own one-outcome-per-test discipline.
 
 use commerce_core::admission::{
-    admit, admit_lexically_narrowed, execute_lexically_narrowed, AdmissionDecision,
-    AdmissionPolicy, RejectReason,
+    admit, admit_lexically_narrowed, admit_structurally_anchored_lexical,
+    execute_lexically_narrowed, AdmissionDecision, AdmissionPolicy, RejectReason,
 };
 use commerce_core::domain::{
     attributes, BrandId, Catalog, CategoryId, Constraint, Inventory, Price, Product, ProductId,
@@ -390,6 +390,48 @@ fn rejects_lexical_narrowing_when_residual_is_already_empty() {
     assert!(
         result.is_none(),
         "this mechanism is for the UnresolvedResidual case specifically, not a general-purpose recheck"
+    );
+}
+
+/// P3-E05 (`docs/experiments/PHASE3_LOG.md`): a real-corpus measurement
+/// found that restricting lexical narrowing to queries that also carry
+/// an existing structural constraint clears Issue #14's relevance budget
+/// where the unrestricted mechanism (P3-E03) did not. This is the
+/// hardened contract for that policy -- must reject outright, never fall
+/// back to "safely narrows on tokens alone," even though plain
+/// `admit_lexically_narrowed` would happily admit the identical query.
+#[test]
+fn rejects_structurally_anchored_lexical_narrowing_when_no_structural_constraint_exists() {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(vec![], vec!["waterproof"]);
+
+    let result = admit_structurally_anchored_lexical(&query, &index, 10);
+
+    assert!(
+        result.is_none(),
+        "must reject when there is no existing structural constraint to anchor the residual \
+         match, even though plain admit_lexically_narrowed would admit this: {result:?}"
+    );
+}
+
+#[test]
+fn admits_structurally_anchored_lexical_narrowing_when_a_structural_constraint_exists() {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(
+        vec![ResolvedConstraint::Structural(StructuralConstraint::Brand(
+            NIKE,
+        ))],
+        vec!["waterproof"],
+    );
+
+    let result = admit_structurally_anchored_lexical(&query, &index, 10);
+
+    let (_, count) = result.expect("Brand=Nike AND \"waterproof\" together anchor this admission");
+    assert_eq!(
+        count, 1,
+        "only product 0 is both Nike-branded and waterproof"
     );
 }
 
