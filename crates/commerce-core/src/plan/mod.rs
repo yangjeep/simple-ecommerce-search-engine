@@ -230,8 +230,29 @@ pub fn execute_planned(
             verify_and_truncate(raw, Some(&restrict_to), query, catalog, index, k)
         }
         ExecutionOutcome::Punt => {
+            // Issue #6 P1-D / P2-E16 (`docs/experiments/PHASE2_LOG.md`): a
+            // real P1-D benchmark measured `lexical_first` (36.8% of all
+            // real traffic, 100% Punt-via-no-structural-constraint) paying
+            // for a `k * policy.delegate_oversample` (e.g. 200 instead of
+            // 10) delegate call for no benefit -- when `query.constraints`
+            // is empty, `verify_and_truncate`'s constraint check
+            // (`CommerceQuery::matches_variant`, an `.all()` over an empty
+            // iterator) is vacuously true for every hit, so no delegate hit
+            // can ever be rejected on constraint grounds and oversampling
+            // cannot change which `k` hits end up returned -- it only
+            // forces the delegate to do more work (e.g. more stored-field
+            // fetches) for a result that's provably identical to asking for
+            // `k` directly. Oversampling still applies whenever
+            // `restrict_to` is present (`Hybrid`, reached only when
+            // `query.constraints` is non-empty) or a real constraint could
+            // still reject a hit, where headroom is genuinely needed.
+            let limit = if query.constraints.is_empty() {
+                k
+            } else {
+                oversampled_limit
+            };
             let raw = delegate
-                .map(|d| d.search(&query.residual_lexical, None, oversampled_limit))
+                .map(|d| d.search(&query.residual_lexical, None, limit))
                 .unwrap_or_default();
             verify_and_truncate(raw, None, query, catalog, index, k)
         }

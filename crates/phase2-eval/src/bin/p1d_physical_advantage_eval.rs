@@ -271,6 +271,37 @@ fn solr_query_for(
     (q, fq)
 }
 
+/// Issue #6 P1-D / P2-E16 (`docs/experiments/PHASE2_LOG.md`): the same
+/// brand/color extraction the correctness loop already did inline,
+/// factored out so the latency sub-experiment can build the *same*
+/// `solr_query_for` request the correctness loop measures -- see
+/// `solr_query_for`'s doc comment and P2-E16 for why using a different,
+/// unfiltered raw-text query here was a real, severe measurement bug (it
+/// silently hit Solr's unpopulated `_text_` default field, timing a
+/// guaranteed-zero-hit lookup instead of the real edismax/`all_text` +
+/// brand/color `fq` search every other measurement in this harness uses).
+fn extract_brand_color(
+    compiled: &commerce_core::ir::CommerceQuery,
+    brand_name_by_id: &HashMap<commerce_core::domain::BrandId, String>,
+) -> (Option<String>, Option<String>) {
+    let brand = compiled.constraints.iter().find_map(|c| match c {
+        commerce_core::ir::ResolvedConstraint::Structural(
+            commerce_core::ir::StructuralConstraint::Brand(id),
+        ) => brand_name_by_id.get(id).cloned(),
+        commerce_core::ir::ResolvedConstraint::Structural(
+            commerce_core::ir::StructuralConstraint::BrandAny(ids),
+        ) => ids.first().and_then(|id| brand_name_by_id.get(id)).cloned(),
+        _ => None,
+    });
+    let color = compiled.constraints.iter().find_map(|c| match c {
+        commerce_core::ir::ResolvedConstraint::Attribute(
+            commerce_core::domain::Constraint::Enum { attribute, value },
+        ) if attribute == "color" => Some(value.clone()),
+        _ => None,
+    });
+    (brand, color)
+}
+
 fn build_tantivy_index(
     products: &[data::RealProduct],
     index_dir: &PathBuf,
@@ -675,21 +706,7 @@ fn main() -> tantivy::Result<()> {
 
             // solr
             if solr_available {
-                let brand = compiled.constraints.iter().find_map(|c| match c {
-                    commerce_core::ir::ResolvedConstraint::Structural(
-                        commerce_core::ir::StructuralConstraint::Brand(id),
-                    ) => brand_name_by_id.get(id).cloned(),
-                    commerce_core::ir::ResolvedConstraint::Structural(
-                        commerce_core::ir::StructuralConstraint::BrandAny(ids),
-                    ) => ids.first().and_then(|id| brand_name_by_id.get(id)).cloned(),
-                    _ => None,
-                });
-                let color = compiled.constraints.iter().find_map(|c| match c {
-                    commerce_core::ir::ResolvedConstraint::Attribute(
-                        commerce_core::domain::Constraint::Enum { attribute, value },
-                    ) if attribute == "color" => Some(value.clone()),
-                    _ => None,
-                });
+                let (brand, color) = extract_brand_color(compiled, &brand_name_by_id);
                 let (q, fq) = solr_query_for(
                     text,
                     &compiled.residual_lexical,
@@ -756,6 +773,31 @@ fn main() -> tantivy::Result<()> {
             vec![Method::CommerceNative, Method::TantivyStandalone]
         };
         let schedule = round_robin_schedule(methods.len(), LATENCY_REPS_PER_METHOD, SEED);
+        // Issue #6 P1-D / P2-E16 (`docs/experiments/PHASE2_LOG.md`): build
+        // the same `(q, fq)` the correctness loop measures for every query
+        // in the latency sample *before* timing anything, exactly mirroring
+        // how `compiled_cache` keeps commerce-native's query-compilation
+        // cost out of its own timed block -- this stays a fair, symmetric
+        // exclusion (query "understanding" cost excluded on both sides)
+        // rather than a bug (as it was before P2-E16: the untimed
+        // `solr_query_for` construction plus everything downstream was
+        // skipped entirely, and a different, unfiltered raw-text query hit
+        // Solr's unpopulated `_text_` default field instead).
+        let solr_query_cache: BTreeMap<u64, (String, Vec<String>)> = latency_sample
+            .iter()
+            .map(|&qid| {
+                let compiled = &compiled_cache[&qid];
+                let (text, _) = &judged_by_query[&qid];
+                let (brand, color) = extract_brand_color(compiled, &brand_name_by_id);
+                let (q, fq) = solr_query_for(
+                    text,
+                    &compiled.residual_lexical,
+                    brand.as_deref(),
+                    color.as_deref(),
+                );
+                (qid, (q, fq))
+            })
+            .collect();
         // warmup: run each method a few times before measuring, per
         // bench-harness's warmup_then discipline.
         for _ in 0..LATENCY_WARMUP {
@@ -772,7 +814,8 @@ fn main() -> tantivy::Result<()> {
                 );
                 let _ = delegate.search_with_count(std::slice::from_ref(text), None, K);
                 if solr_available {
-                    let _ = solr_search(&solr_base_url, text, &[], K);
+                    let (q, fq) = &solr_query_cache[&qid];
+                    let _ = solr_search(&solr_base_url, q, fq, K);
                 }
             }
         }
@@ -798,7 +841,8 @@ fn main() -> tantivy::Result<()> {
                     let _ = delegate.search_with_count(std::slice::from_ref(text), None, K);
                 }
                 Method::Solr => {
-                    let _ = solr_search(&solr_base_url, text, &[], K);
+                    let (q, fq) = &solr_query_cache[&qid];
+                    let _ = solr_search(&solr_base_url, q, fq, K);
                 }
             }
             let elapsed_ms = start.elapsed().as_secs_f64() * 1000.0;

@@ -62,7 +62,7 @@ fn query_with(constraints: Vec<ResolvedConstraint>, residual_lexical: Vec<&str>)
     }
 }
 
-type RecordedCall = (Vec<String>, Option<BTreeSet<ProductId>>);
+type RecordedCall = (Vec<String>, Option<BTreeSet<ProductId>>, usize);
 
 /// A delegate whose responses are configured per-test and which records
 /// every call (terms + restriction) it received, so tests can assert both
@@ -91,11 +91,11 @@ impl LexicalDelegate for MockDelegate {
         &self,
         terms: &[String],
         restrict_to: Option<&BTreeSet<ProductId>>,
-        _limit: usize,
+        limit: usize,
     ) -> Vec<LexicalHit> {
         self.calls
             .borrow_mut()
-            .push((terms.to_vec(), restrict_to.cloned()));
+            .push((terms.to_vec(), restrict_to.cloned(), limit));
         self.responses.clone()
     }
 }
@@ -153,7 +153,7 @@ fn hybrid_routes_when_the_structural_predicate_is_selective() {
         "expected ~9% selectivity, got {selectivity}"
     );
     assert_eq!(delegate.call_count(), 1);
-    let (terms, restrict_to) = &delegate.calls.borrow()[0];
+    let (terms, restrict_to, limit) = &delegate.calls.borrow()[0];
     assert_eq!(terms, &["waterproof".to_string()]);
     assert_eq!(
         restrict_to
@@ -161,6 +161,11 @@ fn hybrid_routes_when_the_structural_predicate_is_selective() {
             .expect("Hybrid must restrict the delegate"),
         &BTreeSet::from([ProductId(0)]),
         "Hybrid must restrict the delegate to exactly the structural candidates"
+    );
+    assert_eq!(
+        *limit,
+        10 * TEST_POLICY.delegate_oversample,
+        "Hybrid has a real, non-empty constraint restrict_to can't fully substitute for verification against, so oversampling is genuinely needed"
     );
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].product, ProductId(0));
@@ -194,10 +199,15 @@ fn punt_routes_when_the_structural_predicate_is_not_selective() {
         "expected ~91% selectivity, got {selectivity}"
     );
     assert_eq!(delegate.call_count(), 1);
-    let (_, restrict_to) = &delegate.calls.borrow()[0];
+    let (_, restrict_to, limit) = &delegate.calls.borrow()[0];
     assert_eq!(
         *restrict_to, None,
         "Punt must never hand the delegate a near-universal candidate set to filter against"
+    );
+    assert_eq!(
+        *limit,
+        10 * TEST_POLICY.delegate_oversample,
+        "this Punt still has a real Brand constraint that can reject a delegate hit, so oversampling is genuinely needed here -- unlike the no-constraint-at-all case"
     );
     // The Brand=Other constraint is still enforced -- against the small
     // delegate-returned hit set, not via a bitmap intersection.
@@ -221,6 +231,33 @@ fn punt_routes_when_there_is_no_structural_constraint_at_all() {
         "no structural constraint means no candidate set is ever computed"
     );
     assert_eq!(delegate.call_count(), 1);
+}
+
+/// Issue #6 P1-D / P2-E16 (`docs/experiments/PHASE2_LOG.md`): a real P1-D
+/// benchmark found `lexical_first` (Punt via no structural constraint at
+/// all, 36.8% of all real traffic) paying for a `k * delegate_oversample`
+/// delegate call for no benefit -- with no constraints,
+/// `CommerceQuery::matches_variant`'s `.all()` over an empty iterator is
+/// vacuously true for every hit, so oversampling can never change which
+/// `k` hits get returned, only waste delegate work. This must ask the
+/// delegate for exactly `k`, not `k * delegate_oversample`.
+#[test]
+fn punt_with_no_constraints_at_all_asks_the_delegate_for_exactly_k_not_the_oversampled_limit() {
+    let catalog = eleven_product_catalog();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with(vec![], vec!["running", "shoes"]);
+    let delegate = MockDelegate::new(vec![]);
+
+    let (planned, _hits) =
+        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+
+    assert_eq!(planned.outcome, ExecutionOutcome::Punt);
+    assert_eq!(delegate.call_count(), 1);
+    let (_, _, limit) = &delegate.calls.borrow()[0];
+    assert_eq!(
+        *limit, 10,
+        "no constraint can ever reject a delegate hit here, so oversampling is pure waste: {limit}"
+    );
 }
 
 /// Note: this test's misbehaving-delegate scenario happens to also
