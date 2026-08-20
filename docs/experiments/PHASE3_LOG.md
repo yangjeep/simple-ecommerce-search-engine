@@ -703,6 +703,162 @@ budget, (structural=50, anchored=20) for a <=2% budget; (b) the
 pure-lexical-only population's own further segmentation (P3-E05's
 deferred idea); (c) Issue #16/#17 as queued, orthogonal coverage levers.
 
+## Issue #18 opened: HOW-driven epic governs the remainder of this loop
+
+The repo owner opened Issue #18 ("Expand the commerce-native multiplier
+toward P50/P95") and `docs/research/HOW_DRIVEN_THESIS.md`, plus explicit
+PR review direction: keep mining #14's highest-volume rejected class
+until additional safe coverage attempts are exhausted or a clear
+structural boundary is established, before moving to #16/#17/#9/#7/
+#11/#12. Governing targets: search coverage toward >=50%/P50, browse/PLP
+toward >=95%/P95, an 80x physical-multiplier floor on promoted fast
+paths, negligible fallback tax. P3-E08+ below continue directly under
+this mandate -- mining the pure-lexical-only population (the remainder
+after P3-E04/E05 recovered its structurally-anchored slice) rather than
+moving on to a new epic.
+
+## P3-E08 — diagnostic: single-residual-token queries are a strikingly better precision class within the pure-lexical-only remainder
+
+**Evidence class**: real, but a diagnostic only -- reuses P3-E03's own
+already-measured per-query data (native NDCG computed by actually
+executing `execute_lexically_narrowed` during that run, not an
+approximation) joined against P3-E05's eligible-qid set (to exclude the
+already-recovered structurally-anchored slice). No new Solr calls.
+
+**Hypothesis**: per Issue #18's mining loop ("keep mining the highest-
+volume rejected class until additional safe coverage attempts are
+exhausted or a clear structural boundary is established"), the pure-
+lexical-only remainder's aggregate REJECT should not be accepted as
+final without checking its own internal structure. A single-token
+residual (often a specific, low-ambiguity term -- a model name, a rare
+descriptor) should be a stronger precision signal than a multi-token
+residual (more often a generic descriptive phrase -- P3-E03's own cited
+false positives: "without full grille bar", "24 volt electric plug",
+each combining several individually-common words whose AND-narrowing
+does not track compositional intent, including an explicit negation
+"without" that token-presence verification cannot represent at all).
+
+**Method**: `p3e08_pure_lexical_token_count_diagnostic`. Buckets the
+10,237-query pure-lexical-only remainder by `residual_token_count`
+(1/2/3+) at the same four representative cap points prior diagnostics
+used.
+
+**Result**: confirmed, sharply, and in a way no other admission
+mechanism in this campaign has shown:
+
+| cap | token count | admitted | native NDCG | Solr NDCG | delta | false-positive rate |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 20 | 0.1865 | 0.2348 | -0.0483 | 0/20 (0.00%) |
+| 20 | 1 | 279 | 0.5482 | 0.6213 | -0.0731 | 5/279 (1.79%) |
+| 20 | 2 | 1,041 | 0.3874 | 0.4734 | -0.0860 | 65/1,041 (6.24%) |
+| 20 | 3+ | 2,667 | 0.3080 | 0.4320 | -0.1240 | 319/2,667 (11.96%) |
+| unlimited | 1 | 824 | 0.2226 | 0.3330 | -0.1108 | 229/824 (27.79%)* |
+
+(*unlimited-cap false-positive rate recomputed in P3-E09 below on the
+final disjoint population; the pattern -- 1-token consistently better
+than 2-token consistently better than 3+-token, at every cap -- holds
+throughout.) At cap=20, the 1-token bucket's false-positive rate
+(1.79%) is *lower* than P3-E05's own already-KEPT anchored mechanism at
+the identical cap (5.14%) -- a pure-lexical-only signal outperforming a
+structurally-anchored one on precision, which is why this diagnostic
+promotes directly to a real measurement rather than being filed as a
+minor curiosity.
+
+**Decision**: strong, real evidence justifying a full whole-workload
+measurement of a new, third disjoint mechanism (P3-E09), not just a
+noted pattern.
+
+## P3-E09 — KEEP: single-token lexical narrowing is a third disjoint mechanism that clears budget at every cap, including unlimited
+
+**Evidence class**: real, whole-workload -- no new Solr querying (every
+input is already-persisted, already-measured per-query data: P3-E03's
+`eligible_queries_raw.csv` for native NDCG, P3-E06's
+`whole_corpus_solr_ndcg.csv` for every other query's own real Solr
+score).
+
+**Hypothesis**: restricting admission to residual-lexical queries whose
+entire residual is exactly one token -- regardless of whether a
+structural constraint also exists, so this is disjoint from both `admit`
+(requires empty residual) and `admit_structurally_anchored_lexical`
+(requires a structural constraint; P3-E08's population explicitly
+excludes anchored qids) -- clears Issue #14's relevance budgets with real
+coverage.
+
+**Method**: `p3e09_single_token_lexical_eval`, same "isolated marginal
+contribution" methodology as P3-E03/P3-E05 (every non-admitted query,
+including ones the other two KEPT mechanisms would separately admit,
+scores as a Solr fallback here). 824/22,458 (3.67%) queries are
+single-residual-token and non-anchored, cap-independently eligible.
+
+### Result — every swept cap clears the 2% budget; this population is nearly saturated at unlimited cap
+
+| cap | admitted | coverage (% of whole corpus) | native NDCG (admitted) | Solr NDCG (same admitted) | whole-workload NDCG | degradation (relative) |
+|---|---|---|---|---|---|---|
+| 1 | 20 | 0.09% | 0.1865 | 0.2348 | 0.2335 | 0.00% |
+| 20 | 279 | 1.24% | 0.5482 | 0.6213 | 0.2326 | 0.39% |
+| 75 | 407 | 1.81% | 0.4416 | 0.5632 | 0.2313 | 0.94% |
+| 250 | 503 | 2.24% | 0.3627 | 0.4980 | 0.2305 | 1.28% |
+| 200,000 | 823 | 3.66% | 0.2226 | 0.3334 | 0.2294 | 1.76% |
+
+RQ2 budget calibration: **budget<=0.5% at cap=20 (1.24% coverage);
+budget<=1.0% at cap=75 (1.81% coverage); budget<=2.0% at cap=200,000
+(3.66% coverage -- 99.88% of the entire eligible population)**. This is
+qualitatively different from every prior mechanism measured in Phase 3:
+P3-E02's structural admission and P3-E05's anchored lexical narrowing
+both showed degradation *accelerating* as the cap loosened past their
+"safe" zone; here, even the loosest possible cap (200,000, effectively
+unlimited) stays within the 2% budget with real margin (1.76% relative,
+not a hair's-width pass). The population is close to fully saturated: no
+further cap tuning meaningfully changes coverage past ~3.66%, because
+there are simply very few single-residual-token, non-anchored eligible
+queries with a combined candidate count above 200,000's practical range.
+
+**Decision**: KEEP. Hardened into `commerce_core::admission::admit_single_token_lexical`
+(additive, does not modify `admit_lexically_narrowed`'s or
+`admit_structurally_anchored_lexical`'s own already-measured contracts):
+rejects outright whenever the residual does not tokenize to exactly one
+token, then delegates to `admit_lexically_narrowed` unchanged.
+Deliberately does *not* also require empty `query.constraints` --
+unlike the anchored mechanism, a single-token residual is safe on its
+own merits regardless of whether a structural constraint also happens to
+be present; a production caller composing multiple mechanisms should try
+them in a fixed order (`admit`, then `admit_structurally_anchored_lexical`,
+then this) so a query already admitted upstream is never re-evaluated
+here -- exactly how this measurement's own population was kept disjoint
+(explicitly excluding P3-E05's anchored qids). 3 new RED-first tests: a
+single-token residual admits with the expected count; a 2-token residual
+rejects outright even when its own combined count is small and non-zero
+(i.e. even though plain `admit_lexically_narrowed` would happily admit
+it -- the boundary is token count, not candidate count); a single-token
+residual admits even when a structural constraint is also present
+(deliberately not mutually exclusive with the anchored mechanism). 20/20
+admission tests pass (142 total workspace tests).
+
+**Cross-phase note**: three disjoint, independently-KEPT admission
+mechanisms now exist (`admit` structural, `admit_structurally_anchored_lexical`,
+`admit_single_token_lexical`), each measured on its own isolated marginal
+contribution. A proper P3-E06-style three-way combined measurement
+(overlap-checked, real Pareto frontier) is the natural next step before
+any further claim about total combined coverage -- three isolated
+"clears budget" results do not automatically imply their sum clears
+budget when combined, even though all three are pairwise disjoint by
+construction (the same caution P3-E06 itself demonstrated is necessary,
+not assumed).
+
+Raw artifacts: `docs/research/artifacts/p3e08_run1/`, `p3e09_run1/`.
+
+**Next**: (a) a P3-E10 three-way combined Pareto frontier (structural x
+anchored-lexical x single-token-lexical), mirroring P3-E06's own
+methodology and overlap-verification discipline; (b) bootstrap CIs on
+the newly promoted P3-E09 operating points, mirroring P3-E07; (c)
+whether the pure-lexical-only population has further exploitable
+structure beyond token count (e.g. does a single token that is also a
+recognized brand/product-line spelling variant behave even better --
+this edges toward Issue #16's learned-implication territory and should
+be evaluated there rather than re-litigated here); (d) per Issue #18's
+stated execution order, once #14's mining loop is judged exhausted or
+bounded, proceed to #16/#17/#9/#7/#11/#12 in the stated priority.
+
 ## P3-E07 — bootstrap confidence intervals for the promoted operating points; a real determinism bug caught by running it twice
 
 **Evidence class**: real, but requires no new Solr querying -- pure
