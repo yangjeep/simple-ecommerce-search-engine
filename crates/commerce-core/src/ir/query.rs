@@ -97,29 +97,41 @@ fn parse_money(token: Option<&str>) -> Option<i64> {
     Some((dollars * 100.0).round() as i64)
 }
 
-/// A catalog field that holds exactly one value per product: two
+/// A field that holds exactly one value per product/variant: two
 /// *different* hard constraints on the same slot can never be jointly
 /// satisfied by any real product (a product has exactly one brand, one
-/// product type, one category), unlike e.g. two attribute constraints on
-/// different attributes, which legitimately combine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum EntitySlot {
+/// product type, one category; `AttributeValue::Enum` is single-valued per
+/// attribute name), unlike e.g. two constraints on different attributes,
+/// or `Constraint::MultiEnumContains` (deliberately multi-valued -- a
+/// variant can carry several tags/features at once), which legitimately
+/// combine.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum SingleValuedSlot {
     Brand,
     ProductType,
     Category,
+    /// A variant-level `Constraint::Enum`, keyed by attribute name (e.g.
+    /// "color") -- P2-E15 (`docs/experiments/PHASE2_LOG.md`): a real query,
+    /// "skeleton toy", independently resolved two phrases to two different
+    /// `color` values and hard-ANDed them, the same guaranteed-empty shape
+    /// P2-E14 fixed for structural entities.
+    Attribute(String),
 }
 
-fn entity_slot(c: &ResolvedConstraint) -> Option<EntitySlot> {
+fn single_valued_slot(c: &ResolvedConstraint) -> Option<SingleValuedSlot> {
     match c {
         ResolvedConstraint::Structural(StructuralConstraint::Brand(_))
         | ResolvedConstraint::Structural(StructuralConstraint::BrandAny(_)) => {
-            Some(EntitySlot::Brand)
+            Some(SingleValuedSlot::Brand)
         }
         ResolvedConstraint::Structural(StructuralConstraint::ProductType(_)) => {
-            Some(EntitySlot::ProductType)
+            Some(SingleValuedSlot::ProductType)
         }
         ResolvedConstraint::Structural(StructuralConstraint::Category(_)) => {
-            Some(EntitySlot::Category)
+            Some(SingleValuedSlot::Category)
+        }
+        ResolvedConstraint::Attribute(Constraint::Enum { attribute, .. }) => {
+            Some(SingleValuedSlot::Attribute(attribute.clone()))
         }
         _ => None,
     }
@@ -129,25 +141,27 @@ fn apply_candidates(result: &mut CommerceQuery, phrase: &str, candidates: &[Cand
     if let [only] = candidates {
         match &only.resolved {
             ResolvedTerm::Constraint(c) => {
-                // Issue #6 P1-D / P2-E14 (`docs/experiments/PHASE2_LOG.md`): a
-                // real P1-D sweep found a real query class -- two independent
+                // Issue #6 P1-D / P2-E14 / P2-E15 (`docs/experiments/PHASE2_LOG.md`):
+                // a real P1-D sweep found real query classes -- two independent
                 // phrases in one query each unambiguously resolving to a
-                // *different* Brand -- at 100% zero-result, because both
-                // became hard constraints ANDed together (e.g. "harry potter
-                // lego" compiling to `Brand(Harry Potter) AND Brand(Lego)`,
-                // which no product can ever satisfy). The first phrase to
-                // claim a single-valued entity slot (matching this compiler's
-                // existing leftmost/longest-match-first bias) keeps its hard
-                // constraint; a later phrase that would conflict with an
-                // already-filled slot falls back to residual free text
-                // instead of a second, mutually-exclusive hard constraint --
-                // this project's own established structural-narrows/lexical-
-                // ranks-residual contract, not a new mechanism.
-                let conflicts = entity_slot(c).is_some_and(|slot| {
-                    result
-                        .constraints
-                        .iter()
-                        .any(|existing| entity_slot(existing) == Some(slot) && existing != c)
+                // *different* value on the same single-valued field -- at
+                // majority-to-total zero-result, because both became hard
+                // constraints ANDed together (e.g. "harry potter lego"
+                // compiling to `Brand(Harry Potter) AND Brand(Lego)`, or
+                // "skeleton toy" compiling to `color=Skeleton AND
+                // color=Toy`), which no product/variant can ever satisfy.
+                // The first phrase to claim a single-valued slot (matching
+                // this compiler's existing leftmost/longest-match-first
+                // bias) keeps its hard constraint; a later phrase that would
+                // conflict with an already-filled slot falls back to
+                // residual free text instead of a second, mutually-
+                // exclusive hard constraint -- this project's own
+                // established structural-narrows/lexical-ranks-residual
+                // contract, not a new mechanism.
+                let conflicts = single_valued_slot(c).is_some_and(|slot| {
+                    result.constraints.iter().any(|existing| {
+                        single_valued_slot(existing) == Some(slot.clone()) && existing != c
+                    })
                 });
                 if conflicts {
                     result.residual_lexical.push(phrase.to_string());

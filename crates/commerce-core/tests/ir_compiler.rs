@@ -168,6 +168,40 @@ fn conflicting_same_slot_entity_constraints_do_not_get_and_ed_together() {
     assert!(query.ambiguous.is_empty());
 }
 
+/// P2-E15 (`docs/experiments/PHASE2_LOG.md`): the same guaranteed-empty-AND
+/// shape recurs for variant-level attribute `Constraint::Enum`, not just
+/// structural entities -- a real query in the corpus, "skeleton toy",
+/// independently resolved "skeleton" and "toy" to two different `color`
+/// values and hard-ANDed them (`color=Skeleton AND color=Toy`), which no
+/// variant can ever satisfy since `AttributeValue::Enum` is single-valued
+/// per attribute name. Must be caught by the same first-wins/residual-
+/// fallback mechanism as the structural-entity case.
+#[test]
+fn conflicting_same_attribute_enum_constraints_do_not_get_and_ed_together() {
+    let query = compile("black red running shoes", &shoe_lexicon());
+
+    assert_eq!(
+        query.constraints,
+        vec![
+            ResolvedConstraint::Attribute(Constraint::Enum {
+                attribute: "color".to_string(),
+                value: "Black".to_string(),
+            }),
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(
+                commerce_core::domain::ProductTypeId(1)
+            )),
+        ],
+        "only the first color match (black) may become a hard constraint: {:?}",
+        query.constraints
+    );
+    assert!(
+        query.residual_lexical.contains(&"red".to_string()),
+        "the conflicting second color match must fall back to residual free text: {:?}",
+        query.residual_lexical
+    );
+    assert!(query.ambiguous.is_empty());
+}
+
 /// Identical repeated matches of the same entity are a harmless no-op, not
 /// a conflict -- "nike nike shoes" must not discard the second "nike".
 #[test]
