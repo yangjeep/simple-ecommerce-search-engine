@@ -1,3 +1,0 @@
-apple:doc1
-banana:doc2
-apple:doc3

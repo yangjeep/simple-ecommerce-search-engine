@@ -8,7 +8,7 @@ This repository intentionally starts from a narrower world model than a generic 
 
 Research prototype / architecture experiment. The previous C/GTrie implementation remains in git history but is not the target architecture.
 
-The active experiment is tracked in **GitHub Issue #2**.
+The active experiment is tracked in **GitHub Issue #2**. Gates 0-7 have initial evidence recorded in [`docs/experiments/LOG.md`](docs/experiments/LOG.md) (E000-E007) and [`docs/adr/`](docs/adr/); the resulting decision is [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md).
 
 ## Core questions
 
@@ -58,3 +58,5 @@ The current epic ends with `SCALE_UP_DECISION.md` containing one of:
 - **STOP** — the commerce-native specialization does not provide enough advantage to justify further scale-up.
 
 Success is a defensible decision backed by reproducible data, not a large codebase.
+
+**Current decision: PROCEED** to the next round of experiments (an external baseline, a larger/real catalog, larger scale tiers) — not to production. See [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md) for the full evidence, unresolved risks, and what should explicitly not be built yet.

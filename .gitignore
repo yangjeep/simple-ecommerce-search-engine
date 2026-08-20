@@ -1,44 +1,14 @@
-# Build directories
-bin/
-obj/
-lib/
+# Rust
+/target/
+**/target/
+Cargo.lock.bak
+*.profraw
 
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# Round 1: large downloaded datasets and external baseline binaries.
+# Reproducible from docs/experiments/ROUND1_LOG.md, never committed.
+/dataset_cache/
+__pycache__/
+*.pyc
 
 # Editor/IDE specific files
 .vscode/
@@ -54,18 +24,3 @@ lib/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# CMake generated files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-install_manifest.txt
-compile_commands.json
-CTestTestfile.cmake
-Testing/
-Makefile
-*.cmake
-build/
-_deps/
-testdb/
-test_gtrie
