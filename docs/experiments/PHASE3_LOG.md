@@ -82,3 +82,94 @@ Quality gate green: fmt, clippy `-D warnings`, full workspace test suite
 P3-E01, the transparent fallback baseline -- measure the admission check's
 own overhead on the reject path before trusting any coverage/relevance
 number that depends on it staying cheap.
+
+## P3-E01 — transparent fallback baseline: fallback tax
+
+**Evidence class**: real (full 1,215,854-product Amazon ESCI catalog,
+full 22,458-query judged corpus, fresh local Apache Solr 9.10.1 re-indexed
+with the identical catalog -- same evidence base Phase 2 used).
+
+**Hypothesis**: `admission::admit()`'s own overhead on the reject path
+(the one cost every rejected query pays) is close to zero relative to a
+single Solr round trip -- Issue #14's invariant 1, initial target <=5%
+fallback tax.
+
+**Method**: `crates/phase3-eval/src/bin/p3e01_fallback_baseline.rs`. Whole
+corpus admission pass (cheap, no Solr calls) with `AdmissionPolicy {
+max_candidates: 50 }` as an initial conservative starting point (not yet
+calibrated -- that is P3-E02's job), reporting coverage and a reject-
+reason breakdown. Then a seeded-random (`ChaCha8Rng`, not "smallest-N-by-
+id" -- addressing the P2-E17 adversarial review's own finding about Phase
+2's sampling) sample of 20 rejected queries, 30 reps/arm, interleaved via
+`bench_harness::round_robin_schedule`, comparing `solr_baseline` (a direct
+`solr_search` call, using the exact `round1_eval::solr::solr_query_for`
+construction Phase 2's P1-D already validated as fair) against
+`admission_then_solr` (`admit()` -- which returns `Reject` for every
+query in this sample by construction -- immediately followed by the
+identical `solr_search` call). `compile()` itself is excluded from both
+arms' timed block, symmetric with every prior phase's own convention.
+
+**Result** (raw: `docs/research/artifacts/p3e01_run1/`):
+
+Whole-corpus admission pass (`max_candidates=50`): **admitted 82/22,458
+(0.37%)**; rejected ambiguous 5,005 (22.29%); rejected unresolved-residual
+17,268 (76.89%); rejected not-selective-enough 103 (0.46%); rejected
+no-structural-constraint 0 (0.00%, absent from the corpus entirely at
+this lexicon).
+
+**A strong, unplanned cross-validation against Phase 2's own established
+9-class counts**, all exact: rejected-ambiguous (5,005) equals Phase 2's
+`ambiguous_punt` class size exactly; rejected-unresolved-residual (17,268)
+equals the sum of Phase 2's four residual-bearing classes exactly
+(`structural_plus_lexical_residual` 3,253 + `structural_plus_semantic_residual`
+57 + `lexical_first` 8,274 + `long_tail_noisy` 5,684 = 17,268); admitted +
+not-selective-enough (82 + 103 = 185) equals Phase 2's total FastPath-
+eligible population exactly (`structural_exact_entity` 153 +
+`selective_multi_attribute_structural` 0 + `variant_scoped_structural` 30
++ `range_plus_structural` 2 = 185). Same lexicon, same `compile()`, same
+underlying query population -- `admission::admit`'s ambiguity/residual
+checks land on precisely the same population boundaries `classify9`
+already established, which is exactly what should happen since both read
+the same compiled-query shape, and is a real (if incidental) regression
+check that the new module isn't silently drawing its lines somewhere
+`classify9` doesn't.
+
+A genuinely new number this run reveals: **of the 185 queries that would
+have been FastPath-eligible under Phase 2's plain "no residual, no
+ambiguity" test, more than half (103/185, 55.7%) resolve to a candidate
+set larger than 50** -- i.e. a strict, safety-first selectivity cap
+rejects a majority of Phase 2's own FastPath population outright. This is
+concrete evidence for why P3-E02's coverage-frontier sweep matters: the
+raw "FastPath-eligible" population Phase 2 measured is not automatically
+"safe" by this phase's own selectivity-conscious admission bar.
+
+Fallback-tax latency (interleaved, 30 reps/arm): `solr_baseline`
+mean=2.5603ms (sd=0.4102ms); `admission_then_solr` mean=2.4983ms
+(sd=0.2702ms). Bootstrap CI (diff = `admission_then_solr` - `solr_baseline`):
+**diff=-0.0620ms, CI=[-0.2377, 0.1050], excludes_zero=false** -- the
+admission check's own cost is not statistically distinguishable from
+zero at this sample size, and the point estimate is negative (i.e.
+`admission_then_solr` measured *faster*, which is measurement noise, not
+a real negative cost -- `admit()` cannot make a Solr call faster). As a
+percentage of the `solr_baseline` mean: **-2.42%**, comfortably within
+Issue #14's <=5% target with headroom to spare.
+
+**Threats to validity, stated rather than assumed away**: n=20 unique
+queries (not a random draw from the full 17,376-query rejected
+population at this policy) -- adequate for this exploratory measurement
+per Issue #14's own distinction between exploratory and paper-grade final
+replication, but the *exact* tax percentage should not be over-read from
+one run at this sample size; the CI already including zero is the
+important, robust part of this result, not the -2.42% point estimate.
+The `not_selective_enough` rejection path (which does build a real
+`indexed_candidates` bitmap, unlike the other three cheap short-circuit
+rejections) was not isolated from the cheaper rejection paths in this
+run's 20-query sample by construction -- a targeted follow-up sampling
+only `NotSelectiveEnough`-rejected queries would more precisely bound the
+selectivity-check's own marginal cost specifically, if a future
+experiment needs that finer breakdown.
+
+**Decision**: KEEP. The admission check's overhead is close to zero and
+statistically indistinguishable from a pure Solr call, meeting Issue
+#14's invariant 1 with margin. Proceed to P3-E02: sweep `max_candidates`
+on the full real corpus to trace the safe-coverage/relevance frontier.
