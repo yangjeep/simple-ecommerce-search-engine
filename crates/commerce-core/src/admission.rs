@@ -159,6 +159,18 @@ pub fn execute_admitted(
 /// something, while the latter would silently admit a query to a
 /// guaranteed-empty native result when falling back could have helped.
 ///
+/// The identical reasoning applies when every individual token *is*
+/// known but their AND-combination (optionally further ANDed with an
+/// existing structural constraint) is empty: no single product carries
+/// every token together, or none of the lexically-matching products also
+/// satisfy the structural constraint. A real-data P3-E03 measurement
+/// (`docs/experiments/PHASE3_LOG.md`) found this was not a rare edge case
+/// -- 24.9% of otherwise-eligible queries hit exactly this, and a quarter
+/// of those had Solr find a real relevant result the native path would
+/// have silently returned nothing for. `count == 0` is therefore rejected
+/// explicitly below rather than left to pass the cap check trivially (0
+/// is never greater than any cap).
+///
 /// Additive, not integrated into `admit`/`AdmissionPolicy`: this keeps
 /// the original, already-validated (P3-E00/E01/E02) admission contract
 /// completely unchanged for existing callers. Callers should try `admit`
@@ -195,7 +207,7 @@ pub fn admit_lexically_narrowed(
         lexical_bitmap & index.indexed_candidates(&query.constraints)
     };
     let count = combined.len();
-    if count as usize > max_lexical_narrowed_candidates {
+    if count == 0 || count as usize > max_lexical_narrowed_candidates {
         return None;
     }
     Some((combined, count))

@@ -316,6 +316,37 @@ fn rejects_lexical_narrowing_when_a_residual_token_appears_in_no_title_at_all() 
     );
 }
 
+/// P3-E03 real-data measurement (`docs/experiments/PHASE3_LOG.md`) found
+/// 24.9% of eligible queries had a combined candidate count of exactly
+/// zero -- every residual token individually known somewhere in the
+/// catalog, but their AND-combination (or the AND-combination with an
+/// existing structural constraint) empty. Before this fix, `count == 0`
+/// passed the `count > max_lexical_narrowed_candidates` check trivially
+/// (0 is never greater than any cap), so the query was "admitted" to a
+/// guaranteed-empty native result -- exactly the same unsafe claim this
+/// function's own doc comment already rejects for a single out-of-
+/// vocabulary token ("a residual token that never appears... makes the
+/// whole query ineligible... rather than safely narrows to zero
+/// candidates"), just not applied to the *combined* count. "runner" and
+/// "boot" are each individually known (product 0's and product 5's title
+/// respectively) but no single product's title contains both words, so
+/// their AND is empty even though neither token is out-of-vocabulary.
+#[test]
+fn rejects_lexical_narrowing_when_every_token_is_known_but_the_combined_set_is_empty() {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(vec![], vec!["runner boot"]);
+
+    let result = admit_lexically_narrowed(&query, &index, 1_000);
+
+    assert!(
+        result.is_none(),
+        "\"runner\" and \"boot\" are each individually known but no product has both -- a \
+         guaranteed-empty combined set must reject exactly like an out-of-vocabulary token, not \
+         be treated as a safe zero-candidate admission: {result:?}"
+    );
+}
+
 #[test]
 fn rejects_lexical_narrowing_for_an_ambiguous_query_regardless_of_residual_content() {
     let catalog = eleven_product_catalog_with_titles();
