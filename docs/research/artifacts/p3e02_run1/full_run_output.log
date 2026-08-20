@@ -1,0 +1,53 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+compiling every real query...
+querying Solr for every real query (whole-corpus pure-Solr baseline)...
+  done in 148.8s (22458 queries)
+
+finding structurally eligible queries + native ranking...
+  185 structurally eligible queries (ambiguous empty, residual empty, >=1 constraint)
+  variant-correctness violations: 0 (must be 0 -- commerce_core always exactly re-verifies hard constraints)
+
+whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+
+native execution latency (n=20 small-candidate-set queries, 30 reps each, 600 individual samples):
+  native_execute_admitted: n=600 mean=0.0011ms sd=0.0009ms | p10=0.0004 p25=0.0007 p50=0.0011 p75=0.0013 p90=0.0016 p95=0.0018 p99=0.0032 | min=0.0002 max=0.0194ms
+  [manifest] experiment=p3e02_coverage_frontier method=max_candidates_sweep commit=486bef57b66d dirty=false host=vm cpus=4 os=linux seed=7 warmup=0 reps=1
+  [manifest] dataset=dataset_cache/export/catalog.jsonl (size=1520400382b_mtime=1787206455)  query_set=dataset_cache/export/queries.jsonl (size=41184952b_mtime=1787206462)
+  [manifest] config={"eligible_queries":185,"solr_base_url":"http://localhost:8983/solr/commerce_bench","sweep":[1,2,3,5,10,20,30,50,75,100,150,250,500,1000,2500,5000,10000,50000,200000],"total_queries":22458}
+
+=== coverage/relevance frontier sweep ===
+       cap   admitted coverage% native_ndcg solr_ndcg_sub ndcg_delta whole_wl_ndcg  wl_degrad  false_pos
+         1         20     0.09%    -0.0000     0.0271    -0.0271       0.2335    +0.0000          2
+         2         21     0.09%     0.0171     0.0429    -0.0258       0.2335    +0.0000          2
+         3         21     0.09%     0.0171     0.0429    -0.0258       0.2335    +0.0000          2
+         5         21     0.09%     0.0171     0.0429    -0.0258       0.2335    +0.0000          2
+        10         21     0.09%     0.0171     0.0429    -0.0258       0.2335    +0.0000          2
+        20         21     0.09%     0.0171     0.0429    -0.0258       0.2335    +0.0000          2
+        30         45     0.20%     0.2254     0.2854    -0.0600       0.2334    +0.0001          5
+        50         82     0.37%     0.2428     0.3034    -0.0606       0.2333    +0.0002         16
+        75        114     0.51%     0.2003     0.2867    -0.0863       0.2331    +0.0004         31
+       100        123     0.55%     0.1878     0.2699    -0.0821       0.2331    +0.0004         34
+       150        151     0.67%     0.1622     0.2365    -0.0743       0.2330    +0.0005         46
+       250        164     0.73%     0.1526     0.2214    -0.0688       0.2330    +0.0005         50
+       500        174     0.77%     0.1438     0.2105    -0.0667       0.2330    +0.0005         53
+      1000        180     0.80%     0.1390     0.2052    -0.0662       0.2330    +0.0005         54
+      2500        183     0.81%     0.1367     0.2019    -0.0651       0.2330    +0.0005         54
+      5000        183     0.81%     0.1367     0.2019    -0.0651       0.2330    +0.0005         54
+     10000        183     0.81%     0.1367     0.2019    -0.0651       0.2330    +0.0005         54
+     50000        183     0.81%     0.1367     0.2019    -0.0651       0.2330    +0.0005         54
+    200000        183     0.81%     0.1367     0.2019    -0.0651       0.2330    +0.0005         54
+
+=== relevance-budget calibration (Issue #14 RQ2) ===
+  budget<=0.0%: no swept cap value stays within this budget
+  budget<=0.5%: best cap=2500, coverage=183/22458 (0.81%)
+  budget<=1.0%: best cap=2500, coverage=183/22458 (0.81%)
+  budget<=2.0%: best cap=2500, coverage=183/22458 (0.81%)
+
+artifacts written to dataset_cache/p3e02_artifacts

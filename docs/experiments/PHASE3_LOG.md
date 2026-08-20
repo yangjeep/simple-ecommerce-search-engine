@@ -173,3 +173,138 @@ experiment needs that finer breakdown.
 statistically indistinguishable from a pure Solr call, meeting Issue
 #14's invariant 1 with margin. Proceed to P3-E02: sweep `max_candidates`
 on the full real corpus to trace the safe-coverage/relevance frontier.
+
+## P3-E02 — the safe coverage/relevance frontier: coverage is capped by semantic resolution, not selectivity
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, live local Solr, single deterministic
+whole-corpus pass -- relevance/coverage/candidate-count numbers require
+no repeated measurement per `bench_harness`'s own documented methodology,
+since `commerce_core`'s compile/plan/execute path is deterministic).
+
+**Hypothesis**: sweeping `AdmissionPolicy::max_candidates` traces a real
+coverage-vs-relevance frontier -- higher caps admit more real traffic at
+some relevance cost, per Issue #14 RQ2's four target budgets (~0%, 0.5%,
+1%, 2% degradation).
+
+**Method**: `crates/phase3-eval/src/bin/p3e02_coverage_frontier.rs`. One
+pass: compile every real query; query Solr for every real query (148.8s
+for 22,458 queries -- the whole-corpus pure-Solr baseline, cap-
+independent); find every "structurally eligible" query (ambiguous empty,
+residual empty, >=1 constraint, at an effectively unlimited cap) and rank
+it natively; sweep `max_candidates` in
+`{1,2,3,5,10,20,30,50,75,100,150,250,500,1000,2500,5000,10000,50000,200000}`,
+filtering the eligible set by candidate count at each point. Native
+execution latency measured once (30 reps, individual per-query timing)
+over a small-candidate-set sample, since a query's own native cost never
+depends on which cap is being evaluated.
+
+### Result 1 -- only 185/22,458 (0.82%) real queries are ever structurally eligible, at *any* cap
+
+The full sweep, from `max_candidates=1` to `200,000` (nearly the entire
+1.2M-product catalog), tops out at **183/22,458 admitted (0.81%)** --
+essentially the entire eligible population, reached already by
+`max_candidates=2,500`. Two of the 185 eligible queries are *never*
+admitted even at `max_candidates=200,000` (their candidate sets exceed
+even that). **Selectivity is not the binding constraint on coverage --
+semantic resolution is.** The dominant rejection reason (P3-E01's own
+whole-corpus admission pass, `max_candidates=50`): unresolved residual
+lexical text, 17,268/22,458 queries (76.89%) -- more than three times the
+ambiguous-rejection rate (5,005, 22.29%) and roughly 170x the
+not-selective-enough rate (103, 0.46%). Tightening or loosening the
+selectivity cap cannot move coverage past this ceiling; only reducing the
+*residual* rejection rate can.
+
+### Result 2 -- whole-workload relevance degradation is tiny across the entire sweep
+
+| cap | admitted | coverage | native NDCG (admitted) | Solr NDCG (same admitted) | whole-workload NDCG | degradation vs. Solr-only |
+|---|---|---|---|---|---|---|
+| 1 | 20 | 0.09% | 0.0000 | 0.0271 | 0.2335 | +0.0000 |
+| 50 | 82 | 0.37% | 0.2428 | 0.3034 | 0.2333 | +0.0002 |
+| 500 | 174 | 0.77% | 0.1438 | 0.2105 | 0.2330 | +0.0005 |
+| 200,000 | 183 | 0.81% | 0.1367 | 0.2019 | 0.2330 | +0.0005 |
+
+Whole-workload pure-Solr-only baseline: NDCG@10 = 0.2335. Worst observed
+whole-workload degradation across the *entire* sweep: 0.0005 absolute
+(~0.21% relative) -- comfortably inside every one of Issue #14's four
+target budgets (0%, 0.5%, 1%, 2%) in absolute terms, though see the
+calibration note below for a real, minor subtlety in the 0% case.
+Native-vs-Solr NDCG *on the admitted subset itself* is consistently
+negative (native worse, by 0.06-0.09 NDCG at most cap values) -- this is
+the same missing-ranking-signal cost P2-E17 already found and flagged as
+unresolved (`execute_ranked` has no ranking signal when
+`query.preferences` is empty), inherited unchanged into Phase 3. It does
+not threaten the *whole-workload* budget at this coverage level only
+because the admitted subset is such a small share of total traffic
+(<=0.81%) that its own relevance cost barely moves the aggregate.
+
+**A real, minor methodological note, not smoothed over**: the RQ2
+calibration loop reports "no swept cap value stays within 0.0% budget,"
+even though the sweep table's 4-decimal-rounded degradation column shows
+`+0.0000` for `max_candidates` 1 through 20. The exact (unrounded)
+degradation at those cap values is a small positive number that rounds
+to `0.0000` for display but is not exactly zero, so it fails a strict
+`<= 0.0` comparison. A true, non-rounded exact-zero budget is not
+achievable by construction (any admitted-and-imperfect query moves the
+degradation off exactly zero), so this is not a bug, but worth stating
+precisely: the reported table already shows the *actual* achievable
+floor, and only the "0.0%" *label* is unreachable in the strict sense.
+
+### Result 3 -- false-positive admissions exist even at the strictest cap, and are the *same* real-catalog defect P2-E15 already found
+
+At `max_candidates=1` (the most conservative point swept), 2 of the 20
+admitted queries are false-positive admissions (native NDCG=0 while Solr
+found at least one relevant result): qid 51954 ("huggies size 1") and
+qid 64314 ("luvs size 3"). Both are diaper-brand-plus-numeric-size
+queries. Checked directly against `docs/experiments/PHASE2_LOG.md`
+P2-E15's own diagnostic output from this session: **qid 64314 is the
+exact same query P2-E15 already root-caused** -- every real judged-
+relevant product for this query carries *no* `size` attribute in
+`effective_attributes()` at all, so any numeric size constraint is
+unsatisfiable regardless of value, a genuine real-catalog data-quality
+gap (this ingestion's diaper products carry no structured size field),
+not a Phase 3-specific defect. "huggies size 1" is the identical shape
+(same brand category, same missing attribute). This is expected, not
+alarming: Phase 3's "structurally eligible" population *is* Phase 2's
+`FastPath`-eligible population (P3-E01 already found this an exact-count
+match), so the same already-diagnosed data-quality cases necessarily
+recur here. **Important, and genuinely new**: a small, near-unique
+candidate set (`max_candidates=1`, as conservative as an admission policy
+can be) does *not* protect against this failure mode -- a highly
+selective but semantically-*absent*-data structural match is just as
+capable of a false-positive admission as a broad one. Selectivity and
+correctness are different axes; no selectivity cap alone closes this gap.
+False-positive admissions grow from 2 (cap=1) to 54 (cap>=1,000) as more
+of the eligible population's own real defects (the same brand-exact-match
+and color-vocabulary-noise issues P2-E15 catalogued) get admitted at
+looser caps.
+
+### Result 4 -- native execution latency is extremely fast, confirming the core mechanism
+
+30 reps x 20 small-candidate-set (<=10) queries, individual per-query
+timing: mean=0.0011ms, p50=0.0011ms, p99=0.0032ms, max=0.0194ms. Even
+faster than Phase 2's own ~0.02ms `structural_exact_entity` FastPath
+number (expected: this sample is drawn from queries with even smaller
+candidate sets). Combined with P3-E01's near-zero fallback tax, every
+query's cost in this architecture is now characterized: admitted ~
+0.001ms, rejected ~ solr_baseline (already measured, ~2.5ms mean). Given
+coverage tops out at 0.81% (Result 1), the *aggregate* whole-workload
+latency distribution will not materially shift versus a pure-Solr
+deployment on this real corpus -- RQ4's "does p50 move onto the native
+path" hypothesis requires materially higher coverage than this dataset's
+current semantic-resolution rate supports, not a looser selectivity cap.
+
+### Decision: KEEP the mechanism; the frontier is now well-characterized; proceed to coverage expansion (P3-E03+)
+
+Per Issue #14's own framing ("if coverage stays small, narrow the claim
+instead of overstating it"): on *this* real dataset, with the *current*
+baseline lexicon (no P1-B/P1-C enhancements), the safe-admission
+architecture is real, cheap, and relevance-safe, but capped at ~0.81%
+coverage -- not enough to move the whole-workload latency distribution.
+The highest-information next experiment is not further selectivity-cap
+tuning (exhausted by this sweep) but attacking the dominant rejection
+reason directly: unresolved residual lexical text (76.89% of all real
+traffic, by far the largest of the three rejection reasons). Per Issue
+#14's own P3-E03+ loop ("identify opportunity -> add RED/adversarial
+tests -> implement smallest semantic/compiler improvement -> replay full
+corpus -> rerun latency campaign -> update frontier -> KEEP/REJECT").
