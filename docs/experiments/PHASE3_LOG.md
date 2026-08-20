@@ -718,6 +718,51 @@ product from that brand's catalog. This is the same "no ranking signal"
 risk documented since P2-E17, now bounded to a smaller and less frequent
 share of traffic by the structural anchor rather than eliminated.
 
+**A Solr-baseline-fairness audit (triggered by P3-E13's own surprising
+result, see that entry) checked this verdict too, and it holds -- record
+corrected here, verdict unchanged.** `round1_eval::solr::solr_query_for`
+silently drops from Solr's own `q=` any word that resolved to a
+structural constraint with no `fq` substitute (`extract_brand_color`
+only ever populates `fq` for Brand/BrandAny/color; `size` and price-range
+constraints get neither). Measured directly against this experiment's
+real 4,599-query anchored-lexical population: **104 queries (2.26%)**
+carry such a constraint (68 `size`, 36 price-under; no `ProductType`/
+`Category`/other-Enum ever occurs in this population, since real ESCI
+products carry only sentinel values for those fields). Since dropping a
+word can only make Solr's own score *lower*, never higher, this gap can
+only have made P3-E05's reported native-vs-Solr advantage look slightly
+*better* than the fully-fair number would -- i.e. the bias, where it
+exists, favors this KEEP decision, not against it, and at 2.26% incidence
+it is too small to matter regardless of direction. An initial audit
+report additionally claimed the whole-corpus Solr baseline (NDCG@10 =
+0.2335, used as this table's degradation denominator) was "unrelated" to
+this verdict; an adversarial review proved that claim false and derived
+the correction directly: `whole_workload_degradation` algebraically
+collapses to a term computed entirely over the *admitted* subset (the
+non-admitted `rest_solr_sum` term cancels), so the shared denominator's
+own corpus-wide gaps (a separate, larger issue -- see P3-E11-E13) affect
+only how the raw degradation is expressed as a percentage, never its
+sign or the admitted-subset comparison itself; correcting that
+denominator would only shrink the reported relative-degradation
+percentages in this table (more room under budget), never grow them.
+**Net: P3-E05's KEEP verdict is CONFIRMED, not just assumed, under this
+audit** -- both potential gaps point the same way (favoring this
+decision, not threatening it) and neither is large enough to move it
+regardless. P3-E06/P3-E07/P3-E10, which compose this mechanism's own
+already-measured admission counts rather than re-deriving an independent
+Solr comparison, inherit the same conclusion without needing separate
+re-verification.
+
+**A pre-existing, bug-independent risk worth flagging separately**: the
+same audit's adversarial review noted P3-E07's own bootstrap CI for the
+`budget<=2.0%` combined operating point has a 95% upper bound of 2.16%
+-- outside the nominal 2% target -- under the *current* baseline,
+regardless of this fairness question. This is not caused by the
+`solr_query_for` gap (P3-E07's own entry already reported it honestly
+without connecting it here), but is worth a human decision on whether
+that specific operating point should be characterized as REVISE rather
+than KEEP; not resolved by this audit, flagged for follow-up.
+
 **Decision**: KEEP. Hardened into `commerce_core::admission::admit_structurally_anchored_lexical`
 (additive, does not modify `admit_lexically_narrowed`'s own already-
 measured-and-REJECTed-in-general contract): rejects outright whenever
