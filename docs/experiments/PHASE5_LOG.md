@@ -442,4 +442,81 @@ service). Recorded as an open risk, not resolved here.
     diversity, cache temperature under a wider query mix, mutation/churn —
     the last likely blocked by native having no incremental-update API at
     all, a real architectural gap worth stating plainly rather than
-    building one ad hoc) not yet started. (next)
+    building one ad hoc) explicitly scoped out below rather than left
+    silently undone. Closeout: the 80x physical-multiplier floor (Issue
+    #18's own hard red line) holds unconditionally for filter, pagination,
+    and concurrent-basic-filter throughput at every real size tested, but
+    is violated by facet and sort at large/huge real candidate-set sizes —
+    a precise, disclosed breakpoint, not a uniform result. Done.
+- **P5-E04** — `PHASE5_DECISION.md`: NARROW BUT PUBLISHABLE (Issue #18's
+  own framework). Done.
+
+## P5-E03 closeout — the 80x physical-multiplier floor, checked precisely (Issue #18)
+
+Issue #18's own "hard red line" requires promoted native mechanisms to
+preserve **at least an 80x physical latency advantage** on the fast-path
+workload class. Every P5-E00/E03 measurement (using native's *best*
+implementation at each request class -- the scan-based facet methods, the
+top-k sort) was checked against this floor directly, using the exact
+`speedup_mean` column already persisted in
+`docs/research/artifacts/p5e00_run1/results.csv`:
+
+| request class | holds >=80x floor at every real size tested? | where it fails |
+|---|---|---|
+| filter-only (brand or color) | **yes**, 2,799x-18,354x across every size, tiny through huge | never |
+| deep pagination | **yes**, 5,331x-12,715x across every size tested | never |
+| concurrency (basic filter, 1-8 workers) | **yes**, native's single thread alone beats Solr's best 8-worker throughput by ~460-1,780x | never |
+| facet (color-under-brand direction) | **no** | already below floor at "medium" (86 candidates, 67.0x); further below at "large" (437 candidates, 4.26x) |
+| facet (brand-under-color direction) | **no** | holds through "medium" (104 candidates, 186.0x); fails at "large" (841, 4.32x); fully reverses to a **loss** at "huge" (1,844, 0.74x) |
+| sort-by-title (brand-scoped) | **no** | holds through "medium" (86 candidates in-group, 193.7x); fails at "large" (1,249-product group, 16.97x) |
+| sort-by-title (color-scoped) | **no** | holds through "medium" (106, 240.1x); fails at "large" (2,112, 8.62x) and "huge" (11,264, 1.67x) |
+
+**This is a precise, real breakpoint, not a uniform result.** Filter,
+pagination, and concurrent basic-filter throughput comfortably clear the
+80x floor at every real size this catalog produces. Facet and sort do
+not: both remain genuine native *wins* through medium-sized real groups,
+but the margin collapses well below 80x at large/huge real group sizes,
+and facet fully reverses to a native *loss* at the largest size sampled
+(11,264-candidate-adjacent groups). This is exactly the
+"degradation/breakpoint curve" Issue #17/#18 ask Workstream B to produce,
+and it is reported as measured rather than smoothed toward a single
+headline number.
+
+## Scope decisions for the remaining Stage B dimensions (stated explicitly, not silently dropped)
+
+- **Mutation/churn**: out of scope for this phase. `CatalogIndex::build`
+  constructs an immutable snapshot with no incremental-update API at all
+  -- there is no `insert`/`update`/`remove` method anywhere in
+  `commerce-core`. Benchmarking "mutation cost" would require first
+  *building* a real incremental-update capability, which is a new product
+  capability, not a benchmark of an existing one -- exactly the kind of
+  "production polish... during this epic" CLAUDE.md says to avoid. This is
+  a real, disclosed architectural gap, not a benchmarking convenience: any
+  future scale-up decision must treat "does native support live catalog
+  mutation at all" as an open, unanswered, and currently *unimplemented*
+  question, not assume it away.
+- **Sort diversity beyond title**: this real catalog's only two structural
+  fields are Brand and Color (per Phase 5's own real-data scoping finding);
+  neither is a meaningful secondary sort key alongside title (there is no
+  real price/rating/popularity field to sort by, the actual real gap
+  Issue #17's scoping already identified). Testing "sort ascending vs
+  descending" on the same title field would not test a materially
+  different mechanism from what P5-E00 already measured -- deferred as low
+  marginal value given this dataset's real constraints, not fabricated.
+- **Cache temperature under a materially wider query mix**: P5-E01 already
+  confirmed the default 512-entry Solr caches are not a binding constraint
+  for P5-E00's own narrow (5+5 group) query set. A test that actually
+  stresses cache capacity needs many hundreds of distinct real queries
+  cycled with realistic reuse skew -- a real, tractable follow-up, but a
+  materially larger undertaking than any single P5-E03 sub-experiment run
+  so far (both in query-set construction and in run duration to observe
+  eviction effects). Deferred, not attempted this session.
+- **Catalog-scale sensitivity (Solr side)**: testing whether the measured
+  speedups/breakpoints shift at smaller or larger real catalog sizes would
+  need Solr fully reindexed at each additional size (each a real ~5-minute
+  operation per size, based on this session's own reindex timings) --
+  materially larger infrastructure/time investment than an in-process
+  native-only re-slice would need. Deferred as the clearest instance of
+  CLAUDE.md's own stop condition ("the next meaningful experiment requires
+  materially larger infrastructure... scope") for this specific dimension;
+  flagged as the first thing to build if this program scales up.
