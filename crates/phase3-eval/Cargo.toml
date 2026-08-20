@@ -1,0 +1,18 @@
+[package]
+name = "phase3-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Phase 3 (Issue #14, safe fast-path offload frontier over Solr) experiments. Solr is the safety-net fallback, not a baseline to beat outright: a cheap admission check decides whether a query is safe+complete enough for native FastPath execution, otherwise it forwards unmodified to Solr."
+
+[dependencies]
+bench-harness = { path = "../bench-harness" }
+commerce-core = { path = "../commerce-core" }
+round1-eval = { path = "../round1-eval" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Same fresh, same-run, same-environment local Solr instance Phase 2's
+# P1-D used (dataset_cache/solr/solr-9.10.1) -- Phase 3 forwards rejected
+# queries to it directly, unmodified, as the safety-net fallback path.
+ureq = { version = "2", features = ["json"] }

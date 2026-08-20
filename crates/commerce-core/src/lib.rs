@@ -1,3 +1,4 @@
+pub mod admission;
 pub mod cold_start;
 pub mod control_plane;
 pub mod domain;
