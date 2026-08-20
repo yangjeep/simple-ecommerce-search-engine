@@ -226,6 +226,43 @@ self-corrections, not required by the falsification conditions being
 missed -- exactly the "deepen every result" discipline this campaign
 operates under.
 
+## P5-E01 — Stage A closeout: is this the strongest realistic Solr baseline?
+
+Before moving to Stage B, checked whether any further realistic Solr-side
+tuning remains on the table for the *specific* workload P5-E00 measures
+(the standard the "strongest-realistic-Solr-baseline-first" mandate sets),
+distinct from tuning that would matter for Stage B's broader sweep.
+
+**Cache configuration** (`solrconfig.xml`): `filterCache`/`queryResultCache`/
+`documentCache` are all at the `_default` configset's stock
+`size=512, initialSize=512, autowarmCount=0`. Two checks:
+1. `autowarmCount=0` has **zero effect on this measurement** — autowarm
+   only repopulates a cache across a *searcher generation change* (i.e.
+   after a commit), and no commit occurs mid-benchmark, so every rep after
+   the first genuinely warm one benefits from a fully populated
+   `filterCache`/`queryResultCache` regardless of this setting. Already
+   correctly disclosed in the audit table, not a live gap.
+2. `size=512` is **not a binding constraint for P5-E00's own query set**:
+   5 brand groups + 5 color groups, a handful of `fq`/facet/sort
+   variants each, is well under 512 distinct cache entries — no eviction
+   pressure, so this default is not silently starving Solr relative to
+   what a real deployment would configure for a workload this narrow.
+
+**Query shape**: non-scoring `fq` (not `q`) for every filter, so Solr never
+computes a relevance score it doesn't need — already the standard
+"filter, don't rank" idiom a competent Solr user would reach for, and
+already in place before P5-E00's first run.
+
+**Conclusion**: for the specific real Brand/Color request classes P5-E00
+measures, the two real gaps found (missing `docValues`, no sortable title
+field) were the only *material* baseline weaknesses, and both are now
+fixed. No further tuning knob was found that would change P5-E00's own
+verdict. This is **not** a claim that `size=512` caches are appropriate at
+every scale -- Stage B's own concurrency/cache-temperature sweep
+introduces a much larger, more diverse query mix where cache capacity
+becomes a live variable again, and must re-examine it as a first-class
+tunable dimension rather than inherit this default unexamined.
+
 ## Experiment index
 
 - **P5-E00** — real Brand/Color workload generation from actual catalog
@@ -233,6 +270,14 @@ operates under.
   (docValues, `title_sort`); two adversarial follow-ups (O(|candidates|)
   facet-scan methods, top-k sort) with real measured before/after and one
   disclosed remaining crossover. Done.
-- **P5-E01** — formal Stage A closeout: fold this entry's Solr-side fixes
-  into a standalone audit doc; confirm no further realistic Solr tuning is
-  available before Stage B. (next)
+- **P5-E01** — formal Stage A closeout: confirmed no further realistic
+  Solr tuning changes P5-E00's own verdict; cache capacity re-flagged as a
+  live Stage B variable, not settled for good. Done.
+- **P5-E02** — commerce-native execution + first real comparison:
+  substantially answered already by P5-E00's own measurements (this
+  experiment's scope folds into P5-E00/E01 rather than duplicating them).
+- **P5-E03** — Stage B saturation/breakpoint campaign: catalog scale,
+  selectivity, facet cardinality (characterize the P5-E00 facet-scan
+  crossover point precisely), sort diversity, concurrency, cache
+  temperature (revisit `size=512` under a wider query mix), mutation/churn.
+  (next)
