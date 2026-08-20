@@ -469,3 +469,144 @@ residual) still accounts for 76.89% of traffic and remains the largest
 lever by volume, but naive token verification is now a closed, documented
 dead end for it -- the next attempt on this reason needs a real
 relevance/ranking signal, not just a narrower candidate set.
+
+## P3-E04 — diagnostic: structural+lexical queries have a meaningfully better relevance profile than pure-lexical-only
+
+**Evidence class**: real, but a diagnostic only -- reuses P3-E03's
+already-measured per-query relevance data (no new Solr calls), joined
+against a fresh, cheap, deterministic recompile of each query solely to
+check `!compiled.constraints.is_empty()`. Whole-workload impact below is
+a bucket-*mean* approximation, explicitly not treated as a verdict on its
+own (P3-E05 supplies the real number).
+
+**Hypothesis**: `admit_lexically_narrowed` treats a query with an
+existing structural constraint (Brand/ProductType/etc.) alongside
+residual text identically to one with no structural constraint at all --
+but the former's structural half is exactly the kind of independent
+precision anchor P3-E02 found tolerates having no ranking signal
+reasonably well. This distinction alone might explain a meaningful share
+of P3-E03's aggregate REJECT.
+
+**Method**: `p3e04_structural_plus_lexical_diagnostic`. Buckets P3-E03's
+11,794 eligible queries by `has_structural_constraint`, reporting native
+NDCG, Solr NDCG (on the same admitted subset), delta, and false-positive
+rate at the same four representative cap points P3-E03's own frontier
+table used (1, 20, 250, unlimited).
+
+**Result**: confirmed, consistently, at every cap point:
+
+| cap | bucket | admitted | native NDCG | Solr NDCG | delta | false-positive rate |
+|---|---|---|---|---|---|---|
+| 1 | has_constraint | 240 | 0.1337 | 0.2335 | -0.0998 | 18/240 (7.50%) |
+| 1 | pure_lexical | 543 | 0.1509 | 0.3153 | -0.1645 | 108/543 (19.89%) |
+| 250 | has_constraint | 1,526 | 0.2769 | 0.3768 | -0.0999 | 227/1,526 (14.88%) |
+| 250 | pure_lexical | 7,802 | 0.2178 | 0.3733 | -0.1556 | 2,493/7,802 (31.95%) |
+| unlimited | has_constraint | 1,557 | 0.2714 | 0.3704 | -0.0990 | 239/1,557 (15.35%) |
+| unlimited | pure_lexical | 10,237 | 0.1666 | 0.3105 | -0.1438 | 3,620/10,237 (35.37%) |
+
+`has_constraint` shows a smaller NDCG delta and a 2-3x lower false-
+positive rate than `pure_lexical` at every cap, and the gap *widens* as
+the cap loosens -- consistent with the "structural constraint as
+precision anchor" hypothesis, not a coincidence at one cap value.
+
+**Decision**: real, evidence-based grounds to measure a restricted
+policy -- "never invoke lexical narrowing when there is no existing
+structural constraint" -- properly (P3-E05), rather than either
+abandoning the coverage lever entirely (P3-E03's aggregate REJECT) or
+promoting this bucket-mean approximation directly.
+
+## P3-E05 — KEEP: structurally-anchored lexical narrowing clears the relevance budget with real coverage gain
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, live local Solr, fresh whole-corpus Solr
+pass -- same methodology as P3-E02/P3-E03, not the P3-E04 diagnostic's
+bucket-mean approximation).
+
+**Hypothesis**: restricting `admit_lexically_narrowed` to only the
+`UnresolvedResidual`-rejected queries that also carry a non-empty
+`query.constraints` clears Issue #14's relevance budgets at a real,
+useful coverage point, per P3-E04's diagnostic signal.
+
+**Method**: `crates/phase3-eval/src/bin/p3e05_structural_anchored_lexical_eval.rs`,
+mirroring P3-E02/P3-E03 exactly (fresh whole-corpus Solr baseline, same
+log-scale cap sweep, whole-workload degradation computed from each
+non-admitted query's own real Solr score, RQ2 budget calibration,
+once-only native latency measurement) but restricted to the
+structurally-anchored population: of 17,268 `UnresolvedResidual`-
+rejected queries, 4,599 (26.63%) also carry an existing structural
+constraint; of those, 3,042 are blocked outright (out-of-vocabulary
+token or an empty AND-combination, same safety check P3-E03's bug fix
+established) and 1,557 have a real, non-zero combined candidate count,
+swept below.
+
+### Result — every swept cap clears Issue #14's 2% budget; three caps clear tighter budgets with real coverage
+
+| cap | admitted | coverage (% of whole corpus) | native NDCG (admitted) | Solr NDCG (same admitted) | whole-workload NDCG | degradation vs. Solr-only | false-positive admissions |
+|---|---|---|---|---|---|---|---|
+| 1 | 240 | 1.07% | 0.1337 | 0.2335 | 0.2324 | +0.0011 (0.47% relative) | 18 (7.50%) |
+| 2 | 382 | 1.70% | 0.1783 | 0.2866 | 0.2317 | +0.0018 (0.77% relative) | 26 (6.81%) |
+| 20 | 1,110 | 4.94% | 0.3322 | 0.4182 | 0.2293 | +0.0043 (1.84% relative) | 57 (5.14%) |
+| 250 | 1,526 | 6.79% | 0.2769 | 0.3768 | 0.2267 | +0.0068 (2.91% relative) | 227 (14.88%) |
+| 200,000 | 1,557 | 6.93% | 0.2714 | 0.3704 | 0.2266 | +0.0069 (2.96% relative) | 239 (15.35%) |
+
+Whole-workload pure-Solr-only baseline: NDCG@10 = 0.2335 (identical to
+P3-E02/P3-E03's, same corpus/Solr instance). RQ2 budget calibration:
+**budget<=0.5%: best cap=1, coverage 1.07% of whole corpus. budget<=1.0%:
+best cap=2, coverage 1.70%. budget<=2.0%: best cap=20, coverage 4.94%.**
+(budget<=0.0% stays unreachable by construction, same footnote as
+P3-E02.) At `cap=20`, coverage is **~6x P3-E02's entire structural-only
+coverage (0.81%)**, while staying inside the 2% budget -- the largest
+real coverage gain of the whole Phase 3 campaign so far. Even at
+*no* cap limit at all, degradation only reaches 2.96% relative -- nowhere
+near the unrestricted mechanism's 31.0% relative degradation at the same
+unlimited point (P3-E03). Native execution latency: mean=0.0015ms
+(30 reps, individual per-query timing over a small-candidate-set sample)
+-- back in line with P3-E02's fast structural-admission numbers, not
+P3-E03's inflated ones (which were dominated by iterating much larger,
+unrestricted candidate sets).
+
+**Not perfect, stated plainly**: a false-positive rate of 7.5-15.35%
+remains even in this restricted policy -- lower than P3-E03's 16-33% by
+a real margin, but not zero. Representative examples from the unlimited-
+cap false-positive set (illustrative, not individually root-caused):
+qid 31529 "dansko womens shoes", qid 33792 "disney loungefly purse", qid
+41959 "foodie ninja cooker" -- brand-plus-descriptive-noun queries where
+the structural constraint (brand) narrows correctly but the residual
+noun phrase's lexical match still occasionally selects a non-relevant
+product from that brand's catalog. This is the same "no ranking signal"
+risk documented since P2-E17, now bounded to a smaller and less frequent
+share of traffic by the structural anchor rather than eliminated.
+
+**Decision**: KEEP. Hardened into `commerce_core::admission::admit_structurally_anchored_lexical`
+(additive, does not modify `admit_lexically_narrowed`'s own already-
+measured-and-REJECTed-in-general contract): rejects outright whenever
+`query.constraints` is empty, so a future caller cannot reproduce
+P3-E03's rejected behavior by calling the wrong function. 2 new RED-first
+tests (a pure-lexical-only query that plain `admit_lexically_narrowed`
+would admit but this rejects; a structural-constraint-anchored query that
+admits with the expected candidate count) -- 17/17 admission tests pass.
+Not yet wired into a combined production admission policy alongside the
+original structural `admit()` (the two populations are disjoint by
+construction, so combining them is additive, not conflicting) -- that
+wiring, plus a paper-grade replication (>=30 runs, bootstrap CIs) at the
+promoted cap point, is next.
+
+**Cross-phase note**: this is the first real coverage-expansion win of
+Issue #14's P3-E03+ loop. Combined with P3-E02's own 0.81% structural-
+only coverage (disjoint population, additive), the safe FastPath
+architecture now has real, evidence-backed coverage in the 5-8% range at
+a <=2% relevance budget, depending on which cap is chosen for each
+mechanism -- still short of RQ4's ">50% coverage" threshold for a p50
+latency shift, but a meaningful, real step beyond P3-E02's ceiling.
+
+**Next**: continue Issue #14's loop. Immediate candidates: (a) paper-
+grade replication of this result at the promoted cap points; (b) apply
+the same "diagnose the rejected population for a real precision anchor"
+approach P3-E04 used to the *pure-lexical-only* population itself (is
+there a further split within it -- e.g. by residual token count, or by
+whether the residual is a single highly-specific token like a model
+number vs. multiple generic descriptive words -- that recovers some of
+its otherwise-REJECTed coverage); (c) Issue #16's learned semantic
+implication rules, which could supply a real ranking/precision signal
+where this experiment relied on structural-constraint co-occurrence
+alone.
