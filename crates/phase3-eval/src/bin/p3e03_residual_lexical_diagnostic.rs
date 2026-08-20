@@ -107,7 +107,11 @@ fn main() {
 
         let known_tokens = residual_tokens
             .iter()
-            .filter(|t| !index.lexical_and_candidates(std::slice::from_ref(t)).is_empty())
+            .filter(|t| {
+                !index
+                    .lexical_and_candidates(std::slice::from_ref(t))
+                    .is_empty()
+            })
             .count();
         if known_tokens == residual_tokens.len() {
             all_tokens_known += 1;

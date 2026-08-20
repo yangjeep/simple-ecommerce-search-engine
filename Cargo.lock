@@ -838,6 +838,7 @@ dependencies = [
  "commerce-core",
  "rand",
  "rand_chacha",
+ "roaring",
  "round1-eval",
  "serde",
  "serde_json",
