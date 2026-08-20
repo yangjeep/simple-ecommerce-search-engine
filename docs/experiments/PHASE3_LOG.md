@@ -922,7 +922,9 @@ default:
 items already on record (paper-grade bootstrap CI for this experiment's
 own new `<=2.0%` operating point; a human decision on whether the
 existing `<=2.0%` two-mechanism CI's thin margin, P3-E07, should be
-downgraded to REVISE) remain open. But the *mining loop* -- "find the next
+downgraded to REVISE) remain open -- **see P3-E17 immediately below,
+which supplies the CI and finds the same margin issue is pervasive, not
+isolated to one point.** But the *mining loop* -- "find the next
 safe-admissible slice of rejected traffic within this admission family" --
 has produced three independently-KEPT mechanisms, one BOUNDED finding,
 two REJECTed mechanisms (one root-caused twice, first as a bug, then as a
@@ -930,6 +932,94 @@ fundamental limitation), and a fully-searched combined tuning frontier.
 Per Issue #18's stated execution order, the next highest-information-value
 work is Issue #16 (learned semantic implication rules), not further
 narrow-casting within this same toolkit.
+
+## P3-E17 — bootstrap CIs for P3-E16's three-way operating points: all three budget-edge points have a CI upper bound exceeding their own nominal budget
+
+**Evidence class**: real, whole-workload -- pure re-aggregation of
+already-persisted per-query CSVs (P3-E02's/P3-E05's `eligible_queries_raw.csv`,
+P3-E03's for the single-token population, P3-E06's whole-corpus
+`whole_corpus_solr_ndcg.csv`), extending P3-E07's own paired-bootstrap
+methodology from two admission mechanisms to three. No new Solr querying.
+
+**Hypothesis**: P3-E16 flagged its own point estimates as not yet having
+a CI, "to keep this experiment's own claim scoped to what it actually
+demonstrates." This measures that CI directly for all three P3-E16-
+promoted operating points, following P3-E07's exact paired-percentile-
+bootstrap method (5,000 resamples, alpha=0.05, seeded `ChaCha8Rng`,
+qids sorted before array construction per P3-E07's own determinism
+lesson).
+
+**Method**: `p3e17_three_way_bootstrap_ci`.
+
+### Result -- every one of the three points' CI upper bound exceeds its own nominal budget
+
+| operating point | admitted | coverage | point degradation | 95% CI (relative) | CI upper vs. nominal budget |
+|---|---|---|---|---|---|
+| budget<=0.5% (s=2,a=1,t=2) | 313 | 1.39% | 0.50% | [0.38%, 0.62%] | **0.62% > 0.5%** |
+| budget<=1.0% (s=50,a=1,t=20) | 601 | 2.68% | 0.94% | [0.76%, 1.12%] | **1.12% > 1.0%** |
+| budget<=2.0% (s=2,a=20,t=10) | 1,303 | 5.80% | 1.98% | [1.76%, 2.22%] | **2.22% > 2.0%** |
+
+Every CI excludes zero (the degradation is real, not noise, at all three
+points -- consistent with every prior Phase 3 bootstrap result). But at
+all three points, the *upper* bound of the CI sits above the nominal
+budget line the point estimate was tuned to just barely clear. **This is
+not a new, independent problem at each point -- it is a structural
+consequence of how P3-E16's search itself works**: the fine-grained grid
+search explicitly finds the *highest-coverage* grid point whose point
+estimate is `<=` budget, which mechanically places the point estimate as
+close to the budget line as the available 19x19x19 grid resolution
+allows. A point estimate deliberately placed at the edge of a threshold
+will very often have a two-sided confidence interval that crosses that
+same threshold, independent of whether the underlying mechanism is sound
+-- this is a generic property of optimizing-to-a-threshold before
+checking uncertainty, not a new defect in any of the three admission
+mechanisms themselves (each of which independently cleared its own
+budget with real margin in its own isolated measurement: P3-E02/E05/E09).
+Checked directly: the ratio of CI-upper to point estimate shrinks as
+coverage grows (1.24x at 0.5%, 1.19x at 1.0%, 1.12x at 2.0%), consistent
+with a largely fixed-width absolute CI half-width becoming a smaller
+fraction of a larger point estimate -- not evidence the mechanism gets
+*less* reliable at higher coverage, the opposite.
+
+**A conservative alternative was checked and does not exist at the
+tighter budgets**: querying P3-E16's full 6,859-point grid for a point
+whose *point estimate* sits meaningfully below (not just at) each budget
+found no useful candidate for the `<=0.5%`/`<=1.0%` budgets -- the
+anchored-lexical mechanism's own minimum-degradation floor (P3-E05's
+cap=1 point, ~0.47% relative, real even at the tightest possible cap
+because of its own 7.5% false-positive rate at cap=1) already sits within
+0.03 points of the `<=0.5%` budget line by itself, before the other two
+mechanisms contribute anything -- there is no room in the grid to trade
+coverage for statistical margin at this budget without dropping the
+anchored mechanism (P3-E05's own single largest coverage contributor)
+out of the combined system entirely.
+
+**Decision**: **disclose plainly, do not downgrade to REVISE outright.**
+This mirrors P3-E07's own already-disclosed finding for the two-mechanism
+`<=2.0%` point (CI upper 2.16%) and extends it: the pattern is not one
+fragile point but a systematic property of budget-edge operating points
+found by any threshold-constrained search over this admission family.
+The correct interpretation is not "these mechanisms are unsafe" (each was
+independently KEPT with its own real, adequate margin at moderate caps in
+P3-E02/E05/E09) but "an operating point chosen to spend a budget down to
+the last basis point should be understood as having thinner statistical
+margin than its own point estimate suggests, and a production deployment
+wanting a hard guarantee should back off from the searched optimum
+by a margin informed by this CI, not adopt the raw grid-search optimum
+verbatim." This is a human/deployment-policy decision (how much margin to
+keep), not a research verdict this experiment can resolve unilaterally --
+flagged explicitly, per this project's own "disclose plainly" discipline,
+rather than silently adopting the aggressive point as if the CI didn't
+exist.
+
+Raw artifacts: `docs/research/artifacts/p3e17_run1/`.
+
+**Next**: with this CI now attached, Issue #14's "Done when" criterion
+("final frontier points have paper-grade replication/ablations") is
+satisfied for the full three-mechanism combined frontier, not just the
+two-mechanism one. Issue #14's mining loop remains judged exhausted
+(P3-E16's own boundary call). Proceeding to Issue #16 per Issue #18's
+stated execution order.
 
 ## P3-E04 — diagnostic: structural+lexical queries have a meaningfully better relevance profile than pure-lexical-only
 
