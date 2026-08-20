@@ -394,6 +394,81 @@ impl CatalogIndex {
         counts
     }
 
+    /// Issue #17 (Phase 5): the same faceting operation as
+    /// [`Self::facet_counts`], but for [`crate::domain::BrandId`] rather
+    /// than a generic string-valued `Enum` attribute. Brand is a first-class
+    /// structural field with its own dedicated `brand_bitmaps` index (see
+    /// [`Self::structural_bitmap`]), not one of the generic
+    /// `enum_bitmaps` `facet_counts` reads -- so a "which brands appear
+    /// under this candidate set" facet (e.g. brand facet under an active
+    /// color filter) needs this sibling method rather than being
+    /// answerable through `facet_counts("brand", ...)`, which would
+    /// always return empty.
+    pub fn brand_facet_counts(&self, candidates: &RoaringBitmap) -> BTreeMap<BrandId, u64> {
+        let mut counts = BTreeMap::new();
+        for (&brand_id, bm) in &self.brand_bitmaps {
+            let count = (candidates & bm).len();
+            if count > 0 {
+                counts.insert(brand_id, count);
+            }
+        }
+        counts
+    }
+
+    /// Issue #17 (Phase 5): an alternative faceting strategy for
+    /// [`Self::facet_counts`], scanning the (typically small) *candidate*
+    /// set directly rather than the field's entire global vocabulary.
+    /// `facet_counts` costs `O(distinct values for this attribute across
+    /// the whole catalog)` regardless of how small `candidates` is --
+    /// real-data measurement (P5-E00) found this costs 35-420ms on a
+    /// ~175k/206k-distinct-value real field even when the candidate set
+    /// itself is only a few thousand ordinals, dramatically slower than a
+    /// tuned Solr JSON Facet API call (1-3ms) on the identical request.
+    /// This method instead costs `O(|candidates|)`: for a genuinely small
+    /// candidate set (the common real case for a filtered PLP facet
+    /// request), that is far cheaper than scanning the whole vocabulary,
+    /// testing whether the slowness above was fundamental or an
+    /// avoidable representation choice. Additive: does not change
+    /// `facet_counts`'s existing behavior/tests.
+    pub fn facet_counts_by_scan(
+        &self,
+        candidates: &RoaringBitmap,
+        catalog: &Catalog,
+        attribute: &str,
+    ) -> BTreeMap<String, u64> {
+        let mut counts = BTreeMap::new();
+        for ord in candidates.iter() {
+            let (_, variant_id) = self.ordinals[ord as usize];
+            let Some((product, variant)) = self.lookup_variant(catalog, variant_id) else {
+                continue;
+            };
+            if let Some(AttributeValue::Enum(value)) =
+                effective_attributes(product, variant).get(attribute)
+            {
+                *counts.entry(value.clone()).or_insert(0) += 1;
+            }
+        }
+        counts
+    }
+
+    /// The scan-based sibling of [`Self::brand_facet_counts`], for the
+    /// same reason [`Self::facet_counts_by_scan`] exists alongside
+    /// [`Self::facet_counts`].
+    pub fn brand_facet_counts_by_scan(
+        &self,
+        candidates: &RoaringBitmap,
+        catalog: &Catalog,
+    ) -> BTreeMap<BrandId, u64> {
+        let mut counts = BTreeMap::new();
+        for ord in candidates.iter() {
+            let (product_id, _) = self.ordinals[ord as usize];
+            if let Some(product) = self.lookup_product(catalog, product_id) {
+                *counts.entry(product.brand).or_insert(0) += 1;
+            }
+        }
+        counts
+    }
+
     /// Top-K ranking (Gate 3): correctness-verified hits from `execute`,
     /// scored by summing compiled `Preference` weights and sorted
     /// deterministically (score desc, then product/variant id asc so ties

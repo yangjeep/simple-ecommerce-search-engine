@@ -1,0 +1,102 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+
+computing real brand/color group-size distributions...
+  206227 distinct real brands, 175292 distinct real color values
+
+selected real brand groups:
+  BrandId(182044) (neotec): 2 products [tiny (2-10)]
+  BrandId(40801) (milk snob): 12 products [small (11-100)]
+  BrandId(75) (clairol): 116 products [medium (101-1,000)]
+  BrandId(917) (simple joys by carter's): 1249 products [large (1,001-10,000)]
+selected real color groups:
+  "S2 Black": 2 products [tiny (2-10)]
+  "Subalpine": 28 products [small (11-100)]
+  "Grey/White": 106 products [medium (101-1,000)]
+  "Multicolored": 2112 products [large (1,001-10,000)]
+  "Clear": 11264 products [huge (>10,000)]
+
+=== P5-E00/E01/E02 result ===
+request class                          group   key                      bucket                  n_count    s_count   match  n_mean_ms  s_mean_ms    speedup
+brand_filter_first_page                brand   neotec                   tiny (2-10)                   2          2    true     0.0001     1.1675    8729.97
+color_facet_under_brand_filter         brand   neotec                   tiny (2-10)                   1          1    true   133.6006     1.9497       0.01
+color_facet_under_brand_filter_scan    brand   neotec                   tiny (2-10)                   1          1    true     0.0003     1.9497    7529.74
+sort_title_under_brand_filter          brand   neotec                   tiny (2-10)                   2          2    true     0.0002     0.9908    3964.85
+brand_filter_first_page                brand   milk snob                small (11-100)               12         12    true     0.0001     2.1224   18354.44
+color_facet_under_brand_filter         brand   milk snob                small (11-100)                8          8    true   133.1644     1.8150       0.01
+color_facet_under_brand_filter_scan    brand   milk snob                small (11-100)                8          8    true     0.0025     1.8150     728.18
+sort_title_under_brand_filter          brand   milk snob                small (11-100)               12         12    true     0.0010     2.5855    2512.72
+brand_filter_first_page                brand   clairol                  medium (101-1,000)          116        116    true     0.0003     2.2757    7601.62
+color_facet_under_brand_filter         brand   clairol                  medium (101-1,000)           86         86    true   165.1072     1.9572       0.01
+color_facet_under_brand_filter_scan    brand   clairol                  medium (101-1,000)           86         86    true     0.0292     1.9572      67.01
+sort_title_under_brand_filter          brand   clairol                  medium (101-1,000)           24         24    true     0.0107     2.0635     193.75
+deep_pagination_under_brand_filter     brand   clairol                  medium (101-1,000)           24         24    true     0.0004     2.4373    5592.70
+brand_filter_first_page                brand   simple joys by carter's  large (1,001-10,000)       1249       1249    true     0.0010     2.8700    2798.75
+color_facet_under_brand_filter         brand   simple joys by carter's  large (1,001-10,000)        437        437    true   198.9253     2.9909       0.02
+color_facet_under_brand_filter_scan    brand   simple joys by carter's  large (1,001-10,000)        437        437    true     0.7028     2.9909       4.26
+sort_title_under_brand_filter          brand   simple joys by carter's  large (1,001-10,000)         24         24    true     0.1629     2.7641      16.97
+deep_pagination_under_brand_filter     brand   simple joys by carter's  large (1,001-10,000)         24         24    true     0.0005     2.7845    5331.22
+color_filter_first_page                color   S2 Black                 tiny (2-10)                   2          2    true     0.0002     1.2074    6784.27
+brand_facet_under_color_filter         color   S2 Black                 tiny (2-10)                   2          2    true    42.7067     1.4669       0.03
+brand_facet_under_color_filter_scan    color   S2 Black                 tiny (2-10)                   2          2    true     0.0002     1.4669    7791.51
+sort_title_under_color_filter          color   S2 Black                 tiny (2-10)                   2          2    true     0.0003     1.1900    4295.01
+color_filter_first_page                color   Subalpine                small (11-100)               28         28    true     0.0002     1.9987    8848.85
+brand_facet_under_color_filter         color   Subalpine                small (11-100)               28         28    true    80.0847     1.4740       0.02
+brand_facet_under_color_filter_scan    color   Subalpine                small (11-100)               28         28    true     0.0012     1.4740    1226.42
+sort_title_under_color_filter          color   Subalpine                small (11-100)               24         24    true     0.0026     2.3725     898.63
+color_filter_first_page                color   Grey/White               medium (101-1,000)          106        106    true     0.0004     3.3286    8097.40
+brand_facet_under_color_filter         color   Grey/White               medium (101-1,000)          104        104    true   156.4486     1.9021       0.01
+brand_facet_under_color_filter_scan    color   Grey/White               medium (101-1,000)          104        104    true     0.0102     1.9021     186.04
+sort_title_under_color_filter          color   Grey/White               medium (101-1,000)           24         24    true     0.0125     3.0027     240.08
+deep_pagination_under_color_filter     color   Grey/White               medium (101-1,000)           24         24    true     0.0004     2.8172    6861.80
+color_filter_first_page                color   Multicolored             large (1,001-10,000)       2112       2112    true     0.0004     3.7334    9114.82
+brand_facet_under_color_filter         color   Multicolored             large (1,001-10,000)        841        837   false   232.4978     2.3853       0.01
+brand_facet_under_color_filter_scan    color   Multicolored             large (1,001-10,000)        841        837   false     0.5523     2.3853       4.32
+sort_title_under_color_filter          color   Multicolored             large (1,001-10,000)         24         24    true     0.6325     5.4536       8.62
+deep_pagination_under_color_filter     color   Multicolored             large (1,001-10,000)         24         24    true     0.0004     4.8912   12715.35
+color_filter_first_page                color   Clear                    huge (>10,000)            11264      11264    true     0.0015     3.3991    2203.72
+brand_facet_under_color_filter         color   Clear                    huge (>10,000)             1844       1842   false   424.8794     2.9960       0.01
+brand_facet_under_color_filter_scan    color   Clear                    huge (>10,000)             1844       1842   false     4.0502     2.9960       0.74
+sort_title_under_color_filter          color   Clear                    huge (>10,000)               24         24    true     2.9795     4.9810       1.67
+deep_pagination_under_color_filter     color   Clear                    huge (>10,000)               24         24    true     0.0013     3.6811    2848.81
+
+correctness: 37/41 rows had matching native/Solr counts -- SEE MISMATCHES BELOW
+  FACET MISMATCH color=Multicolored: native={"American Greetings": 7, "BLUE PANDA": 7, "Baby Einstein": 6, "Bearbrick": 16, "Big Dot of Happiness": 53, "Bioworld": 18, "Bullet Weights": 6, "CUPSHE": 30, "California Costumes": 7, "Crayola": 19, "Desert Cactus": 26, "Disguise": 11, "Disney": 187, "Disney Pixar": 26, "EvolveFISH": 5, "Foraineam": 5, "Fun Express": 5, "Fun World": 5, "GRAPHICS & MORE": 8, "Generic": 5, "Graphics and More": 10, "Great Eastern Entertainment": 6, "Harry Potter": 5, "Hauntlook": 10, "John Bartlett Consensus": 9, "Juvale": 23, "Kangaroo": 5, "Keeerqe": 9, "LEGO": 8, "Liberty Imports": 44, "Little Tikes": 5, "Loungefly": 29, "Marvel": 20, "Mayflower": 5, "Meri Meri": 5, "Milumia": 7, "Navy Peony": 6, "NobleWorks": 12, "P. Graham Dunn": 10, "PicassoTiles": 16, "Playmobil": 8, "Pokemon": 7, "Popular Patch": 11, "Prextex": 8, "Purple Ladybug Novelty": 6, "STAR WARS": 9, "Spirit Halloween": 17, "Sprayground": 34, "The Best Card Company": 9, "Ty": 36} solr={"American Greetings": 7, "BLUE PANDA": 6, "Baby Einstein": 6, "Bearbrick": 16, "Big Dot of Happiness": 53, "Bioworld": 18, "Bullet Weights": 6, "CUPSHE": 30, "California Costumes": 7, "Crayola": 19, "Desert Cactus": 26, "Disguise": 11, "Disney": 187, "Disney Pixar": 26, "EvolveFISH": 5, "Foraineam": 5, "Fun Express": 5, "Fun World": 5, "GRAPHICS & MORE": 8, "Generic": 5, "Graphics and More": 10, "Great Eastern Entertainment": 6, "Hauntlook": 10, "John Bartlett Consensus": 9, "Juvale": 23, "Keeerqe": 9, "LEGO": 8, "Liberty Imports": 44, "Little Tikes": 5, "Loungefly": 29, "Marvel": 20, "Mayflower": 5, "Meri Meri": 5, "Milumia": 7, "Mr. Heater": 5, "Mr. Pen": 5, "Navy Peony": 6, "NobleWorks": 12, "P. Graham Dunn": 10, "PicassoTiles": 16, "Playmobil": 8, "Pokemon": 7, "Popular Patch": 11, "Prextex": 8, "Purple Ladybug Novelty": 6, "Spirit Halloween": 17, "Sprayground": 34, "Star Wars": 6, "The Best Card Company": 9, "Ty": 36}
+  COUNT MISMATCH brand_facet_under_color_filter color=Multicolored: native=841 solr=837
+  SCAN FACET MISMATCH color=Multicolored: native_scan={"American Greetings": 7, "BLUE PANDA": 7, "Baby Einstein": 6, "Bearbrick": 16, "Big Dot of Happiness": 53, "Bioworld": 18, "Bullet Weights": 6, "CUPSHE": 30, "California Costumes": 7, "Crayola": 19, "Desert Cactus": 26, "Disguise": 11, "Disney": 187, "Disney Pixar": 26, "EvolveFISH": 5, "Foraineam": 5, "Fun Express": 5, "Fun World": 5, "GRAPHICS & MORE": 8, "Generic": 5, "Graphics and More": 10, "Great Eastern Entertainment": 6, "Harry Potter": 5, "Hauntlook": 10, "John Bartlett Consensus": 9, "Juvale": 23, "Kangaroo": 5, "Keeerqe": 9, "LEGO": 8, "Liberty Imports": 44, "Little Tikes": 5, "Loungefly": 29, "Marvel": 20, "Mayflower": 5, "Meri Meri": 5, "Milumia": 7, "Navy Peony": 6, "NobleWorks": 12, "P. Graham Dunn": 10, "PicassoTiles": 16, "Playmobil": 8, "Pokemon": 7, "Popular Patch": 11, "Prextex": 8, "Purple Ladybug Novelty": 6, "STAR WARS": 9, "Spirit Halloween": 17, "Sprayground": 34, "The Best Card Company": 9, "Ty": 36} solr={"American Greetings": 7, "BLUE PANDA": 6, "Baby Einstein": 6, "Bearbrick": 16, "Big Dot of Happiness": 53, "Bioworld": 18, "Bullet Weights": 6, "CUPSHE": 30, "California Costumes": 7, "Crayola": 19, "Desert Cactus": 26, "Disguise": 11, "Disney": 187, "Disney Pixar": 26, "EvolveFISH": 5, "Foraineam": 5, "Fun Express": 5, "Fun World": 5, "GRAPHICS & MORE": 8, "Generic": 5, "Graphics and More": 10, "Great Eastern Entertainment": 6, "Hauntlook": 10, "John Bartlett Consensus": 9, "Juvale": 23, "Keeerqe": 9, "LEGO": 8, "Liberty Imports": 44, "Little Tikes": 5, "Loungefly": 29, "Marvel": 20, "Mayflower": 5, "Meri Meri": 5, "Milumia": 7, "Mr. Heater": 5, "Mr. Pen": 5, "Navy Peony": 6, "NobleWorks": 12, "P. Graham Dunn": 10, "PicassoTiles": 16, "Playmobil": 8, "Pokemon": 7, "Popular Patch": 11, "Prextex": 8, "Purple Ladybug Novelty": 6, "Spirit Halloween": 17, "Sprayground": 34, "Star Wars": 6, "The Best Card Company": 9, "Ty": 36}
+  COUNT MISMATCH brand_facet_under_color_filter_scan color=Multicolored: native=841 solr=837
+  FACET MISMATCH color=Clear: native={"": 21, "3M": 25, "AVERY": 26, "AmazerBath": 22, "Amazon Basics": 31, "Anchor Hocking": 43, "Ball": 37, "Bormioli Rocco": 36, "Clara Pucci": 36, "Comfy Package": 23, "Command": 30, "Cq acrylic": 21, "Darice": 33, "DilaBee": 26, "Dr. Brown's": 37, "ESR": 39, "Generic": 23, "Godinger": 54, "Gorilla": 39, "IRIS USA, Inc.": 29, "Jetech": 24, "Juvale": 26, "Libbey": 71, "Loctite": 19, "MaxGear": 19, "MyGift": 21, "NIUBEE": 31, "OXO": 47, "OtterBox": 29, "PANDORA": 75, "Paksh Novelty": 32, "Philips AVENT": 29, "Prestee": 21, "Pyrex": 39, "Royal Imports": 29, "Rubbermaid": 52, "STORi": 34, "Scotch": 43, "Seaguar": 20, "Speck": 20, "Sterilite": 29, "Super Z Outlet": 21, "Tervis": 157, "Ultra Pro": 25, "UniqueMe": 30, "Waterford": 29, "ZAGG": 34, "Ziploc": 21, "iDesign": 27, "mDesign": 159} solr={"3M": 25, "AVERY": 26, "AmazerBath": 22, "Amazon Basics": 31, "Anchor Hocking": 43, "Ball": 37, "Bormioli Rocco": 36, "Clara Pucci": 36, "Comfy Package": 23, "Command": 30, "Cq acrylic": 21, "Darice": 33, "DilaBee": 26, "Dr. Brown's": 37, "ESR": 39, "Generic": 23, "Godinger": 54, "Gorilla": 39, "IRIS USA, Inc.": 29, "JETech": 24, "Juvale": 26, "Libbey": 71, "Loctite": 19, "MaxGear": 19, "MyGift": 21, "NIUBEE": 31, "OXO": 47, "OtterBox": 29, "PANDORA": 75, "Paksh Novelty": 32, "Philips AVENT": 29, "Prestee": 21, "ProCase": 19, "Pyrex": 39, "Royal Imports": 29, "Rubbermaid": 52, "STORi": 34, "Scotch": 43, "Seaguar": 20, "Speck": 20, "Sterilite": 29, "Super Z Outlet": 21, "Tervis": 157, "Ultra Pro": 25, "UniqueMe": 30, "Waterford": 29, "ZAGG": 34, "Ziploc": 21, "iDesign": 27, "mDesign": 159}
+  COUNT MISMATCH brand_facet_under_color_filter color=Clear: native=1844 solr=1842
+  SCAN FACET MISMATCH color=Clear: native_scan={"": 21, "3M": 25, "AVERY": 26, "AmazerBath": 22, "Amazon Basics": 31, "Anchor Hocking": 43, "Ball": 37, "Bormioli Rocco": 36, "Clara Pucci": 36, "Comfy Package": 23, "Command": 30, "Cq acrylic": 21, "Darice": 33, "DilaBee": 26, "Dr. Brown's": 37, "ESR": 39, "Generic": 23, "Godinger": 54, "Gorilla": 39, "IRIS USA, Inc.": 29, "Jetech": 24, "Juvale": 26, "Libbey": 71, "Loctite": 19, "MaxGear": 19, "MyGift": 21, "NIUBEE": 31, "OXO": 47, "OtterBox": 29, "PANDORA": 75, "Paksh Novelty": 32, "Philips AVENT": 29, "Prestee": 21, "Pyrex": 39, "Royal Imports": 29, "Rubbermaid": 52, "STORi": 34, "Scotch": 43, "Seaguar": 20, "Speck": 20, "Sterilite": 29, "Super Z Outlet": 21, "Tervis": 157, "Ultra Pro": 25, "UniqueMe": 30, "Waterford": 29, "ZAGG": 34, "Ziploc": 21, "iDesign": 27, "mDesign": 159} solr={"3M": 25, "AVERY": 26, "AmazerBath": 22, "Amazon Basics": 31, "Anchor Hocking": 43, "Ball": 37, "Bormioli Rocco": 36, "Clara Pucci": 36, "Comfy Package": 23, "Command": 30, "Cq acrylic": 21, "Darice": 33, "DilaBee": 26, "Dr. Brown's": 37, "ESR": 39, "Generic": 23, "Godinger": 54, "Gorilla": 39, "IRIS USA, Inc.": 29, "JETech": 24, "Juvale": 26, "Libbey": 71, "Loctite": 19, "MaxGear": 19, "MyGift": 21, "NIUBEE": 31, "OXO": 47, "OtterBox": 29, "PANDORA": 75, "Paksh Novelty": 32, "Philips AVENT": 29, "Prestee": 21, "ProCase": 19, "Pyrex": 39, "Royal Imports": 29, "Rubbermaid": 52, "STORi": 34, "Scotch": 43, "Seaguar": 20, "Speck": 20, "Sterilite": 29, "Super Z Outlet": 21, "Tervis": 157, "Ultra Pro": 25, "UniqueMe": 30, "Waterford": 29, "ZAGG": 34, "Ziploc": 21, "iDesign": 27, "mDesign": 159}
+  COUNT MISMATCH brand_facet_under_color_filter_scan color=Clear: native=1844 solr=1842
+
+artifacts written to dataset_cache/p5e00_artifacts
+
+=== Required Solr fair-baseline audit artifact (per Issue #17) ===
+
+request class:      brand/color filter, facet, sort, pagination
+schema fields:       brand (string), color (string), title_sort (string, copyField<-title)
+docValues:           true on brand/color/title_sort (FIXED this session -- were false;
+                     confirmed false via the live Schema API before the fix, not assumed)
+facet method:        Solr JSON Facet API, type=terms (docValues/ordinal-backed given the fix above)
+cache mode/state:    filterCache (size=512, autowarmCount=0), queryResultCache (size=512,
+                     autowarmCount=0) -- both Solr defaults, in play for repeated fq/facet
+                     requests within one searcher generation; autowarmCount=0 means no
+                     proactive cross-commit re-warm, irrelevant here since no commits occur
+                     mid-benchmark
+sort/index-sort:     no explicit Lucene index sort configured (Solr's out-of-the-box
+                     default) -- a real, disclosed limitation, not yet exploited as a
+                     further Stage A optimization; flagged for Stage B if sort-heavy
+                     classes show a native advantage worth checking against this
+result-count val.:   every filter/sort/pagination request's native count is compared
+                     directly against Solr's own numFound; every facet request's native
+                     value->count map is compared directly against Solr's JSON Facet API
+                     buckets -- see "correctness" line above for pass/fail
+warm/cold regime:    this run measures WARM state only (5 discarded warmup reps,
+                     30 measured reps per request, same searcher generation
+                     throughout) -- cold-state / post-commit measurement is Stage B's
+                     own required addition, not covered here
+
