@@ -4,8 +4,9 @@
 //! `tests/plan.rs`'s own one-outcome-per-test discipline.
 
 use commerce_core::admission::{
-    admit, admit_lexically_narrowed, admit_structurally_anchored_lexical,
-    execute_lexically_narrowed, AdmissionDecision, AdmissionPolicy, RejectReason,
+    admit, admit_lexically_narrowed, admit_single_token_lexical,
+    admit_structurally_anchored_lexical, execute_lexically_narrowed, AdmissionDecision,
+    AdmissionPolicy, RejectReason,
 };
 use commerce_core::domain::{
     attributes, BrandId, Catalog, CategoryId, Constraint, Inventory, Price, Product, ProductId,
@@ -429,6 +430,84 @@ fn admits_structurally_anchored_lexical_narrowing_when_a_structural_constraint_e
     let result = admit_structurally_anchored_lexical(&query, &index, 10);
 
     let (_, count) = result.expect("Brand=Nike AND \"waterproof\" together anchor this admission");
+    assert_eq!(
+        count, 1,
+        "only product 0 is both Nike-branded and waterproof"
+    );
+}
+
+/// P3-E08/P3-E09 (`docs/experiments/PHASE3_LOG.md`): a real-corpus
+/// measurement found single-residual-token queries have a strikingly
+/// better precision profile than multi-token residuals, clearing Issue
+/// #14's 2% budget at every swept cap including effectively unlimited --
+/// the opposite of every other lexical-narrowing mechanism measured.
+/// "waterproof" is a single token that narrows to exactly 2 candidates
+/// (same fixture `lexically_narrows_a_residual_token_found_in_exactly_the_expected_titles`
+/// already established).
+#[test]
+fn admits_single_token_lexical_narrowing_for_a_one_word_residual() {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(vec![], vec!["waterproof"]);
+
+    let result = admit_single_token_lexical(&query, &index, 10);
+
+    let (_, count) = result.expect("a single-token residual with real matches must admit");
+    assert_eq!(count, 2, "products 0 and 5 both mention \"waterproof\"");
+}
+
+/// The core safety boundary this function adds over plain
+/// `admit_lexically_narrowed`: a *two*-token residual must reject
+/// outright, even when its combined candidate count is small and
+/// non-zero (i.e. even when `admit_lexically_narrowed` itself would
+/// happily admit it) -- token count, not candidate count, is what this
+/// mechanism gates on. "nike waterproof" narrows to exactly 1 candidate
+/// (only product 0 is both Nike-branded-in-title and waterproof), which
+/// would trivially clear any real cap.
+#[test]
+fn rejects_single_token_lexical_narrowing_for_a_two_word_residual_even_with_a_small_nonzero_combined_count(
+) {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(vec![], vec!["nike waterproof"]);
+
+    let plain_result = admit_lexically_narrowed(&query, &index, 10);
+    assert_eq!(
+        plain_result.map(|(_, count)| count),
+        Some(1),
+        "sanity check: plain admit_lexically_narrowed must admit this 2-token residual with a \
+         small nonzero count, so the rejection below is genuinely about token count, not cap"
+    );
+
+    let result = admit_single_token_lexical(&query, &index, 10);
+
+    assert!(
+        result.is_none(),
+        "a 2-token residual must reject here even though its combined count (1) is small and \
+         nonzero: {result:?}"
+    );
+}
+
+/// Deliberately not exclusive with an existing structural constraint --
+/// a single-token residual is safe on its own merits regardless of
+/// whether `query.constraints` is also non-empty, unlike
+/// `admit_structurally_anchored_lexical`'s own requirement.
+#[test]
+fn admits_single_token_lexical_narrowing_even_when_a_structural_constraint_also_exists() {
+    let catalog = eleven_product_catalog_with_titles();
+    let index = CatalogIndex::build(&catalog);
+    let query = query_with_residual(
+        vec![ResolvedConstraint::Structural(StructuralConstraint::Brand(
+            NIKE,
+        ))],
+        vec!["waterproof"],
+    );
+
+    let result = admit_single_token_lexical(&query, &index, 10);
+
+    let (_, count) = result.expect(
+        "a single-token residual must still admit even when a structural constraint is present",
+    );
     assert_eq!(
         count, 1,
         "only product 0 is both Nike-branded and waterproof"

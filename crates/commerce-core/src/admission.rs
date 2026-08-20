@@ -266,3 +266,52 @@ pub fn admit_structurally_anchored_lexical(
     }
     admit_lexically_narrowed(query, index, max_lexical_narrowed_candidates)
 }
+
+/// Issue #14 P3-E08/P3-E09: a third mechanism, disjoint from both `admit`
+/// and `admit_structurally_anchored_lexical`. P3-E08's diagnostic (real
+/// data, `docs/experiments/PHASE3_LOG.md`) found the pure-lexical-only
+/// population `admit_structurally_anchored_lexical` deliberately excludes
+/// (no existing structural constraint) is not uniformly unsafe: queries
+/// whose *entire* residual is a single token have a strikingly better
+/// precision profile than 2-token or 3+-token residuals, and get
+/// *better*, not worse, as the candidate cap loosens up to a point --
+/// the opposite of every other admission mechanism measured so far.
+/// P3-E09's real-corpus measurement confirmed this at the whole-workload
+/// level: this population clears Issue #14's 2% relevance budget at
+/// *every* swept cap, including effectively unlimited (200,000) --
+/// 99.88% of the eligible population admits within budget, contributing
+/// 3.66% whole-corpus coverage on its own, fully disjoint from the other
+/// two KEPT mechanisms.
+///
+/// A single residual token is often a highly specific, low-ambiguity
+/// term (a model name, a rare descriptor) that narrows the catalog on
+/// its own almost as precisely as a structural constraint does; a
+/// multi-token residual is more often a generic descriptive phrase
+/// (P3-E03's own false-positive examples: "without full grille bar", "24
+/// volt electric plug") whose independent-token AND-narrowing does not
+/// reliably track the query's actual intent. This function encodes that
+/// distinction directly: rejects outright (`None`) whenever the residual
+/// does not tokenize to exactly one token, then delegates to
+/// `admit_lexically_narrowed` unchanged. Deliberately does not also
+/// require `query.constraints` to be empty -- unlike
+/// `admit_structurally_anchored_lexical`, a single-token residual is
+/// safe on its own merits regardless of whether a structural constraint
+/// also happens to be present; a caller composing multiple admission
+/// mechanisms should try them in a fixed order (e.g. `admit`, then
+/// `admit_structurally_anchored_lexical`, then this) so a query already
+/// admitted upstream is never re-evaluated here.
+pub fn admit_single_token_lexical(
+    query: &CommerceQuery,
+    index: &CatalogIndex,
+    max_lexical_narrowed_candidates: usize,
+) -> Option<(RoaringBitmap, u64)> {
+    let residual_token_count = query
+        .residual_lexical
+        .iter()
+        .flat_map(|phrase| phrase.split_whitespace())
+        .count();
+    if residual_token_count != 1 {
+        return None;
+    }
+    admit_lexically_narrowed(query, index, max_lexical_narrowed_candidates)
+}
