@@ -1,8 +1,8 @@
-use commerce_core::domain::{Constraint, NumericOp, ProductId, VariantId};
+use commerce_core::domain::{BrandId, Constraint, NumericOp, ProductId, VariantId};
 use commerce_core::fixtures::{
     representative_query_catalog, shoe_lexicon, variant_safety_catalog, REPRESENTATIVE_QUERY,
 };
-use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
+use commerce_core::ir::{compile, Candidate, ResolvedConstraint, StructuralConstraint};
 
 #[test]
 fn compiles_representative_query_into_expected_typed_constraints() {
@@ -121,6 +121,69 @@ fn negation_suppresses_an_ambiguous_phrase_instead_of_flagging_it_ambiguous() {
         query.ambiguous
     );
     assert!(query.residual_lexical.contains(&"leather".to_string()));
+}
+
+/// Issue #6 P1-D / P2-E14 (`docs/experiments/PHASE2_LOG.md`): a real P1-D
+/// sweep found `selective_multi_attribute_structural` at 100% zero-result
+/// for commerce-native (22/22 real queries) -- e.g. "harry potter lego"
+/// independently resolving both "harry potter" and "lego" to *different*
+/// `Brand` ids, which the compiler then hard-ANDed together. A product has
+/// exactly one brand, so two distinct hard `Brand`/`BrandAny`/`ProductType`/
+/// `Category` constraints (a "single-valued entity slot") can never be
+/// jointly satisfied by any real product -- that AND is not a narrow
+/// query, it is a guaranteed-empty one. The first phrase to claim a slot
+/// keeps its hard constraint (matches this compiler's existing leftmost/
+/// longest-match-first bias); a second, conflicting phrase must fall back
+/// to residual free text instead of a second, mutually-exclusive hard
+/// constraint.
+#[test]
+fn conflicting_same_slot_entity_constraints_do_not_get_and_ed_together() {
+    let mut lex = shoe_lexicon();
+    lex.insert(
+        "adidas",
+        vec![Candidate::constraint(
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(2))),
+            1.0,
+        )],
+    );
+
+    let query = compile("nike adidas running shoes", &lex);
+
+    assert_eq!(
+        query.constraints,
+        vec![
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1))),
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(
+                commerce_core::domain::ProductTypeId(1)
+            )),
+        ],
+        "only the first brand match (nike) may become a hard constraint: {:?}",
+        query.constraints
+    );
+    assert!(
+        query.residual_lexical.contains(&"adidas".to_string()),
+        "the conflicting second brand match must fall back to residual free text: {:?}",
+        query.residual_lexical
+    );
+    assert!(query.ambiguous.is_empty());
+}
+
+/// Identical repeated matches of the same entity are a harmless no-op, not
+/// a conflict -- "nike nike shoes" must not discard the second "nike".
+#[test]
+fn identical_repeated_entity_matches_are_not_treated_as_a_conflict() {
+    let query = compile("nike nike running shoes", &shoe_lexicon());
+    assert_eq!(
+        query.constraints,
+        vec![
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1))),
+            ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1))),
+            ResolvedConstraint::Structural(StructuralConstraint::ProductType(
+                commerce_core::domain::ProductTypeId(1)
+            )),
+        ]
+    );
+    assert!(query.residual_lexical.is_empty());
 }
 
 #[test]

@@ -97,10 +97,64 @@ fn parse_money(token: Option<&str>) -> Option<i64> {
     Some((dollars * 100.0).round() as i64)
 }
 
+/// A catalog field that holds exactly one value per product: two
+/// *different* hard constraints on the same slot can never be jointly
+/// satisfied by any real product (a product has exactly one brand, one
+/// product type, one category), unlike e.g. two attribute constraints on
+/// different attributes, which legitimately combine.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EntitySlot {
+    Brand,
+    ProductType,
+    Category,
+}
+
+fn entity_slot(c: &ResolvedConstraint) -> Option<EntitySlot> {
+    match c {
+        ResolvedConstraint::Structural(StructuralConstraint::Brand(_))
+        | ResolvedConstraint::Structural(StructuralConstraint::BrandAny(_)) => {
+            Some(EntitySlot::Brand)
+        }
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(_)) => {
+            Some(EntitySlot::ProductType)
+        }
+        ResolvedConstraint::Structural(StructuralConstraint::Category(_)) => {
+            Some(EntitySlot::Category)
+        }
+        _ => None,
+    }
+}
+
 fn apply_candidates(result: &mut CommerceQuery, phrase: &str, candidates: &[Candidate]) {
     if let [only] = candidates {
         match &only.resolved {
-            ResolvedTerm::Constraint(c) => result.constraints.push(c.clone()),
+            ResolvedTerm::Constraint(c) => {
+                // Issue #6 P1-D / P2-E14 (`docs/experiments/PHASE2_LOG.md`): a
+                // real P1-D sweep found a real query class -- two independent
+                // phrases in one query each unambiguously resolving to a
+                // *different* Brand -- at 100% zero-result, because both
+                // became hard constraints ANDed together (e.g. "harry potter
+                // lego" compiling to `Brand(Harry Potter) AND Brand(Lego)`,
+                // which no product can ever satisfy). The first phrase to
+                // claim a single-valued entity slot (matching this compiler's
+                // existing leftmost/longest-match-first bias) keeps its hard
+                // constraint; a later phrase that would conflict with an
+                // already-filled slot falls back to residual free text
+                // instead of a second, mutually-exclusive hard constraint --
+                // this project's own established structural-narrows/lexical-
+                // ranks-residual contract, not a new mechanism.
+                let conflicts = entity_slot(c).is_some_and(|slot| {
+                    result
+                        .constraints
+                        .iter()
+                        .any(|existing| entity_slot(existing) == Some(slot) && existing != c)
+                });
+                if conflicts {
+                    result.residual_lexical.push(phrase.to_string());
+                } else {
+                    result.constraints.push(c.clone());
+                }
+            }
             // Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md`): a real-data
             // replay found that resolving a phrase to *only* a Preference
             // consumed it exactly like a hard Constraint would -- removing
