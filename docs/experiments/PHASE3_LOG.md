@@ -308,3 +308,164 @@ traffic, by far the largest of the three rejection reasons). Per Issue
 #14's own P3-E03+ loop ("identify opportunity -> add RED/adversarial
 tests -> implement smallest semantic/compiler improvement -> replay full
 corpus -> rerun latency campaign -> update frontier -> KEEP/REJECT").
+
+## P3-E03 — native token-verified lexical narrowing: REJECT (real evidence, after fixing a real bug)
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, live local Solr) -- one deterministic pass,
+same methodology as P3-E02.
+
+**Hypothesis**: the dominant rejection reason (unresolved residual
+lexical text, 76.89% of traffic) can be safely narrowed if every residual
+token is verified against Round 1's native `lexical_and_candidates`
+token-postings index (no delegate call) and the combined structural+
+lexical candidate set stays small -- the same "small candidate set is
+safe without a ranking signal" principle `admit`'s own `max_candidates`
+cap already relies on, applied to a second signal.
+
+**Method**: `commerce_core::admission::admit_lexically_narrowed`/
+`execute_lexically_narrowed` (additive, does not touch the existing
+`admit`/`AdmissionPolicy` contract) plus `CatalogIndex::execute_ranked_narrowed_by`.
+A pre-implementation diagnostic (`p3e03_residual_lexical_diagnostic`, no
+Solr needed) found this *could* newly make 54.02% of residual-rejected
+queries (41.54% of the whole corpus) safe-admissible under a combined
+cap<=250 -- candidate-set-size promise only, explicitly flagged as
+insufficient on its own (no ranking signal exists on this path either,
+the same open risk P2-E17/P3-E02 already found for the original
+mechanism). `crates/phase3-eval/src/bin/p3e03_lexical_narrowing_eval.rs`
+supplies the missing real NDCG@10/Recall@10/MRR evidence: for every query
+`admit()` rejects `UnresolvedResidual`, sweep `max_lexical_narrowed_candidates`
+over the same log-scale points P3-E02 used, comparing native relevance
+against both the real ESCI judgments and what Solr actually returns for
+the same queries. The whole-workload metric isolates this mechanism's own
+marginal contribution (every query it does not admit, including ones the
+*original* structural `admit()` would separately admit, scores as a Solr
+fallback) since the two admission paths are disjoint by construction.
+
+### A real bug, found and fixed before trusting the first run's numbers
+
+The first run (raw output preserved; superseded by the fixed re-run below)
+reported whole-workload NDCG degradation of **+0.0220 absolute even at the
+most conservative swept cap** (`max_lexical_narrowed_candidates=1`) -- far
+beyond every one of Issue #14's four target budgets, worse than expected
+even accounting for the known missing-ranking-signal risk. Per this
+project's own "any benchmark anomaly is a bug investigation, not noise to
+ignore," this was checked against the raw per-query artifact before being
+treated as a verdict on the mechanism itself.
+
+Root cause, confirmed directly against `eligible_queries_raw.csv`: **24.9%
+of "eligible" queries (3,908/15,702) had a combined structural+lexical
+candidate count of exactly zero** -- every residual token individually
+known somewhere in the catalog, but their AND-combination (or the AND-
+combination with an existing structural constraint) empty. `admit_lexically_narrowed`'s
+cap check (`count as usize > max_lexical_narrowed_candidates`) never
+special-cased `count == 0`, so these queries were silently "admitted" to
+a guaranteed-empty native result at *every* swept cap (0 is never greater
+than any cap). 994 of those 3,908 had Solr find a real relevant result the
+native path would have returned nothing for. This is the exact same unsafe
+claim the function's own doc comment already rejected for a single
+out-of-vocabulary token ("makes the whole query ineligible... rather than
+safely narrows to zero candidates") -- just never applied to the combined
+count itself.
+
+Fixed RED-first: added
+`rejects_lexical_narrowing_when_every_token_is_known_but_the_combined_set_is_empty`
+(two catalog-fixture tokens, "runner" and "boot", each individually known
+but whose AND is empty), confirmed it failed against the old code, then
+added `count == 0` to the rejection check. 15/15 admission tests pass.
+Full gate green (fmt, clippy `-D warnings`, 137 workspace tests, release
+build). This does not by itself establish the mechanism is safe -- it
+only removes one confirmed source of inflated coverage/degradation so the
+real-data measurement could be rerun honestly.
+
+### The corrected result: still REJECT, at every swept cap
+
+Post-fix (`docs/research/artifacts/p3e03_run1/`, superseding the buggy
+first run): of the 17,268 residual-rejected queries, 5,474 (31.7%) are now
+correctly blocked outright (an out-of-vocabulary token, or a known-but-
+empty AND-combination -- internally consistent with the pre-fix run's own
+1,566 genuinely-OOV-token count plus the 3,908 newly-caught zero-combined
+count: 1,566 + 3,908 = 5,474 exactly). 11,794 queries have a real,
+non-zero combined candidate count, swept below.
+
+| cap | admitted | coverage (% of whole corpus) | native NDCG (admitted) | Solr NDCG (same admitted) | whole-workload NDCG | degradation vs. Solr-only | false-positive admissions |
+|---|---|---|---|---|---|---|---|
+| 1 | 783 | 3.49% | 0.1456 | 0.2902 | 0.2285 | +0.0050 (2.14% relative) | 126 (16.09%) |
+| 20 | 5,097 | 22.70% | 0.3426 | 0.4478 | 0.2096 | +0.0239 (10.24% relative) | 446 (8.75%) |
+| 250 | 9,328 | 41.54% | 0.2274 | 0.3739 | 0.1727 | +0.0608 (26.04% relative) | 2,720 (29.16%) |
+| 200,000 | 11,791 | 52.50% | 0.1805 | 0.3184 | 0.1611 | +0.0724 (31.0% relative) | 3,859 (32.73%) |
+
+Whole-workload pure-Solr-only baseline: NDCG@10 = 0.2335 (identical to
+P3-E02's, same corpus/Solr instance). **Every single swept cap value fails
+every one of Issue #14's four target budgets (0%, 0.5%, 1%, 2%)** -- the
+RQ2 calibration loop reports "no swept cap value stays within this
+budget" at all four thresholds. Even the single best point in the entire
+sweep, `max_lexical_narrowed_candidates=1` (as conservative as this
+mechanism can be), overshoots the loosest 2% budget (2.14% relative
+degradation). Coverage is real and large (up to 52.50% of the whole
+corpus, confirming the diagnostic's candidate-set-size promise was not
+wrong on its own terms), but relevance cost grows with it, not against
+it: native NDCG on the admitted subset actually peaks around cap=20
+(0.3426) and *declines* as the cap loosens further, while degradation and
+false-positive rate climb monotonically and substantially at every point.
+
+**Why, in terms this project can act on**: `execute_ranked_narrowed_by`
+has no ranking signal (same as every other Phase 2/3 FastPath execution
+path) -- ties break on ascending `(product_id, variant_id)`. `admit`'s own
+structural constraints (`Brand=X`, `ProductType=Y`) are a strong precision
+signal for relevance almost by construction, which is why a small
+structurally-admitted candidate set tolerates having no ranking signal
+reasonably well (P3-E02). Independent per-token presence-in-title
+verification is a much weaker signal: it establishes that a word
+*appears somewhere* in a product's indexed text, not that the product
+matches the query's actual compositional intent. Representative real
+examples from the false-positive set (not individually root-caused the
+way P2-E15's diaper-attribute gap was, but illustrative of the pattern):
+qid 553 "06 trailblazer headlight without full grille bar" contains an
+explicit negation ("without full grille bar") that independent token
+verification cannot represent -- it can only confirm "grille" and "bar"
+*appear*, which selects toward the opposite of what the shopper excluded;
+qid 3018 "24 volt electric plug trolling motor" and qid 4459 "4x4 inch
+gauze pads" combine several individually-common technical/numeric tokens
+whose co-occurrence in one product's title does not reliably imply that
+product is the one being searched for. Coverage growing while relevance
+degrades faster (rather than the flat-cost shape P3-E02's structural
+mechanism showed) is consistent with this: looser caps admit queries
+whose "safe" candidate set is large specifically *because* the tokens
+verified are generic, which is exactly when a missing ranking signal
+matters most.
+
+### Decision: REJECT this mechanism as evaluated; preserve the evidence, do not fold it into the admission path
+
+Naive per-token presence verification with AND-narrowing and no ranking
+signal does not clear Issue #14's relevance-budget bar at any coverage
+point on this real dataset -- not a narrow miss, but a miss by 4-15x at
+every budget threshold once every swept cap is examined. This is a
+genuine negative result, preserved rather than iterated away: the
+mechanism code, its 15 tests, and this measurement stay in the tree
+(`admit_lexically_narrowed`/`execute_lexically_narrowed` are additive and
+harmless when unused -- nothing calls them from the production admission
+path), but they are **not** wired into `admit`/`AdmissionPolicy`, and
+coverage expansion should not pursue this specific lever further without
+new evidence that changes the diagnosis (e.g. a real ranking signal on
+the narrowed candidate set, or restricting to phrase-level rather than
+independent-token verification).
+
+The one confirmed, durable finding from P3-E03 worth carrying forward:
+**candidate-set-size promise is not sufficient evidence for a coverage
+lever's safety, and this project's own discipline of measuring real
+relevance before promoting a candidate-set-size diagnostic is exactly
+why this REJECT was caught before being shipped as a KEEP.** The
+already-queued P1 follow-ups (#16 -- learned semantic implication rules;
+#17 -- browse/PLP structural benchmark) attack coverage expansion along
+different axes than naive token verification and remain independently
+worth pursuing; #16 in particular targets exactly the gap this experiment
+exposes (a real semantic/ranking signal, rather than raw token
+co-occurrence, behind any new admission).
+
+**Next**: continue Issue #14's loop by identifying the next-highest-
+information experiment. The dominant rejection reason (unresolved
+residual) still accounts for 76.89% of traffic and remains the largest
+lever by volume, but naive token verification is now a closed, documented
+dead end for it -- the next attempt on this reason needs a real
+relevance/ranking signal, not just a narrower candidate set.
