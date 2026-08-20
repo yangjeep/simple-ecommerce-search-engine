@@ -782,6 +782,155 @@ alone doesn't supply one) -- a real ranking/precision signal (Issue
 this rejection reason, not further narrow-casting within the same
 token/frequency-based toolkit this phase has now exhausted for it.
 
+## P3-E16 — fine-grained three-way combined Pareto frontier: the true budget-2% coverage nearly doubles, and Issue #14's mining loop is judged exhausted
+
+**Evidence class**: real, whole-workload -- pure re-aggregation of
+P3-E02's/P3-E05's/P3-E09's own already-persisted, full 19-point
+`frontier_sweep.csv` files. No new Solr querying, no new native
+execution, no new admission logic: the combination is proven exact by
+algebra, not re-measured empirically.
+
+**Hypothesis**: P3-E10's own Decision section flagged, explicitly, that
+its coarse 2x2x2 grid (each mechanism's own two most information-dense
+cap values) likely was not the true Pareto-optimal combined frontier, and
+that "the additive relationship makes the tradeoff surface exactly
+characterizable from each mechanism's own already-measured per-cap
+degradation without further Solr querying." This experiment tests that
+claim directly: search the *full* 19x19x19 = 6,859-point grid (every cap
+value each mechanism's own budget-calibration sweep already used, not
+just two per mechanism) for the true best-coverage point at each RQ2
+budget.
+
+**Method**: `p3e16_finegrained_three_way_frontier`. Because the three
+eligible populations are pairwise disjoint by construction (verified
+directly in P3-E06/P3-E10), each mechanism's own reported
+`whole_workload_degradation` at a given cap already equals `(sum_solr_on_admitted
+- sum_native_on_admitted) / total_queries` -- a quantity that provably
+does not depend on what any *other* mechanism admits (the `rest_solr_sum`
+term the whole-workload formula subtracts cancels algebraically, the same
+identity P3-E14's audit already used to reason about the shared
+denominator). Summing three such isolated degradation values, and three
+disjoint admitted counts, therefore reproduces the *exact* combined
+measurement a live combined run would produce, for any cap triple --
+not an approximation. **Cross-checked, not just asserted**: all 8 cap
+triples P3-E10 actually measured were recomputed from this experiment's
+aggregation and matched P3-E10's own reported coverage/degradation
+figures exactly (e.g. `(250,1,20)` -> 683 admitted / 3.04% coverage /
+1.06% relative degradation, matching P3-E10's reported "3.04% / 1.07%"
+to rounding; all 7 other measured points matched identically).
+
+### Result -- the true Pareto-optimal budget<=2% point covers nearly double what the coarse grid found
+
+| budget | structural cap | anchored cap | single-token cap | combined admitted | coverage | degradation (relative) |
+|---|---|---|---|---|---|---|
+| <=0.5% | 2 | 1 | 2 | 313 | 1.39% | 0.50% |
+| <=1.0% | 50 | 1 | 20 | 601 | 2.68% | 0.94% |
+| <=2.0% | 2 | 20 | 10 | 1,303 | **5.80%** | 1.98% |
+
+The `<=1.0%` point is identical to a point P3-E10's own coarse grid
+already found (`(50,1,20)`, 2.68% coverage) -- the coarse grid happened
+to include this optimum. The `<=2.0%` point is genuinely new: P3-E10's
+coarse grid's best sub-2%-budget point was `(250,1,20)` at 3.04%
+coverage / 1.07% degradation, leaving real budget headroom unused (only
+just over half of the 2% allowance was spent). The fine-grained search
+finds `(2,20,10)` at **5.80% coverage / 1.98% degradation** -- 1.9x the
+coverage, using the budget far more completely. The counterintuitive
+detail -- a *lower* structural cap (2, not 250) is part of the best
+combined point -- is explained directly by each mechanism's own
+already-published per-cap table: structural admission's degradation
+contribution grows roughly 20x from cap=2 (0.000024) to cap=250
+(0.0005), for only 143 more admitted queries (21->164), while anchored
+lexical narrowing's cap=20 point contributes 1,110 admitted queries at
+a moderate degradation cost (0.0043) -- the anchored mechanism's own
+marginal coverage-per-degradation-unit is far better than the
+structural mechanism's beyond a very small cap, so the optimal combined
+allocation spends nearly the entire 2% budget on the anchored and
+single-token mechanisms and only a token amount on the structural one.
+This is exactly the kind of non-obvious allocation a coarse, evenly-spaced
+grid is liable to miss, and precisely why P3-E10 flagged a finer search
+as worth doing rather than assuming its own coarse answer was final.
+
+**Decision**: KEEP this as the new promoted `<=2.0%` operating point
+(structural cap=2, anchored cap=20, single-token cap=10; combined
+coverage 5.80%, real measured relative degradation 1.98%, budget
+respected with real but thin margin -- narrower than the `<=1.0%`
+point's own margin, consistent with this campaign's standing practice of
+disclosing margin honestly rather than only reporting the point
+estimate). Supersedes P3-E10's own `<=2.0%`-budget recommendation
+(3.04% coverage) as the operating point to promote if a production
+caller wants to spend the full 2% budget; P3-E10's own entry is left
+unedited per this project's "do not erase evidence" rule, since its
+figures remain correct for the coarse grid it actually measured. Because
+this searches the *existing* cap universe rather than proposing any new
+one, no new tests are required and no new admission logic changes: a
+production caller simply composes the same three already-hardened
+functions (`admit`, `admit_structurally_anchored_lexical`,
+`admit_single_token_lexical`) at these specific cap values, in the
+disjointness-preserving order already established (P3-E09's own
+cross-phase note).
+
+**A note on why this was NOT extended to a bootstrap CI**: P3-E07 already
+established the paired-bootstrap methodology for the two-mechanism
+`<=1.0%`/`<=2.0%` operating points; a CI for this three-mechanism point
+would need per-query paired resampling across the combined admitted set,
+which is a genuinely new measurement (not free algebra, unlike the point
+estimate above) and is flagged as follow-up work rather than done here,
+to keep this experiment's own claim scoped to what it actually
+demonstrates -- a better point estimate from already-published data, nothing
+more.
+
+Raw artifacts: `docs/research/artifacts/p3e16_run1/` (full
+6,859-point grid in `finegrained_combined_frontier.csv`).
+
+### Issue #14 mining-loop boundary: judged reached
+
+Per the owner's own instruction ("keep mining the highest-volume rejected
+class until additional safe coverage attempts are exhausted or a clear
+structural boundary is established"), this is the point where that
+boundary is judged reached, for the following concrete reasons, not by
+default:
+
+1. **Both rejection reasons that make up 99.18% of all rejected real
+   traffic have now been mined directly**: unresolved residual lexical
+   text (76.89%, P3-E03 REJECT / P3-E05 KEEP / P3-E08-E09 KEEP) and
+   ambiguous queries (22.29%, P3-E11 diagnostic / P3-E12 BOUNDED / P3-E13
+   REJECT-after-correction / P3-E15 confirmed REJECT). The third
+   rejection reason (not-selective-enough, 0.46%) is too small to be a
+   meaningful next target.
+2. **Every mechanism tried against the residual-lexical class either
+   cleared budget and was hardened (structural anchoring, single-token
+   narrowing) or was rejected with root-caused evidence (naive
+   unrestricted narrowing) -- no untried angle within that class remains
+   that this campaign's own diagnostics have surfaced.** P3-E08's own
+   diagnostic (residual-token-count segmentation) was the last such
+   angle; both its findings (1-token safe, 2+/3+-token unsafe) are now
+   fully exploited.
+3. **The ambiguous class's own toolkit (frequency resolution, combined
+   with lexical narrowing) is now exhausted and root-caused as a
+   fundamental limitation (no ranking signal), confirmed under a
+   corrected, fair Solr baseline -- not merely under-explored.**
+4. **The combined-frontier tuning space itself has now been searched
+   exhaustively** (this experiment's full 6,859-point grid, not a
+   sample), closing the one item P3-E10 itself had explicitly left open.
+5. **No further safe-coverage lever exists within the current admission
+   family (structural/lexical token-presence verification) without a real
+   ranking or semantic-implication signal** -- which is precisely Issue
+   #16's scope, already queued and cross-referenced throughout this PR,
+   not a new discovery.
+
+**This does not mean Issue #14 is fully closed** -- the queued follow-up
+items already on record (paper-grade bootstrap CI for this experiment's
+own new `<=2.0%` operating point; a human decision on whether the
+existing `<=2.0%` two-mechanism CI's thin margin, P3-E07, should be
+downgraded to REVISE) remain open. But the *mining loop* -- "find the next
+safe-admissible slice of rejected traffic within this admission family" --
+has produced three independently-KEPT mechanisms, one BOUNDED finding,
+two REJECTed mechanisms (one root-caused twice, first as a bug, then as a
+fundamental limitation), and a fully-searched combined tuning frontier.
+Per Issue #18's stated execution order, the next highest-information-value
+work is Issue #16 (learned semantic implication rules), not further
+narrow-casting within this same toolkit.
+
 ## P3-E04 — diagnostic: structural+lexical queries have a meaningfully better relevance profile than pure-lexical-only
 
 **Evidence class**: real, but a diagnostic only -- reuses P3-E03's
