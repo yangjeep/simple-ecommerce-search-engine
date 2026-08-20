@@ -304,15 +304,84 @@ runs' logs, the loose-threshold run's `rule_report.csv`/
 `per_query_report.csv`).
 
 **Next**: P4-E02 hardens the loose-threshold propose/replay/promote
-pipeline's output into `commerce_core` (an `admit_with_implications`-style
-composition, or wiring `apply_implications` as a pre-admission enrichment
-step callers are expected to run), with its own RED-first tests. P4-E03
-runs Issue #16's full required adversarial-safety list (wrong-brand
-over-constraint, ambiguous product-family names, merchant-specific naming
-conflicts, generic-word/product-name collisions, mutually incompatible
-facts, stale/withdrawn rules) as dedicated fixture tests, since this
-real-data run already surfaced one real adversarial case (the sentinel
-brand) organically rather than needing a synthetic fixture to find it.
+pipeline's output into the deployable, compiled-lookup shape Issue #16
+itself asks for. P4-E03 runs Issue #16's full required adversarial-safety
+list as dedicated fixture tests, since this real-data run already
+surfaced one real adversarial case (the sentinel brand) organically
+rather than needing a synthetic fixture to find it.
+
+## P4-E02 — hardening: compiled-artifact reproducibility, disjointness verification, native latency
+
+**Evidence class**: real, whole-workload -- loads *only* P4-E01's
+already-persisted promoted-rule CSV (no title index, no candidate
+generation, no replay logic anywhere on this path -- the exact
+deployable shape Issue #16 itself specifies: "query span -> compiled
+implication lookup -> ... -> native execute OR immediate Solr
+fallback").
+
+**Hypothesis**: P4-E01's propose/replay/promote pipeline and its
+resulting coverage/degradation numbers should be exactly reproducible
+from the compiled artifact alone, with implication-admitted queries
+verifiably (not just assumedly) disjoint from baseline-admitted ones,
+and `apply_implications`'s own native cost should be cheap.
+
+**Method**: `phase4-eval::bin::p4e02_compiled_table_latency_and_reproducibility`
+loads `docs/research/artifacts/p4e01_run1/rule_report_loose_threshold.csv`,
+filters to `PROMOTE` rows, reconstructs each `ImplicationRule`, and
+compiles the table via `ImplicationTable::compile` -- then re-runs the
+same real-corpus measurement, explicitly checks disjointness, and times
+`apply_implications` in isolation versus the full admit-and-execute path.
+
+### Result
+
+1. **Reproducibility: exact.** 85/22,458 newly admitted (0.38% coverage),
+   0 false positives, whole-workload degradation 2.16% relative --
+   identical to P4-E01's live pipeline in every figure.
+2. **Disjointness: verified, not assumed.** `assert_eq!(overlap, 0)`
+   against the real computed intersection of implication-admitted and
+   baseline-admitted qid sets (both real `HashSet<u64>`, not a
+   by-construction claim left unchecked) -- confirmed 0.
+3. **`apply_implications` itself is cheap, isolated separately from
+   execution**: mean=0.0006ms, p99=0.0032ms over 600 samples (30 reps x
+   20 queries) -- a pure in-memory phrase-window/hashmap lookup, as
+   expected.
+4. **The full admit-and-execute path is real, and slower than expected,
+   disclosed rather than glossed over**: mean=0.0504ms, p50=0.0367ms,
+   p99=0.1946ms -- roughly 80x the isolated enrichment cost, and
+   30-45x P3-E02/E05's own previously-reported ~0.0011-0.0015ms
+   small-candidate-set figure. Candidate-set sizes for this same sample
+   (1-15) are comparable to P3-E02/E05's own `<=10`-candidate latency
+   sample, so candidate-set size alone does **not** explain the gap --
+   stated honestly rather than guessed at: this experiment did not
+   isolate how much of the remainder is
+   `admit_structurally_anchored_lexical`'s own lexical-narrowing
+   execution path (two index lookups plus a bitmap intersection plus a
+   re-verification pass, never itself benchmarked at this fine a grain
+   in Phase 3) versus this loop's own measurement overhead. The one
+   claim this experiment *does* support directly: `apply_implications`
+   itself is not the cost driver, whatever the remainder turns out to be
+   -- it is a negligible fraction of the full-path latency either way,
+   and even the full-path p99 (0.19ms) remains two orders of magnitude
+   below a Solr round-trip (~2.5ms mean, per every prior Phase 3
+   fallback-tax measurement), so this is not a concern for the
+   fallback-tax invariant regardless of its unresolved root cause.
+
+**Decision**: KEEP. The compiled-artifact deployment shape works exactly
+as specified (reproducible, disjoint by verification, cheap enrichment
+step); the full-path latency gap is a real, disclosed open question
+(flagged, not resolved) that does not threaten Issue #14's fallback-tax
+invariant at the magnitudes measured.
+
+Raw artifacts: `docs/research/artifacts/p4e02_run1/`.
+
+**Next**: P4-E03 runs Issue #16's full required adversarial-safety list
+as dedicated fixture tests (wrong-brand over-constraint, ambiguous
+product-family names, merchant-specific naming conflicts, generic-word/
+product-name collisions, mutually incompatible facts, stale/withdrawn
+rules) -- P4-E00's own unit tests already cover disagreement-abstention
+and withdrawn/candidate-never-applied; P4-E01 already surfaced one real
+adversarial case (the sentinel brand) organically. P4-E03 closes the
+remaining required cases with explicit fixtures.
 
 ## Experiment index
 
@@ -323,7 +392,8 @@ brand) organically rather than needing a synthetic fixture to find it.
   KEEP the mechanism; small, real, zero-false-positive coverage gain,
   marginally over budget only when stacked on P3-E16's own already-tight
   baseline.
-- **P4-E02** — wire promoted implications ahead of the existing admission
-  mechanisms; full real-corpus measurement against Issue #14's frontier.
-  (next)
+- **P4-E02** — hardening: compiled-artifact reproducibility (exact),
+  disjointness (verified), native latency (enrichment cheap, full-path
+  gap disclosed unresolved). KEEP.
 - **P4-E03** — adversarial safety tests per Issue #16's required list.
+  (next)
