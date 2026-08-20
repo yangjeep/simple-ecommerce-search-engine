@@ -610,3 +610,95 @@ its otherwise-REJECTed coverage); (c) Issue #16's learned semantic
 implication rules, which could supply a real ranking/precision signal
 where this experiment relied on structural-constraint co-occurrence
 alone.
+
+## P3-E06 — the combined system: additivity confirmed, real safe-offload Pareto frontier, RQ4 answered
+
+**Evidence class**: real (full 1,215,854-product catalog, full
+22,458-query judged corpus, live local Solr, fresh whole-corpus Solr
+pass -- this run's whole-corpus per-query Solr NDCG is now persisted to
+`docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv` for
+future experiments to reuse without repeating the ~70s Solr pass).
+
+**Hypothesis**: P3-E02 (structural `admit()`) and P3-E05
+(`admit_structurally_anchored_lexical`) were each measured in isolation,
+scoring everything the *other* mechanism would separately admit as a
+Solr fallback. Since the two populations are disjoint by construction
+(the latter requires non-empty `residual_lexical`, the former's `Admit`
+branch requires it empty), running both together should be additive --
+this measures the combined system directly rather than assuming it.
+
+**Method**: `p3e06_combined_admission_frontier`. Computes both eligible
+populations cap-independently in one pass (185 structural, matching
+P3-E02 exactly; 1,557 anchored-lexical, matching P3-E05 exactly),
+**explicitly asserts zero overlap between them** (a real correctness
+check, not just an assumption), then sweeps a small representative grid
+-- `structural_cap` in {50, 250} x `anchored_lexical_cap` in {1, 20,
+250} -- six combined operating points. Latency is a real weighted mean
+using each route's own already-measured mean (P3-E01/P3-E02/P3-E05),
+weighted by this corpus's own real per-route admission counts at each
+grid point -- not a new synthetic timing campaign.
+
+### Result 1 — disjointness confirmed; additivity holds
+
+`0 overlap` between the structural and anchored-lexical eligible
+populations, verified directly rather than merely assumed. This means
+every grid point's combined coverage is exactly the sum of the two
+mechanisms' own admission counts at that cap pair, with no double-
+counting risk.
+
+### Result 2 — the real combined safe-offload Pareto frontier
+
+| structural cap | anchored-lexical cap | structural admitted | anchored admitted | coverage | whole-workload NDCG | degradation (relative) | weighted mean latency |
+|---|---|---|---|---|---|---|---|
+| 50 | 1 | 82 | 240 | 1.43% | 0.2322 | +0.0013 (0.56%) | 2.5236ms |
+| 250 | 1 | 164 | 240 | 1.80% | 0.2319 | +0.0016 (0.69%) | 2.5143ms |
+| 50 | 20 | 82 | 1,110 | 5.31% | 0.2290 | +0.0045 (1.93%) | 2.4245ms |
+| 250 | 20 | 164 | 1,110 | 5.67% | 0.2288 | +0.0048 (2.06%) | 2.4152ms |
+| 50 | 250 | 82 | 1,526 | 7.16% | 0.2265 | +0.0070 (3.00%) | 2.3771ms |
+| 250 | 250 | 164 | 1,526 | 7.53% | 0.2262 | +0.0073 (3.13%) | 2.3678ms |
+
+Reading the frontier against Issue #14's four budgets: **budget<=1.0%**
+is cleared by (structural=250, anchored=1) at **1.80% combined
+coverage**; **budget<=2.0%** is cleared by (structural=50, anchored=20)
+at **5.31% combined coverage** -- the tightest point that also clears
+2.0% in this six-point grid ((250,20) at 2.06% relative narrowly misses
+it). No grid point clears the strictest 0.5% budget (closest:
+(50,1) at 0.56% relative) -- a finer sweep near `anchored_lexical_cap<1`
+is not meaningful (1 is already the minimum), so 0.5% is not reachable
+by *coverage-side* tuning alone at this grid's structural-cap values;
+a stricter structural cap below 50 was not swept here and is a natural
+follow-up if a 0.5% operating point is specifically wanted.
+
+### Result 3 — RQ4 answered analytically: p50 does not move at this coverage level
+
+Weighted mean latency drops only modestly (2.5236ms to 2.3678ms across
+the grid, a 1.4-7.5% reduction from the pure-Solr baseline mean
+2.5603ms) -- consistent with coverage topping out at 7.53% in this grid.
+Since admission is content-based (ambiguity/residual/structural-
+constraint shape), not latency-based, and P3-E01 already found Solr's
+own per-query latency has a tight CI uncorrelated with which queries get
+admitted, every percentile at or above the coverage fraction remains
+governed by `solr_baseline`'s own already-measured distribution as long
+as coverage stays below 50%. At a measured ceiling of 7.53%, **p50/p95/p99
+do not move onto the native path** -- this is the same conclusion P3-E02
+reached qualitatively, now confirmed quantitatively for the *combined*
+system rather than either mechanism alone, and without needing a
+fabricated synthetic combined-latency campaign to discover it.
+
+**Decision**: KEEP the combined-measurement methodology and its result.
+The safe-offload architecture, combining both currently-KEPT mechanisms,
+reaches a real, evidence-backed **1.80-7.53% coverage band across
+budgets from 1% to 3% relative degradation**, roughly 2.2-9.3x P3-E02's
+own structural-only ceiling (0.81%) depending on which combined operating
+point is chosen. This is genuine, measured progress on Issue #14's
+central thesis, but RQ4's p50-shift threshold (>50% coverage) remains
+far out of reach with the mechanisms KEPT so far -- reaching it requires
+either Issue #16's learned semantic implications or a further coverage
+lever on the still-untouched pure-lexical-only population (P3-E05's
+"Next" note), not incremental cap tuning on what already exists.
+
+**Next**: (a) paper-grade replication (>=30 runs, bootstrap CIs) at the
+promoted operating points -- (structural=250, anchored=1) for a <=1%
+budget, (structural=50, anchored=20) for a <=2% budget; (b) the
+pure-lexical-only population's own further segmentation (P3-E05's
+deferred idea); (c) Issue #16/#17 as queued, orthogonal coverage levers.
