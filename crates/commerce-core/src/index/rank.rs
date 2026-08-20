@@ -1,3 +1,5 @@
+use roaring::RoaringBitmap;
+
 use crate::domain::{
     effective_attributes, AttributeMap, AttributeValue, Catalog, Product, ProductId, Variant,
     VariantId,
@@ -93,6 +95,54 @@ pub(super) fn execute_ranked(
         b.score
             .total_cmp(&a.score)
             .then(a.product.0.cmp(&b.product.0))
+            .then(a.variant.0.cmp(&b.variant.0))
+    });
+    scored.truncate(k);
+    scored
+}
+
+/// Issue #14 P3-E03: rank a query's structural candidates further
+/// narrowed by an externally-supplied ordinal bitmap -- e.g. Round 1's
+/// `lexical_and_candidates` AND-narrowing over unresolved residual-text
+/// tokens, the mechanism `admission::admit_lexically_narrowed` uses to
+/// safely admit a query with non-empty `residual_lexical` when every
+/// residual token is verifiable via the native token-postings index (no
+/// delegate call). Every hard constraint in `query.constraints` is still
+/// re-verified exactly against each surviving candidate via
+/// `CommerceQuery::matches_variant` -- correctness never depends on
+/// trusting the caller's narrowing bitmap, matching `plan::execute_planned`'s
+/// own "commerce_core re-verifies every hard constraint against every
+/// returned hit itself" contract. No ranking signal here either (same as
+/// `execute_ranked`'s own FastPath case): ties break on ascending
+/// `(product_id, variant_id)`, which is why this mechanism's own safety
+/// depends on the *caller* keeping the narrowed candidate set small, not
+/// on anything this function does.
+pub(super) fn execute_ranked_narrowed_by(
+    index: &CatalogIndex,
+    query: &CommerceQuery,
+    narrow_by: &RoaringBitmap,
+    catalog: &Catalog,
+    k: usize,
+) -> Vec<RankedHit> {
+    let candidates = index.indexed_candidates(&query.constraints) & narrow_by;
+    let mut scored: Vec<RankedHit> = candidates
+        .iter()
+        .filter_map(|ord| {
+            let variant_id = index.variant_id_at(ord)?;
+            let (product, variant) = index.lookup_variant(catalog, variant_id)?;
+            query
+                .matches_variant(product, variant)
+                .then_some(RankedHit {
+                    product: product.id,
+                    variant: variant_id,
+                    score: 0.0,
+                })
+        })
+        .collect();
+    scored.sort_by(|a, b| {
+        a.product
+            .0
+            .cmp(&b.product.0)
             .then(a.variant.0.cmp(&b.variant.0))
     });
     scored.truncate(k);

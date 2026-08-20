@@ -30,6 +30,8 @@
 //! a lot. `AdmissionPolicy::max_candidates` is the one tunable knob this
 //! phase's coverage-frontier sweep (Issue #14 RQ2) varies.
 
+use roaring::RoaringBitmap;
+
 use crate::domain::Catalog;
 use crate::index::CatalogIndex;
 use crate::ir::CommerceQuery;
@@ -131,4 +133,84 @@ pub fn execute_admitted(
     k: usize,
 ) -> Vec<crate::index::RankedHit> {
     index.execute_ranked(query, catalog, k)
+}
+
+/// Issue #14 P3-E03: a second, independent admission check for the
+/// single largest rejection reason `admit` finds (P3-E02, real data:
+/// 76.89% of all real traffic) -- residual free text left over after
+/// structural resolution. Rather than requiring `residual_lexical` to be
+/// *empty*, this requires every residual token to be *safely verifiable*:
+/// present as an exact whole-word token somewhere in this catalog's own
+/// indexed text (`CatalogIndex::lexical_and_candidates`, Round 1's own
+/// token-postings index -- no delegate call, no BM25 ranking, no
+/// generic lexical retrieval rebuilt), AND the resulting *combined*
+/// (structural AND lexical) candidate set small enough to stay within
+/// `max_lexical_narrowed_candidates` -- the exact same "small candidate
+/// set is safe without a ranking signal" principle `admit`'s own
+/// `max_candidates` cap already relies on, applied to a second signal.
+///
+/// A residual token that never appears *anywhere* in this catalog's
+/// indexed text at all (a typo, an out-of-vocabulary word, a plural/
+/// stemming mismatch this exact-token index cannot bridge) makes the
+/// whole query ineligible here (`None`) rather than "safely narrows to
+/// zero candidates": those are different claims -- the former means this
+/// mechanism genuinely cannot interpret the term at all and Solr (whose
+/// own analyzer may stem/fuzzy-match it) is strictly more likely to find
+/// something, while the latter would silently admit a query to a
+/// guaranteed-empty native result when falling back could have helped.
+///
+/// Additive, not integrated into `admit`/`AdmissionPolicy`: this keeps
+/// the original, already-validated (P3-E00/E01/E02) admission contract
+/// completely unchanged for existing callers. Callers should try `admit`
+/// first and only reach for this on a `Reject(RejectReason::UnresolvedResidual)`
+/// outcome (calling it on an ambiguous or already-structurally-admitted
+/// query is meaningless, though not unsafe -- it reads the index, never
+/// mutates anything).
+pub fn admit_lexically_narrowed(
+    query: &CommerceQuery,
+    index: &CatalogIndex,
+    max_lexical_narrowed_candidates: usize,
+) -> Option<(RoaringBitmap, u64)> {
+    if !query.ambiguous.is_empty() || query.residual_lexical.is_empty() {
+        return None;
+    }
+    let residual_tokens: Vec<String> = query
+        .residual_lexical
+        .iter()
+        .flat_map(|phrase| phrase.split_whitespace().map(str::to_lowercase))
+        .collect();
+    if residual_tokens.is_empty()
+        || residual_tokens.iter().any(|t| {
+            index
+                .lexical_and_candidates(std::slice::from_ref(t))
+                .is_empty()
+        })
+    {
+        return None;
+    }
+    let lexical_bitmap = index.lexical_and_candidates(&residual_tokens);
+    let combined = if query.constraints.is_empty() {
+        lexical_bitmap
+    } else {
+        lexical_bitmap & index.indexed_candidates(&query.constraints)
+    };
+    let count = combined.len();
+    if count as usize > max_lexical_narrowed_candidates {
+        return None;
+    }
+    Some((combined, count))
+}
+
+/// Execute a query admitted via [`admit_lexically_narrowed`]. `narrow_by`
+/// must be the exact bitmap that function returned -- this does not
+/// recompute it, matching `execute_admitted`'s own "no internal re-check"
+/// division of labor between routing and execution.
+pub fn execute_lexically_narrowed(
+    index: &CatalogIndex,
+    query: &CommerceQuery,
+    narrow_by: &RoaringBitmap,
+    catalog: &Catalog,
+    k: usize,
+) -> Vec<crate::index::RankedHit> {
+    index.execute_ranked_narrowed_by(query, narrow_by, catalog, k)
 }
