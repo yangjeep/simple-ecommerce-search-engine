@@ -7,8 +7,15 @@ publish.workspace = true
 description = "Phase 2 (Issue #6, ROUND1_DECISION_TREE.md's NARROW THE PRODUCT branch) experiments. First: does an embedded Tantivy index recover Solr's Round 1 relevance numbers in-process, on the same real catalog/judgments round1-eval already loads."
 
 [dependencies]
+bench-harness = { path = "../bench-harness" }
 commerce-core = { path = "../commerce-core" }
 round1-eval = { path = "../round1-eval" }
 tantivy = "0.22"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Issue #6 P1-D: a fresh, same-run, same-environment Solr baseline (the
+# already-indexed local Solr instance from R1-E04, not Docker -- see
+# dataset_cache/solr/solr-9.10.1). ureq is a synchronous client with no
+# async runtime dependency, appropriate for a benchmark harness that is
+# not itself a server.
+ureq = { version = "2", features = ["json"] }
