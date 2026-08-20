@@ -383,6 +383,73 @@ and withdrawn/candidate-never-applied; P4-E01 already surfaced one real
 adversarial case (the sentinel brand) organically. P4-E03 closes the
 remaining required cases with explicit fixtures.
 
+## P4-E03 — adversarial safety coverage: a real compile-time conflict bug found and fixed, full required-list closure
+
+**Evidence class**: mechanism, unit-tested (fixture-based, the same
+"synthetic-fixture-where-real-data-can't-exercise-a-case" discipline
+`cold_start::prefill`'s own test suite already uses).
+
+**Hypothesis**: reviewing `ImplicationTable::compile`'s own implementation
+adversarially (not just its already-passing tests) before declaring
+Issue #16's required adversarial list closed would surface at least one
+real gap, per this project's own "actively try to kill every favorable
+result" discipline -- P4-E00/E01/E02 had, up to this point, only ever
+exercised *cooperating* rule sets (one rule per trigger, no conflicts).
+
+**Method**: read `ImplicationTable::compile`'s own source directly. Found
+a real bug: `rules.into_iter()... .map(|rule| (rule.trigger.clone(),
+rule)).collect()` into a `HashMap` silently keeps whichever rule happens
+to iterate last when two *distinct* promoted rules share a trigger and
+disagree -- an arbitrary, iteration-order-dependent pick with no safety
+meaning, never previously exercised because every prior test/real run
+only ever produced one promoted rule per trigger. This is exactly Issue
+#16's "ambiguous product-family name" and "merchant-specific naming
+conflict" hazard, materializing as a real code defect, not a hypothetical
+one. Fixed RED-first: `compile` now groups incoming promoted rules by
+trigger, keeps a trigger only if every rule sharing it agrees exactly on
+`implies` (collapsing duplicates safely, no information lost), and
+excludes the trigger entirely -- abstains -- when they disagree.
+
+### Coverage against Issue #16's required adversarial list
+
+| required case | how it's covered | test |
+|---|---|---|
+| wrong-brand over-constraint | an implication is never applied when an explicit `Brand`/`BrandAny` constraint already exists on the query | `an_explicit_brand_constraint_already_present_suppresses_the_implication_entirely` (P4-E00) |
+| ambiguous product-family names | two distinct promoted rules sharing one trigger and disagreeing abstain at compile time (this entry's fix) | `conflicting_promoted_rules_for_the_same_trigger_abstain_at_compile_time` (new) |
+| merchant-specific naming conflicts | the same compile-time mechanism: rule sets merged from multiple offline sources/verticals/merchants that disagree on a shared trigger abstain rather than silently picking one source's view | same test, by construction -- see note below on scope |
+| terms that are both generic words and product/model names | real evidence, not a synthetic fixture: P4-E01's own sentinel-brand finding (7/24 initially-promoted rules were generic book/media phrases spuriously "implying" a missing-brand-data sentinel) is exactly this case, caught and fixed against real data | P4-E01's rerun (0/16 promoted rules were the pattern afterward) |
+| one query span implying mutually incompatible facts | two matched triggers in the same query implying different Brand values abstain at apply time | `two_matched_triggers_implying_different_brands_abstain_entirely` (P4-E00) |
+| stale/withdrawn product lines | a withdrawn rule is never applied, even after having been promoted; `ImplicationTable::compile` only ever admits `Promoted` status | `a_withdrawn_rule_is_never_applied_even_after_having_been_promoted` (P4-E00) |
+
+**A scope note, stated rather than silently assumed**: Issue #16's own
+sketched rule schema lists `scope: global | vertical | merchant` as a
+field. This phase does **not** add a typed `scope` field to
+`ImplicationRule` -- the real ESCI catalog used throughout this campaign
+is a single, unified catalog with no merchant/vertical dimension to
+validate such a field against, and CLAUDE.md's own discipline ("Don't
+design for hypothetical future requirements") argues against adding
+type-level machinery with zero real data behind it. The same-trigger
+conflict check added this entry covers the *practical* consequence of a
+merchant-specific conflict (two sources disagreeing on one trigger)
+without needing the type to know *why* they disagree. A full `scope`
+field remains a natural addition if/when a genuinely multi-merchant real
+catalog is tested (deferred, not forgotten).
+
+**Decision**: KEEP. All six of Issue #16's required adversarial cases are
+now covered, five by dedicated fixture tests and one by real-data
+evidence from P4-E01's own self-caught bug. 39/39 `commerce-core`
+control-plane-adjacent tests pass (37 total in the crate: 27 pre-existing
++ 10 in `implication.rs`, up from 8 after this entry's 2 new tests).
+
+**Next**: with P4-E00 through P4-E03 complete, Phase 4's first
+implication-rule class (Brand-only, per this phase's own explicit
+catalog-scoping decision) has a full KEEP verdict: a real, small,
+zero-false-positive coverage gain (P4-E01/E02), and a fully-closed
+adversarial-safety list (this entry). A `PHASE4_DECISION.md`-style
+synthesis, mirroring `PHASE2_DECISION.md`/`PHASE3_DECISION.md`, is the
+natural next step before moving to Issue #18's next-priority item (#17,
+browse/PLP against a strongest-fair-Solr baseline).
+
 ## Experiment index
 
 - **P4-E00** — `ImplicationRule`/`ImplicationTable` type, compiled lookup,
@@ -396,4 +463,5 @@ remaining required cases with explicit fixtures.
   disjointness (verified), native latency (enrichment cheap, full-path
   gap disclosed unresolved). KEEP.
 - **P4-E03** — adversarial safety tests per Issue #16's required list.
-  (next)
+  Found and fixed a real compile-time same-trigger-conflict bug along the
+  way. All six required cases closed. KEEP.

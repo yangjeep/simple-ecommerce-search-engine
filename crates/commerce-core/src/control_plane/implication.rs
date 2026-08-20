@@ -110,6 +110,25 @@ impl ImplicationRule {
 /// compiled table version, not flagged inside it -- there is deliberately
 /// no way for a caller of [`Self::lookup`] to observe a withdrawn rule at
 /// all.
+///
+/// **Same-trigger conflict handling, Issue #16's own "ambiguous product-
+/// family name"/"merchant-specific naming conflict" adversarial case**:
+/// if two or more *distinct* promoted rules share the same trigger and
+/// disagree on `implies`, naively collecting them into a `HashMap` would
+/// silently keep whichever one happened to iterate last -- an arbitrary,
+/// iteration-order-dependent pick with no safety meaning at all (exactly
+/// the hazard this project's own "actively try to kill every favorable
+/// result" discipline exists to catch before it becomes a real serving
+/// bug, not a hypothetical one: this was found by inspecting `compile`'s
+/// own implementation, not by a bug report). `compile` excludes a
+/// trigger entirely (abstains) whenever its promoted rules disagree,
+/// mirroring `apply_implications`'s own cross-trigger disagreement
+/// abstention -- but applied here at the compile boundary, one layer
+/// earlier, so a caller merging rule sets from multiple offline sources
+/// (multiple proposers, multiple verticals/merchants) never has to
+/// implement this check themselves. Multiple promoted rules that happen
+/// to agree exactly on `implies` collapse safely to one entry -- no
+/// information is lost, since they represent the same fact.
 #[derive(Debug, Clone, Default)]
 pub struct ImplicationTable {
     pub version: u32,
@@ -118,10 +137,26 @@ pub struct ImplicationTable {
 
 impl ImplicationTable {
     pub fn compile(version: u32, rules: impl IntoIterator<Item = ImplicationRule>) -> Self {
-        let rules = rules
+        let mut by_trigger: HashMap<String, Vec<ImplicationRule>> = HashMap::new();
+        for rule in rules
             .into_iter()
-            .filter(|rule| rule.status == RuleStatus::Promoted)
-            .map(|rule| (rule.trigger.clone(), rule))
+            .filter(|r| r.status == RuleStatus::Promoted)
+        {
+            by_trigger
+                .entry(rule.trigger.clone())
+                .or_default()
+                .push(rule);
+        }
+        let rules = by_trigger
+            .into_iter()
+            .filter_map(|(trigger, candidates)| {
+                let first_implies = &candidates[0].implies;
+                if candidates.iter().all(|r| &r.implies == first_implies) {
+                    Some((trigger, candidates.into_iter().next().unwrap()))
+                } else {
+                    None // conflicting promoted rules for the same trigger -- abstain
+                }
+            })
             .collect();
         ImplicationTable { version, rules }
     }
@@ -412,5 +447,59 @@ mod tests {
         let applied = apply_implications(&mut query, "air force 1", &table, 3);
 
         assert!(applied.is_empty());
+        assert!(query.constraints.is_empty());
+    }
+
+    #[test]
+    fn conflicting_promoted_rules_for_the_same_trigger_abstain_at_compile_time() {
+        // Issue #16's "ambiguous product-family name" / "merchant-specific
+        // naming conflict" adversarial case: two distinct promoted rules
+        // (e.g. proposed from two different offline sources/verticals)
+        // both claim the same trigger phrase but disagree on the implied
+        // brand. Compiling them together must not silently pick either
+        // one -- the trigger must not resolve to anything at all.
+        let table = ImplicationTable::compile(
+            1,
+            [
+                brand_rule("max", nike()).promote(),
+                brand_rule("max", adidas()).promote(),
+            ],
+        );
+
+        assert!(
+            table.lookup("max").is_none(),
+            "a trigger with conflicting promoted rules must not be applied"
+        );
+
+        let mut query = CommerceQuery::default();
+        let applied = apply_implications(&mut query, "max", &table, 3);
+        assert!(applied.is_empty());
+        assert!(query.constraints.is_empty());
+    }
+
+    #[test]
+    fn agreeing_promoted_rules_for_the_same_trigger_collapse_safely() {
+        // Two promoted rules for the same trigger that agree on the
+        // implied fact (e.g. proposed independently by two sources that
+        // both arrived at the same real conclusion) must still apply --
+        // agreement is not the same hazard as conflict.
+        let table = ImplicationTable::compile(
+            1,
+            [
+                brand_rule("air force 1", nike()).promote(),
+                brand_rule("air force 1", nike()).promote(),
+            ],
+        );
+
+        assert!(table.lookup("air force 1").is_some());
+        let mut query = CommerceQuery::default();
+        let applied = apply_implications(&mut query, "air force 1", &table, 3);
+        assert_eq!(applied, vec!["air force 1"]);
+        assert_eq!(
+            query.constraints,
+            vec![ResolvedConstraint::Structural(StructuralConstraint::Brand(
+                nike()
+            ))]
+        );
     }
 }
