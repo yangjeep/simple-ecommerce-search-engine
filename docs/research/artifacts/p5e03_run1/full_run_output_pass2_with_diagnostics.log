@@ -1,0 +1,62 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+
+computing real color group-size distribution...
+  175292 distinct real color values
+
+selected real color groups (closest real match to each target checkpoint):
+  "Brown/a": 497 products
+  "Matte Black": 1510 products
+  "Stainless Steel": 3104 products
+  "Orange": 4532 products
+  "black": 6027 products
+  "Multi": 7186 products
+  "Gray": 8910 products
+  "Grey": 11112 products
+  "Green": 11612 products
+  "Multicolor": 15219 products
+  "Silver": 17328 products
+  "Blue": 22782 products
+
+=== P5-E03 facet-crossover sweep result ===
+color                        candidates    n_scan_ms      solr_ms   match     n_count    s_count ratio(s/n)
+Brown/a                             497       0.0246       2.1102   false         434        432      85.89
+  MISMATCH DIFF color="Brown/a": native_only=["Takara Tomy"] solr_only=["Star Wars"] differing_counts=[("STAR WARS", 23, 3)]
+    after excluding casing-twin pairs: unexplained_native_only=["Takara Tomy"] unexplained_solr_only=["Star Wars"]
+Matte Black                        1510       0.1933       2.4122    true         588        588      12.48
+Stainless Steel                    3104       0.4978       2.5909   false         855        846       5.20
+  MISMATCH DIFF color="Stainless Steel": native_only=["Ninja"] solr_only=["FRIGIDAIRE"] differing_counts=[("Frigidaire", 54, 26)]
+    after excluding casing-twin pairs: unexplained_native_only=["Ninja"] unexplained_solr_only=["FRIGIDAIRE"]
+Orange                             4532       1.1158       2.6462   false         493        486       2.37
+  MISMATCH DIFF color="Orange": native_only=["", "Core", "Outdoor Edge"] solr_only=["OUTDOOR EDGE", "SweatyRocks", "TETON Sports"] differing_counts=[("FORESTER", 7, 6)]
+    after excluding casing-twin pairs: unexplained_native_only=["", "Core"] unexplained_solr_only=["SweatyRocks", "TETON Sports"]
+black                              6027       1.6517       3.1387   false         858        845       1.90
+  MISMATCH DIFF color="black": native_only=["", "Alpine"] solr_only=["Rage Powersports", "Road Ready Wheels"] differing_counts=[("Lenovo", 15, 14)]
+    after excluding casing-twin pairs: unexplained_native_only=["", "Alpine"] unexplained_solr_only=["Rage Powersports", "Road Ready Wheels"]
+Multi                              7186       1.9558       2.3939   false        1993       1981       1.22
+  MISMATCH DIFF color="Multi": native_only=[""] solr_only=["JAWO"] differing_counts=[]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["JAWO"]
+Gray                               8910       2.4692       2.8895   false         956        944       1.17
+  MISMATCH DIFF color="Gray": native_only=[""] solr_only=["MyGift"] differing_counts=[("DREAMCARE", 17, 16), ("Rust-Oleum", 14, 13)]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["MyGift"]
+Grey                              11112       3.1754       3.4283   false        1423       1417       1.08
+  MISMATCH DIFF color="Grey": native_only=[""] solr_only=["DriftAway"] differing_counts=[("STAR WARS", 29, 28)]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["DriftAway"]
+Green                             11612       3.4192       3.0264   false        1269       1244       0.89
+  MISMATCH DIFF color="Green": native_only=["", "GreenWorks"] solr_only=["Greenworks", "Puleo International"] differing_counts=[("Bissell", 17, 16), ("John Deere", 40, 38), ("amscan", 21, 20), ("elope", 15, 14)]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["Puleo International"]
+  >>> crossover: native-scan wins at 11112 candidates (ratio 1.08), loses at 11612 candidates (ratio 0.89)
+Multicolor                        15219       3.7723       3.0325   false        5139       5089       0.80
+  MISMATCH DIFF color="Multicolor": native_only=["", "AVERY"] solr_only=["Amscan", "Wilton"] differing_counts=[("Paw Patrol", 36, 35), ("amscan", 196, 164)]
+    after excluding casing-twin pairs: unexplained_native_only=["", "AVERY"] unexplained_solr_only=["Amscan", "Wilton"]
+Silver                            17328       4.8398       4.5273   false        2289       2253       0.94
+  MISMATCH DIFF color="Silver": native_only=[""] solr_only=["GRIDMANN"] differing_counts=[("Filterbuy", 58, 41), ("SEIKO", 41, 39)]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["GRIDMANN"]
+Blue                              22782       6.3784       3.4669   false        1741       1701       0.54
+  MISMATCH DIFF color="Blue": native_only=[""] solr_only=["Pyrex"] differing_counts=[("Generic", 57, 56), ("STAR WARS", 26, 21)]
+    after excluding casing-twin pairs: unexplained_native_only=[""] unexplained_solr_only=["Pyrex"]
+
+artifacts written to dataset_cache/p5e03_artifacts

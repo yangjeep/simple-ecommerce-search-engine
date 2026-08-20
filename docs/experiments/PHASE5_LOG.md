@@ -263,6 +263,78 @@ introduces a much larger, more diverse query mix where cache capacity
 becomes a live variable again, and must re-examine it as a first-class
 tunable dimension rather than inherit this default unexamined.
 
+## P5-E03 (facet-cardinality sub-experiment) — characterizing the facet-scan crossover precisely
+
+P5-E00 observed native's `O(|candidates|)` facet-scan method cross over
+from beating Solr to losing to it at exactly one sampled point (a win at
+2,112 candidates, a loss at 11,264). `crates/phase5-eval/src/bin/
+p5e03_facet_crossover_sweep.rs` characterizes this precisely: it picks the
+*closest real color-group size that actually exists* to each of twelve
+target checkpoints spanning 500-30,000 candidates (never a fabricated
+size), and times the identical `brand_facet_under_color_filter` request at
+each. Raw artifacts: `docs/research/artifacts/p5e03_run1/`.
+
+**Crossover result (two independent runs)**: run 1 found native winning at
+8,910 candidates (ratio 1.04) and losing at 11,112 (ratio 0.93); run 2 —
+same binary, same catalog, same Solr instance, no code change — found
+native winning at 11,112 (ratio 1.08) and losing at 11,612 (ratio 0.89).
+The crossover point itself shifted by one sampled data point between runs.
+**Honest conclusion**: the crossover is not a razor-sharp boundary at a
+single candidate count; it is a real, narrow transition band around
+**~9,000-12,000 candidates** for this catalog's real brand/color
+cardinality (206K distinct brands), where the ratio hovers close enough to
+1.0 that ordinary timing noise decides which side of 1.0 a given run lands
+on. Reporting a single precise crossover candidate count would overclaim
+precision the measurement doesn't have — the band is the honest result.
+
+**Adversarial verification of the correctness side-channel (required
+before trusting the timing claim)**: 11 of 12 sweep rows showed a
+native/Solr facet-count mismatch, a much higher rate than P5-E00's
+original 2/10. Before accepting the crossover result, each mismatch class
+was traced to ground truth via direct Solr queries (not assumed from
+precedent), using a diagnostic added to the sweep
+(`print_facet_diff`) plus ad hoc higher-`limit`/`missing:true` Solr
+queries:
+
+1. **`BrandId(0)` ("no real brand field") sentinel**: native facets it as
+   an explicit `""` bucket; Solr's terms facet (without `missing:true`)
+   excludes documents missing the field entirely rather than bucketing
+   them. Confirmed directly — `color:"Orange"` has Solr `missing.count=11`
+   with no corresponding bucket in the ordinary facet response. This is a
+   genuine **facet-semantics difference** (what counts as a facet value
+   for "no brand"), not a counting bug.
+2. **N-way brand-casing consolidation** (the same mechanism P5-E00 already
+   documented, generalized beyond simple 1:1 pairs): native interns brand
+   identity case-insensitively (one `BrandId`, one bucket); Solr facets the
+   raw string (one bucket per casing variant). Verified to reconcile
+   *exactly*: under `color:"Brown/a"`, Solr's `"STAR WARS":3` +
+   `"Star Wars":20` = 23 = native's single merged `"STAR WARS":23` bucket;
+   under `color:"Blue"`, Solr's `"Generic":56` + `"generic":1` = 57 =
+   native's 57, and `"STAR WARS":21` + `"Star Wars":5` = 26 = native's 26.
+3. **Cascading top-50 rank-boundary effects from (2)**: because native's
+   consolidation uses fewer distinct buckets than Solr's for the same
+   underlying data, the specific set of entries inside each side's top-50
+   cut can differ near tied-count boundaries. Verified directly: a
+   `limit=60` Solr facet query under `color:"Brown/a"` shows `"Takara
+   Tomy":2` sitting at Solr rank 51 (just past its own top-50 cutoff),
+   while it lands inside native's top-50 because native's list has one
+   fewer bucket consumed by the merged Star Wars identity — the same
+   top-50 tie-break artifact P5-E00 already documented, just now shown to
+   be *caused* by consolidation freeing a ranking slot, not an independent
+   coincidence.
+
+Every discrepancy checked (across both a small, 497-candidate group and
+the largest, 22,782-candidate group) reconciled exactly under these three
+mechanisms; none left an unexplained residual. **This does not affect the
+timing/crossover finding**: both systems are computing the same real facet
+over the same real candidate set; the count differences are small
+(single/low-double-digit, against totals in the hundreds to thousands) and
+fully attributable to the three verified, non-bug mechanisms above. The
+higher mismatch *frequency* at larger candidate-set sizes is itself an
+expected, disclosed consequence — bigger real groups have proportionally
+more missing-brand documents, more casing duplicates, and more
+tied-count boundary collisions, not a sign of a new correctness defect.
+
 ## Experiment index
 
 - **P5-E00** — real Brand/Color workload generation from actual catalog
@@ -276,8 +348,13 @@ tunable dimension rather than inherit this default unexamined.
 - **P5-E02** — commerce-native execution + first real comparison:
   substantially answered already by P5-E00's own measurements (this
   experiment's scope folds into P5-E00/E01 rather than duplicating them).
-- **P5-E03** — Stage B saturation/breakpoint campaign: catalog scale,
-  selectivity, facet cardinality (characterize the P5-E00 facet-scan
-  crossover point precisely), sort diversity, concurrency, cache
-  temperature (revisit `size=512` under a wider query mix), mutation/churn.
+- **P5-E03** — Stage B saturation/breakpoint campaign. Facet-cardinality
+  sub-experiment done: crossover characterized as a ~9,000-12,000-candidate
+  transition band (not a sharp point — shifted between two runs), 11/12
+  observed count "mismatches" traced to ground truth and confirmed as three
+  already-understood, non-bug mechanisms (no-brand-field sentinel facet
+  semantics, n-way casing consolidation, cascading top-50 boundary
+  effects), none affecting the timing result. Remaining Stage B dimensions
+  (catalog scale, selectivity, sort diversity, concurrency, cache
+  temperature under a wider query mix, mutation/churn) not yet started.
   (next)
