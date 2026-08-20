@@ -32,6 +32,23 @@
 //! of holding one dimension fixed at a reasonable value while
 //! characterizing the other.
 //!
+//! A real anomaly, investigated rather than accepted: P3-E11's own
+//! diagnostic reported 2,113 queries passing a nonzero/<=250 combined-
+//! candidate check, but never verified `residual_lexical` was empty
+//! after resolution -- only candidate-set size. This eval's own
+//! exclusion breakdown (printed below) found 4,279/4,356 (98.2%) of the
+//! single-span tractable subclass *still* carries unresolved residual
+//! text elsewhere in the query even after resolving its one ambiguous
+//! span, which `admit()`'s own "complete" requirement (empty residual)
+//! correctly rejects. This is not a bug in either binary -- it is a
+//! real, load-bearing fact about this corpus's queries: an ambiguous
+//! phrase is usually just *one part* of a longer, multi-word real
+//! shopper query, not the whole thing. Ambiguity resolution alone
+//! therefore recovers almost nothing; a mechanism that also lexically
+//! narrows the co-occurring residual (composing this technique with
+//! P3-E03/P3-E05/P3-E09's own lexical-narrowing machinery) is the
+//! natural next experiment, not a larger ratio/cap sweep on this one.
+//!
 //! Usage: cargo run --release -p phase3-eval --bin p3e12_ambiguous_frequency_eval
 //!        [catalog.jsonl] [queries.jsonl] [p3e06_whole_corpus_csv]
 
@@ -134,6 +151,17 @@ fn main() {
     let mut ambiguous_count = 0usize;
     let mut tractable: Vec<AmbiguousQuery> = Vec::new();
     let mut variant_correctness_violations = 0usize;
+    // Exclusion breakdown: P3-E11's diagnostic never checked whether a
+    // query's residual_lexical was empty (it only checked combined
+    // candidate-set size), so its 2,113-query estimate overstated real
+    // tractability. This breaks down exactly why the real tractable
+    // count is far smaller -- an anomaly investigated, not smoothed over
+    // (see the module doc comment and PHASE3_LOG.md's P3-E12 entry).
+    let mut excluded_multi_span = 0usize;
+    let mut excluded_not_all_constraint = 0usize;
+    let mut excluded_zero_top_freq = 0usize;
+    let mut excluded_residual_still_nonempty = 0usize;
+    let mut excluded_resolved_zero = 0usize;
     for (&qid, (text, judged)) in &judged_by_query {
         let compiled = compile(text, &lexicon);
         let AdmissionDecision::Reject(reason) = admit(&compiled, &index, &unlimited_policy) else {
@@ -144,6 +172,7 @@ fn main() {
         }
         ambiguous_count += 1;
         if compiled.ambiguous.len() != 1 {
+            excluded_multi_span += 1;
             continue;
         }
         let span = &compiled.ambiguous[0];
@@ -156,6 +185,7 @@ fn main() {
             })
             .collect();
         if constraint_candidates.len() != span.candidates.len() || constraint_candidates.len() < 2 {
+            excluded_not_all_constraint += 1;
             continue;
         }
 
@@ -179,6 +209,7 @@ fn main() {
         // admission.rs's own doc comments have drawn for every other
         // mechanism in this phase.
         if top_freq == 0 {
+            excluded_zero_top_freq += 1;
             continue;
         }
 
@@ -189,11 +220,14 @@ fn main() {
             .push(constraint_candidates[winner_idx].clone());
         if !resolved_query.residual_lexical.is_empty() {
             // Not "complete" per admit()'s own definition even after
-            // resolving the ambiguity -- must still fall back.
+            // resolving the ambiguity -- must still fall back. This is
+            // the dominant exclusion reason by far: see PHASE3_LOG.md.
+            excluded_residual_still_nonempty += 1;
             continue;
         }
         let resolved_count = index.indexed_candidates(&resolved_query.constraints).len();
         if resolved_count == 0 {
+            excluded_resolved_zero += 1;
             continue;
         }
 
@@ -232,6 +266,9 @@ fn main() {
         "  {}/{} ambiguous-rejected queries are tractable (single-span, all-Constraint, resolvable, residual-lexical-empty after resolution)",
         tractable.len(),
         ambiguous_count
+    );
+    println!(
+        "  exclusion breakdown: multi_span={excluded_multi_span} not_all_constraint={excluded_not_all_constraint} zero_top_freq={excluded_zero_top_freq} residual_still_nonempty_after_resolution={excluded_residual_still_nonempty} resolved_candidate_set_zero={excluded_resolved_zero}"
     );
     println!(
         "  variant-correctness violations: {variant_correctness_violations} (must be 0 -- commerce_core always exactly re-verifies hard constraints)"

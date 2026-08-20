@@ -1,0 +1,18 @@
+    Finished `release` profile [optimized] target(s) in 0.09s
+     Running `target/release/p3e11_ambiguous_frequency_diagnostic`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+=== P3-E11 diagnostic: ambiguous-query internal structure, real data ===
+rejected for Ambiguous: 5005/22458
+  single-span: 4356, multi-span: 649
+  span candidate counts: 2-candidate spans=2224, 3+-candidate spans=3522
+  spans where every candidate's confidence is tied: 5746, spans where confidence varies: 0
+  spans where every candidate is Preference-only (no hard constraint at all): 0
+
+  tractable subclass (exactly 1 ambiguous span, every candidate a real Constraint, >=2 candidates): 4356/5005
+    catalog-frequency dominance: top>=10x second: 3879, top 2-10x second: 464, flat (<2x): 13
+    of these, picking the highest-frequency candidate yields a combined candidate set (with existing constraints) that is nonzero and <=250: 2113/4356 (42.22% of all ambiguous-rejected traffic, 9.41% of the whole corpus)

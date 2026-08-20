@@ -470,6 +470,147 @@ lever by volume, but naive token verification is now a closed, documented
 dead end for it -- the next attempt on this reason needs a real
 relevance/ranking signal, not just a narrower candidate set.
 
+## P3-E11 — diagnostic: ambiguous queries have a strong catalog-frequency dominance signal (first look at the second-largest rejection reason)
+
+**Evidence class**: real, diagnostic only -- no Solr needed (pure
+`compile()`/`CatalogIndex` computation over the real catalog).
+
+**Motivation**: per Issue #18's mining loop, the dominant rejection
+reason (unresolved residual) has now been mined across P3-E03-E10;
+ambiguous queries (22.29% of all real traffic, P3-E01 -- the second-
+largest rejection reason) have not been examined at all in this campaign.
+Structurally distinct: a phrase resolved to *multiple* candidate
+interpretations, not one that failed to resolve.
+
+**A real, checked-not-assumed finding**: `Candidate::confidence` exists
+in the type but `cold_start::profile::compile_lexicon` -- the actual
+lexicon every real-data Phase 2/3 experiment has used -- hard-codes
+every candidate to `confidence: 1.0` unconditionally. "Pick the higher-
+confidence candidate" is a dead end against this project's own
+benchmarked lexicon without first changing lexicon compilation.
+
+**Method**: `p3e11_ambiguous_frequency_diagnostic`. For the tractable
+subclass (exactly one ambiguous span, every candidate a real hard
+Constraint), computes each candidate's real catalog frequency via
+`CatalogIndex::indexed_candidates` on a single-element constraint slice
+-- a catalog-grounded signal, not a placeholder.
+
+**Result**: 5,005/22,458 (22.29%) ambiguous -- exact match to P3-E01's own
+count. 4,356/5,005 (87.03%) single-span; every single-span query's
+candidates are all real Constraints (none Preference-only). Catalog-
+frequency dominance is striking: **3,879/4,356 (89.05%) have a top
+candidate at least 10x more catalog-frequent than the runner-up**;
+464 (10.65%) are 2-10x; only 13 (0.30%) are flat. Picking the highest-
+frequency candidate yields a nonzero, <=250 combined candidate set for
+2,113/4,356 -- reported as "42.22% of ambiguous traffic, 9.41% of the
+whole corpus," the largest coverage opportunity found in this campaign
+by a wide margin.
+
+**Decision**: strong enough to justify a full relevance measurement --
+but explicitly flagged (matching this project's own "candidate-set-size
+promise is not sufficient evidence" lesson from P3-E03) that this number
+has NOT been checked against whether resolving the ambiguity actually
+makes the *whole query* complete (i.e. whether `residual_lexical` is
+also empty afterward) -- P3-E12 supplies that check.
+
+## P3-E12 — real measurement: the diagnostic's promise mostly evaporates, for a real and well-understood reason (BOUNDED, not KEEP)
+
+**Evidence class**: real, whole-workload -- no live Solr querying (reuses
+P3-E06's already-persisted `whole_corpus_solr_ndcg.csv`, which covers
+every query including ambiguous ones since that pass ran before any
+admission filtering; only the native side needs fresh computation).
+
+**Hypothesis**: resolving tractable ambiguous queries via their catalog-
+frequency-dominant candidate, requiring the *fully resolved* query to
+be complete (`residual_lexical` empty, matching `admit()`'s own
+definition) and its candidate set to stay within a fixed 250 cap, clears
+Issue #14's relevance budgets with real coverage close to P3-E11's
+9.41% estimate.
+
+**Method**: `p3e12_ambiguous_frequency_eval`. Same tractable-subclass
+identification as P3-E11, but for each candidate, substitutes the
+frequency winner as a real hard constraint, executes the *fully
+resolved* query exactly as any other admitted query, and requires
+`residual_lexical` to be empty afterward -- the completeness check
+P3-E11's diagnostic never performed. Sweeps the frequency-ratio
+threshold (1x-100x) at a fixed 250-candidate cap.
+
+### A real anomaly, investigated before drawing any conclusion
+
+The first run found only 24-29 tractable queries, not the ~2,113 P3-E11
+estimated -- a >99% collapse. Per this project's own "any benchmark
+anomaly is a bug investigation, not noise to ignore," this was broken
+down by exclusion reason rather than accepted or dismissed:
+
+```text
+exclusion breakdown (of 4,356 single-span, all-Constraint queries):
+  multi_span (excluded upstream, not part of this 4,356): 649
+  not_all_constraint: 0
+  zero_top_freq: 0
+  residual_still_nonempty_after_resolution: 4,279 (98.2%)
+  resolved_candidate_set_zero: 48
+  tractable: 29
+```
+
+**Not a bug in either binary -- a real, load-bearing fact about this
+corpus's queries**: 98.2% of single-span ambiguous queries *also* carry
+unresolved residual text elsewhere in the query, even after resolving
+the one ambiguous phrase. An ambiguous phrase is usually just one part
+of a longer, multi-word real shopper query ("air mattress queen size"
+where "air mattress" might resolve ambiguously and "queen size" is
+separate residual text), not the whole query. P3-E11's diagnostic
+measured a real, catalog-grounded signal correctly, but its "coverage
+opportunity" estimate implicitly assumed resolving the ambiguous span
+alone would make these queries complete -- an assumption this measurement
+disproves directly.
+
+### Result — real, safe, but negligible in isolation
+
+| ratio>= | admitted | coverage (% of whole corpus) | native NDCG | Solr NDCG (same admitted) | whole-workload degradation |
+|---|---|---|---|---|---|
+| 1 (unlimited) | 24 | 0.11% | 0.0836 | 0.1510 | +0.0001 (0.04% relative) |
+| 10 | 23 | 0.10% | 0.0872 | 0.1544 | +0.0001 (0.04% relative) |
+| 100 | 2 | 0.01% | 0.0000 | 0.0212 | +0.0000 |
+
+0 variant-correctness violations (the resolved-query execution path
+re-verifies hard constraints exactly like every other mechanism in this
+phase). Native NDCG is meaningfully worse than Solr on the admitted
+subset itself (-0.0674 at ratio>=1, ~45% relative) -- similar in kind to
+every other no-ranking-signal mechanism in this phase -- but coverage is
+so small (0.11% at best) that whole-workload impact is negligible either
+way (+0.0001, indistinguishable from zero in practical terms).
+
+**Decision**: BOUNDED, not KEEP. The mechanism is real and safe (no
+correctness violations, negligible whole-workload cost) but recovers a
+coverage of matters (0.11% of the whole corpus) too small to justify
+hardening into `commerce_core` on its own -- the real constraint is not
+this mechanism's own precision but its *applicability*: 98.2% of its
+target population is disqualified by co-occurring residual text before
+frequency-based resolution ever gets a chance to help. Per Issue #18's
+"isolate whether the limitation is fundamental, data-quality-specific,
+benchmark-specific, or implementation-specific" instruction: this is
+FUNDAMENTAL to how real multi-word shopper queries are shaped on this
+corpus, not a data-quality gap or an implementation bug.
+
+**Decision discipline applied**: rather than discard this finding
+because the mechanism alone is negligible, the real, well-diagnosed
+bottleneck (co-occurring residual text) points directly at the next
+experiment: composing frequency-based ambiguity resolution *with*
+lexical narrowing on the leftover residual (reusing P3-E03/P3-E05/P3-E09's
+own `lexical_and_candidates` machinery, seeded with the frequency-
+resolved constraint already in place) rather than requiring residual to
+already be empty. This is not scope creep -- it is the same "identify
+the highest-volume rejected class -> characterize what's missing ->
+propose the smallest mechanism" loop Issue #18 itself prescribes,
+applied to the specific blocker P3-E12 just measured.
+
+Raw artifacts: `docs/research/artifacts/p3e11_run1/` (diagnostic log
+only, no persisted CSV), `p3e12_run1/`.
+
+**Next**: P3-E13 -- a combined ambiguity-resolution-plus-lexical-narrowing
+mechanism targeting the 98.2% of tractable ambiguous queries this
+experiment found blocked by co-occurring residual text.
+
 ## P3-E04 — diagnostic: structural+lexical queries have a meaningfully better relevance profile than pure-lexical-only
 
 **Evidence class**: real, but a diagnostic only -- reuses P3-E03's
