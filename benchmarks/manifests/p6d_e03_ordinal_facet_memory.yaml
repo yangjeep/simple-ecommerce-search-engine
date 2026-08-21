@@ -27,7 +27,7 @@ claim: >
   -- that remains a named next step. See docs/experiments/PHASE6D_LOG.md
   for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 98a23f2029f4219ae8fc93e16a157914232b16b9
 binary: crates/commerce-core/src/index/mod.rs (approximate_size_bytes,
   approximate_ordinal_facet_bytes, ordinal_facet_bytes),
   crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs

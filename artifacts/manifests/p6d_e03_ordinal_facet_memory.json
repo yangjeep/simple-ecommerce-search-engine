@@ -3,7 +3,7 @@
   "phase": "6D",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6d_e03_ordinal_facet_memory.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "98a23f2029f4219ae8fc93e16a157914232b16b9",
   "dataset": {
     "name": "real WANDS catalog (42,994 products)"
   },
