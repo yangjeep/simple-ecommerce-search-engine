@@ -20,7 +20,7 @@ The paper should therefore avoid claims such as "we introduce ecommerce query pa
 | Ecommerce-specific selective execution based on category intent | Amazon `Light Feed-Forward Networks for Shard Selection in Large-scale Product Search` (SIGIR eCom 2020): category-intent prediction, selective shard search, double-digit cost reduction without customer-experience degradation | **Very close prior art** | This is a major novelty risk. Our paper must explain why routing to a cheaper physical execution plane with transparent generic fallback and a coverage/relevance/multiplier frontier is a different problem than category-shard selection |
 | Use structure to reduce semantic product-search search space | Amazon `Embracing Structure in Data for Billion-Scale Semantic Product Search` partitions a query-product interaction graph and searches relevant partitions | **Not novel broadly** | "Structure reduces search work" is background, not contribution |
 | Multi-stage retrieval / cascades / early exits | Mature IR literature and production systems | **Not novel** | Our value must be in the admission contract, physical path, and workload economics |
-| Cache frequent/easy product-search queries instead of running expensive pipeline | Amazon ROSE (WWW 2022) explicitly covers most traffic with near-constant-time cache lookup and avoids expensive models | **Close conceptual neighbor** | Median/tail economics alone are not novel. Need to distinguish semantic execution from result/query caching and show behavior under catalog/state changes |
+| Cache frequent/easy product-search queries instead of running expensive pipeline | Amazon ROSE (WWW 2022) explicitly covers most traffic with near-constant-time cache lookup and avoids expensive models | **Close conceptual neighbor, but materially different execution model** | Median/tail economics alone are not novel. We must prove that our gains come from executing each real application request through a cheaper commerce-native substrate, not from memoizing prior answers |
 | Commerce-specific search engine built from scratch because ecommerce differs from web | eBay Cassini architecture (SIGIR eCom 2017) | **Not novel** | Do not claim that ecommerce warrants a custom engine as novel |
 | Multiple specialized physical index types for commerce search | Havenask / IndexLib; KV/KKV, inverted, attribute/bitmap, realtime update machinery | **Not novel** | Havenask is the anchor and wheel-reinvention check |
 | Realistic end-to-end ecommerce search benchmark driven by production data | Alibaba eCommerceSearchBench / AIBench ecommerce-search benchmark | **Not novel** | Incorporate as standard external validation rather than inventing another synthetic benchmark in isolation |
@@ -91,9 +91,57 @@ Therefore terms such as "semantic router", "forwarding plane", and "query routin
 
 ROSE is important because it already makes a distributional systems argument: serving all product-search traffic through expensive models is unnecessary; much traffic can be covered by near-constant-time cache behavior, with long-tail handling remaining elsewhere.
 
-This is conceptually close to "make the median cheap while leaving hard tail expensive".
+This is conceptually close to "make the median cheap while leaving hard tail expensive", but the distinction is deeper than simply saying that our path is "not a cache".
 
-Our distinction must be that the native path is **semantic/physical execution over live commerce state**, not cached result reuse. Tests involving inventory/price churn, category/filter composition, unseen-but-structurally-equivalent requests, and multi-tenant state are therefore important novelty defenses.
+ROSE's core economic win is **memoization**: a repeated/head query can avoid most downstream work because a prior result (or a representation close to the final result) is reused. That means the cheapest request is one whose answer has already effectively been computed.
+
+Our target serving model is different:
+
+```text
+hosted application request
+  -> admission / semantic route lookup
+  -> execute the request against current commerce state
+  -> return current result
+```
+
+Every admitted request remains a **real execution request** with real CPU/memory/index work. The gain must come from the fact that commerce-native semantics make that execution substantially cheaper than the generic engine, not because the system reuses a previously computed answer from Redis/result cache.
+
+This distinction matters especially for hosted commerce applications because every incoming request is still billable serving work even if the query text or broad intent resembles a previous request. The system must remain cheap when:
+
+- the exact query string has never been seen before;
+- the same semantic request is expressed with different lexical wording;
+- filter/facet combinations differ per request;
+- inventory, price, promotion eligibility, or availability changed since the previous request;
+- tenant-specific state changes the answer;
+- long-tail category/collection requests have little or no repetition;
+- the request must be evaluated against current state rather than a cached historical result.
+
+Therefore the novelty defense against ROSE must be empirical, not rhetorical.
+
+#### Mandatory ROSE-style comparator / falsification tests
+
+At minimum measure:
+
+```text
+A. competent query/result cache for hot repeated requests
+B. Solr/ES baseline without result-cache help
+C. commerce-native execution with result caching disabled
+```
+
+Then explicitly test:
+
+1. **Repeated identical head requests** — ROSE/cache should be allowed to win here; this establishes the strongest cache baseline.
+2. **Unseen-but-semantically-equivalent requests** — same structural intent, different lexical form; a result cache should lose most of its advantage while semantic/native execution should retain its physical advantage if the thesis is correct.
+3. **Combinatorial browse/filter requests** — category + facet/filter/sort combinations large enough that precomputing every final result is impractical.
+4. **Live-state churn** — inventory/price/availability/promotion updates between requests; cached results must either invalidate/recompute or risk staleness, while the native engine should execute against current state directly.
+5. **Multi-tenant state** — similar requests across merchants must not incorrectly share answers; measure how cache-key explosion / isolation compares with tenant-local native execution.
+6. **Long-tail requests** — quantify economics when reuse probability is low.
+
+The paper should be able to state, with data:
+
+> The measured fast-path advantage is an execution advantage on real hosted application requests, not a cache-hit advantage.
+
+If a competent ROSE-style cache achieves the same whole-workload economics under realistic freshness and tenant constraints, narrow the novelty claim accordingly.
 
 ### 5. Havenask / eCommerceSearchBench
 
@@ -139,13 +187,19 @@ This would directly quantify the distinction from Amazon's 2020 work.
 
 ### B. Is the P50 story just caching?
 
-Compare against a competent hot-query/result cache where realistic. Demonstrate which gains survive:
+This is a mandatory falsification target, not a wording exercise.
 
-- unseen requests sharing the same structural semantics;
-- filter/facet combinations;
-- dynamic inventory/price changes;
-- long-tail categories;
-- tenant-specific state.
+The system must demonstrate that its P50/whole-workload advantage survives when result caching is disabled and requests still execute against live application state. The core distinction to defend is:
+
+```text
+cache hit:
+reuse a prior answer / avoid execution
+
+native fast-path hit:
+execute the current request, but on a much cheaper commerce-specific physical substrate
+```
+
+Compare against a competent ROSE-style hot-query/result cache and demonstrate which gains survive unseen-but-equivalent queries, combinatorial filters/facets, live state changes, long-tail requests, and tenant-specific data.
 
 If a normal cache gets the same economics, narrow the claim.
 
@@ -170,10 +224,12 @@ Benchmark against realistic tenant-filtered Solr/ES patterns and existing multi-
 1. Keep #16, but **do not** present implicit semantic inference as new.
 2. Add Amazon 2020 shard selection as a mandatory baseline/ablation concept for the search-coverage paper story.
 3. Add a competent query/result-cache baseline for high-frequency/head traffic where applicable, motivated by ROSE.
-4. Use Havenask/eCommerceSearchBench as external specialization/workload anchors.
-5. Prioritize production-log workload characterization because it can establish a target-market difference that existing marketplace literature does not answer.
-6. Make multi-tenant cost/isolation experiments concrete; otherwise remove multi-tenancy from the claimed contributions.
-7. Continue searching related work around selective query processing, QPP, cascades, and vertical/federated search before freezing the paper's novelty statement.
+4. **For the ROSE comparison, keep result caching disabled on the native path for the primary execution claim.** The measured benefit must come from executing each admitted request cheaply against current state, not from answer reuse.
+5. Add unseen-but-semantically-equivalent, live-state-churn, combinatorial-filter, long-tail, and multi-tenant tests as mandatory cache-vs-execution discriminators.
+6. Use Havenask/eCommerceSearchBench as external specialization/workload anchors.
+7. Prioritize production-log workload characterization because it can establish a target-market difference that existing marketplace literature does not answer.
+8. Make multi-tenant cost/isolation experiments concrete; otherwise remove multi-tenancy from the claimed contributions.
+9. Continue searching related work around selective query processing, QPP, cascades, and vertical/federated search before freezing the paper's novelty statement.
 
 ## Current verdict
 
