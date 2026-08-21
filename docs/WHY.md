@@ -271,9 +271,12 @@ reached a real, safely-confirmed ceiling of about 3,500 query-capable
 tenants under a disclosed, conservative memory envelope, with
 quiet-tenant throughput and latency both essentially unaffected there
 — a materially lower, but now genuinely query-capable, number than the
-earlier memory-only ceiling. Combining Phase 3/4's admission-rate
-evidence with a multi-tenant request-volume model for "backend
-requests avoided" remains open for the next Phase 7 pass.
+earlier memory-only ceiling. A last synthesis combined Phase 3/4's own
+already-promoted admission-rate evidence with this multi-tenant
+population to answer the remaining named economic output directly:
+tens of thousands of backend requests avoided per million real queries
+per tenant, closing the final gap in this document's own required
+economic-output list without leaving anything silently undelivered.
 
 ## What this project is not
 

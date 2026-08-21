@@ -655,9 +655,14 @@ scale and up to 6,500 controlled-stress-replicated tenants. It addresses
 4 of Issue #21's 7 required "Economic output" metrics well, one
 partially (a memory-only "cost per million requests" proxy, shown to be
 highly window-length-sensitive). **Tenants per fixed hardware envelope
-at target SLO is now also delivered** (H12, P7-E09, below), leaving
-"backend requests avoided" as the one remaining explicit, undelivered
-gap rather than silently omitted.
+at target SLO is now also delivered** (H12, P7-E09, below), and
+**"backend requests avoided" is now delivered too** — combining Phase
+3/4's promoted admission-rate evidence (5.80% clean-in-budget / 6.18%
+stacked-but-marginally-over-budget) with Phase 7's real 55-tenant
+population, added directly to `PHASE7_ECONOMIC_MODEL.md`'s own
+"Backend requests avoided" section. All 7 of Issue #21's required
+economic-output metrics now have a delivered or partial status; none
+remain silently undelivered.
 
 **Cold-tenant overhead (Issue #21's explicit metric) is now measured**
 (H9, P7-E06) — a real, reproducible ~9-13x latency-ratio effect between
@@ -699,19 +704,34 @@ important distinction that had been implicit until now: H5's own
 a query-capable one — the real query-capable ceiling on this
 container's disclosed envelope is materially lower.
 
-Still to build: combining Phase 3/4's admission-rate evidence with a
-multi-tenant request-volume model to produce "backend requests
-avoided" (Issue #21's one remaining undelivered economic-output
-metric); profiling to identify the specific allocator mechanism behind
-H7/H8's growth pattern and residual tail creep, the CPU-cache-locality
-hypothesis behind H9's cold-tenant effect, the "cache dilution from
-interleaving" hypothesis behind H10's smaller magnitude, the
-memory-pressure-vs-safety-cap hypothesis behind H11's n=2,000 dip, and
-whether H12's 3,500-tenant envelope would look materially different on
-a larger machine or with less reserved headroom, if a real
-deployment's memory/latency budget needs tighter precision than
-"decelerates toward roughly a known bound" / "plausibly cache
-locality."
+**Backend requests avoided (Issue #21's last remaining economic-output
+metric) is now also delivered** — combining Phase 3/4's promoted,
+already-existing admission-rate evidence (P3-E16/E17's 5.80%
+clean-in-budget coverage; P4-E01/E02's stacked 6.18% marginally-over-
+budget coverage) with Phase 7's real 55-tenant population:
+~58,019-61,804 backend requests avoided per million real queries per
+tenant, ~3.19-3.40 million per 55M queries in aggregate under an
+illustrative even-traffic-split assumption, added to
+`PHASE7_ECONOMIC_MODEL.md`. This closes the last of Issue #21's 7
+named "Economic output" metrics without silently leaving any
+undelivered.
+
+Still to build: profiling to identify the specific allocator mechanism
+behind H7/H8's growth pattern and residual tail creep, the
+CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
+"cache dilution from interleaving" hypothesis behind H10's smaller
+magnitude, the memory-pressure-vs-safety-cap hypothesis behind H11's
+n=2,000 dip, and whether H12's 3,500-tenant envelope would look
+materially different on a larger machine or with less reserved
+headroom, if a real deployment's memory/latency budget needs tighter
+precision than "decelerates toward roughly a known bound" / "plausibly
+cache locality." Also still open, per Issue #21's required
+"Experiments" list (distinct from the "Economic output" list, now
+fully addressed): CPU/query and CPU/tenant (Phase 7 has measured only
+wall-clock so far); high-churn tenant impact on low-churn tenants (no
+mutation/churn workload has been exercised); lexical-backend contention
+(would require live Solr integration in the multi-tenant harness, not
+yet attempted).
 
 ## What should explicitly not be built yet
 
@@ -843,33 +863,45 @@ that H12's 3,500-tenant figure generalizes beyond this specific
 container, this one 9 GB self-imposed envelope, one quiet tenant, and
 one query type, or that a larger/less-headroom-reserved machine would
 show the same, a proportionally larger, or a qualitatively different
-ceiling (untested); that "backend requests avoided" (Issue #21's one
-remaining named economic-output metric) has been answered — this is a
-first pass on memory (including at scale), pairwise isolation,
-fixed-tenant throughput-under-breadth (now including at memory-scale
-tenant counts), process-baseline floors (short-lived, and a
-longer-resident window that decelerates toward but has not been proven
-to fully reach a bound), a first cold-vs-hot latency comparison under
-two different designs, a first economic-model synthesis, and a first
-tenants-per-envelope-at-SLO measurement only.
+ceiling (untested); that the "backend requests avoided" figure
+(58,019-61,804 per million queries) reflects a same-dataset
+measurement — it combines Phase 3/4's ESCI-corpus admission rate with
+Phase 7's WANDS-based tenant population, a disclosed cross-dataset
+combination, not an admission-rate measurement run against WANDS'
+own real queries; or that the illustrative even-split-across-55-
+tenants traffic assumption reflects any measured per-tenant traffic
+distribution (Phase 7 never measured one) — this is a first pass on
+memory (including at scale), pairwise isolation, fixed-tenant
+throughput-under-breadth (now including at memory-scale tenant
+counts), process-baseline floors (short-lived, and a longer-resident
+window that decelerates toward but has not been proven to fully reach
+a bound), a first cold-vs-hot latency comparison under two different
+designs, and a first economic-model synthesis (now addressing all 7 of
+Issue #21's named "Economic output" metrics, six well and one
+partially) only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (combining
-Phase 3/4's admission-rate evidence with a multi-tenant request-volume
-model for "backend requests avoided", Issue #21's one remaining
-undelivered economic-output metric) without changing the underlying
-commerce-native mechanism. The favorable, adversarially-corrected H1
-result, its clean confirmation at scale via H5, the robust H2/H4 results
-(H4 now itself confirmed at memory-scale tenant counts via H11),
-H6/H7/H8's real, reproduced, now-stability-confirmed measurement of the
-pooling advantage this project's own thesis assumed, the first economic
-cost-per-tenant model, H9's honestly-scaled cold-tenant finding, H10's
-honest replication check (confirming the direction, correcting the
-magnitude), and H12's real, empirically-reached tenants-per-envelope
-figure (which also directly discovered this container's actual hard
-memory limit rather than continuing to assume a host-level figure) are
-real evidence in favor of the architecture's packing-density and
-latency-predictability potential, but are explicitly a floor on the
-claim (single-process, short-lived-process, or 180-second-resident-
-process measurements, one tenant model, one self-imposed safety bound,
-one size-matched hot/cold pair, one traffic-skew ratio, one hardware
-envelope), not a ceiling on what remains to be tested.
+**Decision: PROCEED** to the next Phase 7 sub-experiment (Issue #21's
+still-open required "Experiments" list items: CPU/query and
+CPU/tenant, not yet measured; high-churn tenant impact on low-churn
+tenants, not yet tested; lexical-backend contention, which would need
+live Solr integration in the multi-tenant harness) without changing the
+underlying commerce-native mechanism. The favorable,
+adversarially-corrected H1 result, its clean confirmation at scale via
+H5, the robust H2/H4 results (H4 now itself confirmed at memory-scale
+tenant counts via H11), H6/H7/H8's real, reproduced,
+now-stability-confirmed measurement of the pooling advantage this
+project's own thesis assumed, the first economic cost-per-tenant model
+(now addressing all 7 of Issue #21's named economic-output metrics),
+H9's honestly-scaled cold-tenant finding, H10's honest replication
+check (confirming the direction, correcting the magnitude), H12's
+real, empirically-reached tenants-per-envelope figure (which also
+directly discovered this container's actual hard memory limit rather
+than continuing to assume a host-level figure), and the
+backend-requests-avoided synthesis combining Phase 3/4 with Phase 7's
+tenant model are real evidence in favor of the architecture's
+packing-density and latency-predictability potential, but are
+explicitly a floor on the claim (single-process, short-lived-process,
+or 180-second-resident-process measurements, one tenant model, one
+self-imposed safety bound, one size-matched hot/cold pair, one
+traffic-skew ratio, one hardware envelope, one cross-dataset admission-
+rate combination), not a ceiling on what remains to be tested.
