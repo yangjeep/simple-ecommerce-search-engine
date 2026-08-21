@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e12_lexical_backend_contention.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "516a513",
   "dataset": {
     "name": "WANDS Solr cores from Phase 6A/6B: wands_bench (quiet, 42994 docs), wands_bench_20x (noisy, 859880 docs)"
   },
