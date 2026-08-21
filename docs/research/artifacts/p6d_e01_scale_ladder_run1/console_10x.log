@@ -1,0 +1,42 @@
+=== P6B-E00 scale-ladder tier 10x ===
+loading catalog from dataset_cache/wands_scale/catalog_10x.jsonl...
+429940 products loaded
+building commerce_core structural index...
+index build: 7570.1 ms, approx_size=73346846 bytes (170.6 bytes/product), rss Some(2412) -> Some(1753596) kb
+checking Solr (http://localhost:8983/solr/wands_bench_10x)...
+  Solr reachable: numFound=429940
+
+running depth-1 color-facet crossover sweep at tier 10x...
+  Rugs: n=20020 (solr n=20020)
+  Storage & Organization: n=21750 (solr n=21750)
+  Lighting: n=20720 (solr n=20720)
+  Outdoor: n=33940 (solr n=33940)
+  Décor & Pillows: n=46120 (solr n=46120)
+  Home Improvement: n=46860 (solr n=46860)
+  Furniture: n=160390 (solr n=160390)
+
+running average_rating numeric-range filter at tier 10x...
+
+=== P6B-E00 tier 10x result ===
+tier       class                                      key                           n_count    s_count   match  n_mean_ms  s_mean_ms    speedup
+10x        color_facet_under_depth1_crossover_sweep   Rugs                            20020      20020    true    25.5244     1.7530       0.07
+10x        color_facet_ordinal_under_depth1_crossover_sweep Rugs                            20020      20020    true     0.1015     1.7530      17.27
+10x        color_facet_under_depth1_crossover_sweep   Storage & Organization          21750      21750    true    33.0120     1.8564       0.06
+10x        color_facet_ordinal_under_depth1_crossover_sweep Storage & Organization          21750      21750    true     0.1180     1.8564      15.73
+10x        color_facet_under_depth1_crossover_sweep   Lighting                        20720      20720    true    28.0687     1.4892       0.05
+10x        color_facet_ordinal_under_depth1_crossover_sweep Lighting                        20720      20720    true     0.0905     1.4892      16.46
+10x        color_facet_under_depth1_crossover_sweep   Outdoor                         33940      33940    true    50.5959     1.7543       0.03
+10x        color_facet_ordinal_under_depth1_crossover_sweep Outdoor                         33940      33940    true     0.3375     1.7543       5.20
+10x        color_facet_under_depth1_crossover_sweep   Décor & Pillows                 46120      46120    true    68.7042     2.1757       0.03
+10x        color_facet_ordinal_under_depth1_crossover_sweep Décor & Pillows                 46120      46120    true     0.5807     2.1757       3.75
+10x        color_facet_under_depth1_crossover_sweep   Home Improvement                46860      46860    true    59.5163     1.7877       0.03
+10x        color_facet_ordinal_under_depth1_crossover_sweep Home Improvement                46860      46860    true     0.3482     1.7877       5.13
+10x        color_facet_under_depth1_crossover_sweep   Furniture                      160390     160390    true   173.0079     3.2410       0.02
+10x        color_facet_ordinal_under_depth1_crossover_sweep Furniture                      160390     160390    true     1.2549     3.2410       2.58
+10x        numeric_range_average_rating_gte           4                              319670     319670    true     2.0035     0.5701       0.28
+10x        numeric_range_average_rating_gte           4.5                            283990     283990    true     1.8432     0.6307       0.34
+10x        mixed_depth1_and_rating_filter             Furniture+rating>=4            114300     114300    true     2.0848     0.5757       0.28
+
+correctness: 17/17 rows had matching native/Solr counts (ALL MATCH)
+
+appended 17 rows to /tmp/claude-0/-home-user-simple-ecommerce-search-engine/42c216bb-068c-521f-bf1b-8df9ff5387ed/scratchpad/p6d_e01/ladder_results.csv

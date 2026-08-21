@@ -67,6 +67,15 @@ byte-for-byte equality with the existing scan method rather than with
   across full/filtered/empty/never-indexed inputs) and by 21/21 exact
   top-50-facet matches against Solr's own live response across 3
   repeated runs.
+- Confirmed across Phase 6B's own 2x-20x controlled-stress scale ladder
+  (P6D-E01): the margin over Solr holds across all 35 checkpoint x tier
+  combinations tested (2,002-320,780 candidates), zero exceptions, but
+  narrows — not grows — at the largest candidate counts, converging
+  toward roughly 2.5x-3x. The margin over `facet_counts_by_scan`, by
+  contrast, grows sharply with scale (up to 327x), consistent with the
+  scan method's per-candidate `BTreeMap`-clone cost getting relatively
+  worse as candidate count grows while both other methods scale closer
+  to linearly.
 - This is a materially larger, more consistent margin than Lucene's own
   equivalent module achieved over Solr in P6C-E01 (up to 3.0x, still
   trailing at 2 checkpoints) — because `facet_counts_by_scan`'s naive

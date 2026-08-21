@@ -252,10 +252,19 @@ lookup) — so there was more room for the fix to help. The facet
 crossover this project characterized four times over (Phase 5, 6A, 6B,
 Phase 6C) is now confirmed to have been a property of naive
 per-candidate scanning specifically, not an inherent ceiling on
-commerce-native's own architecture — real limitations remain (only one
-facet field tested, only WANDS' natural scale, memory cost estimated
-not measured, no query-serving path yet wired to prefer it), but the
-core question this whole four-phase thread asked is answered.
+commerce-native's own architecture. Extended across Phase 6B's own
+2x-20x controlled-stress scale ladder (P6D-E01, up to 320,780
+candidates), the margin over Solr holds — no exceptions across all 35
+checkpoint x tier combinations tested — but narrows, not grows, at the
+largest candidate counts, converging toward roughly 2.5x-3x rather than
+widening further; its margin over commerce-native's own scan method, by
+contrast, grows sharply with scale instead, consistent with the scan
+method's per-candidate allocation cost getting relatively worse as
+candidate count grows. Real limitations remain (only one facet field
+tested, memory cost estimated not measured, no query-serving path yet
+wired to prefer it, organic growth beyond the replication ladder
+untested), but the core question this whole four-phase thread asked is
+answered.
 
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more

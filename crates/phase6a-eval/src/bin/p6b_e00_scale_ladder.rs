@@ -293,6 +293,7 @@ fn main() {
             ));
         }
         println!("  {name}: n={n} (solr n={solr_n})");
+        let solr_ns_reused = solr_ns.clone();
         rows.push(make_row(
             &tier,
             "color_facet_under_depth1_crossover_sweep",
@@ -301,6 +302,30 @@ fn main() {
             solr_n,
             native_ns,
             solr_ns,
+            &mut mismatches,
+        ));
+
+        // Issue #21 Phase 6D (P6D-E01): does the ordinal-based facet
+        // counter's dramatic margin over Solr (P6D-E00: 5.2x-69.8x at
+        // WANDS' natural 1x scale) hold, narrow, or grow at this
+        // controlled-stress tier? Reuses the exact same
+        // `solr_ns`/`solr_facets` captured just above.
+        let (native_ordinal_ns, native_ordinal_facets_full) =
+            time_reps(|| index.facet_counts_ordinal(&candidates, "color"));
+        let native_ordinal_facets = top_n(native_ordinal_facets_full, 50);
+        if native_ordinal_facets != solr_facets {
+            mismatches.push(format!(
+                "FACET MISMATCH tier={tier} color_ordinal_under_depth1={name}: native_ordinal={native_ordinal_facets:?} solr={solr_facets:?}"
+            ));
+        }
+        rows.push(make_row(
+            &tier,
+            "color_facet_ordinal_under_depth1_crossover_sweep",
+            name,
+            n as u64,
+            solr_n,
+            native_ordinal_ns,
+            solr_ns_reused,
             &mut mismatches,
         ));
     }

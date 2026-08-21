@@ -167,6 +167,13 @@ same as Phases 0–5:
   `facet_counts_by_scan` (23.5x-89.3x) — a larger, more consistent
   margin than Lucene's own equivalent module achieved over Solr; see
   `PHASE6D_DECISION.md`.
+- `p6d_e01_ordinal_facet_scale_ladder.yaml` — does the ordinal method's
+  margin hold across Phase 6B's own 2x-20x controlled-stress scale
+  ladder, not just WANDS' natural 1x scale? Beats Solr at all 35
+  checkpoint x tier combinations tested (2,002-320,780 candidates), zero
+  exceptions -- but the margin narrows (not grows) at the largest
+  candidate counts, converging toward ~2.5x-3x; its margin over the
+  scan method grows sharply with scale instead; see `PHASE6D_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

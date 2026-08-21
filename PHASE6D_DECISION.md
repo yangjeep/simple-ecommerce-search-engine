@@ -94,8 +94,27 @@ equivalent) — so removing that cost via the ordinal design had more
 room to help. A disclosed, mechanistic explanation, not independently
 profiled.
 
+**Confirmed across the entire Phase 6B scale ladder, not just WANDS'
+natural 1x scale (P6D-E01)**: extending the same measurement to Phase
+6B's own controlled-stress replication (2x/5x/10x/20x, up to 859,880
+products / 320,780 candidates at the largest checkpoint), the ordinal
+method beat Solr at every one of 35 checkpoint x tier combinations, with
+zero exceptions — margins from 2.5x to 72.6x. **The margin is not
+scale-invariant: it narrows, converging toward roughly 2.5x-3x at the
+largest candidate counts tested, rather than growing indefinitely** (at
+Furniture, the largest checkpoint: 5.2x at 1x → 4.4x at 2x → 3.4x at 5x
+→ 2.5x at 10x and 20x). By contrast, the ordinal method's margin over
+commerce-native's own scan method *grows* sharply with scale (20.6x-99.6x
+at 1x, up to 118.2x-327.0x at 10x/20x) — the mirror image, consistent
+with the scan method's `BTreeMap`-clone cost getting relatively worse at
+scale while both other methods scale closer to linearly. All 85 rows
+(17 x 5 tiers) and 35 top-50-facet checks passed correctness with zero
+mismatches. See "P6D-E01" in `docs/experiments/PHASE6D_LOG.md` for the
+full table and mechanism discussion.
+
 Full tables, raw CSVs, console logs: `docs/experiments/PHASE6D_LOG.md`,
-`docs/research/artifacts/p6d_e00_ordinal_facet_run1/`.
+`docs/research/artifacts/p6d_e00_ordinal_facet_run1/`,
+`docs/research/artifacts/p6d_e01_scale_ladder_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -116,12 +135,14 @@ and is the version committed.
    three-way comparison.** `product_class` and any other Enum attribute
    use architecturally identical code paths but were not independently
    re-measured against Solr in this pass.
-2. **Only WANDS at its natural 1x scale was tested.** The Phase 6B
-   scale-ladder (2x-20x controlled-stress replication) was not repeated
-   for the ordinal method — whether this margin holds, narrows, or grows
-   at larger candidate-set sizes is untested, though the removed-
-   per-candidate-allocation mechanism gives no architectural reason to
-   expect it to narrow.
+2. **Resolved by P6D-E01, with a real nuance**: the Phase 6B scale
+   ladder (2x-20x) was repeated for the ordinal method. The margin over
+   Solr holds (never crosses into a loss) across the whole 1x-20x range
+   tested, but it narrows — not grows — at the largest candidate counts,
+   converging toward roughly 2.5x-3x rather than an ever-widening
+   advantage. Whether this narrowing continues, plateaus, or reverses
+   beyond the ~320,780-candidate ceiling tested here is itself now the
+   open question (see "What would be built next").
 3. **The additional per-attribute memory cost
    (`enum_dictionary`/`enum_value_ordinal`/`enum_columns`) was not
    measured with a dedicated RSS benchmark** (Phase 7's own established
@@ -164,9 +185,12 @@ and is the version committed.
    flat `Vec` indexed 0..N by a build-time-assigned dense ordinal) and to
    `MultiEnum` attributes, generalizing this phase's single-valued-only
    design.
-3. **Re-run at Phase 6B's own scale ladder (2x-20x)** to confirm the
-   margin holds (or characterize how it changes) at larger candidate-set
-   sizes.
+3. **Extend past P6D-E01's own 320,780-candidate ceiling** to determine
+   whether the observed margin-narrowing trend continues, plateaus, or
+   reverses at organically larger (not just replication-scaled)
+   candidate counts and facet cardinalities — the Phase 6B replication
+   methodology deliberately holds facet cardinality fixed, so this
+   would need a genuinely larger real catalog, not further replication.
 4. **A dedicated RSS/memory measurement** for the new per-attribute
    dictionary/column structures, using Phase 7's own established
    methodology, to replace the analytical estimate above with a real
@@ -195,33 +219,48 @@ and is the version committed.
   measured," and nothing in this result changes that sequencing.
 - **Declaring the facet-crossover question fully closed campaign-wide**
   — this phase closes it decisively for the specific operation measured
-  (color facet-scan under category filter, WANDS 1x scale); the named
-  unresolved risks above (other fields, other scales, memory cost) are
-  real, not merely formal, caveats.
+  (color facet-scan under category filter, across WANDS' natural 1x
+  scale and the full Phase 6B 2x-20x controlled-stress ladder); the
+  named unresolved risks above (other fields, memory cost, organic
+  growth beyond the replication ladder) are real, not merely formal,
+  caveats.
+- **Assuming the margin over Solr grows without bound as scale
+  increases** — P6D-E01 found the opposite: it narrows at the largest
+  candidate counts tested. Any future capacity/scaling claim should use
+  the observed ~2.5x-3x floor at large candidate counts, not the larger
+  margins seen at small-to-medium ones, as the conservative planning
+  number.
 
 ## What this decision does and does not claim
 
 **Does claim**: an ordinal/dictionary-based facet-counting method,
 correctness-gated exactly against both `facet_counts_by_scan` (unit
-test) and Solr's own live facet response (21/21 real-data matches),
-beats Solr at every one of 7 real WANDS checkpoints by 5.2x-69.8x, and
-beats commerce-native's own existing scan-based method by 23.5x-89.3x —
-a substantially larger and more consistent win than P6C-E01 found for
-Lucene's own equivalent module against Solr. This confirms the facet
-crossover this project has repeatedly measured (Phase 5, 6A, 6B, P6C-E00)
-is a property of naive per-candidate scanning specifically, not an
-inherent ceiling on commerce-native's own architecture.
+test) and Solr's own live facet response (21/21 real-data matches at
+WANDS' natural 1x scale, plus 35/35 more across the full Phase 6B 2x-20x
+scale ladder — 56/56 total), beats Solr at every checkpoint tested
+across the *entire* 1x-20x range (2,002-320,780 candidates), by 2.5x to
+72.6x with zero exceptions, and beats commerce-native's own existing
+scan-based method by 20.6x-327.0x. This confirms the facet crossover
+this project has repeatedly measured (Phase 5, 6A, 6B, P6C-E00) is a
+property of naive per-candidate scanning specifically, not an inherent
+ceiling on commerce-native's own architecture, and that this holds
+across a genuine, controlled-stress scale range, not just WANDS' natural
+1x scale.
 
-**Does not claim**: that this margin holds for facet fields other than
-`color` (untested, though architecturally identical); that it holds at
-scales beyond WANDS' natural 1x (untested); that the new structures'
-memory cost is negligible (estimated, not measured); that `MultiEnum`
-attributes or the dedicated brand/category/product_type facets are
-covered (explicitly out of scope for this pass); that any real query-
-serving path has been changed to prefer this method (it has not — this
-is an additive, benchmarked-only method); or that commerce-native's
-ordinal approach is faster or slower than Lucene's own equivalent module
-specifically (not directly compared in the same session).
+**Does not claim**: that the margin over Solr is scale-invariant or
+grows with scale — it narrows, converging toward roughly 2.5x-3x at the
+largest candidate counts tested (P6D-E01's own real, disclosed nuance);
+that this margin holds for facet fields other than `color` (untested,
+though architecturally identical); that it holds beyond the ~320,780
+candidates tested here, or under organic (not replication-scaled) facet
+cardinality growth; that the new structures' memory cost is negligible
+(estimated, not measured); that `MultiEnum` attributes or the dedicated
+brand/category/product_type facets are covered (explicitly out of scope
+for this pass); that any real query-serving path has been changed to
+prefer this method (it has not — this is an additive, benchmarked-only
+method); or that commerce-native's ordinal approach is faster or slower
+than Lucene's own equivalent module specifically (not directly compared
+in the same session).
 
 **Decision: PROCEED.** This phase answers the single highest-value
 question P6C-E01 surfaced, with a result more decisive than that
