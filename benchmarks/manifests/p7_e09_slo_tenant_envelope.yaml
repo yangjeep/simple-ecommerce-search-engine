@@ -32,7 +32,7 @@ claim: >
   docs/experiments/PHASE7_LOG.md for the full H12 hypothesis and
   result.
 
-git_sha: PENDING
+git_sha: cc9e638
 binary: crates/phase7-eval/src/bin/p7_e09_slo_tenant_envelope.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e09_slo_tenant_envelope
 run_command: ./target/release/p7_e09_slo_tenant_envelope dataset_cache/wands/catalog.jsonl

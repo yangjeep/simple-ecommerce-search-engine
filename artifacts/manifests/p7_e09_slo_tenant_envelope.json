@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e09_slo_tenant_envelope.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "cc9e638",
   "dataset": {
     "name": "WANDS real 55 tenants, incrementally controlled-stress replicated up to a real safety-capped ceiling; quiet tenant: Rugs-copy0"
   },
