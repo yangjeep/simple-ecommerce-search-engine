@@ -244,8 +244,20 @@ every run, but its MAGNITUDE shrank roughly 4-6x under this realistic,
 shared/interleaved design compared to the original idealized one —
 pointing at the earlier measurement's fully-dedicated-thread setup, not
 a general architectural property, as the likely source of its larger
-observed ratio. Combining the memory model with latency evidence for an
-SLO-conditioned tenant count remains open for the next Phase 7 pass.
+observed ratio. A final measurement closed a gap this project's own
+decision document had previously named as still open: whether the
+fixed-tenant breadth-independence finding (originally tested only up to
+WANDS' real 54-other-tenant ceiling) also holds at the much larger
+tenant counts the memory-scaling replication reached. It does —
+confirmed cleanly at 2,000 controlled-stress-replicated tenants (36x
+the original ceiling), with quiet-tenant throughput dropping only 6-9%
+and p99 growing only 5-8% across that entire range, reproduced across 3
+runs — with a small, honestly-disclosed dip at the very top of the
+tested range coinciding with resident memory approaching this run's
+self-imposed safety cap, named as an unconfirmed candidate mechanism
+rather than a resolved one. Combining the memory model with latency
+evidence for an SLO-conditioned tenant count remains open for the next
+Phase 7 pass.
 
 ## What this project is not
 

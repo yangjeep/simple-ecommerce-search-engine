@@ -98,6 +98,40 @@ pub fn load_depth1_tenants(catalog_path: &std::path::Path, limit: usize) -> Vec<
         .collect()
 }
 
+/// Controlled-stress replication (Phase 6B's disclosed methodology,
+/// applied to tenant COUNT rather than catalog size -- first used by
+/// P7-E02/H5, now shared with P7-E08/H11): repeat the real base
+/// population (already-built `Catalog`s, e.g. from `partition_depth1`)
+/// end to end, each pass's tenants renamed with a `-copyN` suffix to
+/// stay distinct, until `target_count` total tenants are produced
+/// (truncating the final pass if `target_count` isn't an exact
+/// multiple of `base.len()`). Explicitly NOT a claim about organic
+/// tenant growth -- this isolates tenant COUNT as a variable, holding
+/// per-tenant data/schema shape fixed, the same disclosure discipline
+/// `p7_e02_packing_ceiling.rs` established.
+pub fn replicate_tenants(
+    base: &[(String, Catalog)],
+    target_count: usize,
+) -> Vec<(String, Catalog)> {
+    let mut out = Vec::with_capacity(target_count);
+    let mut copy = 0usize;
+    while out.len() < target_count {
+        for (name, catalog) in base {
+            if out.len() >= target_count {
+                break;
+            }
+            out.push((
+                format!("{name}-copy{copy}"),
+                Catalog {
+                    products: catalog.products.clone(),
+                },
+            ));
+        }
+        copy += 1;
+    }
+    out
+}
+
 /// Load and build ONLY the named tenant's catalog -- unlike
 /// `partition_depth1`, which materializes all 55 tenants' fully-built
 /// `Catalog`s in one `Vec` before any caller can select a subset (a real

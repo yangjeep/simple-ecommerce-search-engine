@@ -76,6 +76,10 @@ same as Phases 0–5:
   finding under a materially different, more realistic full-population
   Zipfian query-arrival pattern: the direction replicates, the magnitude
   does not (roughly 4-6x smaller); see `PHASE7_DECISION.md`.
+- `p7_e08_extended_breadth_qps.yaml` — extends P7-E01's fixed-tenant
+  throughput/latency-under-breadth finding from WANDS' real 54-other-
+  tenant ceiling to 2,000 controlled-stress-replicated tenants (36x
+  larger), confirmed cleanly across 3 runs; see `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

@@ -43,6 +43,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p7_e05_extended_duration_overhead.json`
 - `p7_e06_cold_tenant_overhead.json`
 - `p7_e07_realistic_demand_mix.json`
+- `p7_e08_extended_breadth_qps.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

@@ -1009,3 +1009,100 @@ magnitudes differ is disclosed, not profiled or confirmed. Aggregate
 throughput and per-tenant "hot tenant saturation" behavior were observed
 only as secondary context, not independently, rigorously isolated as
 their own falsifiable claims this pass.
+
+## P7-E08: extending H4's QPS-vs-breadth finding to controlled-stress-replicated tenant counts (H11, stated before implementation)
+
+P7-E01 (H4) confirmed that a fixed tenant's own query throughput/latency
+does not meaningfully degrade as the BREADTH of other, distinct,
+concurrently-touched tenants grows -- but WANDS' real partition only
+reaches 55 total tenants (54 "other"). P7-E02 (H5) separately confirmed
+memory scales linearly, not tenant-count-dependently, all the way to
+6,500 controlled-stress-replicated tenants (real 55-tenant population
+repeated end to end, `-copyN` suffixed to stay distinct, explicitly
+disclosed as NOT a claim about organic tenant growth -- it isolates
+tenant COUNT as a variable while holding per-tenant data/schema shape
+fixed). PHASE7_DECISION.md's own "what would be built next" list named
+the natural combination as still open: "extending H4 (query throughput
+under breadth) to the hundreds-to-thousands tenant counts H5 already
+reached for memory."
+
+**H11**: H4's finding (a fixed tenant's own throughput/latency does not
+degrade as breadth of other touched tenants grows) continues to hold
+when breadth is extended via H5's controlled-stress replication
+methodology far beyond WANDS' real 54-tenant ceiling, into the
+hundreds-to-thousands (matching H5's memory-scale reach).
+
+**Design**: reuses P7-E01's exact quiet/noisy-tenant methodology --
+one fixed tenant ("Rugs-copy0", the first replication pass of P7-E01's
+own "Rugs" checkpoint tenant, so it is guaranteed present at every
+tested breadth since copy0 always covers all 55 real base tenants
+first) is queried continuously for a fixed 4-second window by a
+dedicated loop, while `WORKERS - 1 = 3` noisy threads round-robin
+through every OTHER replicated tenant for the same window, each
+building its own `CatalogIndex`. `TENANT_COUNTS = [55, 200, 500, 1000,
+2000]` -- the top of that range matches the same order of magnitude H5
+reached before this run's RSS crossed a 6 GB safety cap (this
+process's own RSS, not system-wide, matching P7-E02's established
+safety-capping convention; the container also holds Solr's JVM at
+~4.8 GB resident). The new shared `phase7_eval::tenants::replicate_tenants`
+helper (added this pass, not retrofitted into P7-E02 since P7-E02's
+incrementally-safety-checked build loop is a different access pattern)
+performs the replication upfront for each tenant count.
+
+**Pass/fail defined in advance**: as breadth grows from n=55 to n=2000,
+if the quiet tenant's own throughput does not drop more than 20% and
+its p99 does not grow more than 2x (both relative to the n=55
+baseline, the same material-regression bar used throughout Phase 7),
+H11 is CONFIRMED (H4's finding generalizes to H5's memory-scale
+tenant counts). If either threshold is crossed, H11 is FALSIFIED.
+
+## P7-E08 result: H11 CONFIRMED, reproduced across 3 independent runs
+
+Three independent full runs (55 -> 200 -> 500 -> 1000 -> 2000 tenants
+each), raw data in `docs/research/artifacts/p7_e08_extended_breadth_run1/
+results_run{1,2,3}.csv`. All 3 runs completed the full ladder without
+tripping the 6 GB safety cap (peak RSS 5.48 GB at n=2000, ~91% of the
+cap -- close enough to be worth naming as a limitation below, but the
+run was never actually stopped short).
+
+| n_tenants | rps (run1/2/3) | p99 ms (run1/2/3) | RSS MB |
+|---|---|---|---|
+| 55 | 757.0 / 760.5 / 753.8 | 1.858 / 1.879 / 1.804 | 242.9 |
+| 200 | 760.3 / 761.0 / 759.8 | 1.909 / 1.833 / 1.780 | 680.0 |
+| 500 | 777.8 / 744.5 / 759.3 | 1.656 / 1.832 / 1.950 | 1508.6 |
+| 1000 | 719.5 / 764.8 / 758.8 | 2.120 / 1.742 / 1.833 | 2851.8 |
+| 2000 | 712.8 / 688.5 / 700.3 | 1.992 / 1.982 / 1.957 | 5481.4 |
+
+Throughput ratio at n=2000 vs. the n=55 baseline: 0.942 / 0.905 / 0.929
+across the 3 runs -- a consistent 6-9% reduction, well inside the 20%
+pass bar. p99 ratio at n=2000 vs. n=55: 1.072 / 1.055 / 1.085 -- a
+consistent 5-8% growth, far inside the 2x pass bar. **H11 is CONFIRMED
+in all 3 runs**: H4's breadth-independence finding, originally
+established only up to WANDS' real 55-tenant ceiling, continues to
+hold cleanly at 2,000 controlled-stress-replicated tenants -- a 36x
+larger breadth, and the same order of magnitude H5 reached for memory.
+
+As a secondary consistency check (not this experiment's primary
+claim, but a useful cross-reference against H5): RSS grows linearly
+with tenant count in all 3 runs, ~2.7-3.0 MB/tenant, matching H5's own
+per-tenant memory-scaling finding rather than contradicting it.
+
+**Named limitations**: a small, consistent throughput dip and p99
+uptick appear specifically at n=2000 in every run (the ladder's
+largest jump is between n=1000 and n=2000, not evenly spread across
+the whole range) right as RSS reaches ~5.48 GB, ~91% of the 6 GB
+safety cap. Because the effect is well inside the pre-registered pass
+thresholds it does not change H11's verdict, but this run cannot fully
+rule out memory-pressure (cache/TLB pressure, allocator fragmentation
+as RSS nears the cap) as a contributing factor at n=2000, as distinct
+from a pure tenant-count/breadth effect -- this joins the project's
+existing disclosed-but-unconfirmed mechanism hypotheses (H7/H8's
+allocator-arena growth, H9/H10's CPU-cache-locality/interleaving-
+dilution effect) as a candidate for future profiling rather than a
+claim made here. Only one quiet tenant ("Rugs-copy0") and one noisy-
+worker-count (3) were tested; the noisy threads' own round-robin
+coverage of ever-larger tenant counts was not independently, rigorously
+isolated as its own claim (it is reported via `noisy_total_requests`
+in the raw CSVs for transparency, not analyzed as a hypothesis here).
+Query type is a single fixed facet-scan operation, the same one every
+other Phase 7 QPS/throughput experiment (P7-E01, P7-E04-E07) has used.

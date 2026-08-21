@@ -1,4 +1,4 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E07 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E08 first pass
 
 **Decision: PROCEED**, with two hypotheses falsified (one in the good
 direction, one revealing a real but practically tiny effect) and six
@@ -30,7 +30,14 @@ metrics): the DIRECTION replicated cleanly in every run, but the
 MAGNITUDE shrank roughly 4-6x (to ~1.85-2.08x, hovering right at this
 project's own material-regression threshold) — pointing at H9's
 specific fully-dedicated-thread design, not a general architectural
-property, as the likely source of its larger observed ratio.
+property, as the likely source of its larger observed ratio. A final
+follow-on (H11) directly closed a gap this document itself had
+previously named as still open: whether H4's breadth-independence
+finding, only tested up to WANDS' real 54-other-tenant ceiling, also
+holds at the much larger tenant counts H5 reached for memory. It does
+— confirmed cleanly at 2,000 controlled-stress-replicated tenants (36x
+H4's original ceiling), with only a small, honestly-disclosed dip right
+at the top of the tested range as RSS approached this run's safety cap.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -90,6 +97,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   artifact of its specific methodology, and Issue #21's explicitly-named
   "aggregate QPS," "fairness under skewed tenant load," and "hot tenant
   saturation" metrics, untested by any prior Phase 7 hypothesis.
+- **H11** (P7-E08): H4's finding (a fixed tenant's own throughput/latency
+  does not degrade as breadth of other touched tenants grows) continues
+  to hold when breadth is extended via H5's controlled-stress
+  replication methodology far beyond WANDS' real 54-tenant ceiling, into
+  the hundreds-to-thousands (matching H5's memory-scale reach) — closing
+  a gap this document itself had previously named as still open.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -413,6 +426,42 @@ substantially smaller effect (~2x, right at the material-regression
 line) than H9's idealized dedicated-thread design (~9-13x). Both
 figures are now part of the honest record.
 
+**H11 — CONFIRMED, reproduced across 3 independent runs (P7-E08).**
+Directly closes this document's own previously-named gap: does H4's
+breadth-independence finding, only tested up to WANDS' real
+54-other-tenant ceiling, also hold at the much larger tenant counts H5
+reached for memory? Using the exact same quiet/noisy-tenant
+methodology as H4, with breadth extended via H5's controlled-stress
+tenant-count replication (`-copyN`-suffixed repeats of the real
+55-tenant population, holding per-tenant data/schema shape fixed), the
+quiet tenant's own throughput and p99 latency were measured at 5
+breadth levels: 55, 200, 500, 1,000, and 2,000 total tenants.
+
+Throughput ratio at n=2,000 vs. the n=55 baseline: **0.905-0.942**
+across all 3 runs (a consistent 6-9% reduction). p99 ratio at n=2,000
+vs. n=55: **1.055-1.085** (a consistent 5-8% growth). Both stay
+comfortably inside the pre-registered pass bar (throughput drop <20%,
+p99 growth <2x) in every run. **H4's finding generalizes cleanly to
+2,000 tenants — a 36x larger breadth than WANDS' real ceiling, and the
+same order of magnitude H5 reached for memory.** As a secondary
+cross-check (not this experiment's primary claim), RSS grew linearly
+with tenant count in all 3 runs at ~2.7-3.0 MB/tenant, consistent with
+H5's own per-tenant memory-scaling finding rather than contradicting
+it.
+
+**Named, honestly-disclosed limitation**: a small, consistent
+throughput dip and p99 uptick appear specifically at n=2,000 in every
+run — the ladder's largest single-step change, not evenly spread across
+the whole range — right as RSS reached ~5.48 GB, ~91% of this run's 6
+GB safety cap. Because the effect stays well inside the pass
+thresholds it does not change the H11 verdict, but this run cannot
+fully rule out memory-pressure effects (cache/TLB pressure, allocator
+fragmentation as RSS nears the cap) as a contributing factor at n=2,000,
+as distinct from a pure tenant-count/breadth effect. This joins H7/H8's
+allocator-arena hypothesis and H9/H10's cache-locality/interleaving-
+dilution hypothesis as a disclosed, unconfirmed mechanism candidate for
+future profiling.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
@@ -421,7 +470,8 @@ Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e04_long_running_run1/`,
 `docs/research/artifacts/p7_e05_extended_duration_run1/`,
 `docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/`,
-`docs/research/artifacts/p7_e07_realistic_demand_mix_run1/`.
+`docs/research/artifacts/p7_e07_realistic_demand_mix_run1/`,
+`docs/research/artifacts/p7_e08_extended_breadth_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -494,6 +544,13 @@ renamed rather than deleted.
    and one size-matched pair were tested under the realistic design;
    whether the ~2x effect grows, shrinks, or holds at a different
    traffic skew or tenant size is untested.
+8. **H11's small n=2,000 throughput dip/p99 uptick coincides with RSS
+   reaching ~91% of this run's 6 GB safety cap, and memory-pressure
+   effects cannot be fully ruled out as a contributing factor there,
+   distinct from a pure breadth effect.** The effect is well inside the
+   pass thresholds and does not change H11's verdict, but whether it
+   would grow, shrink, or disappear at a higher safety cap (a larger
+   machine) or a different quiet tenant/noisy-worker-count is untested.
 
 ## What would be built next if scaling up
 
@@ -527,18 +584,25 @@ is measured but explicitly not compared across experiments, since
 per-query cost varies by exactly which tenants are hot/cold — the same
 workload-mix caveat P7-E01's first draft had to learn.
 
-Still to build: extending H4 (query throughput under breadth) to the
-hundreds-to-thousands tenant counts H5 already reached for memory;
-combining Phase 7's memory model with H2/H4's latency/isolation evidence
-to produce the still-missing "tenants per envelope at target SLO"
-metric; combining Phase 3/4's admission-rate evidence with a
-multi-tenant request-volume model to produce "backend requests avoided";
-profiling to identify the specific allocator mechanism behind H7/H8's
-growth pattern and residual tail creep, the CPU-cache-locality
-hypothesis behind H9's cold-tenant effect, and the "cache dilution from
-interleaving" hypothesis behind H10's smaller magnitude, if a real
-deployment's memory/latency budget needs tighter precision than
-"decelerates toward roughly a known bound" / "plausibly cache locality."
+**H4's breadth-independence finding is now extended to H5's memory-scale
+tenant counts** (H11, P7-E08) — confirmed cleanly at 2,000
+controlled-stress-replicated tenants (36x WANDS' real ceiling), with a
+small, honestly-disclosed dip right at the top of the tested range
+possibly (not confirmed) related to RSS approaching this run's safety
+cap.
+
+Still to build: combining Phase 7's memory model with H2/H4/H11's
+latency/isolation evidence to produce the still-missing "tenants per
+envelope at target SLO" metric; combining Phase 3/4's admission-rate
+evidence with a multi-tenant request-volume model to produce "backend
+requests avoided"; profiling to identify the specific allocator
+mechanism behind H7/H8's growth pattern and residual tail creep, the
+CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
+"cache dilution from interleaving" hypothesis behind H10's smaller
+magnitude, and the memory-pressure-vs-safety-cap hypothesis behind
+H11's n=2,000 dip, if a real deployment's memory/latency budget needs
+tighter precision than "decelerates toward roughly a known bound" /
+"plausibly cache locality."
 
 ## What should explicitly not be built yet
 
@@ -616,44 +680,56 @@ under this realistic shared/interleaved design vs. H9's ~9-13x under an
 idealized fully-dedicated-thread design — a real, reproducible, and
 smaller effect, not a vanished one, most likely because H9's dedicated
 thread gave the hot tenant an artificially ideal, uninterrupted cache
-advantage a realistic shared worker pool does not provide.
+advantage a realistic shared worker pool does not provide. H4's own
+breadth-independence finding, previously only tested up to WANDS' real
+54-other-tenant ceiling, is now confirmed to extend cleanly to 2,000
+controlled-stress-replicated tenants — a 36x larger breadth, matching
+the order of magnitude H5 reached for memory (H11, reproduced across 3
+runs): quiet-tenant throughput drops only 6-9% and p99 grows only 5-8%
+across that entire 36x range, both far inside the pre-registered pass
+bar, with only a small, honestly-disclosed dip at the very top of the
+tested range coinciding with RSS nearing this run's safety cap.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants is a discovered
 hardware or architectural ceiling (it is a self-imposed safety bound —
 the real ceiling is very likely materially higher and was deliberately
-not pursued); that H4's no-degradation finding holds at the
-hundreds-to-thousands tenant counts H5 reached for memory (H4 itself was
-only tested up to WANDS' real 54-other-tenant ceiling); that H8's
-180-second resident window represents a real service's full-lifetime
-steady state (a small, real residual tail creep persists in 2 of 3 runs,
-roughly two orders of magnitude smaller than the initial climb, and
-whether it fully stops over a much longer real lifetime is untested);
-that the specific allocator mechanism behind H7/H8's growth is confirmed
-(a thread-local-arena hypothesis is named, not verified); that H9's
-cache-locality mechanism is confirmed (named, not profiled), or that
-either its ~9-13x or H10's ~2x ratio generalizes beyond the one
-size-matched tenant pair, one cold-query interval, and one traffic-skew
-ratio tested; that H10's "cache dilution from interleaving" explanation
-for the magnitude gap between H9 and H10 is confirmed (disclosed, not
-profiled); that H4's own throughput/latency finding has been re-tested
-under a realistic skewed demand mix (H10 measured a DIFFERENT
-size-matched pair's latency under skew, not H4's own breadth-at-fixed-
-demand claim); that "tenants per envelope at target SLO" or "backend
-requests avoided" (both explicitly named in Issue #21's Phase 7) have
-been answered — this is a first pass on memory (including at scale),
-pairwise isolation, fixed-tenant throughput-under-breadth,
-process-baseline floors (short-lived, and a longer-resident window that
-decelerates toward but has not been proven to fully reach a bound), a
-first cold-vs-hot latency comparison under two different designs, and a
-first economic-model synthesis only.
+not pursued); that H8's 180-second resident window represents a real
+service's full-lifetime steady state (a small, real residual tail creep
+persists in 2 of 3 runs, roughly two orders of magnitude smaller than
+the initial climb, and whether it fully stops over a much longer real
+lifetime is untested); that the specific allocator mechanism behind
+H7/H8's growth is confirmed (a thread-local-arena hypothesis is named,
+not verified); that H9's cache-locality mechanism is confirmed (named,
+not profiled), or that either its ~9-13x or H10's ~2x ratio generalizes
+beyond the one size-matched tenant pair, one cold-query interval, and
+one traffic-skew ratio tested; that H10's "cache dilution from
+interleaving" explanation for the magnitude gap between H9 and H10 is
+confirmed (disclosed, not profiled); that H4's own throughput/latency
+finding has been re-tested under a realistic skewed demand mix (H10
+measured a DIFFERENT size-matched pair's latency under skew, not H4's
+own breadth-at-fixed-demand claim); that H11's small n=2,000
+throughput dip/p99 uptick has a confirmed cause (a memory-pressure
+hypothesis tied to RSS nearing this run's safety cap is disclosed, not
+profiled), or that H11's result generalizes beyond the one quiet
+tenant, one noisy-worker-count, and one query type (facet scan) tested;
+that "tenants per envelope at target SLO" or "backend requests avoided"
+(both explicitly named in Issue #21's Phase 7) have been answered —
+this is a first pass on memory (including at scale), pairwise
+isolation, fixed-tenant throughput-under-breadth (now including at
+memory-scale tenant counts), process-baseline floors (short-lived, and
+a longer-resident window that decelerates toward but has not been
+proven to fully reach a bound), a first cold-vs-hot latency comparison
+under two different designs, and a first economic-model synthesis
+only.
 
 **Decision: PROCEED** to the next Phase 7 sub-experiment (combining
-H2/H4 with the economic model for an SLO-conditioned tenant count; or
-combining Phase 3/4's admission-rate evidence for "backend requests
+H2/H4/H11 with the economic model for an SLO-conditioned tenant count;
+or combining Phase 3/4's admission-rate evidence for "backend requests
 avoided") without changing the underlying commerce-native mechanism.
 The favorable, adversarially-corrected H1 result, its clean confirmation
-at scale via H5, the robust H2/H4 results, H6/H7/H8's real, reproduced,
+at scale via H5, the robust H2/H4 results (H4 now itself confirmed at
+memory-scale tenant counts via H11), H6/H7/H8's real, reproduced,
 now-stability-confirmed measurement of the pooling advantage this
 project's own thesis assumed, the first economic cost-per-tenant model,
 H9's honestly-scaled cold-tenant finding, and H10's honest replication

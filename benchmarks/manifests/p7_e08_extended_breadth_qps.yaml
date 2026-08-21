@@ -1,0 +1,63 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E08
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  H4 (P7-E01) confirmed a fixed tenant's own query throughput/latency
+  does not degrade as the BREADTH of other, distinct, concurrently-
+  touched tenants grows -- but only up to WANDS' real 54-other-tenant
+  ceiling. This experiment extends that test via H5/P7-E02's
+  controlled-stress tenant-count replication methodology (real
+  55-tenant population repeated end to end, `-copyN` suffixed to stay
+  distinct) out to 2,000 total tenants -- a 36x larger breadth,
+  matching the order of magnitude H5 reached for memory. Across 3
+  independent runs, quiet-tenant throughput at n=2,000 vs. the n=55
+  baseline drops only 6-9% (ratio 0.905-0.942) and p99 grows only 5-8%
+  (ratio 1.055-1.085) -- both far inside the pre-registered pass bar
+  (throughput drop <20%, p99 growth <2x). H11 CONFIRMED in all 3 runs.
+  A small, consistent throughput dip/p99 uptick appears specifically at
+  n=2,000 in every run, coinciding with RSS reaching ~91% of this run's
+  6GB self-process safety cap -- disclosed as an unconfirmed candidate
+  memory-pressure effect, not a claim, since it does not change the
+  verdict. See docs/experiments/PHASE7_LOG.md for the full H11
+  hypothesis and result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p7_e08_extended_breadth_qps.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e08_extended_breadth_qps
+run_command: ./target/release/p7_e08_extended_breadth_qps dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real 55-tenant category_depth_1 population, replicated via
+    phase7_eval::tenants::replicate_tenants with synthetic per-copy
+    tenant names ("Rugs-copy0" held as the fixed quiet tenant)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  disclosure: >
+    Controlled-stress replication of TENANT COUNT (same methodology and
+    disclosure as P7-E02/H5) -- explicitly not a claim about organic
+    tenant growth.
+
+engine:
+  native: commerce_core::index::CatalogIndex, one fixed quiet tenant
+    queried continuously by a dedicated loop while 3 noisy worker
+    threads round-robin through every other replicated tenant, at each
+    of 5 breadth levels (55, 200, 500, 1000, 2000 total tenants), up to
+    a 6GB self-process-RSS safety cap (never tripped)
+
+workload:
+  selection: quiet tenant's own facet-scan query (same operation as
+    P7-E01/H4), measured for a fixed 4-second window per breadth level;
+    noisy threads continuously round-robin all other tenants'
+    facet-scans for the same window
+  repetitions: 3 independent external process runs
+
+seed: "n/a (deterministic real-data replication, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e08_extended_breadth_run1/
+  - results_run{1,2,3}.csv
+  - console_run{1,2,3}.log
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H11 hypothesis and result.
