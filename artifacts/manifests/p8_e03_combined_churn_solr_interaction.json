@@ -3,7 +3,7 @@
   "phase": "8",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p8_e03_combined_churn_solr_interaction.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "c77bc858890da7beb5e5b1cc5da77ff027d84ab4",
   "dataset": {
     "name": "WANDS native quiet tenant 'Rugs' + churn tenant 'Furniture'; Solr cores wands_bench (quiet) + wands_bench_20x (noisy), same pair as H15/H18"
   },

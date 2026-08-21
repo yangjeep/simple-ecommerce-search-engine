@@ -29,7 +29,7 @@ claim: >
   docs/experiments/PHASE8_LOG.md for the full H19 hypothesis and
   result.
 
-git_sha: PENDING
+git_sha: c77bc858890da7beb5e5b1cc5da77ff027d84ab4
 binary: crates/phase7-eval/src/bin/p8_e03_combined_churn_solr_interaction.rs
 build_command: cargo build --release -p phase7-eval --bin p8_e03_combined_churn_solr_interaction
 run_command: ./target/release/p8_e03_combined_churn_solr_interaction dataset_cache/wands/catalog.jsonl http://localhost:8983/solr
