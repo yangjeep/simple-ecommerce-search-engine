@@ -469,6 +469,72 @@ impl CatalogIndex {
         counts
     }
 
+    /// Phase 6A (Issue #23): `category` and `product_type` are, like
+    /// `brand`, first-class structural fields with their own dedicated
+    /// `category_bitmaps`/`product_type_bitmaps` indexes -- populated by
+    /// every catalog since `CatalogIndex::build` has always built them,
+    /// but never exercised with real, non-sentinel values until WANDS
+    /// (ESCI always assigns `CategoryId(0)`/`ProductTypeId(0)`; see
+    /// `round1_eval::catalog`). These four methods complete the same
+    /// global-vocabulary-scan / candidate-scan pair Phase 5 built for
+    /// `brand`, for exactly the same reason: `facet_counts("category", ...)`
+    /// would always return empty, since category/product_type are not
+    /// `enum_bitmaps` attributes.
+    pub fn category_facet_counts(&self, candidates: &RoaringBitmap) -> BTreeMap<CategoryId, u64> {
+        let mut counts = BTreeMap::new();
+        for (&category_id, bm) in &self.category_bitmaps {
+            let count = (candidates & bm).len();
+            if count > 0 {
+                counts.insert(category_id, count);
+            }
+        }
+        counts
+    }
+
+    pub fn category_facet_counts_by_scan(
+        &self,
+        candidates: &RoaringBitmap,
+        catalog: &Catalog,
+    ) -> BTreeMap<CategoryId, u64> {
+        let mut counts = BTreeMap::new();
+        for ord in candidates.iter() {
+            let (product_id, _) = self.ordinals[ord as usize];
+            if let Some(product) = self.lookup_product(catalog, product_id) {
+                *counts.entry(product.category).or_insert(0) += 1;
+            }
+        }
+        counts
+    }
+
+    pub fn product_type_facet_counts(
+        &self,
+        candidates: &RoaringBitmap,
+    ) -> BTreeMap<ProductTypeId, u64> {
+        let mut counts = BTreeMap::new();
+        for (&product_type_id, bm) in &self.product_type_bitmaps {
+            let count = (candidates & bm).len();
+            if count > 0 {
+                counts.insert(product_type_id, count);
+            }
+        }
+        counts
+    }
+
+    pub fn product_type_facet_counts_by_scan(
+        &self,
+        candidates: &RoaringBitmap,
+        catalog: &Catalog,
+    ) -> BTreeMap<ProductTypeId, u64> {
+        let mut counts = BTreeMap::new();
+        for ord in candidates.iter() {
+            let (product_id, _) = self.ordinals[ord as usize];
+            if let Some(product) = self.lookup_product(catalog, product_id) {
+                *counts.entry(product.product_type).or_insert(0) += 1;
+            }
+        }
+        counts
+    }
+
     /// Top-K ranking (Gate 3): correctness-verified hits from `execute`,
     /// scored by summing compiled `Preference` weights and sorted
     /// deterministically (score desc, then product/variant id asc so ties

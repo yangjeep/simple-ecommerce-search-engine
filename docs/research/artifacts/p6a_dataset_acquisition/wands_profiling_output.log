@@ -1,0 +1,152 @@
+=== shape ===
+(42994, 9)
+['product_id', 'product_name', 'product_class', 'category hierarchy', 'product_description', 'product_features', 'rating_count', 'average_rating', 'review_count']
+
+=== null counts ===
+product_id                0
+product_name              0
+product_class          2852
+category hierarchy     1556
+product_description    6008
+product_features          0
+rating_count           9452
+average_rating         9452
+review_count           9452
+dtype: int64
+
+=== product_class ===
+distinct product_class: 860
+product_class
+Area Rugs                   1316
+Accent Chairs               1169
+Beds                        1112
+Coffee & Cocktail Tables    1085
+Floor & Wall Tile            861
+Bar Stools                   775
+Accent Pillows               698
+End Tables                   607
+Desks                        595
+Dining Tables                591
+Wall Art                     586
+Dining Chairs                568
+Bedding Sets                 559
+Curtains & Drapes            553
+Vanities                     534
+Sofa & Console Tables        519
+Dressers & Chests            502
+Cabinet and Drawer Pulls     494
+Wall Décor                   484
+Recliners                    435
+Name: count, dtype: int64
+
+=== category hierarchy depth distribution ===
+_depth
+0     1556
+1      103
+2     1720
+3    16297
+4    16256
+5     6453
+6      609
+Name: count, dtype: int64
+
+=== distinct hierarchy prefixes per depth ===
+depth 1: distinct nodes=55, products with this depth available=41438
+depth 2: distinct nodes=138, products with this depth available=41335
+depth 3: distinct nodes=458, products with this depth available=39615
+depth 4: distinct nodes=806, products with this depth available=23318
+depth 5: distinct nodes=492, products with this depth available=7062
+depth 6: distinct nodes=71, products with this depth available=609
+depth 7: distinct nodes=0, products with this depth available=0
+
+=== product_class vs deepest hierarchy segment: how often do they match? ===
+leaf==product_class: 12186 / 42994 (28.3%)
+second_last==product_class: 4959 / 42994 (11.5%)
+
+=== product_features: key frequency analysis ===
+products with any features: 42994 / 42994
+top 40 most common feature keys:
+  'overallproductweight': 57110 (132.8%)
+  '': 50491 (117.4%)
+  'overallwidth-sidetoside': 46687 (108.6%)
+  'supplierintendedandapproveduse': 42605 (99.1%)
+  'overallheight-toptobottom': 37136 (86.4%)
+  'countryoforigin': 34034 (79.2%)
+  'commercialwarranty': 30534 (71.0%)
+  'overalldepth-fronttoback': 29674 (69.0%)
+  'productwarranty': 29209 (67.9%)
+  'purposefuldistressingtype': 26650 (62.0%)
+  'color': 26295 (61.2%)
+  'uniformpackagingandlabelingregulationsuplrcompliant': 25658 (59.7%)
+  'adultassemblyrequired': 25258 (58.7%)
+  'producttype': 23784 (55.3%)
+  'canadaproductrestriction': 23262 (54.1%)
+  'compositewoodproductcwp': 21801 (50.7%)
+  'warrantylength': 21320 (49.6%)
+  'style': 19221 (44.7%)
+  'dsprimaryproductstyle': 18227 (42.4%)
+  'naturalvariationtype': 17947 (41.7%)
+  'dssecondaryproductstyle': 17699 (41.2%)
+  'levelofassembly': 16986 (39.5%)
+  'fullorlimitedwarranty': 16579 (38.6%)
+  'generalcertificateofconformitygcc': 15871 (36.9%)
+  'productcare': 15802 (36.8%)
+  'weightcapacity': 15125 (35.2%)
+  'installationrequired': 12555 (29.2%)
+  'overalllength-endtoend': 12268 (28.5%)
+  'countryoforigin-additionaldetails': 11783 (27.4%)
+  'californiaproposition65warningrequired': 11634 (27.1%)
+  'primarymaterial': 10860 (25.3%)
+  'upholstered': 10779 (25.1%)
+  'framematerial': 10396 (24.2%)
+  'dswoodtone': 10223 (23.8%)
+  'additionaltoolsrequirednotincluded': 10161 (23.6%)
+  'holidayoccasion': 9864 (22.9%)
+  'shape': 9122 (21.2%)
+  'tscatitlevicompliantformaldehydeemissions': 9098 (21.2%)
+  'carbphaseiicompliantformaldehydeemissions': 9083 (21.1%)
+  'material': 9010 (21.0%)
+
+=== looking for brand/manufacturer/store/price-like keys ===
+  'manufacturedwoodtype': 927
+  'manufacturingtype': 188
+  'topmanufacturedwoodtype': 1674
+  'framemanufacturedwoodtype': 212
+  'seatmanufacturedwoodtype': 94
+  'basemanufacturedwoodtype': 837
+  'perigoldmanufacturergivenproductname': 205
+  'remanufacturedrefurbished': 394
+  'countermanufacturedwoodtype': 30
+  'countertopmanufacturedwoodtype': 50
+  'primarymanufacturedwoodtype': 90
+  'brandspecificfeaturestechnology': 133
+  'backmanufacturedwoodtype': 8
+  'manufacturerspecifictechnology': 32
+  'manufacturerwarrantyparts': 138
+  'manufacturerwarrantylabor': 139
+  'estimatedyearlyoperatingcost': 94
+  'numberoffingerprintsstored': 5
+  'compatibletvbrand': 42
+  'fashionbrand': 1
+  'numberofpinsstored': 6
+  'screenmanufacturedwoodtype': 2
+  'manufacturerproductname': 5
+  'compatiblemixerbrand': 1
+  'countryofmanufacture': 2
+  'brand': 1
+  'collectionandmanufacturergivenname': 2
+  'manufacturerpreferredname': 1
+
+=== looking for a parent/variant-like id column (already know columns above, double-check) ===
+[]
+
+=== rating/review stats (as availability/quality proxy, not price) ===
+        rating_count  average_rating  review_count
+count   33542.000000    33542.000000  33542.000000
+mean      430.270437        4.530126    284.250343
+std      2407.921579        0.509263   1539.611737
+min         1.000000        1.000000      0.000000
+25%         8.000000        4.500000      6.000000
+50%        42.000000        4.500000     31.000000
+75%       195.000000        5.000000    131.000000
+max    109226.000000        5.000000  61362.000000
