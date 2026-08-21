@@ -3,7 +3,7 @@
   "phase": "8",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p8_e02_burst_amplified_solr_contention.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "98fa0f1bbd3cd741c1df00a87cf5e62aef7409c0",
   "dataset": {
     "name": "real WANDS-derived Solr cores: wands_bench (42994, quiet), wands_bench_20x (859880, noisy, same as H15), wands_bench_2x/5x/10x (burst cores)"
   },
