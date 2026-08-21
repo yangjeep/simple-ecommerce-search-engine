@@ -1,0 +1,57 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E05
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  P7-E04/H7 found the largest real tenant's (Furniture) peak in-service
+  RSS still rising, decelerating but not fully plateaued, at the end of
+  a 20-second resident window. Extending that window 9x (to 180 seconds,
+  sampled every 15 seconds instead of 5) shows the growth decelerates
+  sharply: roughly 98% of the total growth happens in the first half of
+  the window, in all 3 independent runs -- a ~35-50x deceleration
+  between first-half and second-half growth. This confirms H7's
+  ~896-1,024 KB peak-growth figure is a stable, decelerating-toward-a-
+  bound measurement, not a transient artifact of too short a window --
+  though a small, real residual tail creep (roughly two orders of
+  magnitude smaller than the initial climb) persists in 2 of 3 runs, so
+  "fully plateaued" is not claimed, only "decelerating toward what looks
+  like a bound." Idle-resident's finding is now confirmed completely
+  stable over the same 9x longer window (zero further growth in every
+  run). See docs/experiments/PHASE7_LOG.md for the full H8 hypothesis
+  and result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p7_e05_extended_duration_overhead.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e05_extended_duration_overhead
+run_command: ./target/release/p7_e05_extended_duration_overhead dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real tenant (Furniture, the largest category_depth_1 by product count)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, built and queried in a
+    long-running (180-second) spawned child OS process
+    (std::process::Command), 4 worker threads, reusing
+    phase7_eval::resident's shared sampling primitives (factored out of
+    P7-E04 specifically so this experiment would not duplicate the
+    mechanism)
+
+workload:
+  selection: 1 idle-resident bare child process (no tenant data, 4
+    parked worker threads) + 1 active-resident child serving real
+    structural queries (facet_scan_once) against Furniture's own data
+    file for the full 180-second window, RSS sampled every 15 seconds
+  repetitions: 3 independent orchestrator runs
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e05_extended_duration_run1/
+  - results_run{1,2,3}.csv
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H8 hypothesis, the
+  pre-registered first-half/second-half deceleration criterion, and the
+  corrected result.

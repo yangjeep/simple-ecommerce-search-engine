@@ -1,0 +1,27 @@
+{
+  "experiment_id": "P7-E05",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e05_extended_duration_overhead.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS real tenant (Furniture, largest category_depth_1)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, in a 180-second long-running spawned child OS process, 4 worker threads"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e05_extended_duration_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E05",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h8_status": "CONFIRMED, reproduced across 3 independent runs",
+    "idle_peak_growth_kb": 244,
+    "idle_second_half_growth_kb": 0,
+    "furniture_peak_growth_kb_range": [1004, 1024],
+    "furniture_first_half_growth_kb_range": [976, 1004],
+    "furniture_second_half_growth_kb_range": [20, 28],
+    "deceleration_ratio_approx": "35-50x",
+    "named_residual": "small, still-positive tail creep in 2 of 3 runs, ~2 orders of magnitude smaller than initial climb"
+  }
+}

@@ -214,11 +214,16 @@ window (rather than exiting immediately) and found the true cost is
 even larger: peak resident RSS grows by an exactly-reproducible 244 KB
 for an idle process and by 196-900 KB for one serving real query
 traffic (scaling with the tenant's own data size), reproduced across 3
-runs — strengthening, not weakening, the pooling-advantage finding.
-Aggregate QPS under a realistic multi-tenant demand mix, a
-longer-duration resident-process run, and a full economic cost model
-combining all of Phase 7's findings remain open for the next Phase 7
-pass.
+runs — strengthening, not weakening, the pooling-advantage finding. A
+further follow-on extended that same resident window 9x (20s -> 180s)
+to check whether the largest real tenant's still-rising RSS curve was a
+stable measurement or an artifact of too short a window: growth
+decelerates sharply toward what looks like a bound (roughly 98% of the
+total growth happens in the first half of the window, in all 3 runs),
+confirming the earlier figure is a stable input rather than a
+measurement-window artifact. Aggregate QPS under a realistic
+multi-tenant demand mix and a full economic cost model combining all of
+Phase 7's findings remain open for the next Phase 7 pass.
 
 ## What this project is not
 

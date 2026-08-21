@@ -63,6 +63,10 @@ same as Phases 0–5:
   spawn-and-exit) resident-process RSS, closing the gap between P7-E03's
   short-lived floor and a real deployed service's actual cost; see
   `PHASE7_DECISION.md`.
+- `p7_e05_extended_duration_overhead.yaml` — a 9x longer resident window
+  confirming P7-E04's still-rising RSS curve for the largest real tenant
+  decelerates toward a plateau rather than growing without bound; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
