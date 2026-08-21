@@ -1,0 +1,73 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6B-E00
+phase: 6B
+issue: 21
+decision_document: PHASE6B_DECISION.md
+claim: >
+  A controlled-stress scale ladder (real WANDS catalog replicated 2x/5x/
+  10x/20x, holding facet cardinality and per-candidate attribute
+  complexity fixed while scaling only candidate-set size) shows that
+  Phase 6A's facet-scan crossover (2,072-2,175 real candidates) is not
+  explained by attribute-map complexity alone: native
+  facet_counts_by_scan's per-1,000-candidate cost grows roughly 2.5x
+  over a 20x candidate-count increase, and every depth-1 checkpoint is
+  in native-loss territory by the 2x tier. A new operator (numeric-range
+  filter on average_rating, untestable in Phase 6A for lack of a price
+  field) shows its own, materially higher real crossover
+  (~57,000-160,000 candidates).
+
+git_sha: aa9a37e
+binary: crates/phase6a-eval/src/bin/p6b_e00_scale_ladder.rs
+build_command: cargo build --release -p phase6a-eval --bin p6b_e00_scale_ladder
+run_command: >
+  ./target/release/p6b_e00_scale_ladder <catalog.jsonl> <solr_base_url>
+  <tier_label> docs/research/artifacts/p6b_e00_scale_ladder_run1/results.csv
+  (run once per tier: 1x against the real catalog/wands_bench core, then
+  2x/5x/10x/20x against scripts/datasets/replicate_wands_scale.py's
+  output and a freshly-indexed Solr core per tier)
+
+dataset:
+  name: WANDS (Wayfair ANnotation Dataset) -- controlled-stress replicated
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  acquisition_script: scripts/datasets/fetch_wands.sh
+  preparation_script: scripts/datasets/prepare_wands.py
+  replication_script: scripts/datasets/replicate_wands_scale.py
+  tiers: [42994, 85988, 214970, 429940, 859880]
+  disclosure: >
+    Tiers beyond 1x are NOT organic data -- every record is a
+    byte-identical copy of a real WANDS record except for a suffixed
+    `id`. Facet cardinality and per-candidate attribute complexity are
+    held fixed by construction; only candidate-set size scales. See
+    PHASE6B_LOG.md's "Methodology" section for the full disclosure and
+    why Issue #23's own "clearly labeled controlled stress datasets"
+    fallback authorizes this design.
+
+engine:
+  native: commerce_core::index::CatalogIndex (facet_counts_by_scan,
+    indexed_candidates with Constraint::Numeric via numeric_index,
+    approximate_size_bytes)
+  baseline: Apache Solr, one fresh core per tier (wands_bench,
+    wands_bench_2x, wands_bench_5x, wands_bench_10x, wands_bench_20x),
+    indexed via scripts/datasets/solr_index_wands.py
+
+workload:
+  selection: identical 7 real depth-1 checkpoints as Phase 6A's own
+    crossover sweep, rerun at every tier; plus a new average_rating
+    numeric-range filter (thresholds 4.0/4.5) and a mixed
+    category+rating request
+  repetitions: 30 (WARMUP=5) per request, per system, per tier
+
+seed: "n/a (deterministic real-data replication, no sampling)"
+
+raw_results: docs/research/artifacts/p6b_e00_scale_ladder_run1/
+  - results.csv (50 rows: 5 tiers x 10 rows/tier)
+  - tier_1x.log, tier_2x.log, tier_5x.log, tier_10x.log, tier_20x.log
+
+analysis: printed directly by the binary per tier, appended to one
+  combined CSV; correctness gate (50/50 true candidate-count matches
+  across all tiers) verified before any timing claim; one tooling bug
+  found and fixed (solr_index_wands.py's non-idempotent add-copy-field
+  schema setup) -- see docs/experiments/PHASE6B_LOG.md. Adversarially
+  reviewed (3 independent lenses: confound analysis, statistical rigor,
+  honesty/scope) before promotion to PHASE6B_DECISION.md.

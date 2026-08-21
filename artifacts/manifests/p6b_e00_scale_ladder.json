@@ -1,0 +1,34 @@
+{
+  "experiment_id": "P6B-E00",
+  "phase": "6B",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6b_e00_scale_ladder.yaml",
+  "git_sha": "aa9a37e",
+  "dataset": {
+    "name": "WANDS (Wayfair ANnotation Dataset) -- controlled-stress replicated",
+    "source": "https://github.com/wayfair/WANDS",
+    "pinned_commit": "3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5",
+    "tiers_products": [42994, 85988, 214970, 429940, 859880],
+    "disclosure": "tiers beyond 1x are byte-identical replicas of real records (id suffixed only); facet cardinality and per-candidate attribute complexity held fixed by construction, not organic growth"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex (facet_counts_by_scan, numeric_index)",
+    "baseline": "Apache Solr, one fresh core per tier"
+  },
+  "repetitions": 30,
+  "warmup": 5,
+  "raw_results_path": "docs/research/artifacts/p6b_e00_scale_ladder_run1/",
+  "analysis_version": "docs/experiments/PHASE6B_LOG.md#P6B-E00",
+  "decision": "PHASE6B_DECISION.md",
+  "headline_result": {
+    "real_1x_facet_crossover_candidates_low": 2072,
+    "real_1x_facet_crossover_candidates_high": 2175,
+    "reproduces_phase6a_finding": true,
+    "native_loss_by_tier_2x_onward": true,
+    "facet_scan_ms_per_1000_candidates_1x": 0.81,
+    "facet_scan_ms_per_1000_candidates_20x": 2.05,
+    "numeric_range_crossover_candidates_low": 57000,
+    "numeric_range_crossover_candidates_high": 160000,
+    "correctness_rows_matching": "50/50"
+  }
+}
