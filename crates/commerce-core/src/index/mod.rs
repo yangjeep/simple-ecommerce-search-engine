@@ -788,10 +788,12 @@ impl CatalogIndex {
     /// Approximate on-heap index size in bytes (Gate 7's "index size"
     /// metric): the sum of every `RoaringBitmap`'s
     /// [`RoaringBitmap::serialized_size`] plus the flat byte size of the
-    /// ordinal/numeric/price vectors. This is a comparable-across-runs
-    /// estimate, not a precise allocator-level accounting — `HashMap`
-    /// bucket overhead, `String` heap allocations (attribute/value names),
-    /// and allocator bookkeeping are not itemized.
+    /// ordinal/numeric/price vectors and the Issue #21 Phase 6D
+    /// ordinal/dictionary facet-counting structures (see
+    /// [`Self::approximate_ordinal_facet_bytes`]). This is a
+    /// comparable-across-runs estimate, not a precise allocator-level
+    /// accounting — `HashMap` bucket overhead and allocator bookkeeping
+    /// are not itemized.
     pub fn approximate_size_bytes(&self) -> usize {
         let bitmap_bytes: usize = self
             .enum_bitmaps
@@ -832,7 +834,60 @@ impl CatalogIndex {
             .sum();
         let price_bytes = self.price_index.len() * std::mem::size_of::<(i64, Ordinal)>();
 
-        bitmap_bytes + ordinals_bytes + numeric_bytes + price_bytes
+        bitmap_bytes + ordinals_bytes + numeric_bytes + price_bytes + self.ordinal_facet_bytes()
+    }
+
+    /// Issue #21 Phase 6D (P6D-E00/E02): approximate on-heap bytes used by
+    /// *only* the ordinal/dictionary facet-counting structures added this
+    /// phase (`enum_dictionary`/`enum_value_ordinal`/`enum_columns` for
+    /// generic `Enum` attributes, plus the three typed-ID dictionaries/
+    /// reverse-maps/columns for `brand`/`category`/`product_type`) --
+    /// broken out from [`Self::approximate_size_bytes`] so this phase's
+    /// own memory-cost claim (named as an unresolved, estimated-not-
+    /// measured risk in `PHASE6D_DECISION.md`) can be reported as a real,
+    /// measured number instead. Same approximation discipline as
+    /// `approximate_size_bytes`: flat byte sizes and string lengths, not
+    /// precise allocator/`HashMap`-bucket accounting.
+    pub fn approximate_ordinal_facet_bytes(&self) -> usize {
+        self.ordinal_facet_bytes()
+    }
+
+    fn ordinal_facet_bytes(&self) -> usize {
+        // `enum_columns`/`*_column` are the dominant term (one `u32` per
+        // variant ordinal per faceted field); the dictionary strings/
+        // reverse-maps are small, proportional to distinct-value count,
+        // not variant count.
+        let enum_dictionary_bytes: usize = self
+            .enum_dictionary
+            .values()
+            .map(|values| values.iter().map(String::len).sum::<usize>())
+            .sum();
+        let enum_value_ordinal_bytes: usize = self
+            .enum_value_ordinal
+            .values()
+            .map(|m| {
+                m.keys().map(String::len).sum::<usize>() + m.len() * std::mem::size_of::<u32>()
+            })
+            .sum();
+        let enum_columns_bytes: usize = self
+            .enum_columns
+            .values()
+            .map(|v| v.len() * std::mem::size_of::<u32>())
+            .sum();
+        let typed_ordinal_bytes = (self.brand_dictionary.len() * std::mem::size_of::<BrandId>())
+            + (self.brand_ordinal_of.len()
+                * (std::mem::size_of::<BrandId>() + std::mem::size_of::<u32>()))
+            + (self.brand_column.len() * std::mem::size_of::<u32>())
+            + (self.category_dictionary.len() * std::mem::size_of::<CategoryId>())
+            + (self.category_ordinal_of.len()
+                * (std::mem::size_of::<CategoryId>() + std::mem::size_of::<u32>()))
+            + (self.category_column.len() * std::mem::size_of::<u32>())
+            + (self.product_type_dictionary.len() * std::mem::size_of::<ProductTypeId>())
+            + (self.product_type_ordinal_of.len()
+                * (std::mem::size_of::<ProductTypeId>() + std::mem::size_of::<u32>()))
+            + (self.product_type_column.len() * std::mem::size_of::<u32>());
+
+        enum_dictionary_bytes + enum_value_ordinal_bytes + enum_columns_bytes + typed_ordinal_bytes
     }
 }
 

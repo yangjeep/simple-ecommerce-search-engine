@@ -181,13 +181,24 @@ and is the version committed.
    advantage. Whether this narrowing continues, plateaus, or reverses
    beyond the ~320,780-candidate ceiling tested here is itself now the
    open question (see "What would be built next").
-3. **The additional per-attribute memory cost
-   (`enum_dictionary`/`enum_value_ordinal`/`enum_columns`) was not
-   measured with a dedicated RSS benchmark** (Phase 7's own established
-   methodology). A rough analytical estimate (a `Vec<u32>` column sized
-   to total variant count per faceted attribute, plus a small
-   dictionary/reverse-map) is cheap relative to Phase 7's own measured
-   per-tenant costs, but not independently confirmed.
+3. **Resolved by P6D-E03**: the earlier ~172 KB figure was an
+   unmeasured analytical estimate, and `approximate_size_bytes()` — this
+   whole campaign's canonical, 21-file-referenced memory-size metric —
+   had silently omitted every Phase 6D ordinal-facet structure entirely
+   (a real accounting gap, not just an unmeasured one). Both are now
+   fixed: `approximate_size_bytes()` accounts for the new structures, and
+   a new `approximate_ordinal_facet_bytes()` method isolates their
+   contribution. Measured on the real WANDS catalog (42,994 products,
+   `brand`/`category`/`product_type` columns plus any `Enum` attribute
+   columns actually indexed): **2,876,248 bytes total for the ordinal-
+   facet structures, 26.2% of the whole index's 10,984,302 measured
+   bytes, 66.90 bytes/product** — roughly 16.7x the earlier ~172 KB
+   estimate, still small in absolute terms but a materially larger share
+   of the index than the estimate implied. This is not a dedicated
+   RSS/allocator-level benchmark (Phase 7's own methodology); it is the
+   same flat byte-size/string-length approximation
+   `approximate_size_bytes()` has always used, not allocator bookkeeping
+   or `HashMap` bucket overhead.
 4. **`MultiEnum` attributes are not supported by the ordinal path at
    all**, by design (matching `facet_counts_by_scan`'s existing scope,
    which also silently skips `MultiEnum`) — a real, disclosed scope
@@ -242,10 +253,13 @@ and is the version committed.
    candidate counts and facet cardinalities — the Phase 6B replication
    methodology deliberately holds facet cardinality fixed, so this
    would need a genuinely larger real catalog, not further replication.
-4. **A dedicated RSS/memory measurement** for the new per-attribute
-   dictionary/column structures, using Phase 7's own established
-   methodology, to replace the analytical estimate above with a real
-   number.
+4. **A dedicated RSS/allocator-level memory measurement** for the new
+   per-attribute dictionary/column structures, using Phase 7's own
+   established RSS methodology — P6D-E03 replaced the analytical
+   estimate with a real, measured flat-byte-size number
+   (`approximate_ordinal_facet_bytes()`), but a true RSS delta
+   (`/proc` before/after, matching Phase 7's own convention) has still
+   not been run for this specific structure set.
 5. **Profile the mechanism** (JFR/perf/valgrind) to confirm the
    `BTreeMap`-clone-removal explanation, and to characterize how much of
    the remaining ~15-238μs the ordinal method itself still costs (array
@@ -325,7 +339,11 @@ not pinpointed); that `brand`/`category` have real-data (not just
 unit-test) benchmark coverage (they do not); that it holds beyond the
 ~320,780 candidates tested for `color`, or under organic (not
 replication-scaled) facet cardinality growth; that the new structures'
-memory cost is negligible (estimated, not measured); that `MultiEnum`
+memory cost is negligible via a dedicated RSS/allocator-level
+benchmark — P6D-E03 replaced the earlier unmeasured estimate with a
+real flat-byte-size measurement (2,876,248 bytes, 26.2% of the whole
+index, on the real WANDS catalog), but that is not the same thing as an
+RSS delta; that `MultiEnum`
 attributes are covered (explicitly out of scope); that any real
 query-serving path has been changed to prefer either method by default
 (it has not, and P6D-E02 shows an unconditional default would be wrong

@@ -572,3 +572,25 @@ fn approximate_size_grows_with_more_indexed_data() {
         "indexing more products/variants should not shrink the reported size"
     );
 }
+
+#[test]
+fn approximate_ordinal_facet_bytes_is_accounted_for_within_approximate_size_bytes() {
+    // P6D-E03: approximate_size_bytes() silently omitted every Phase 6D
+    // ordinal/dictionary facet structure until this fix. Guard that
+    // regression directly: the ordinal-facet contribution must be nonzero
+    // (these fixtures index brand/category/product_type on every product)
+    // and must never exceed the whole-index total it is a component of.
+    let small = CatalogIndex::build(&variant_safety_catalog());
+    let large = CatalogIndex::build(&combined_catalog());
+
+    assert!(
+        small.approximate_ordinal_facet_bytes() > 0,
+        "typed-ID dictionaries/columns should be nonzero once brand/category/product_type are indexed"
+    );
+    assert!(small.approximate_ordinal_facet_bytes() <= small.approximate_size_bytes());
+    assert!(large.approximate_ordinal_facet_bytes() <= large.approximate_size_bytes());
+    assert!(
+        large.approximate_ordinal_facet_bytes() >= small.approximate_ordinal_facet_bytes(),
+        "indexing more products/variants should not shrink the ordinal-facet byte count"
+    );
+}

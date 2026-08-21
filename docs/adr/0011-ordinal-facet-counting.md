@@ -111,6 +111,23 @@ byte-for-byte equality with the existing scan method rather than with
 - No new dependency: built entirely from `std::collections::HashMap`/
   `Vec`, already used throughout `commerce-core`; `roaring` (the crate's
   sole runtime dependency) is unaffected.
+- **A real accounting gap, found and fixed (P6D-E03):**
+  `CatalogIndex::approximate_size_bytes` — this whole research
+  campaign's canonical, cross-phase memory-size metric, referenced from
+  `SCALE_UP_DECISION.md`, `PHASE7_DECISION.md`, and Phase 2/7's own
+  memory experiments — had silently omitted every structure this ADR
+  added (`enum_dictionary`/`enum_value_ordinal`/`enum_columns` and the
+  three typed-ID dictionary/reverse-map/column groups). Fixed by
+  extracting the accounting into a private `ordinal_facet_bytes()`
+  helper, folded into `approximate_size_bytes`, and exposed on its own
+  via a new `approximate_ordinal_facet_bytes()` method. Measured on the
+  real WANDS catalog (42,994 products): **2,876,248 bytes**, 26.2% of
+  the whole index's 10,984,302 measured bytes, 66.90 bytes/product —
+  about 16.7x the earlier ~172 KB analytical estimate. Guarded by a new
+  correctness test
+  (`approximate_ordinal_facet_bytes_is_accounted_for_within_approximate_size_bytes`)
+  asserting the component is nonzero, never exceeds the whole-index
+  total, and does not shrink as more data is indexed.
 
 ## Alternatives considered
 

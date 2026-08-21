@@ -184,6 +184,15 @@ same as Phases 0–5:
   trades a fixed, dictionary-size-proportional per-call cost for
   per-candidate savings that shrink when there's no clone to remove;
   see `PHASE6D_DECISION.md`.
+- `p6d_e03_ordinal_facet_memory.yaml` — this project's own
+  adversarial-review loop rule applied to its own prior commits, not a
+  new external baseline: `approximate_size_bytes` (the campaign's
+  canonical, 21-file-referenced memory-size metric) had silently
+  omitted every structure P6D-E00/E02 added. Fixed, with a new
+  `approximate_ordinal_facet_bytes()` accessor and correctness test.
+  Real measurement on the WANDS catalog: 2,876,248 bytes (26.2% of the
+  whole index, 66.90 bytes/product) — ~16.7x the earlier ~172 KB
+  unmeasured estimate; see `PHASE6D_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

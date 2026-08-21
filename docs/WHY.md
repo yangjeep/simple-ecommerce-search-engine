@@ -275,11 +275,26 @@ expensive, that fixed cost can dominate. This does not contradict the
 for this technique and when not to, which is a more useful outcome than
 an unqualified "always faster" claim would have been. Real limitations
 remain (the crossover point is bracketed, not pinpointed; `brand`/
-`category` have only unit-test coverage; memory cost estimated not
-measured; no query-serving path yet wired to prefer either strategy;
-organic growth beyond the replication ladder untested), but the core
-question this whole four-phase thread asked is answered, with its real
-boundary now characterized rather than assumed away.
+`category` have only unit-test coverage; no query-serving path yet
+wired to prefer either strategy; organic growth beyond the replication
+ladder untested), but the core question this whole four-phase thread
+asked is answered, with its real boundary now characterized rather than
+assumed away.
+
+**The campaign's own adversarial-review discipline then caught a real
+gap in its own instrumentation (P6D-E03).** `approximate_size_bytes` —
+the memory-size metric this whole project has used since Phase 2,
+referenced across 21 files including `SCALE_UP_DECISION.md` and
+`PHASE7_DECISION.md` — had silently omitted every structure Phase 6D
+added. Fixed, with a new `approximate_ordinal_facet_bytes()` accessor
+and a correctness test guarding the omission from recurring. The real
+measured number on the WANDS catalog — 2,876,248 bytes, 26.2% of the
+whole index, 66.90 bytes/product — is about 16.7x the earlier ~172 KB
+analytical estimate: still small next to Phase 7's own per-tenant costs
+in absolute terms, but a materially larger share of the index than the
+unmeasured estimate implied, and a reminder that an "estimated, not
+measured" caveat is itself a real, actionable gap this loop is meant to
+close, not a permanent asterisk.
 
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more

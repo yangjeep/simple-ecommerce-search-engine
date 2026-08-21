@@ -328,6 +328,14 @@ fn main() {
 
     println!("building commerce_core structural index...");
     let index = CatalogIndex::build(&ingested.catalog);
+    let n_products = ingested.catalog.products.len();
+    let index_bytes = index.approximate_size_bytes();
+    let ordinal_facet_bytes = index.approximate_ordinal_facet_bytes();
+    println!(
+        "index size: approx_size={index_bytes} bytes total, ordinal_facet_bytes={ordinal_facet_bytes} bytes ({:.1}% of total, {:.2} bytes/product) -- P6D-E03 real measurement replacing the earlier ~172KB estimate",
+        100.0 * ordinal_facet_bytes as f64 / index_bytes as f64,
+        ordinal_facet_bytes as f64 / n_products as f64
+    );
 
     println!("checking Solr ({solr_base_url})...");
     let ping = solr_num_found(&solr_base_url, &[], 0, 0, None);

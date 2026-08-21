@@ -420,3 +420,91 @@ to measurement-noise territory for a single sample, though the direction
 was consistent across all 3 independent runs. The mechanism (dictionary-
 size-proportional array allocation as the fixed cost) is inferred from
 the code's own structure, not independently profiled.
+
+## P6D-E03: fix a real gap in the campaign's own memory-size metric, replace the ~172KB estimate with a measured number
+
+**How this was found**: applying this project's own adversarial-review
+loop rule to my own prior commits, not to a new external baseline.
+`CatalogIndex::approximate_size_bytes` is the canonical, cross-phase
+memory-size metric this entire research campaign uses -- referenced
+from `SCALE_UP_DECISION.md`, `PHASE7_DECISION.md`, and the Phase 2/7
+memory-representation experiments (21 files total). Reading it after
+P6D-E02 landed showed it summed `enum_bitmaps`/`bool_bitmaps`/
+`brand_bitmaps`/`product_type_bitmaps`/`category_bitmaps`/
+`lexical_postings`/`ordinals`/`numeric_index`/`price_index` -- every
+structure that existed *before* Phase 6D -- but never touched
+`enum_dictionary`, `enum_value_ordinal`, `enum_columns`, or the three
+typed-ID dictionary/reverse-map/column groups P6D-E00/E02 added. This is
+a real accounting gap in a load-bearing metric, not a documentation
+nit: any future memory claim computed from `approximate_size_bytes` on
+an index built with these fields would have silently undercounted.
+
+**Hypothesis**: fixing the omission and adding a dedicated
+`approximate_ordinal_facet_bytes()` accessor will (a) not change any
+existing test's pass/fail outcome for indexes built before Phase 6D's
+fields existed in meaningful volume, and (b) produce a real measured
+number for the ordinal-facet structures' memory footprint that differs
+materially from the earlier ~172 KB analytical estimate (named as an
+unresolved risk in this log's own P6D-E00 entry, and in
+`PHASE6D_DECISION.md` items 3-4 and the P6D-E02 "does not claim"
+paragraph), since that estimate covered only a `Vec<u32>` column per
+attribute and never accounted for the typed-ID dictionaries/reverse-maps
+or the `brand`/`category`/`product_type` columns P6D-E02 added on top.
+
+**Design**: extracted the missing accounting into a private
+`ordinal_facet_bytes()` helper (flat byte sizes and string lengths, the
+same approximation discipline `approximate_size_bytes` has always used
+-- not allocator/`HashMap`-bucket-level accounting), folded its result
+into `approximate_size_bytes`, and exposed it standalone via a new
+public `approximate_ordinal_facet_bytes()` method. Added a new
+correctness test,
+`approximate_ordinal_facet_bytes_is_accounted_for_within_approximate_size_bytes`,
+asserting: the ordinal-facet byte count is nonzero once brand/category/
+product_type are indexed; it never exceeds the whole-index total it is
+a component of; and it does not shrink as more products/variants are
+indexed. Extended `p6a_e00_wands_vs_native_eval` (the same real-WANDS-
+catalog binary P6D-E00/E02 both used) to print `approximate_size_bytes`
+and `approximate_ordinal_facet_bytes` right after building the index, so
+the number comes from the same real catalog build every other P6D
+finding in this log used, not a synthetic fixture.
+
+**Result**: `cargo test -p commerce-core --all-features` passes 18/18 in
+`physical_index.rs` (17 pre-existing + 1 new), all other workspace tests
+unaffected. On the real WANDS catalog (42,994 products, real
+`brand`/`category`/`product_type` plus any `Enum` attribute columns
+actually indexed by `catalog_ingest::build_catalog`):
+
+| Metric | Value |
+|---|---|
+| `approximate_size_bytes()` (whole index) | 10,984,302 bytes |
+| `approximate_ordinal_facet_bytes()` (Phase 6D structures only) | 2,876,248 bytes |
+| Ordinal-facet share of whole index | 26.2% |
+| Ordinal-facet bytes per product | 66.90 |
+
+The real measured number (2,876,248 bytes, ~2.74 MiB) is **~16.7x the
+earlier ~172 KB analytical estimate**. The direction of the error is
+consistent with the estimate's own stated scope: it accounted for one
+`Vec<u32>` column per faceted attribute at WANDS' 1x scale, but not the
+typed-ID dictionaries/reverse-maps P6D-E02 added, not the
+`enum_value_ordinal` reverse-map's string-keyed entries, and not
+multiple `Enum` attribute columns if more than the ~2 originally
+envisioned are actually populated by real catalog ingestion. In
+absolute terms 2.74 MiB remains small next to Phase 7's own measured
+per-tenant memory costs -- the qualitative "cheap relative to Phase 7"
+conclusion is not overturned -- but the specific number was wrong by
+more than an order of magnitude, and reporting an unmeasured estimate as
+if it were a real accounting had let a genuine metric gap go unnoticed
+until this pass.
+
+**Named limitations**: this is still a flat byte-size measurement, not
+a dedicated RSS/allocator-level benchmark (Phase 7's own established
+methodology for memory claims) -- `HashMap` bucket overhead, allocator
+padding/fragmentation, and `Vec` over-allocation are not itemized, so
+the true resident-memory delta could differ from 2,876,248 bytes in
+either direction. Measured only at WANDS' natural 1x scale, not across
+Phase 6B's scale ladder -- whether the ordinal-facet share of total
+index size (26.2%) grows, shrinks, or holds steady as candidate/variant
+count scales is untested. Measured only for the fields real WANDS
+ingestion actually populates; a catalog with many more distinct `Enum`
+attributes indexed would carry a larger `enum_dictionary`/
+`enum_value_ordinal`/`enum_columns` share than observed here.
