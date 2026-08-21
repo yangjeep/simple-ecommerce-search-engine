@@ -202,10 +202,15 @@ to 6,500 tenants (~4.93M products) showed per-product memory cost
 staying within 0.4% across a 65x range, with no sign of degradation
 before a self-imposed safety cap. Cross-tenant latency isolation held
 robustly across repeated runs, both for pairwise contention and for
-breadth of concurrently-touched tenants. All of this is explicitly
-scoped to a single-process measurement — cross-process fixed cost and
-aggregate QPS under a realistic demand mix remain open for the next
-Phase 7 pass.
+breadth of concurrently-touched tenants. A follow-on measurement then
+spawned actual separate OS processes to test this project's own opening
+claim directly: pooling avoids a real, measured per-process baseline
+(~2.1-2.2 MB, reproduced across 3 runs) that a one-process-per-tenant
+deployment would pay once per tenant — the first real evidence for the
+statistical-multiplexing thesis this document opens with, rather than an
+assumed advantage. A genuinely long-running resident process's real
+overhead (versus this short-lived-process floor) and aggregate QPS under
+a realistic demand mix remain open for the next Phase 7 pass.
 
 ## What this project is not
 

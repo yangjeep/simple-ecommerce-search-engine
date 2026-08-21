@@ -1,0 +1,5 @@
+condition,tenant_name,tenant_products,baseline_rss_kb,with_tenant_rss_kb,tenant_marginal_rss_kb
+bare_process_mean,,,2144.4,,
+one_tenant_process,Furniture,16039,2136,53100,50964
+one_tenant_process,Faux Plants and Trees,5,2168,2344,176
+one_tenant_process,Water Filter Pitchers,1,2140,2324,184

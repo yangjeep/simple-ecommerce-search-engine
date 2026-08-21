@@ -55,6 +55,10 @@ same as Phases 0–5:
 - `p7_e02_packing_ceiling.yaml` — controlled-stress tenant-count
   replication testing the packing ceiling (H3) by proxy; see
   `PHASE7_DECISION.md`.
+- `p7_e03_cross_process_fixed_cost.yaml` — real per-OS-process baseline
+  overhead vs. in-process pooling, the first measured test of
+  `docs/WHY.md`'s statistical-multiplexing thesis; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

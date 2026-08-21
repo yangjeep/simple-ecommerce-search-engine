@@ -1,0 +1,46 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E03
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  A real, consistent per-OS-process baseline (~2.1-2.2 MB, reproduced
+  across 3 independent runs) exists that a one-process-per-tenant
+  deployment model pays once PER TENANT, unlike H1/H5's pooled
+  in-process design (crates/phase7-eval/src/bin/p7_e00_tenant_packing.rs,
+  p7_e02_packing_ceiling.rs) which pays it once TOTAL. That baseline
+  alone equals the in-process pooled marginal cost of ~1,700 products'
+  worth of tenant data. This is the first real, measured evidence for
+  docs/WHY.md's opening "statistical multiplexing" thesis. Two
+  implementation bugs (materializing all 55 tenants before selecting
+  one; parsing the entire shared catalog file regardless of which
+  tenant was requested) were self-caught and fixed before trusting any
+  number -- see docs/experiments/PHASE7_LOG.md.
+
+git_sha: (fill in after commit)
+binary: crates/phase7-eval/src/bin/p7_e03_cross_process_fixed_cost.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e03_cross_process_fixed_cost
+run_command: ./target/release/p7_e03_cross_process_fixed_cost dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real tenants (largest/middle/smallest by category_depth_1 size)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, built in short-lived
+    spawned child OS processes (std::process::Command)
+
+workload:
+  selection: 20 bare child processes (no tenant data, pure baseline) +
+    3 children each loading exactly one real tenant's own data file
+  repetitions: 3 independent orchestrator runs
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e03_cross_process_run1/
+  - results_run{1,2,3}.csv
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H6 hypothesis, both
+  self-caught bugs, and the corrected result.

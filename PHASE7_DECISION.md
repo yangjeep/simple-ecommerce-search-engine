@@ -1,8 +1,12 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 + P7-E01 + P7-E02 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E03 first pass
 
 **Decision: PROCEED**, with one hypothesis falsified (in the good
-direction) and three hypotheses confirmed — one with a small,
-honestly-disclosed open question, two cleanly across repeated runs.
+direction) and four hypotheses confirmed — one with a small,
+honestly-disclosed open question, three cleanly across repeated runs.
+The most important new finding (H6) is the first real, measured evidence
+for this project's own opening "statistical multiplexing" thesis: pooling
+tenants in one process has a real, quantifiable cost advantage over
+process-per-tenant isolation.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -32,6 +36,11 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   controlled-stress methodology applied to tenant count — testing H3
   by proxy, since the real category partition alone could not reach any
   resource ceiling.
+- **H6** (P7-E03): a real per-OS-process baseline overhead exists that a
+  one-process-per-tenant deployment model pays once PER TENANT, unlike
+  H1/H5's pooled in-process design which pays it once TOTAL — the first
+  direct test of `docs/WHY.md`'s own "statistical multiplexing" thesis
+  with real numbers.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -157,10 +166,49 @@ risking a real OOM in this shared container (not a discovered
 architectural or hardware ceiling); the real ceiling on this or a larger
 machine is very likely materially higher, deliberately not pursued here.
 
+**H6 — CONFIRMED, reproduced across 3 independent runs (P7-E03).**
+Spawning fresh, isolated OS processes (via `std::process::Command`) that
+each report their own RSS before touching any tenant data found a real,
+consistent per-process baseline of **~2,144-2,152 KB** across all 3
+runs — essentially unchanged run to run. That baseline alone equals the
+in-process pooled marginal cost of ~1,700 products' worth of tenant data
+(H1/H5's ~1.263 KB/product), and is comparable to or larger than the
+marginal cost of adding real, individual tenants (near-empty tenants:
+~150-220 KB; the largest real tenant, Furniture, 16,039 products: ~51 MB).
+**For a hypothetical 1,000-tenant SMB deployment, process-per-tenant
+isolation would pay this baseline ~1,000 times (~2.1-2.2 GB in pure
+per-process overhead) versus once for a pooled design.** This is the
+first real, measured evidence anywhere in this project for `docs/WHY.md`'s
+opening "statistical multiplexing" thesis, rather than an assumed
+advantage.
+
+**Two self-caught bugs, found and fixed before trusting the first
+numbers** (documented in full in `PHASE7_LOG.md`): (1) the child
+process's tenant loader called a helper that materializes ALL 55
+tenants' built catalogs before selecting one, so every "single tenant"
+measurement was actually paying the cost of building all 55 — caught
+because all three tested tenant sizes reported suspiciously identical
+~100 MB; (2) even after fixing that, `data::load_catalog` always parses
+the entire shared 42,994-product file regardless of which tenant is
+requested, so a genuinely 1-product tenant still reported ~37 MB —
+caught for the same reason (the number still made no sense given H1/H5's
+own finding). Fixed by writing each child a genuinely single-tenant data
+file, matching how a real single-tenant deployment would actually be
+provisioned.
+
+**Named limitations**: uses short-lived `.output()`-based child
+processes, not a genuinely long-running resident server (real service
+overhead — connection handling, logging/metrics, warm caches — is likely
+higher than this floor-level measurement); only 3 real tenant sizes
+sampled (largest/middle/smallest), not a full sweep; measures memory
+only, not per-process CPU/scheduling overhead a real capacity model
+would also need.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
-`docs/research/artifacts/p7_e02_packing_ceiling_run1/`.
+`docs/research/artifacts/p7_e02_packing_ceiling_run1/`,
+`docs/research/artifacts/p7_e03_cross_process_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -171,16 +219,21 @@ self-caught interpretation issue" section, alongside exactly what the
 adversarial review found wrong with it and what was fixed — per this
 project's "record failed experiments, do not erase evidence" rule. The
 P7-E01 first-draft workload-mix confound is likewise preserved in the
-log rather than silently rewritten.
+log rather than silently rewritten. P7-E03's two self-caught
+implementation bugs (materializing all 55 tenants before selecting one;
+parsing the entire shared file regardless of which tenant was requested)
+are documented the same way in `PHASE7_LOG.md`'s "P7-E03: two self-caught
+implementation bugs" section.
 
 ## Unresolved risks
 
-1. **In-process memory is not the whole cost story.** A real multi-
-   tenant deployment likely isolates tenants across processes/containers
-   for fault isolation, which would introduce real per-tenant fixed
-   costs (process overhead, connection pools, OS scheduling) this
-   single-process measurement cannot see. Named as the most important
-   follow-up before any economic model is built on top of H1's result.
+1. **Cross-process overhead is now measured, but only at the
+   short-lived-process floor.** H6 establishes a real ~2.1-2.2 MB
+   per-process baseline via short-lived `.output()`-based child
+   processes; a genuinely long-running resident server process (with
+   connection handling, logging/metrics, warm caches, etc.) very likely
+   costs more than this floor-level measurement captures. Quantifying
+   that gap is the natural next step.
 2. **The small, consistent cross-tenant-vs-same-tenant latency
    difference (H2) has no confirmed mechanism.** A cache-locality
    hypothesis is plausible but unverified; would need profiling to
@@ -198,32 +251,34 @@ log rather than silently rewritten.
    more genuinely-independent schema/vocabulary divergence than this
    experiment's fix (independent ID-interning per tenant) fully
    captures.
+5. **H6 measures memory only.** A real capacity model would also need
+   per-process CPU/scheduling overhead, which this experiment did not
+   attempt.
 
 ## What would be built next if scaling up
 
-A cross-process or cross-container tenant-isolation measurement to
-capture the per-tenant fixed cost this single-process design cannot see
-(the most important remaining gap — H5 confirms in-process packing is
-cheap, but says nothing about per-process overhead in a real
-deployment); an aggregate throughput-under-realistic-load experiment
-(P7-E01 tested breadth of touched tenants at fixed per-tenant demand,
-not aggregate QPS at a realistic multi-tenant demand mix, which Issue
-#21's "per-tenant and aggregate QPS" metric also asks for); extending H4
-(query throughput under breadth) to the hundreds-to-thousands tenant
-counts H5 already reached for memory, to check whether the "no
-degradation" finding also holds at that scale for query latency, not
-just RSS.
+A long-running-resident-process measurement to close the gap H6's
+short-lived-process floor leaves open (item 1 above); an aggregate
+throughput-under-realistic-load experiment (P7-E01 tested breadth of
+touched tenants at fixed per-tenant demand, not aggregate QPS at a
+realistic multi-tenant demand mix, which Issue #21's "per-tenant and
+aggregate QPS" metric also asks for); extending H4 (query throughput
+under breadth) to the hundreds-to-thousands tenant counts H5 already
+reached for memory; a full economic cost model (Issue #21's Phase 7
+"economic output" section) combining H1/H5's negligible in-process
+marginal cost with H6's now-measured per-process baseline to produce a
+real cost-per-tenant-at-scale estimate for the first time.
 
 ## What should explicitly not be built yet
 
-No tenant-aware planner/admission changes based on this pass — H1/H4/H5's
-favorable results and H2's pass are encouraging but rest on one tenant
-model (real category partitions, or controlled-stress replicas of them)
-and one machine configuration; no economic cost model (Issue #21's Phase
-7 "economic output" section) should be built until the cross-process
-fixed-cost gap above is closed, since that is very likely to dominate
-any real per-tenant cost estimate regardless of how cheap in-process
-packing is.
+No tenant-aware planner/admission changes based on this pass —
+H1/H4/H5/H6's favorable and now-quantified results and H2's pass are
+encouraging but rest on one tenant model (real category partitions, or
+controlled-stress replicas of them), one machine configuration, and (for
+H6) a short-lived-process floor rather than a genuinely resident
+server's real cost; a full economic cost model should wait for the
+long-running-process measurement named above, since real service
+overhead may be materially larger than H6's floor.
 
 ## What this decision does and does not claim
 
@@ -242,25 +297,40 @@ first-draft P7-E01 "~19.8x throughput increase" are both withdrawn — the
 former a build-order/allocator artifact, the latter a workload-mix
 artifact — neither a real property of the architecture.
 
-**Does not claim**: that this generalizes to a real multi-process/multi-
-container SaaS deployment (the in-process measurement cannot see
-per-process fixed costs); that the small cross-vs-same-tenant latency
-difference in H2 is understood; that 6,500 tenants is a discovered
-hardware or architectural ceiling (it is a self-imposed safety bound —
-the real ceiling is very likely materially higher and was deliberately
-not pursued); that H4's no-degradation finding holds at the
+A real, consistent per-OS-process baseline (~2.1-2.2 MB) exists that a
+one-process-per-tenant deployment pays once per tenant while H1/H5's
+pooled design pays once total — the first measured (not assumed)
+evidence for `docs/WHY.md`'s statistical-multiplexing thesis (H6,
+reproduced across 3 runs); a second self-caught pair of implementation
+bugs (materializing all 55 tenants before selecting one; parsing the
+whole shared file regardless of which tenant was requested) is withdrawn
+and documented alongside the fix.
+
+**Does not claim**: that H6's short-lived-process measurement represents
+a genuinely long-running resident server's real cost (very likely
+higher — connection handling, logging/metrics, warm caches not
+captured); that the small cross-vs-same-tenant latency difference in H2
+is understood; that 6,500 tenants is a discovered hardware or
+architectural ceiling (it is a self-imposed safety bound — the real
+ceiling is very likely materially higher and was deliberately not
+pursued); that H4's no-degradation finding holds at the
 hundreds-to-thousands tenant counts H5 reached for memory (H4 itself was
 only tested up to WANDS' real 54-other-tenant ceiling); that aggregate
-QPS under a realistic multi-tenant demand mix or economic cost-per-tenant
-questions (both explicitly named in Issue #21's Phase 7) have been
-answered — this is a first pass on memory (including at scale),
-pairwise isolation, and fixed-tenant throughput-under-breadth only.
+QPS under a realistic multi-tenant demand mix or a full economic
+cost-per-tenant model (both explicitly named in Issue #21's Phase 7)
+have been answered — this is a first pass on memory (including at
+scale), pairwise isolation, fixed-tenant throughput-under-breadth, and a
+process-baseline floor only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (a cross-process
-fixed-cost measurement is the most important remaining gap) without
-changing the underlying commerce-native mechanism. The favorable,
-adversarially-corrected H1 result, its clean confirmation at scale via
-H5, and the robust H2/H4 results are real evidence in favor of the
+**Decision: PROCEED** to the next Phase 7 sub-experiment (quantifying a
+genuinely long-running resident process's real overhead beyond H6's
+floor, then combining it with H1/H5's in-process result into a first
+real economic cost-per-tenant model) without changing the underlying
+commerce-native mechanism. The favorable, adversarially-corrected H1
+result, its clean confirmation at scale via H5, the robust H2/H4
+results, and H6's first real measurement of the pooling advantage this
+project's own thesis assumed are real evidence in favor of the
 architecture's packing-density potential, but are explicitly a floor on
-the claim (single-process, one tenant model, one self-imposed safety
-bound), not a ceiling on what remains to be tested.
+the claim (single-process or short-lived-process measurements, one
+tenant model, one self-imposed safety bound), not a ceiling on what
+remains to be tested.

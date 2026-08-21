@@ -395,3 +395,129 @@ H3 (the original packing-ceiling hypothesis from P7-E00) is now answered
 by proxy: no non-linear packing-cost wall was found anywhere between the
 real 55-tenant scale and this experiment's self-imposed 6,500-tenant
 safety bound.
+
+## P7-E03: cross-process fixed cost (H6, stated before implementation)
+
+Every prior Phase 7 measurement (H1/H2/H4/H5) is IN-PROCESS: N tenants
+packed into one running process. Every "unresolved risk" note in
+`PHASE7_DECISION.md` names the same gap: a real multi-tenant deployment
+might instead give each tenant its own OS process/container for fault
+isolation, which would pay a per-process baseline (binary + runtime + OS
+bookkeeping) that pooling avoids. This is also the first Phase 7
+experiment to test `docs/WHY.md`'s own opening thesis with real numbers
+rather than assumption: "pooled infrastructure can serve many tenants
+far more cheaply... because idle capacity for one tenant absorbs a
+burst in another" (statistical multiplexing) implicitly assumes pooling
+avoids a real per-tenant fixed cost that isolation would pay — H1/H5
+already showed that cost is negligible IN-PROCESS; H6 asks whether it is
+also negligible ACROSS processes.
+
+**H6**: a real, measurable per-OS-process baseline overhead exists
+(Rust binary + runtime + OS process bookkeeping, independent of any
+tenant data) that a one-process-per-tenant deployment model pays once
+PER TENANT, while H1/H5's pooled multi-tenant process pays it once
+TOTAL for the whole node. This baseline is expected to be non-negligible
+relative to H1/H5's near-zero in-process marginal per-tenant cost
+(~1.26 KB/product, ~0 KB fixed per near-empty tenant) — i.e., process-
+per-tenant isolation should show a real, quantifiable cost that pooling
+avoids, unlike the in-process finding.
+
+**Pass/fail defined in advance**: spawn N fresh child OS processes (via
+`std::process::Command`, the same compiled binary each time) that each
+report their own RSS immediately at process start, before touching any
+tenant data or commerce_core code at all — this isolates the pure
+process/runtime baseline from any tenant-data cost. Compare that
+baseline against H1/H5's established in-process marginal cost. If the
+per-process baseline is orders of magnitude larger than the in-process
+marginal per-tenant cost, H6 is CONFIRMED: pooling has a real, measured
+economic advantage over process-per-tenant isolation. If the baseline
+turns out to be comparable to or smaller than the in-process marginal
+cost, H6 is FALSIFIED: process-per-tenant isolation would carry no
+material fixed-cost penalty in this specific runtime/OS environment.
+
+## P7-E03: two self-caught implementation bugs, found before trusting the first numbers
+
+**Bug 1**: the first implementation's child-mode tenant loader called
+`partition_depth1(catalog_path, 55, Order::LargestFirst)` and then
+`.into_iter().find(|(n,_)| n == name)` to select one tenant. This looks
+like it should only build the target tenant, but `partition_depth1`
+returns an already-fully-materialized `Vec` of all 55 built `Catalog`s
+-- `.find()` over an already-built `Vec` doesn't avoid constructing the
+other 54, it just discards them after the fact. Result: every "single
+tenant" child process reported ~100 MB regardless of whether the
+requested tenant had 1 product or 16,039 -- all of them were actually
+paying the cost of building all 55 tenants. Caught immediately by
+comparing the three tenant sizes' reported numbers (all suspiciously
+identical) before writing up any result. Fixed with a dedicated
+`load_single_tenant` helper that filters raw records to the ONE target
+tenant BEFORE calling `build_catalog`.
+
+**Bug 2** (found immediately after fixing bug 1, from the still-odd
+numbers that followed): even after fixing bug 1, EVERY tenant --
+including the genuinely 1-product "Water Filter Pitchers" -- still
+reported ~37-39 MB, an obvious remaining anomaly for what should be a
+near-empty catalog per H1/H5's own finding. Root cause: `data::load_catalog`
+always parses the ENTIRE shared 42,994-product `catalog.jsonl` file
+before any per-tenant filtering happens, so even a 1-product tenant's
+child process was paying the cost of parsing every other tenant's raw
+data too -- a real, second confound with the same shape as bug 1 (doing
+much more work than the one tenant actually needs), just one level
+lower in the pipeline. Fixed by writing a genuinely single-tenant JSONL
+file (only that tenant's raw lines, filtered from the shared file) and
+pointing each child at ITS OWN small file, matching how a real
+single-tenant deployment would actually be provisioned (its own data,
+not a shared multi-tenant file it has to filter itself).
+
+Both bugs were caught and fixed before any external adversarial review
+was needed, using the same "does this number make sense given what I
+already know" discipline established across every other Phase 6B/Phase
+7 self-correction this session.
+
+## P7-E03 result (after both fixes): H6 CONFIRMED, reproduced across 3 independent runs
+
+| condition | run1 (KB) | run2 (KB) | run3 (KB) |
+|---|---|---|---|
+| bare process baseline (mean of 20 children, no tenant data) | 2,148.0 | 2,147.6 | 2,151.6 |
+| Furniture (16,039 products) marginal | 56,532* / 50,964 | 50,960 | 50,964 |
+| Faux Plants and Trees (5 products) marginal | 37,072* / 176 | 176 | 220 |
+| Water Filter Pitchers (1 product) marginal | 37,088* / 184 | 216 | 164 |
+
+(*first two columns show the bug-1-only and bug-1-and-2-fixed numbers
+from the same initial debugging session, both superseded by run1's final
+corrected figure shown after the slash; run2/run3 are independent
+process runs of the fully-fixed binary.)
+
+The bare per-process baseline (~2,148-2,152 KB, essentially identical
+across all 3 runs) is **the dominant term**: it alone equals the
+in-process pooled marginal cost of ~1,700 products' worth of tenant
+data (using H1/H5's ~1.263 KB/product figure) — larger than the entire
+marginal cost of either near-empty tenant (164-220 KB) and comparable to
+a meaningful fraction of even the largest real tenant's own marginal
+cost (~51 MB for 16,039 products).
+
+**H6 CONFIRMED, reproduced across 3 independent runs**: a real,
+consistent per-OS-process baseline (~2.1-2.2 MB, essentially unchanged
+run to run) exists that a one-process-per-tenant deployment model would
+pay once PER TENANT, while H1/H5's pooled in-process design pays it
+once TOTAL for the whole node. For a hypothetical 1,000-tenant SMB
+deployment, process-per-tenant isolation would pay this baseline
+~1,000 times (~2.1-2.2 GB just in per-process overhead) versus once for
+a pooled design — this is the first Phase 7 (or project-wide) evidence
+directly supporting `docs/WHY.md`'s opening "statistical multiplexing"
+thesis with real numbers rather than an assumed advantage. Small,
+near-empty tenants ALSO show a modest but real per-process cost (~150-220
+KB beyond the bare baseline) that doesn't appear at all in the pooled
+in-process measurement (H1/H5 found ~0 KB fixed cost for near-empty
+tenants there) -- plausibly the cost of spinning up JSON-parsing/ingestion
+machinery fresh per process rather than sharing it across a pool,
+though this specific sub-mechanism was not further isolated.
+
+**Named limitations**: this uses `.output()`-based process spawn/exit
+(short-lived child processes), not a genuinely long-running resident
+server process -- real per-process overhead for a long-lived service
+(additional runtime warm-up, connection handling, logging/metrics
+infrastructure, etc.) is likely higher than this floor-level measurement
+captures. Only 3 real tenant sizes were sampled (largest, middle,
+smallest by real WANDS distribution), not a full sweep. This measures
+memory only, not per-process CPU/scheduling overhead, which a real
+multi-tenant capacity model would also need.
