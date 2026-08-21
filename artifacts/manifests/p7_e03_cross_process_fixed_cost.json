@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e03_cross_process_fixed_cost.yaml",
-  "git_sha": "PLACEHOLDER",
+  "git_sha": "31517fa",
   "dataset": {
     "name": "WANDS real tenants (largest/middle/smallest category_depth_1)"
   },

@@ -17,7 +17,7 @@ claim: >
   tenant was requested) were self-caught and fixed before trusting any
   number -- see docs/experiments/PHASE7_LOG.md.
 
-git_sha: (fill in after commit)
+git_sha: 31517fa
 binary: crates/phase7-eval/src/bin/p7_e03_cross_process_fixed_cost.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e03_cross_process_fixed_cost
 run_command: ./target/release/p7_e03_cross_process_fixed_cost dataset_cache/wands/catalog.jsonl
