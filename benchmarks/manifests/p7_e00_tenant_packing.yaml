@@ -14,7 +14,7 @@ claim: >
   p99 regression for another tenant sharing the same process, robust
   across 3 independent runs.
 
-git_sha: (see PHASE7_DECISION.md commit)
+git_sha: 61cf382
 binary: crates/phase7-eval/src/bin/p7_e00_tenant_packing.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e00_tenant_packing
 run_command: ./target/release/p7_e00_tenant_packing dataset_cache/wands/catalog.jsonl [forward|reversed]
