@@ -203,27 +203,96 @@ bitset, not a per-candidate scan.
 | Home Improvement | 0.31 | 0.12 | 0.06 | 0.04 | 0.02 |
 | Furniture | 0.11 | 0.05 | 0.03 | 0.03 | 0.02 |
 
-The real (1x) crossover sits between Lighting (n=2,072, 1.88x) and
-Storage & Organization (n=2,175, 1.00x) — reproducing Phase 6A's own
-2,072–2,175 finding exactly, as expected since 1x uses the identical real
-catalog. Every checkpoint is already in native-loss territory by 2x
-(n≈4,000+), and the speedup continues to degrade monotonically through
-20x rather than plateauing.
+**Important correction (see "Adversarial review" below): the 1x speedup
+values in this table are NOT directly comparable, point-for-point, to
+Phase 6A's own archived 1x numbers for the identical query.** Phase 6A's
+`PHASE6A_LOG.md` reports Rugs (n=2,002) at 1.00x and Storage &
+Organization (n=2,175) at 0.51x (a loss); this session's 1x tier measured
+the identical real catalog and query but got 2.40x and 1.00x
+respectively — driven by a real, identified cross-session confound (this
+session's Solr JVM has all 5 scale-ladder cores loaded simultaneously,
+sharing one 4GB heap, unlike Phase 6A's single-core session), not by
+anything having changed in either system. The WITHIN-session ladder
+trend (1x→2x→5x→10x→20x, all measured under the same multi-core-loaded
+JVM throughout) is internally comparable and is the load-bearing claim
+here; the exact absolute crossover value is not re-asserted
+cross-session. Qualitatively, the real (1x) crossover still sits in the
+same 2,000-2,200-candidate neighborhood Phase 6A found, and every
+checkpoint is already in native-loss territory by 2x (n≈4,000+),
+degrading further through 20x.
 
-### Native per-1,000-candidate cost (Rugs checkpoint, illustrative)
+### Native per-1,000-candidate cost — corrected after adversarial review
 
-| tier | candidates | native ms | ms per 1,000 candidates |
-|---|---|---|---|
-| 1x | 2,002 | 1.62 | 0.81 |
-| 2x | 4,004 | 4.80 | 1.20 |
-| 5x | 10,010 | 15.71 | 1.57 |
-| 10x | 20,020 | 29.58 | 1.48 |
-| 20x | 40,040 | 81.97 | 2.05 |
+The original draft of this log illustrated a "super-linear" trend using
+only the Rugs checkpoint. Independent review (below) found that claim
+did not survive checking all 7 checkpoints, and an aggregate across all
+of them (total native ms / total candidates per tier) is **flat within
+~13% across the whole 1x-20x ladder (1.71 -> 1.86 -> 1.63 -> 1.76 -> 1.75
+ms/1,000-candidates)**, with no monotonic trend — the smallest two
+checkpoints (Rugs, Lighting) show growth, the three largest (Décor &
+Pillows, Home Improvement, Furniture) show flat-to-*declining*
+per-candidate cost, and Storage & Organization/Outdoor are weak/mixed.
+Per this log's own pre-registered pass/fail rule, this aggregate result
+is a **pass** for Phase 6A's original "attribute complexity, not raw
+scale" explanation, not the reversal the original draft claimed.
 
-Per-1,000-candidate cost is NOT flat — it grows roughly 2.5x over a 20x
-increase in candidate count. **[Adversarial-review status: pending —
-see below before treating this as a confirmed super-linear-scaling
-finding rather than measurement noise.]**
+To resolve whether the Rugs/Lighting growth was a real, tier-size-linked
+effect or REPS=30/WARMUP=5 in-process noise (the review's specific
+concern, backed by the Phase 6A/6B discrepancy above), a follow-up
+measurement was run: 5 independent process relaunches (fresh `cargo run`
+each time, not just in-process reps) of the 1x, 2x, and 5x tiers for
+Rugs/Lighting/Storage & Organization, plus a reversed-execution-order
+check (5x measured chronologically *before* 1x, to rule out a
+time/thermal-drift confound masquerading as a tier-size effect):
+
+| checkpoint | 1x (5 runs, forward order) | 2x (5 runs) | 5x (5 runs) | 5x (reversed order, 3 runs) | 1x (reversed order, 3 runs) |
+|---|---|---|---|---|---|
+| Rugs | 0.603 ms/1000cand | 0.648 | 1.147 | 1.210 | 0.629 |
+| Lighting | 0.645 | 0.637 | 1.212 | 1.148 | 0.640 |
+| Storage & Organization | 0.763 | 0.780 | 1.422 | 1.499 | 0.727 |
+
+Two things are now clear that were not clear from the single-run data:
+
+1. **1x -> 2x is flat** for all three checkpoints once averaged over 5
+   independent runs (e.g. Rugs 0.603 -> 0.648) — the apparent growth in
+   the original single-run table between these two tiers was
+   measurement noise, exactly as the review predicted.
+2. **2x -> 5x shows a real, ~80-100% jump** in per-1,000-candidate cost,
+   consistent in direction and magnitude across all three checkpoints,
+   and **robust to reversing execution order** (the reversed-order 5x
+   numbers, measured chronologically first, land at 1.21/1.15/1.50 —
+   statistically indistinguishable from the forward-order 5x numbers
+   measured chronologically fourth; the reversed-order 1x numbers,
+   measured last, land back down at 0.63/0.64/0.73, matching the
+   forward-order 1x numbers measured first). Reversing which tier was
+   measured first/last did not change which tier has higher per-item
+   cost, which rules out a simple time-order/thermal-drift explanation.
+
+**Corrected interpretation**: there is a real, order-independent,
+noise-robust scaling irregularity, but it is a discrete jump concentrated
+somewhere in the ~4,000-11,000-candidate range for these specific
+checkpoints, not a smooth super-linear curve across the whole 1x-20x
+range, and it does not appear at all in the three largest checkpoints
+(which are already well past this range even at 1x). The most plausible
+unproven hypothesis is a candidate-set-size threshold related to CPU
+cache locality (working set outgrowing some cache level) rather than an
+algorithmic complexity defect in `facet_counts_by_scan` itself — no
+profiling evidence was collected to confirm this in this pass, and it is
+recorded as an unresolved risk / follow-up, not asserted as confirmed.
+The originally-proposed mechanism (HashMap collision/resizing) is
+**withdrawn**: `facet_counts_by_scan`'s accumulator and `AttributeMap`
+are both `BTreeMap`, not `HashMap` (confirmed by reading
+`crates/commerce-core/src/index/mod.rs` and
+`crates/commerce-core/src/domain/attribute.rs`), and the one HashMap
+that does grow with tier (`variant_location`) would predict a uniform
+effect across every checkpoint at a given tier, which the data
+contradicts.
+
+Solr's own facet-compute time is **not uniformly flat** either, contrary
+to the original draft's blanket "~2.5-9.0ms" characterization: Furniture
+grows 3.04 -> 8.96ms (1x->20x, ~2.9x) and Décor & Pillows 2.61 -> 6.35ms
+(~2.4x) — both correlated with bucket density, and both larger than the
+range originally quoted.
 
 ### Tier-level build/RSS/index-size
 
@@ -262,31 +331,114 @@ binary-search structure rather than a per-candidate hashmap scan.
 
 ## Adversarial review
 
-[To be filled in from the independent multi-lens review before this
-finding is promoted to `PHASE6B_DECISION.md` — see the workflow run
-referenced there.]
+Run as a 3-lens-plus-synthesis Workflow (confound analysis, statistical
+rigor, honesty/scope, then an independent synthesis agent that
+re-derived every headline number from the raw CSV itself rather than
+trusting the three reviews). Full transcripts:
+`/root/.claude/projects/-home-user-simple-ecommerce-search-engine/42c216bb-068c-521f-bf1b-8df9ff5387ed/subagents/workflows/wf_29bc6dd0-80e/journal.jsonl`.
 
-## Interpretation (provisional, pending adversarial review above)
+**Confirmed real problems** (all addressed above or in this section):
 
-1. Phase 6A's "per-candidate attribute complexity" explanation is **not
-   the whole story**: holding attribute complexity and facet cardinality
-   fixed while scaling only candidate-set size still produces a clear,
-   monotonic, apparently super-linear degradation in native
-   `facet_counts_by_scan`'s speedup. This SHARPENS rather than falsifies
-   Phase 6A's finding — attribute complexity explains WHY WANDS' crossover
-   sits lower than ESCI's at a GIVEN candidate count, but candidate-set
-   size independently and materially degrades native's advantage further,
-   exactly the kind of "measurable, root-caused algorithmic scaling
-   problem" Phase 5 already found for facets on ESCI (`PHASE5_DECISION.md`)
-   — now confirmed to generalize under a controlled, complexity-held-fixed
-   design.
-2. The native-loss region Issue #21 asks to characterize is not merely
-   "observed" here, it is prominent and monotonically worsening — by
-   20x/Furniture (320,780 candidates) native is 50x slower than Solr for
-   this operator.
-3. A genuinely new, previously-unmeasured operator (numeric-range filter)
-   has its own real crossover, materially higher than the facet operator's
+1. The original "genuine super-linear scaling, ~2.5x over 20x" claim
+   used only the Rugs checkpoint and did not survive checking all 7 —
+   the sweep-wide aggregate is flat within ~13% with no monotonic trend.
+   **Addressed**: replaced with the corrected, checkpoint-by-checkpoint
+   analysis above, backed by 5 independent process relaunches plus a
+   reversed-execution-order check.
+2. No mechanism in the actual code supports a HashMap-collision growth
+   story (`facet_counts_by_scan`'s accumulator and `AttributeMap` are
+   both `BTreeMap`). **Addressed**: mechanism claim withdrawn; the real
+   finding (a candidate-range-specific jump, hypothesized but not
+   confirmed to be cache-locality-related) is stated with appropriate
+   uncertainty instead.
+3. "Solr facet time stays flat" overstated — Furniture and Décor &
+   Pillows grow 2.4-2.9x across the ladder. **Addressed**: qualified
+   above.
+4. Design confound: candidate-set size (n) and total catalog size (N)
+   are perfectly collinear in this ladder (every tier scales both by the
+   same factor K), so this design cannot separate "cost is a function of
+   candidates touched" from "cost is a function of total resident
+   index/heap size" (RSS grows 191MB->3.45GB over the same tiers).
+   **Not addressed this pass** — recorded as an explicit unresolved risk
+   in `PHASE6B_DECISION.md`; a genuine decoupling (fixed-N/varying-n or
+   vice versa) is named as a follow-up experiment, not fabricated after
+   the fact.
+5. Solr process lifecycle (all 5 scale-ladder cores loaded in one shared
+   4GB-heap JVM throughout this session, unlike Phase 6A's single-core
+   session) is a real, identified cross-session confound.
+   **Addressed**: the cross-session absolute-value comparison to Phase
+   6A is no longer claimed; only the within-session relative ladder
+   trend is asserted.
+
+**Concerns raised and rejected** (per the synthesis's own independent
+re-verification): correctness/methodology being broken (rejected — 50/50
+exact matches, re-confirmed); fabricated/undisclosed workload (rejected —
+prominently and repeatedly self-labeled a controlled stress catalog);
+REPS=30/WARMUP=5 being inadequate as a blanket claim (rejected — only
+marginal for the smallest/fastest rows, already captured above); the
+monotonic speedup-decay itself being proof of a scaling defect (rejected
+as a standalone argument — with Solr's cost held near-constant by the
+fixed-cardinality design, `speedup = k/(c*n)` necessarily decays toward
+zero as n grows even under perfectly linear native cost; only the
+per-item-cost table can distinguish "linear but structurally
+disadvantaged" from "genuinely super-linear"); `index_bytes_per_product`
+decreasing with scale being an error (rejected — real, monotonic,
+corroborated trend, already correctly caveated as a replication-design
+artifact).
+
+**Overall verdict (synthesis agent's own words)**: crossover-shifts-
+with-candidate-size and the new numeric-range crossover are "sound
+enough to write up as-is, with the caveats... added." The original
+"genuine super-linear scaling component" framing was "NOT sound enough
+to write up as a confirmed finding as currently worded" and required the
+additional between-run measurement performed above. The build-time-per-
+product trend (19.78 -> 23.82 microseconds/product, smooth and monotonic
+across all 5 tiers) was independently flagged as "a more credible
+standalone signal of mild super-linear cost at scale than anything in
+the facet-scan timing data" and is kept in the write-up on its own
+merits.
+
+## Interpretation (post-adversarial-review, corrected)
+
+1. **Phase 6A's crossover finding reproduces qualitatively, not as an
+   exact cross-session number.** The real 1x tier's crossover still sits
+   in the same ~2,000-2,200-candidate neighborhood Phase 6A found; the
+   exact speedup values differ from Phase 6A's archived numbers because
+   of an identified cross-session Solr JVM confound (multiple cores
+   sharing one heap this session vs. Phase 6A's single core), not
+   because either system changed. This is itself a useful, disclosed
+   finding about the limits of cross-session absolute-latency
+   comparison, distinct from the within-session ladder trend.
+2. **Phase 6A's "attribute complexity, not raw scale" explanation
+   substantially holds**, contrary to this log's own first-draft
+   conclusion: aggregated across all 7 checkpoints, native
+   `facet_counts_by_scan`'s per-candidate cost is flat within ~13% across
+   the whole 1x-20x ladder. It does NOT sharpen into a general
+   super-linear law.
+3. **A real, narrower, noise-robust exception exists**: for the three
+   smallest real depth-1 checkpoints (Rugs, Lighting, Storage &
+   Organization; n=2,002-2,175 at 1x), per-candidate cost is flat 1x->2x
+   but jumps ~80-100% between 2x and 5x (n≈4,000-4,400 -> n≈10,000-
+   10,900), confirmed robust to 5 independent process relaunches and to
+   reversing measurement order. This is a genuine, order-independent
+   phenomenon, not measurement noise, but its cause (hypothesized:
+   candidate-set working set crossing a CPU cache-locality threshold) is
+   unconfirmed and named as a follow-up, not asserted.
+4. The native-loss region Issue #21 asks to characterize is real and
+   substantial regardless of the above: every depth-1 checkpoint is
+   already in native-loss territory by the 2x tier, and by 20x/Furniture
+   (320,780 candidates) native is roughly 50x slower than Solr for the
+   color-facet operator.
+5. A genuinely new, previously-unmeasured operator (`average_rating`
+   numeric-range filter, untestable in Phase 6A for lack of a price
+   field) has its own real, distinct crossover at a materially higher
+   candidate count (~57,000-160,000) than the facet operator's (~2,100)
    — evidence that crossover behavior is operator-specific, not a single
    catalog-wide constant, reinforcing the planner implication Issue #21
    already states ("native execution is promoted only inside a measured
    physical-advantage region").
+6. Build time and RSS both scale close to linearly with product count,
+   with a mild, consistent super-linear component in build time
+   (19.78 -> 23.82 microseconds/product across 1x-20x) independently
+   endorsed by adversarial review as the most credible standalone
+   scaling-cost signal in this experiment.

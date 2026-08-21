@@ -165,6 +165,23 @@ one specific number (the facet-crossover candidate count) had to be
 narrowed from "a fixed threshold" to "dependent on per-candidate
 attribute-map complexity."
 
+**Scale-ladder follow-on (Phase 6B — PROCEED, `PHASE6B_DECISION.md`)**:
+with Retailrocket, H&M, Amazon Reviews 2023, and Havenask all confirmed
+blocked from this environment (documented on Issue #21), Phase 6B tested
+Phase 6A's attribute-complexity explanation using a controlled-stress
+scale ladder (the real WANDS catalog replicated 2x–20x, holding facet
+cardinality and per-candidate attribute complexity fixed while scaling
+only candidate-set size) — a fallback Issue #23 itself explicitly
+anticipated and authorized. This project's own adversarial-review
+discipline caught a real problem in the first-draft analysis (a "genuine
+super-linear scaling" claim that did not survive checking all measured
+checkpoints, self-corrected before promotion — see `PHASE6B_LOG.md`):
+Phase 6A's explanation substantially holds in aggregate, with one real,
+noise-robust, but narrower and cause-unconfirmed exception at a specific
+candidate range. A genuinely new operator (numeric-range filtering,
+untestable in Phase 6A for lack of a price field) showed its own
+distinct, materially higher crossover point.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

@@ -1,0 +1,11 @@
+tier,n_products,build_ms,index_bytes,index_bytes_per_product,rss_after_build_kb,class,key,native_count,solr_count,counts_match,native_mean_ms,native_p50_ms,native_p99_ms,solr_mean_ms,solr_p50_ms,solr_p99_ms,speedup_mean
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Rugs,4004,4004,true,2.5432175,2.5127,2.9706,1.4567,1.4078,2.0016,0.57
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Storage & Organization,4350,4350,true,3.3668924,3.3257,4.0015,1.3758,1.3684,1.7910,0.41
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Lighting,4144,4144,true,2.5725191,2.5757,2.8653,1.4107,1.3215,2.8066,0.55
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Outdoor,6788,6788,true,6.085759433333334,5.8873,7.5508,1.5872,1.4987,3.6088,0.26
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Décor & Pillows,9224,9224,true,12.5111046,12.6649,15.3022,1.5129,1.5036,1.7008,0.12
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Home Improvement,9372,9372,true,11.1169671,11.5743,13.3349,1.5474,1.5292,2.0121,0.14
+2x,85988,1312.23,15413890,179.26,364068,color_facet_under_depth1_crossover_sweep,Furniture,32078,32078,true,38.6407247,39.5020,41.7057,1.9028,1.7855,2.6135,0.05
+2x,85988,1312.23,15413890,179.26,364068,numeric_range_average_rating_gte,4,63934,63934,true,0.5495648666666667,0.5522,0.6003,0.7829,0.7717,0.9488,1.42
+2x,85988,1312.23,15413890,179.26,364068,numeric_range_average_rating_gte,4.5,56798,56798,true,0.4705487666666667,0.4677,0.5571,0.8013,0.7717,1.0025,1.70
+2x,85988,1312.23,15413890,179.26,364068,mixed_depth1_and_rating_filter,Furniture+rating>=4,22860,22860,true,0.5851467333333332,0.5783,0.6442,0.8484,0.8325,1.1492,1.45

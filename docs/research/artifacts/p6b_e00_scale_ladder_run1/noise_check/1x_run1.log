@@ -1,0 +1,35 @@
+=== P6B-E00 scale-ladder tier 1x ===
+loading catalog from dataset_cache/wands/catalog.jsonl...
+42994 products loaded
+building commerce_core structural index...
+index build: 666.2 ms, approx_size=8108054 bytes (188.6 bytes/product), rss Some(2464) -> Some(191032) kb
+checking Solr (http://localhost:8983/solr/wands_bench)...
+  Solr reachable: numFound=42994
+
+running depth-1 color-facet crossover sweep at tier 1x...
+  Rugs: n=2002 (solr n=2002)
+  Storage & Organization: n=2175 (solr n=2175)
+  Lighting: n=2072 (solr n=2072)
+  Outdoor: n=3394 (solr n=3394)
+  Décor & Pillows: n=4612 (solr n=4612)
+  Home Improvement: n=4686 (solr n=4686)
+  Furniture: n=16039 (solr n=16039)
+
+running average_rating numeric-range filter at tier 1x...
+
+=== P6B-E00 tier 1x result ===
+tier       class                                      key                           n_count    s_count   match  n_mean_ms  s_mean_ms    speedup
+1x         color_facet_under_depth1_crossover_sweep   Rugs                             2002       2002    true     1.2123     1.7883       1.48
+1x         color_facet_under_depth1_crossover_sweep   Storage & Organization           2175       2175    true     1.6080     1.5480       0.96
+1x         color_facet_under_depth1_crossover_sweep   Lighting                         2072       2072    true     1.3138     1.4858       1.13
+1x         color_facet_under_depth1_crossover_sweep   Outdoor                          3394       3394    true     2.6422     1.5239       0.58
+1x         color_facet_under_depth1_crossover_sweep   Décor & Pillows                  4612       4612    true     3.9944     1.5826       0.40
+1x         color_facet_under_depth1_crossover_sweep   Home Improvement                 4686       4686    true     3.6849     1.5650       0.42
+1x         color_facet_under_depth1_crossover_sweep   Furniture                       16039      16039    true    17.7998     1.8519       0.10
+1x         numeric_range_average_rating_gte           4                               31967      31967    true     0.2745     0.8857       3.23
+1x         numeric_range_average_rating_gte           4.5                             28399      28399    true     0.2225     0.9603       4.32
+1x         mixed_depth1_and_rating_filter             Furniture+rating>=4             11430      11430    true     0.2760     1.0908       3.95
+
+correctness: 10/10 rows had matching native/Solr counts (ALL MATCH)
+
+appended 10 rows to docs/research/artifacts/p6b_e00_scale_ladder_run1/noise_check/1x_run1.csv

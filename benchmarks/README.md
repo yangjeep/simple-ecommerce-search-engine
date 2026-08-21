@@ -42,6 +42,10 @@ same as Phases 0–5:
 - `p6a_e00_wands_plp_benchmark.yaml` — the real WANDS PLP filter/facet/
   sort/pagination benchmark and its facet-crossover characterization.
 - `p6a_e01_concurrency_sweep.yaml` — the WANDS concurrency sweep.
+- `p6b_e00_scale_ladder.yaml` — the WANDS controlled-stress scale-ladder
+  follow-on (Retailrocket/H&M/Amazon Reviews 2023/Havenask all confirmed
+  blocked; see `PHASE6B_DECISION.md`), including the numeric-range filter
+  operator never testable in Phase 6A.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

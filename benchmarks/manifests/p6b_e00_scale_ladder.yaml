@@ -6,15 +6,19 @@ decision_document: PHASE6B_DECISION.md
 claim: >
   A controlled-stress scale ladder (real WANDS catalog replicated 2x/5x/
   10x/20x, holding facet cardinality and per-candidate attribute
-  complexity fixed while scaling only candidate-set size) shows that
-  Phase 6A's facet-scan crossover (2,072-2,175 real candidates) is not
-  explained by attribute-map complexity alone: native
-  facet_counts_by_scan's per-1,000-candidate cost grows roughly 2.5x
-  over a 20x candidate-count increase, and every depth-1 checkpoint is
-  in native-loss territory by the 2x tier. A new operator (numeric-range
-  filter on average_rating, untestable in Phase 6A for lack of a price
-  field) shows its own, materially higher real crossover
-  (~57,000-160,000 candidates).
+  complexity fixed while scaling only candidate-set size) shows Phase
+  6A's "attribute complexity, not raw scale" explanation substantially
+  holds: native facet_counts_by_scan's per-candidate cost is flat within
+  ~13% in aggregate across the whole ladder. A first-draft claim of
+  "genuine super-linear scaling" (based on one non-representative
+  checkpoint) was withdrawn after adversarial review and replaced with a
+  corrected, narrower finding: a real, noise-robust, order-independent
+  ~80-100% cost jump specific to the ~4,000-11,000-candidate range for
+  the three smallest checkpoints, cause unconfirmed. Every depth-1
+  checkpoint is in native-loss territory by the 2x tier regardless. A
+  new operator (numeric-range filter on average_rating, untestable in
+  Phase 6A for lack of a price field) shows its own, materially higher
+  real crossover (~57,000-160,000 candidates).
 
 git_sha: aa9a37e
 binary: crates/phase6a-eval/src/bin/p6b_e00_scale_ladder.rs
