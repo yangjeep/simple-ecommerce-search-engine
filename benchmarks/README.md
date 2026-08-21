@@ -138,6 +138,16 @@ same as Phases 0–5:
   NOT measurably worsen the Solr-side contention. Includes a
   self-caught, honestly-disclosed measurement-window subtlety; see
   `PHASE8_DECISION.md`.
+- `p6c_e00_lucene_direct.yaml` — a retroactive Phase 6 audit run after
+  Phase 8: is cross-engine validation actually complete when Solr has
+  been the only baseline through Phase 8? Live re-check found
+  Havenask/Elasticsearch/OpenSearch/Retailrocket/H&M/Amazon Reviews
+  2023 all still blocked, but Maven Central is reachable — the first
+  raw-Apache-Lucene-direct baseline this project has ever run. Central
+  finding: Solr's own facet.field implementation frequently beats a
+  correct, direct Lucene scan (slower in 5 of 7 real checkpoints, up
+  to 3.3x-4.0x), falsifying the idea that Solr's wrapper overhead was
+  masking the native-vs-generic-engine gap; see `PHASE6C_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

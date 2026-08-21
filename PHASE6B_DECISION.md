@@ -219,6 +219,23 @@ script against an already-initialized core. Fixed by checking
    policy changes, they remain the preferred real alternative to
    controlled-stress substitution and should be revisited before Phase 7.
 
+   **Addendum (post-Phase-8 audit, see `PHASE6C_DECISION.md`)**: this
+   revisit did not happen before Phase 7 as instructed above — Phase 7
+   and Phase 8 both proceeded with Solr as the only lexical-backend
+   evidence. A full audit after Phase 8 found this gap and closed it
+   late rather than leaving it silent: Havenask, Retailrocket, H&M, and
+   Amazon Reviews 2023 are all still blocked, re-verified live in that
+   session (unchanged). Elasticsearch and OpenSearch were tested for
+   the first time and are also blocked (official distributions
+   unreachable; OpenSearch's own source build hits a second,
+   independent blocker). `eCommerceSearchBench` was actually located
+   this time (`github.com/alibaba/eCommerceSearchBench`, reachable) —
+   a correction to "no accessible source located" above, though it is a
+   workload/data generator, not an engine. Apache Lucene itself,
+   however, is directly reachable via Maven Central and was benchmarked
+   as a new, real, correctness-gated cross-engine data point — see
+   `PHASE6C_DECISION.md` for the full result.
+
 ## What would be built next if scaling up
 
 A properly decoupled n-vs-N scale experiment (fixed total catalog size,

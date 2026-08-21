@@ -1,0 +1,27 @@
+{
+  "experiment_id": "P6C-E00",
+  "phase": "6C",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6c_e00_lucene_direct.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog (42,994 products), same 7 category_depth_1 checkpoints as P6A-E00/P6B-E00"
+  },
+  "engine_config": {
+    "lucene_direct": "Apache Lucene 9.11.1 via Maven Central, embedded Java harness (lucene-direct-bench/), NIOFSDirectory",
+    "solr": "Apache Solr 9.10.1, wands_bench core, re-queried same session",
+    "native": "commerce_core::index::CatalogIndex, re-run fresh same session"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6c_e00_lucene_direct_run1/",
+  "analysis_version": "docs/experiments/PHASE6C_LOG.md#P6C-E00",
+  "decision": "PHASE6C_DECISION.md",
+  "headline_result": {
+    "correctness_gate": "8/8 filter and numeric-range counts exactly matched the live Solr wands_bench core in all 3 repeated runs",
+    "color_facet_lucene_vs_solr_ratio_5_of_7_checkpoints": "slower, up to 3.31x-3.99x",
+    "color_facet_lucene_vs_solr_ratio_2_of_7_checkpoints": "faster, up to 5.3x",
+    "finding": "raw Lucene direct (no Solr HTTP/schema/facet-wrapper) is often SLOWER than Solr's own wrapped facet.field API -- falsifies the hypothesis that Solr's overhead masked part of the native-vs-generic-engine gap; sharpens the facet-crossover finding into a claim about facet algorithms, not serving-layer overhead",
+    "cross_engine_blockers_reverified_live": ["Havenask (Docker daemon absent, registry blocked)", "Elasticsearch (distribution blocked)", "OpenSearch (distribution blocked + bundled-JDK blocked)", "Retailrocket/H&M (kaggle.com blocked)", "Amazon Reviews 2023 (huggingface.co blocked)"],
+    "named_limitation": "only color-facet has a genuine same-session 3-way comparison; NIOFSDirectory not MMapDirectory; only WANDS 1x scale tested, not the Phase 6B scale ladder"
+  }
+}

@@ -182,6 +182,44 @@ candidate range. A genuinely new operator (numeric-range filtering,
 untestable in Phase 6A for lack of a price field) showed its own
 distinct, materially higher crossover point.
 
+**A repaired evidence-chain gap, found by a whole-campaign audit after
+Phase 8 (Phase 6C — PROCEED, `PHASE6C_DECISION.md`)**: Phase 6B's own
+decision document said its blocked-engine survey "should be revisited
+before Phase 7." It was not — Phase 7 and Phase 8 both proceeded with
+Solr as the only lexical-backend evidence, five phases deep. A fresh
+audit found this and closed it late rather than leaving it silent.
+Live re-verification, done in this session rather than trusted from
+memory, found Havenask, Retailrocket, H&M, and Amazon Reviews 2023 all
+still blocked, unchanged. Elasticsearch and OpenSearch were tested for
+the first time in this project's history and are also blocked — their
+official distributions are unreachable, and OpenSearch's own
+from-source build hits a second, independent blocker (its bundled JDK
+provider is also unreachable) before dependency resolution even
+completes. But one path proved open: Maven Central is fully reachable,
+meaning Apache Lucene itself — the shared retrieval core underlying
+Solr, Elasticsearch, and OpenSearch alike — could be benchmarked
+directly for the first time, with no server, no Docker, and no
+distribution blocker of any kind. A standalone Java harness indexed the
+same real WANDS catalog Phase 6A/6B already used, measured the same
+operation classes at the same real category checkpoints, and
+cross-checked every filter and range count against the same
+still-running Solr instance before trusting any timing — all counts
+matched exactly, in three repeated runs. The result reverses the
+question it was built to answer: for faceting, the one operation
+measured as a genuine same-session three-way comparison, raw Lucene
+direct was *slower* than Solr's own wrapped facet API in five of seven
+real checkpoints, by as much as three-to-four-fold. Stripping away
+Solr's HTTP and schema layer did not reveal a faster engine underneath
+— it revealed that Solr's own faceting implementation is doing
+genuinely better algorithmic work than a straightforward, correct scan
+against the identical raw index. This sharpens, rather than
+undermines, the facet-crossover finding this project has now measured
+four separate times: the crossover was never evidence that Solr's
+serving overhead was being unfairly counted against commerce-native: it
+is evidence about facet algorithms specifically, and a naive
+per-candidate scan — this project's own included — loses to a mature,
+specialized one past a real complexity threshold.
+
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
 than one tenant's index in one process, using WANDS' real category

@@ -1,0 +1,72 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6C-E00
+phase: 6C
+issue: 21
+decision_document: PHASE6C_DECISION.md
+claim: >
+  A repaired evidence-chain gap: every prior cross-engine comparison in
+  this project (Phase 2-6B) measured commerce-native against Solr only.
+  Live re-verification (this session) found Havenask, Elasticsearch,
+  and OpenSearch all still genuinely blocked as installed engines
+  (Docker daemon absent / registry blocked for Havenask; official
+  distributions blocked + a second, independent bundled-JDK blocker for
+  OpenSearch's source build), but Maven Central is fully reachable --
+  making raw Apache Lucene (the shared core under Solr/ES/OpenSearch
+  alike) directly benchmarkable for the first time. Indexed the real
+  WANDS catalog with a standalone Java/Maven harness (lucene-direct-bench/),
+  same 7 real category_depth_1 checkpoints and same operation classes
+  P6A-E00/P6B-E00 used against Solr. Correctness gate: 8/8 filter/range
+  counts exactly matched the live Solr wands_bench core in all 3
+  repeated runs. Central finding: for color-facet-under-category (the
+  one operation with a genuine same-session native/Solr/Lucene 3-way
+  comparison), raw Lucene direct is SLOWER than Solr's own wrapped
+  facet.field API in 5 of 7 checkpoints (up to 3.3x-4.0x), reproduced
+  across all 3 runs -- falsifying the hypothesis that Solr's
+  HTTP/wrapper overhead was masking part of the native-vs-generic-engine
+  gap, and instead sharpening this project's own repeated facet-crossover
+  finding into a claim about facet algorithms (naive scan vs. Solr's
+  mature implementation), not serving-layer overhead. See
+  docs/experiments/PHASE6C_LOG.md for the full hypothesis and result.
+
+git_sha: PENDING
+binary: lucene-direct-bench/src/main/java/org/commercenative/lucenedirect/WandsLuceneBench.java
+build_command: cd lucene-direct-bench && mvn -q package
+run_command: java -jar lucene-direct-bench/target/lucene-direct-bench-jar-with-dependencies.jar dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+comparison_run_command: cargo run --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval -- dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+
+dataset:
+  name: real WANDS catalog (42,994 products), identical file and 7
+    category_depth_1 checkpoints P6A-E00/P6B-E00 both used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  lucene_direct: Apache Lucene 9.11.1 (lucene-core + lucene-analysis-common,
+    via Maven Central), embedded Java harness, NIOFSDirectory (not
+    MMapDirectory -- a build-tooling workaround, see PHASE6C_LOG.md),
+    dual indexed (StringField/TermQuery) + docValues
+    (SortedDocValuesField/NumericDocValuesField/DoublePoint) fields,
+    matching Solr's own schema convention
+  solr: Apache Solr 9.10.1, same wands_bench core P6A-E00/P6B-E00 used,
+    re-queried live in the same session for the 3-way comparison
+  native: commerce_core::index::CatalogIndex, re-run fresh in the same
+    session (cargo run p6a_e00_wands_vs_native_eval) to avoid the
+    cross-session Solr-JVM confound PHASE6B_DECISION.md already flagged
+
+workload:
+  selection: category_depth_1 filter-only (7 checkpoints), product_class
+    facet-scan, color facet-scan, sort by title_sort asc, sort by
+    average_rating desc, deep pagination, numeric-range filter on
+    average_rating >= 4.0 (whole catalog)
+  repetitions: WARMUP=5, REPS=30 per operation (matching p6a_e00's own
+    convention exactly); whole binary invoked 3 independent times
+
+seed: "not applicable -- deterministic real-data queries, no RNG"
+
+raw_results: docs/research/artifacts/p6c_e00_lucene_direct_run1/
+  - results_run3_final.csv
+  - console_run1.log, console_run2.log
+  - p6a_e00_same_session_rerun_console.log (native/Solr 3-way comparison source)
+
+analysis: printed directly by the Java harness; see
+  docs/experiments/PHASE6C_LOG.md for the full hypothesis and result.
