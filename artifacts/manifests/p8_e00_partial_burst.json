@@ -3,7 +3,7 @@
   "phase": "8",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p8_e00_partial_burst.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "f2c683adcf53c5cd43a13808e437ce6b8d1dd19e",
   "dataset": {
     "name": "WANDS all 55 real tenants (Zipfian-weighted); burst group: 10 lowest-weight tenants; bystander: Baby & Kids (rank 10)"
   },

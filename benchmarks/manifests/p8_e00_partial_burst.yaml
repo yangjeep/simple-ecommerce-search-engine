@@ -21,7 +21,7 @@ claim: >
   See docs/experiments/PHASE8_LOG.md for the full H16 hypothesis and
   result.
 
-git_sha: PENDING
+git_sha: f2c683adcf53c5cd43a13808e437ce6b8d1dd19e
 binary: crates/phase7-eval/src/bin/p8_e00_partial_burst.rs
 build_command: cargo build --release -p phase7-eval --bin p8_e00_partial_burst
 run_command: ./target/release/p8_e00_partial_burst dataset_cache/wands/catalog.jsonl
