@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e08_extended_breadth_qps.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "ba998b3",
   "dataset": {
     "name": "WANDS real 55 tenants, controlled-stress replicated to 55/200/500/1000/2000 total tenants; quiet tenant: Rugs-copy0"
   },

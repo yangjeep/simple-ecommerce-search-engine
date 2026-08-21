@@ -23,7 +23,7 @@ claim: >
   verdict. See docs/experiments/PHASE7_LOG.md for the full H11
   hypothesis and result.
 
-git_sha: PENDING
+git_sha: ba998b3
 binary: crates/phase7-eval/src/bin/p7_e08_extended_breadth_qps.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e08_extended_breadth_qps
 run_command: ./target/release/p7_e08_extended_breadth_qps dataset_cache/wands/catalog.jsonl
