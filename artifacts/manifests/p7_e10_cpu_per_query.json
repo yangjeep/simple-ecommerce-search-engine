@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e10_cpu_per_query.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "aca8cf0",
   "dataset": {
     "name": "WANDS 3 real tenants (Water Filter Pitchers, Faux Plants and Trees, Furniture -- same sizes as H6/H7/H8/H9)"
   },

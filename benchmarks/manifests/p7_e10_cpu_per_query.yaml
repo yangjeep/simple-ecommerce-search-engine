@@ -25,7 +25,7 @@ claim: >
   docs/experiments/PHASE7_LOG.md for the full H13 hypothesis and
   result.
 
-git_sha: PENDING
+git_sha: aca8cf0
 binary: crates/phase7-eval/src/bin/p7_e10_cpu_per_query.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e10_cpu_per_query
 run_command: ./target/release/p7_e10_cpu_per_query dataset_cache/wands/catalog.jsonl
