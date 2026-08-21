@@ -393,6 +393,56 @@ fn category_and_product_type_facet_counts_by_scan_match_exactly() {
 }
 
 #[test]
+fn brand_category_product_type_facet_counts_ordinal_match_scan_exactly() {
+    // Issue #21 Phase 6D (P6D-E02): ordinal-based counterparts to the
+    // brand/category/product_type `_by_scan` methods. Same correctness
+    // discipline as `facet_counts_ordinal_matches_facet_counts_by_scan_exactly`
+    // above -- exact match required before any timing claim is trusted.
+    use commerce_core::domain::BrandId;
+    use commerce_core::fixtures::cold_start_catalog;
+    use commerce_core::ir::StructuralConstraint;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&all),
+        index.brand_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.category_facet_counts_ordinal(&all),
+        index.category_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.product_type_facet_counts_ordinal(&all),
+        index.product_type_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&all).get(&BrandId(1)),
+        Some(&4)
+    );
+
+    let running_shoes_only = index.indexed_candidates(&[ResolvedConstraint::Structural(
+        StructuralConstraint::ProductType(commerce_core::domain::ProductTypeId(1)),
+    )]);
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&running_shoes_only),
+        index.brand_facet_counts_by_scan(&running_shoes_only, &catalog)
+    );
+    assert_eq!(
+        index.category_facet_counts_ordinal(&running_shoes_only),
+        index.category_facet_counts_by_scan(&running_shoes_only, &catalog)
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index.brand_facet_counts_ordinal(&empty).is_empty());
+    assert!(index.category_facet_counts_ordinal(&empty).is_empty());
+    assert!(index.product_type_facet_counts_ordinal(&empty).is_empty());
+}
+
+#[test]
 fn top_k_ranking_orders_by_preference_score_deterministically() {
     let catalog = combined_catalog();
     let index = CatalogIndex::build(&catalog);

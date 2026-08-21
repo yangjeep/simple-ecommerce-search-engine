@@ -260,11 +260,26 @@ largest candidate counts, converging toward roughly 2.5x-3x rather than
 widening further; its margin over commerce-native's own scan method, by
 contrast, grows sharply with scale instead, consistent with the scan
 method's per-candidate allocation cost getting relatively worse as
-candidate count grows. Real limitations remain (only one facet field
-tested, memory cost estimated not measured, no query-serving path yet
-wired to prefer it, organic growth beyond the replication ladder
-untested), but the core question this whole four-phase thread asked is
-answered.
+candidate count grows. **But the technique is not a universal, free
+win — its own adversarial follow-up (P6D-E02) found the real boundary.**
+Extended to the dedicated `brand`/`category`/`product_type` facets,
+whose existing naive baselines never paid `color`'s attribute-map-clone
+cost, the ordinal method has its own genuine crossover: 1.9x-5.2x
+*slower* than the existing scan at small candidate counts, and faster
+only past a real threshold. The mechanism is the same one that made
+`color`'s result so large, cutting the other way: the ordinal method
+trades a fixed, dictionary-size-proportional per-call cost for
+per-candidate savings, and when the replaced baseline was never
+expensive, that fixed cost can dominate. This does not contradict the
+`color` result — it tells a future implementer exactly when to reach
+for this technique and when not to, which is a more useful outcome than
+an unqualified "always faster" claim would have been. Real limitations
+remain (the crossover point is bracketed, not pinpointed; `brand`/
+`category` have only unit-test coverage; memory cost estimated not
+measured; no query-serving path yet wired to prefer either strategy;
+organic growth beyond the replication ladder untested), but the core
+question this whole four-phase thread asked is answered, with its real
+boundary now characterized rather than assumed away.
 
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more

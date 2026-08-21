@@ -1,0 +1,84 @@
+loading + ingesting real WANDS catalog...
+42994 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/wands_bench)...
+  Solr reachable: numFound=42994
+
+computing real category-leaf and per-depth group-size distributions...
+  1623 distinct real leaf categories, 458 distinct real depth-3 subtrees
+
+selected real leaf-category groups (category render workload):
+  CategoryId(1613) (Home Improvement / Hardware / Cabinet Hardware / Cabinet & Drawer Knobs / Iron Cabinet & Drawer Knobs): 2 products [tiny (2-10)]
+  CategoryId(532) (Furniture / Living Room Furniture / Cabinets & Chests / White Cabinets & Chests): 13 products [small (11-100)]
+  CategoryId(194) (Storage & Organization / Storage Containers & Drawers / All Storage Containers): 121 products [medium (101-1,000)]
+  CategoryId(37) (Furniture / Living Room Furniture / Chairs & Seating / Accent Chairs): 1103 products [large (1,001-10,000)]
+selected real depth-3 subtree groups (hierarchy/subtree-browse workload):
+  "Outdoor / Hot Tubs & Saunas / Sauna Accessories": 6 products [tiny (2-10)]
+  "Furniture / Game Tables & Game Room Furniture / Sports Team Fan Shop & Memorabillia": 25 products [small (11-100)]
+  "Baby & Kids / Nursery Bedding / Crib Bedding Sets": 132 products [medium (101-1,000)]
+  "Furniture / Kitchen & Dining Furniture / Bar Furniture": 1063 products [large (1,001-10,000)]
+
+running depth-1 crossover-characterization sweep (color facet under filter):
+
+=== P6A-E00 result ===
+request class                              group            key                          bucket                  n_count    s_count   match  n_mean_ms  s_mean_ms    speedup
+category_render_filter_first_page          category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0001     0.9006    7874.36
+color_facet_under_category_filter          category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0017     0.7264     415.19
+product_class_facet_under_category_filter  category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0001     0.6571    4418.75
+product_class_facet_ordinal_under_category_filter category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0007     0.6571     914.58
+style_facet_under_category_filter          category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0011     0.6726     638.77
+sort_title_under_category_filter           category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0002     0.8401    4412.13
+sort_rating_desc_under_category_filter     category_leaf    Home Improvement / Hardware  tiny (2-10)                   2          2    true     0.0002     0.9157    4404.39
+category_render_filter_first_page          category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0001     1.6042   17877.60
+color_facet_under_category_filter          category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0124     0.6828      55.25
+product_class_facet_under_category_filter  category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0006     0.7734    1291.88
+product_class_facet_ordinal_under_category_filter category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0020     0.7734     384.23
+style_facet_under_category_filter          category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0070     0.7030     100.87
+sort_title_under_category_filter           category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0009     1.6740    1853.87
+sort_rating_desc_under_category_filter     category_leaf    Furniture / Living Room Furn small (11-100)               13         13    true     0.0010     1.6817    1667.73
+category_render_filter_first_page          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0001     2.3136   19115.69
+color_facet_under_category_filter          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0754     0.8765      11.62
+product_class_facet_under_category_filter  category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0038     0.6224     161.93
+product_class_facet_ordinal_under_category_filter category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0012     0.6224     512.67
+style_facet_under_category_filter          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0749     0.7351       9.82
+sort_title_under_category_filter           category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0110     2.4048     219.46
+sort_rating_desc_under_category_filter     category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0159     2.1638     136.24
+deep_pagination_under_category_filter      category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0001     2.1537   23736.62
+category_render_filter_first_page          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.0001     2.0916   15913.55
+color_facet_under_category_filter          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.6595     0.7097       1.08
+product_class_facet_under_category_filter  category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.0312     0.7070      22.64
+product_class_facet_ordinal_under_category_filter category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.0049     0.7070     144.84
+style_facet_under_category_filter          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.7236     0.6919       0.96
+sort_title_under_category_filter           category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.1019     1.6500      16.19
+sort_rating_desc_under_category_filter     category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.3058     2.1933       7.17
+deep_pagination_under_category_filter      category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.0001     2.4263   17581.61
+subtree_browse_depth3_filter_first_page    category_depth_3 Outdoor / Hot Tubs & Saunas  tiny (2-10)                   6          6    true     0.0001     1.1023    8214.05
+mixed_color_facet_under_subtree_depth3     category_depth_3 Outdoor / Hot Tubs & Saunas  tiny (2-10)                   6          6    true     0.0022     0.6370     292.21
+subtree_browse_depth3_filter_first_page    category_depth_3 Furniture / Game Tables & Ga small (11-100)               25         25    true     0.0001     1.8486   12490.34
+mixed_color_facet_under_subtree_depth3     category_depth_3 Furniture / Game Tables & Ga small (11-100)               25         25    true     0.0093     0.6900      73.81
+subtree_browse_depth3_filter_first_page    category_depth_3 Baby & Kids / Nursery Beddin medium (101-1,000)          132        132    true     0.0003     2.1526    8296.10
+mixed_color_facet_under_subtree_depth3     category_depth_3 Baby & Kids / Nursery Beddin medium (101-1,000)          132        132    true     0.0696     1.0061      14.45
+subtree_browse_depth3_filter_first_page    category_depth_3 Furniture / Kitchen & Dining large (1,001-10,000)       1063       1063    true     0.0002     2.2895   12840.82
+mixed_color_facet_under_subtree_depth3     category_depth_3 Furniture / Kitchen & Dining large (1,001-10,000)       1063       1063    true     0.8435     1.0004       1.19
+color_facet_under_depth1_crossover_sweep   category_depth_1 Rugs                         large (1,001-10,000)       2002       2002    true     1.2624     1.0205       0.81
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Rugs                         large (1,001-10,000)       2002       2002    true     0.0236     1.0205      43.22
+color_facet_under_depth1_crossover_sweep   category_depth_1 Storage & Organization       large (1,001-10,000)       2175       2175    true     1.6182     1.0816       0.67
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Storage & Organization       large (1,001-10,000)       2175       2175    true     0.0294     1.0816      36.82
+color_facet_under_depth1_crossover_sweep   category_depth_1 Lighting                     large (1,001-10,000)       2072       2072    true     1.2955     1.1091       0.86
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Lighting                     large (1,001-10,000)       2072       2072    true     0.0129     1.1091      86.26
+color_facet_under_depth1_crossover_sweep   category_depth_1 Outdoor                      large (1,001-10,000)       3394       3394    true     2.8883     1.0797       0.37
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Outdoor                      large (1,001-10,000)       3394       3394    true     0.0718     1.0797      15.05
+color_facet_under_depth1_crossover_sweep   category_depth_1 Décor & Pillows              large (1,001-10,000)       4612       4612    true     4.4839     1.1101       0.25
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Décor & Pillows              large (1,001-10,000)       4612       4612    true     0.1992     1.1101       5.57
+color_facet_under_depth1_crossover_sweep   category_depth_1 Home Improvement             large (1,001-10,000)       4686       4686    true     3.7577     1.0981       0.29
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Home Improvement             large (1,001-10,000)       4686       4686    true     0.0861     1.0981      12.76
+color_facet_under_depth1_crossover_sweep   category_depth_1 Furniture                    huge (>10,000)            16039      16039    true    18.8077     1.1364       0.06
+color_facet_ordinal_under_depth1_crossover_sweep category_depth_1 Furniture                    huge (>10,000)            16039      16039    true     0.2425     1.1364       4.69
+
+correctness: 52/52 rows had matching native/Solr counts -- SEE MISMATCHES BELOW
+  FACET MISMATCH product_class_under_category=Storage & Organization / Storage Containers & Drawers / All Storage Containers: native={"": 6, "Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3} solr={"Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3}
+  FACET MISMATCH product_class_ordinal_under_category=Storage & Organization / Storage Containers & Drawers / All Storage Containers: native_ordinal={"": 6, "Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3} solr={"Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3}
+  FACET MISMATCH product_class_under_category=Furniture / Living Room Furniture / Chairs & Seating / Accent Chairs: native={"": 81, "Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1} solr={"Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1}
+  FACET MISMATCH product_class_ordinal_under_category=Furniture / Living Room Furniture / Chairs & Seating / Accent Chairs: native_ordinal={"": 81, "Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1} solr={"Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1}
+
+artifacts written to dataset_cache/p6a_e00_artifacts

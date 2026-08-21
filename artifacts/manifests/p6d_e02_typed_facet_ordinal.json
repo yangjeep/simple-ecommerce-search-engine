@@ -1,0 +1,27 @@
+{
+  "experiment_id": "P6D-E02",
+  "phase": "6D",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6d_e02_typed_facet_ordinal.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog, product_class facet under 8 real leaf-category groups (n=2 to n=1,103)"
+  },
+  "engine_config": {
+    "native_scan": "commerce_core::index::CatalogIndex::product_type_facet_counts_by_scan (existing)",
+    "native_ordinal": "commerce_core::index::CatalogIndex::product_type_facet_counts_ordinal (new)",
+    "solr": "Apache Solr 9.10.1, wands_bench core, re-queried same session"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6d_e02_typed_facet_ordinal_run1/",
+  "analysis_version": "docs/experiments/PHASE6D_LOG.md#P6D-E02",
+  "decision": "PHASE6D_DECISION.md",
+  "headline_result": {
+    "correctness_gate": "unit test exact match vs the three _by_scan methods (full/filtered/empty); real-data mismatches reproduce the exact same 2 pre-existing benign product_class mismatches as the scan method, byte-for-byte identical",
+    "ordinal_vs_scan_small_n": "SLOWER: 4.8x-5.2x at n=2, 1.9x-2.4x at n=13",
+    "ordinal_vs_scan_larger_n": "faster: 2.3x at n=121, 6.2x at n=1,103",
+    "ordinal_vs_solr": "faster at every n tested (142x-944x), but not very informative at these small candidate counts since Solr's own cost here is consistent with network/HTTP-bound rather than facet-algorithm-bound",
+    "finding": "the ordinal facet-counting technique is NOT a universal, unconditional win -- it has its own real crossover for fields whose naive baseline was already cheap (no attribute-map clone to remove), caused by a fixed dictionary-size-proportional per-call cost (zeroing a counter array sized to ~860 distinct product_class values). This qualifies, not contradicts, P6D-E00/E01's own color-facet finding: the win depends on both candidate count and how expensive the replaced baseline already was.",
+    "named_limitation": "only product_type measured in a real-data benchmark (brand/category have unit-test-only coverage); crossover point bracketed (n=13 to n=121) not pinpointed; candidate-count range (2-1,103) not deliberately scaled; no large-n product_type-vs-Solr comparison run"
+  }
+}

@@ -1,0 +1,60 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6D-E02
+phase: 6D
+issue: 21
+decision_document: PHASE6D_DECISION.md
+claim: >
+  An adversarial follow-up to P6D-E00/E01, not a coverage extension:
+  does the ordinal facet-counting technique still help when the naive
+  baseline never paid the expensive per-candidate attribute-map clone
+  color's baseline paid? Implemented brand_facet_counts_ordinal /
+  category_facet_counts_ordinal / product_type_facet_counts_ordinal
+  on CatalogIndex, correctness-gated exactly against the existing
+  _by_scan methods (new unit test) and against Solr's own live
+  response (extended p6a_e00's product_class-under-category-leaf
+  operation). Result: a REAL CROSSOVER, not a uniform win -- the
+  ordinal method is 1.9x-5.2x SLOWER than the existing scan at small
+  candidate counts (n=2, n=13), and only faster past a real threshold
+  (2.3x at n=121, 6.2x at n=1,103), because it trades a fixed,
+  dictionary-size-proportional per-call cost (~860 distinct
+  product_class values in WANDS) for per-candidate savings that are
+  smaller when there is no clone to remove. This is a genuine
+  qualifier to P6D-E00/E01's own "ordinal always wins" framing: the
+  technique's win depends on both candidate count and how expensive
+  the baseline being replaced already was. See
+  docs/experiments/PHASE6D_LOG.md for the full hypothesis and result.
+
+git_sha: PENDING
+binary: crates/commerce-core/src/index/mod.rs (brand/category/product_type_facet_counts_ordinal), crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs (benchmark)
+build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
+run_command: ./target/release/p6a_e00_wands_vs_native_eval dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+test_command: cargo test -p commerce-core --all-features
+
+dataset:
+  name: real WANDS catalog (42,994 products), product_class facet under
+    8 real leaf-category groups spanning WANDS' natural size
+    distribution (n=2 to n=1,103), same category-leaf sweep P5-E00/P6A-E00
+    both used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native_scan: commerce_core::index::CatalogIndex::product_type_facet_counts_by_scan (existing, Phase 6A)
+  native_ordinal: commerce_core::index::CatalogIndex::product_type_facet_counts_ordinal (new, this experiment)
+  solr: Apache Solr 9.10.1, wands_bench core, re-queried live in the same session
+
+workload:
+  selection: product_class facet-count under a category-leaf filter, 8
+    real leaf-category groups at WANDS' natural size distribution
+    (n=2, 2, 2, 13, 13, 13, 121, 1103)
+  repetitions: WARMUP=5, REPS=30 per operation; whole binary invoked 3
+    independent times
+
+seed: "SEED=7 (matches p6a_e00's own fixed-seed category-leaf selection)"
+
+raw_results: docs/research/artifacts/p6d_e02_typed_facet_ordinal_run1/
+  - console_run1.log, console_run2.log, console_run3.log
+  - results_run1.csv, results_run2.csv, results_run3.csv
+
+analysis: printed directly by the Rust binary; see
+  docs/experiments/PHASE6D_LOG.md for the full hypothesis and result.

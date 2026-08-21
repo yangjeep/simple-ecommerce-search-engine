@@ -93,11 +93,21 @@ byte-for-byte equality with the existing scan method rather than with
 - The generic `Enum`/`MultiEnum` attribute system now has two counting
   strategies with different scope (`facet_counts_by_scan`/
   `facet_counts_ordinal` cover only single-valued `Enum`; `facet_counts`
-  alone covers `MultiEnum` too via `enum_bitmaps`). Extending the
-  ordinal approach to `MultiEnum` and to the dedicated
-  brand/category/product_type facets (currently `HashMap<TypedId,
-  RoaringBitmap>`-based) is named as a follow-on in `PHASE6D_DECISION.md`,
-  not attempted in this pass.
+  alone covers `MultiEnum` too via `enum_bitmaps`).
+- **Extended to the dedicated `brand`/`category`/`product_type` facets
+  (P6D-E02) — and this extension found the technique's own real limit.**
+  Unlike `color`'s baseline, these dedicated `_by_scan` methods never
+  paid an attribute-map clone (they read the typed ID directly via an
+  `O(1)` `lookup_product`), so the ordinal method's own fixed cost
+  (zeroing a counter array sized to the full attribute dictionary on
+  every call) is not always amortized: it is 1.9x-5.2x *slower* than the
+  existing scan at small candidate counts (n=2, n=13 in the real-data
+  test), and only faster past a real threshold (n=121: 2.3x faster;
+  n=1,103: 6.2x faster). Both directions are correctness-gated by a new
+  unit test and confirmed against Solr's live response. This is not a
+  contradiction of the `color` result — it is the same mechanism cutting
+  the other way when the baseline it would replace was never expensive
+  to begin with.
 - No new dependency: built entirely from `std::collections::HashMap`/
   `Vec`, already used throughout `commerce-core`; `roaring` (the crate's
   sole runtime dependency) is unaffected.
@@ -116,16 +126,15 @@ byte-for-byte equality with the existing scan method rather than with
   place. A `Vec<RoaringBitmap>` variant remains a real, un-benchmarked
   alternative if a future workload has few candidates but very high
   attribute cardinality (the inverse of this phase's tested shape).
-- **Extend the ordinal design to `MultiEnum` and the dedicated
-  brand/category/product_type facets in this same pass.** Deferred, not
-  rejected: scoping to single-valued `Enum` first (matching
-  `facet_counts_by_scan`'s own existing scope exactly) kept the
-  correctness-gate comparison exact and the change small enough to
-  benchmark and land in one checkpoint; both are named as concrete
-  next steps in `PHASE6D_DECISION.md`.
-- **Wire `facet_counts_ordinal` as the new default immediately**, given
-  how decisive the result is. Rejected for this pass: no real
-  query-serving/planner code exists yet to wire it into, and the method
-  does not yet cover `MultiEnum` or the dedicated typed-ID facets —
-  making it a silent default before those gaps close would risk a real
-  behavior regression for any future caller needing that coverage.
+- **Extend the ordinal design to `MultiEnum` in this same pass.**
+  Deferred, not rejected: scoping to single-valued `Enum`/typed-ID
+  facets first kept the correctness-gate comparisons exact and the
+  change small enough to benchmark and land incrementally; named as a
+  concrete next step in `PHASE6D_DECISION.md`.
+- **Wire any of the ordinal methods as an unconditional default
+  immediately**, given how decisive the `color` result was. Rejected,
+  and P6D-E02 shows this would have been a real mistake, not just
+  premature: for the dedicated typed-ID facets, an unconditional
+  default would regress performance below each field's own crossover
+  point. Any real integration needs the candidate-count/dictionary-size-
+  aware selection named in `PHASE6D_DECISION.md`, not a blanket switch.

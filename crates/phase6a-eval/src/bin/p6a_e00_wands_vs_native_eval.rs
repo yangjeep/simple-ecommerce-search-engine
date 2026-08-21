@@ -554,6 +554,7 @@ fn main() {
                 "FACET MISMATCH product_class_under_category={category_name}: native={native_facets:?} solr={solr_facets:?}"
             ));
         }
+        let solr_ns_reused = solr_ns.clone();
         push_row(
             &mut rows,
             &mut mismatches,
@@ -565,6 +566,43 @@ fn main() {
             solr_count,
             native_ns,
             solr_ns,
+        );
+
+        // Issue #21 Phase 6D (P6D-E02): the ordinal-based counterpart to
+        // `product_type_facet_counts_by_scan` -- unlike the generic Enum
+        // scan, this baseline never paid a per-candidate attribute-map
+        // clone (it reads `product.product_type` directly), so this is
+        // an adversarial test of whether the ordinal technique still
+        // helps when that specific inefficiency was never present.
+        let (native_ordinal_ns, native_ordinal_facets_full) = time_reps(|| {
+            index
+                .product_type_facet_counts_ordinal(&category_bitmap)
+                .into_iter()
+                .map(|(id, c)| {
+                    (
+                        product_type_raw_by_id.get(&id).cloned().unwrap_or_default(),
+                        c,
+                    )
+                })
+                .collect::<BTreeMap<String, u64>>()
+        });
+        let native_ordinal_facets = top_n(native_ordinal_facets_full, 50);
+        if native_ordinal_facets != solr_facets {
+            mismatches.push(format!(
+                "FACET MISMATCH product_class_ordinal_under_category={category_name}: native_ordinal={native_ordinal_facets:?} solr={solr_facets:?}"
+            ));
+        }
+        push_row(
+            &mut rows,
+            &mut mismatches,
+            "product_class_facet_ordinal_under_category_filter",
+            "category_leaf",
+            &category_name,
+            &bucket,
+            category_bitmap.len(),
+            solr_count,
+            native_ordinal_ns,
+            solr_ns_reused,
         );
 
         // 4. style facet under category filter (LOW cardinality: 65

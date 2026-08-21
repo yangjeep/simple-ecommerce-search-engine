@@ -279,3 +279,144 @@ growth is untested. 320,780 candidates (the largest tested) is still a
 single-digit-million-scale candidate set, not the 10M+-candidate range
 some real large catalogs might reach -- whether the narrowing trend
 continues, plateaus, or reverses beyond this range is untested.
+
+## P6D-E02: does the ordinal technique still help when the naive baseline never had the expensive part? (adversarial test, hypothesis stated before implementation)
+
+**Why this test exists.** P6D-E00/E01 measured only the generic `Enum`
+`color` attribute, where `facet_counts_by_scan`'s naive baseline paid a
+genuinely expensive per-candidate cost: a full `BTreeMap<String,
+AttributeValue>` clone via `effective_attributes`. The three dedicated
+typed-ID facets (`brand`, `category`, `product_type`) have their own
+`_by_scan` siblings that were **never that expensive** -- they read
+`product.brand`/`product.category`/`product.product_type` directly via
+an `O(1)` reference lookup (`lookup_product`), no attribute-map clone,
+no string hashing (the key is already a `Copy` `u32` newtype). Before
+extending the "ordinal counting wins" narrative to these fields too,
+this experiment adversarially asks: does the ordinal technique still
+help when the specific inefficiency it removes was never present in the
+baseline, or could it actually be *slower*, given it has its own real
+fixed cost (allocating and zeroing a `Vec<u64>` counter array sized to
+the full attribute dictionary on every call) that the already-cheap
+scan never paid?
+
+**Falsifiable hypothesis (H, P6D-E02)**: `product_type_facet_counts_ordinal`
+will show a **real crossover of its own** against
+`product_type_facet_counts_by_scan` -- slower at small candidate counts
+(where the fixed dictionary-sized array allocation dominates) and
+faster only past some real candidate-count threshold (where per-candidate
+savings, still real even without a clone to remove, start to amortize
+that fixed cost). Falsifiable both ways: the ordinal method could
+instead win uniformly (if array allocation is cheap enough to be
+negligible even at n=2) or lose uniformly (if per-candidate savings
+without a clone-removal are too small to ever amortize the fixed cost
+at realistic candidate counts).
+
+**Design**: added `brand_facet_counts_ordinal`/`category_facet_counts_ordinal`/
+`product_type_facet_counts_ordinal` to `CatalogIndex`, using the
+identical dictionary + flat-column technique as `facet_counts_ordinal`,
+but simpler: every variant always has exactly one brand/category/
+product_type (no "missing value" case), so each column is built with a
+single in-order `push` per variant, no raw-then-finalize pass needed. A
+shared `ordinal_for` free function (not a `&mut self` method, to keep
+dictionary/reverse-map field borrows disjoint) does the get-or-assign
+dictionary lookup for all three fields plus the existing `color` case.
+Extended `p6a_e00_wands_vs_native_eval.rs`'s existing
+`product_class_facet_under_category_filter` operation (product_type
+faceting under a category-leaf filter, at 8 real leaf-category groups
+spanning WANDS' natural tiny-to-large size distribution: n=2 to
+n=1,103) with a parallel ordinal row, reusing the same live Solr
+measurement. 3 independent full-binary runs.
+
+**Correctness gate**: a new unit test
+(`brand_category_product_type_facet_counts_ordinal_match_scan_exactly`)
+asserts exact match against the three `_by_scan` methods across full/
+filtered/empty inputs. The real-data benchmark's own mismatch check
+(ordinal vs. Solr) reproduced the exact same 2 pre-existing, already-
+documented benign `product_class` empty-string-bucket mismatches every
+prior P6A-E00/P6C/P6D measurement has shown (byte-for-byte identical
+output to the existing `_by_scan` method, confirmed by direct
+comparison) -- not a new problem, and expected, since the ordinal method
+is designed to exactly replicate `_by_scan`'s own output.
+
+## P6D-E02 result: CONFIRMED -- a real crossover exists, and the earlier "ordinal always wins" framing needed this qualifier
+
+Raw data: `docs/research/artifacts/p6d_e02_typed_facet_ordinal_run1/`
+(3 console logs, 3 CSVs).
+
+**Medians across 3 runs, product_type ("product_class") facet under a
+category-leaf filter, at WANDS' natural leaf-category size distribution**:
+
+| Candidates | Scan (ms) | Ordinal (ms) | Solr (ms) | Ordinal vs. scan | Ordinal vs. Solr |
+|---|---|---|---|---|---|
+| 2 | 0.00013 | 0.00070 | 0.659 | 0.19x (**5.2x slower**) | 944x faster |
+| 2 | 0.00028 | 0.00129 | 0.699 | 0.21x (**4.8x slower**) | 542x faster |
+| 2 | 0.00014 | 0.00073 | 0.524 | 0.19x (**5.2x slower**) | 716x faster |
+| 13 | 0.00038 | 0.00080 | 0.664 | 0.47x (**2.1x slower**) | 830x faster |
+| 13 | 0.00040 | 0.00075 | 0.571 | 0.53x (**1.9x slower**) | 766x faster |
+| 13 | 0.00038 | 0.00091 | 0.520 | 0.41x (**2.4x slower**) | 574x faster |
+| 121 | 0.00302 | 0.00129 | 0.564 | **2.34x faster** | 438x faster |
+| 1,103 | 0.03008 | 0.00485 | 0.691 | **6.20x faster** | 142x faster |
+
+**A real crossover exists, exactly as hypothesized: the ordinal method
+is SLOWER than the existing scan method at small candidate counts
+(n=2: 4.8x-5.2x slower; n=13: 1.9x-2.4x slower), and only becomes faster
+somewhere between n=13 and n=121 (2.3x faster at n=121, 6.2x faster at
+n=1,103).** This is the mechanistic confirmation the adversarial
+hypothesis predicted: `product_type_facet_counts_ordinal`'s fixed cost
+-- allocating and zeroing a `Vec<u64>` sized to the full `product_class`
+dictionary (~860 distinct values in WANDS) on *every single call* --
+genuinely dominates when the candidate set is tiny, since the already-
+cheap scan (no clone, no string hash, just a `lookup_product` + typed
+integer key `BTreeMap` insert) has no equivalent fixed cost to remove.
+Past roughly n=100-1,000, per-candidate savings (still real: the scan's
+own `BTreeMap<TypedId, u64>` insert has real `O(log n)` tree-rebalancing
+cost per candidate that the ordinal method's flat-array increment
+avoids) amortize the fixed cost and the ordinal method wins.
+
+**This is a genuine, valuable qualifier to P6D-E00/E01's own framing, not
+a contradiction of it.** Both findings are true and mechanistically
+consistent: for the generic `Enum` `color` field, where the naive scan
+paid an expensive per-candidate attribute-map clone, the ordinal method
+won at every single candidate count tested (2,002-320,780) with no
+crossover at all -- the fixed cost was trivial next to the clone-removal
+savings even at the smallest tested scale. For the dedicated
+`product_type` field, where the naive scan was already cheap, the
+ordinal method has its own real, adversarially-confirmed crossover
+against that already-cheap baseline. **The lesson: the ordinal
+technique's win is not universal or free -- it trades a per-call fixed
+cost (proportional to attribute dictionary size) for per-candidate
+savings, and whether it wins depends on both the candidate count AND
+how expensive the specific baseline being replaced already was.** A
+production system wiring this in as a default (named as a future step
+in `PHASE6D_DECISION.md`, not done in this codebase) would need this
+crossover characterized per-field, or a candidate-count-adaptive choice
+between strategies, not a blanket switch.
+
+**Against Solr, the ordinal method still wins by a wide margin at every
+candidate count tested (142x-944x)** -- but this specific comparison is
+not very informative about facet-counting algorithms at these
+particular candidate counts: Solr's own absolute cost here (0.52-0.70ms)
+is consistent with being dominated by HTTP/network round-trip overhead
+rather than real per-candidate facet-counting work, since candidate
+counts this small (2-1,103) are trivial for any in-process method
+regardless of algorithm. The meaningful vs.-Solr comparison for this
+field, at candidate counts large enough to be informative (matching
+color's 2,002-320,780 range), was not run in this pass -- named as a
+limitation below.
+
+**Named limitations**: only `product_type` (not `brand`/`category`)
+measured in a real-data benchmark (all three have equivalent unit-test
+correctness coverage, but only `product_type` had an existing Solr-
+comparable operation in `p6a_e00` to extend). The candidate-count range
+tested here (2-1,103) comes from WANDS' natural leaf-category size
+distribution, not a deliberately-scaled sweep -- the exact crossover
+point (somewhere between n=13 and n=121) is bracketed, not pinpointed.
+A genuinely large-candidate-count product_type-vs-Solr comparison
+(matching color's 2,002-320,780 range) was not run, so whether the
+ordinal method's margin over Solr specifically narrows the way color's
+did (P6D-E01) is untested for this field. Absolute timings at the
+smallest candidate counts (sub-microsecond to low-microsecond) are close
+to measurement-noise territory for a single sample, though the direction
+was consistent across all 3 independent runs. The mechanism (dictionary-
+size-proportional array allocation as the fixed cost) is inferred from
+the code's own structure, not independently profiled.

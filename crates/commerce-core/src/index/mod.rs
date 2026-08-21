@@ -59,6 +59,23 @@ pub struct CatalogIndex {
     category_bitmaps: HashMap<CategoryId, RoaringBitmap>,
     price_index: Vec<(i64, Ordinal)>,
 
+    // Issue #21 Phase 6D (P6D-E02): the same ordinal/dictionary technique
+    // as `enum_dictionary`/`enum_columns`, extended to the three
+    // dedicated typed-ID facets. Simpler than the Enum case: every
+    // variant always has exactly one brand/category/product_type (no
+    // "missing value" sentinel needed), so each column is built with a
+    // single in-order `push` per variant rather than a raw-then-finalize
+    // pass.
+    brand_dictionary: Vec<BrandId>,
+    brand_ordinal_of: HashMap<BrandId, u32>,
+    brand_column: Vec<u32>,
+    category_dictionary: Vec<CategoryId>,
+    category_ordinal_of: HashMap<CategoryId, u32>,
+    category_column: Vec<u32>,
+    product_type_dictionary: Vec<ProductTypeId>,
+    product_type_ordinal_of: HashMap<ProductTypeId, u32>,
+    product_type_column: Vec<u32>,
+
     lexical_postings: HashMap<String, RoaringBitmap>,
 }
 
@@ -72,6 +89,27 @@ pub fn tokenize(text: &str) -> impl Iterator<Item = String> + '_ {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
         .map(str::to_lowercase)
+}
+
+/// Get-or-assign a dense `u32` ordinal for `value` in a dictionary/reverse-map
+/// pair, used identically for `brand`/`category`/`product_type` (Issue #21
+/// Phase 6D, P6D-E02) -- shared as a free function rather than a `&mut self`
+/// method so callers can hold two disjoint `CatalogIndex` field borrows
+/// (the dictionary and the reverse map) simultaneously without a closure
+/// re-borrowing `self` as a whole.
+fn ordinal_for<T: Copy + Eq + std::hash::Hash>(
+    dictionary: &mut Vec<T>,
+    ordinal_of: &mut HashMap<T, u32>,
+    value: T,
+) -> u32 {
+    if let Some(&existing) = ordinal_of.get(&value) {
+        existing
+    } else {
+        let new_ordinal = dictionary.len() as u32;
+        dictionary.push(value);
+        ordinal_of.insert(value, new_ordinal);
+        new_ordinal
+    }
 }
 
 impl CatalogIndex {
@@ -105,6 +143,25 @@ impl CatalogIndex {
                     .or_default()
                     .insert(ord);
                 price_raw.push((variant.price.amount_cents, ord));
+
+                let brand_ord = ordinal_for(
+                    &mut idx.brand_dictionary,
+                    &mut idx.brand_ordinal_of,
+                    product.brand,
+                );
+                idx.brand_column.push(brand_ord);
+                let category_ord = ordinal_for(
+                    &mut idx.category_dictionary,
+                    &mut idx.category_ordinal_of,
+                    product.category,
+                );
+                idx.category_column.push(category_ord);
+                let product_type_ord = ordinal_for(
+                    &mut idx.product_type_dictionary,
+                    &mut idx.product_type_ordinal_of,
+                    product.product_type,
+                );
+                idx.product_type_column.push(product_type_ord);
 
                 idx.index_attributes(
                     &effective_attributes(product, variant),
@@ -630,6 +687,74 @@ impl CatalogIndex {
             }
         }
         counts
+    }
+
+    /// Issue #21 Phase 6D (P6D-E02): an ordinal-based counterpart to
+    /// `brand_facet_counts_by_scan`, following the same dictionary +
+    /// flat-array-column technique as `facet_counts_ordinal`. Unlike the
+    /// generic `Enum` case, `brand_facet_counts_by_scan` never paid a
+    /// per-candidate attribute-map clone (it reads `product.brand`
+    /// directly via `lookup_product`, an `O(1)` reference lookup) --
+    /// this exists to adversarially test whether the ordinal technique
+    /// still helps meaningfully when the naive baseline never had that
+    /// specific inefficiency, or whether the earlier dramatic margins
+    /// (P6D-E00/E01) were entirely attributable to removing the clone.
+    pub fn brand_facet_counts_ordinal(&self, candidates: &RoaringBitmap) -> BTreeMap<BrandId, u64> {
+        let mut counts = vec![0u64; self.brand_dictionary.len()];
+        for ord in candidates.iter() {
+            if let Some(&value_ord) = self.brand_column.get(ord as usize) {
+                counts[value_ord as usize] += 1;
+            }
+        }
+        let mut result = BTreeMap::new();
+        for (value_ord, count) in counts.into_iter().enumerate() {
+            if count > 0 {
+                result.insert(self.brand_dictionary[value_ord], count);
+            }
+        }
+        result
+    }
+
+    /// The ordinal-based counterpart to `category_facet_counts_by_scan`;
+    /// see `brand_facet_counts_ordinal` for the rationale.
+    pub fn category_facet_counts_ordinal(
+        &self,
+        candidates: &RoaringBitmap,
+    ) -> BTreeMap<CategoryId, u64> {
+        let mut counts = vec![0u64; self.category_dictionary.len()];
+        for ord in candidates.iter() {
+            if let Some(&value_ord) = self.category_column.get(ord as usize) {
+                counts[value_ord as usize] += 1;
+            }
+        }
+        let mut result = BTreeMap::new();
+        for (value_ord, count) in counts.into_iter().enumerate() {
+            if count > 0 {
+                result.insert(self.category_dictionary[value_ord], count);
+            }
+        }
+        result
+    }
+
+    /// The ordinal-based counterpart to `product_type_facet_counts_by_scan`;
+    /// see `brand_facet_counts_ordinal` for the rationale.
+    pub fn product_type_facet_counts_ordinal(
+        &self,
+        candidates: &RoaringBitmap,
+    ) -> BTreeMap<ProductTypeId, u64> {
+        let mut counts = vec![0u64; self.product_type_dictionary.len()];
+        for ord in candidates.iter() {
+            if let Some(&value_ord) = self.product_type_column.get(ord as usize) {
+                counts[value_ord as usize] += 1;
+            }
+        }
+        let mut result = BTreeMap::new();
+        for (value_ord, count) in counts.into_iter().enumerate() {
+            if count > 0 {
+                result.insert(self.product_type_dictionary[value_ord], count);
+            }
+        }
+        result
     }
 
     /// Top-K ranking (Gate 3): correctness-verified hits from `execute`,

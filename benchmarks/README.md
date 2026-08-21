@@ -174,6 +174,16 @@ same as Phases 0–5:
   exceptions -- but the margin narrows (not grows) at the largest
   candidate counts, converging toward ~2.5x-3x; its margin over the
   scan method grows sharply with scale instead; see `PHASE6D_DECISION.md`.
+- `p6d_e02_typed_facet_ordinal.yaml` — an adversarial follow-up, not a
+  coverage extension: does the ordinal technique still help when the
+  naive baseline never paid color's expensive attribute-map clone?
+  Extended to brand/category/product_type facets. Result: a REAL
+  crossover, not a uniform win -- 1.9x-5.2x slower than the existing
+  scan at small candidate counts (n=2, n=13), only faster past a real
+  threshold (2.3x-6.2x at n=121-1,103) -- because the ordinal method
+  trades a fixed, dictionary-size-proportional per-call cost for
+  per-candidate savings that shrink when there's no clone to remove;
+  see `PHASE6D_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

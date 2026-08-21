@@ -1,11 +1,20 @@
-# Phase 6D Decision (Issue #21 Phase 6, extending 6A/6B/6C — the facet crossover closes)
+# Phase 6D Decision (Issue #21 Phase 6, extending 6A/6B/6C — the facet crossover closes, with a real qualifier)
 
 **Decision: PROCEED**, with the single highest-value question P6C-E01
 surfaced now answered: commerce-native's own facet counting *can* adopt
-an ordinal-based technique, and doing so does not merely narrow the
-long-standing facet crossover against Solr — it reverses it decisively,
-by a substantially larger margin than Lucene's own equivalent module
-achieved.
+an ordinal-based technique, and for the field this project's own
+repeated crossover finding was built on (`color`, a generic `Enum`
+attribute), doing so does not merely narrow the long-standing crossover
+against Solr — it reverses it decisively, holding across the full
+WANDS-to-20x-replication scale range tested. **But this phase's own
+adversarial follow-up (P6D-E02) found the technique is not a universal,
+free win**: for fields whose existing naive baseline was already cheap
+(the dedicated `brand`/`category`/`product_type` facets), the ordinal
+method has a real crossover of its own — slower at small candidate
+counts, faster only past a real threshold — because it trades a fixed,
+dictionary-size-proportional per-call cost for per-candidate savings.
+Both results are correctness-gated and are reported together, not
+selectively.
 
 ## Recap: what this phase was asked to answer
 
@@ -112,9 +121,32 @@ scale while both other methods scale closer to linearly. All 85 rows
 mismatches. See "P6D-E01" in `docs/experiments/PHASE6D_LOG.md` for the
 full table and mechanism discussion.
 
+**A real crossover found in the technique itself, not just in the
+comparison against Solr (P6D-E02, an adversarial test of the earlier
+finding's generality)**: extending the ordinal technique to the three
+dedicated typed-ID facets (`brand`/`category`/`product_type`) tested
+whether it still helps when the naive baseline never paid the expensive
+attribute-map clone `color`'s baseline paid (these dedicated `_by_scan`
+methods read the typed ID directly, no clone, no string hash). Result:
+**the ordinal method is SLOWER than the existing scan method at small
+candidate counts** (4.8x-5.2x slower at n=2, 1.9x-2.4x slower at n=13),
+**and only becomes faster past a real threshold** (2.3x faster at
+n=121, 6.2x faster at n=1,103) — a genuine crossover, not a uniform win,
+caused by the ordinal method's own fixed cost (allocating and zeroing a
+counter array sized to the full attribute dictionary, ~860 distinct
+`product_class` values in WANDS) dominating when there are too few
+candidates to amortize it. Against Solr the ordinal method still wins
+by a wide margin (142x-944x) at every candidate count tested here, but
+this specific comparison is not very informative at these particular
+counts (2-1,103) since Solr's own cost is consistent with being
+network/HTTP-bound rather than facet-algorithm-bound at this scale. See
+"P6D-E02" in `docs/experiments/PHASE6D_LOG.md` for the full table and
+mechanism discussion.
+
 Full tables, raw CSVs, console logs: `docs/experiments/PHASE6D_LOG.md`,
 `docs/research/artifacts/p6d_e00_ordinal_facet_run1/`,
-`docs/research/artifacts/p6d_e01_scale_ladder_run1/`.
+`docs/research/artifacts/p6d_e01_scale_ladder_run1/`,
+`docs/research/artifacts/p6d_e02_typed_facet_ordinal_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -131,10 +163,16 @@ and is the version committed.
 
 ## Unresolved risks
 
-1. **Only one facet field (`color`) was measured in this same-session
-   three-way comparison.** `product_class` and any other Enum attribute
-   use architecturally identical code paths but were not independently
-   re-measured against Solr in this pass.
+1. **Resolved by P6D-E02, with a materially important qualifier**: the
+   dedicated `brand`/`category`/`product_type` facets were measured.
+   The ordinal technique does NOT win uniformly there — it has its own
+   real crossover (slower than the existing scan at n=2/13, faster at
+   n=121/1,103), because those baselines never paid the per-candidate
+   allocation `color`'s baseline did. `brand`/`category` have unit-test
+   correctness coverage but no real-data benchmark (only `product_type`
+   had an existing Solr-comparable operation to extend); other generic
+   `Enum` attributes beyond `color` remain untested in a real-data
+   benchmark.
 2. **Resolved by P6D-E01, with a real nuance**: the Phase 6B scale
    ladder (2x-20x) was repeated for the ordinal method. The margin over
    Solr holds (never crosses into a loss) across the whole 1x-20x range
@@ -167,24 +205,37 @@ and is the version committed.
    referenced for context from a separate binary/session, not
    re-measured here.
 7. **No integration with `CatalogIndex::execute`/`execute_ranked` or any
-   real query-serving path was changed** — this phase adds a new,
-   additive counting method next to the existing ones; whether/how a
-   planner would actually prefer `facet_counts_ordinal` over
-   `facet_counts_by_scan` by default is a real, unaddressed follow-on
-   design question (see "What would be built next").
+   real query-serving path was changed** — this phase adds new,
+   additive counting methods next to the existing ones. P6D-E02's own
+   crossover finding means "prefer ordinal by default" is now known to
+   be the WRONG design for a real planner — any future integration needs
+   a candidate-count-aware (or field-cardinality-aware) choice between
+   strategies, not a blanket default, for the typed-ID facets at least.
+8. **P6D-E02's crossover point (somewhere between n=13 and n=121 for
+   `product_type`'s ~860-value dictionary) is bracketed, not pinpointed**
+   — the exact threshold, and whether it scales predictably with
+   dictionary size (a smaller-cardinality field like `brand` would be
+   expected to cross over at a smaller n, since its fixed cost is
+   smaller), is untested.
 
 ## What would be built next if scaling up
 
-1. **Make `facet_counts_ordinal` the default facet-counting strategy**
-   in any future query-serving/planner code, now that it is both
-   correctness-gated and measured faster than both the existing native
-   scan and Solr — the natural, direct consequence of this result.
-2. **Extend the ordinal approach to `product_type`/`category`/`brand`
-   faceting** (currently `HashMap<TypedId, RoaringBitmap>`-based, closer
-   to ordinal-shaped already since the IDs are dense `u32`s, but not a
-   flat `Vec` indexed 0..N by a build-time-assigned dense ordinal) and to
-   `MultiEnum` attributes, generalizing this phase's single-valued-only
-   design.
+1. **Design and measure a candidate-count/dictionary-size-aware strategy
+   selector** (not a blanket default) for any future query-serving/
+   planner code — P6D-E00/E01 show the ordinal method should be
+   preferred for `color`-like fields at essentially any realistic scale,
+   but P6D-E02 shows the dedicated typed-ID facets need the scan method
+   preferred below their own crossover point and the ordinal method
+   above it. This is now a concrete design question with real data
+   behind it, not a speculative one.
+2. **Pinpoint P6D-E02's own crossover point precisely** (currently
+   bracketed between n=13 and n=121 for `product_type`) and test whether
+   it scales with dictionary size as expected (`brand`/`category`, with
+   presumably smaller dictionaries than `product_type`'s ~860 values,
+   would be predicted to cross over at a smaller n) — real-data
+   benchmarks for `brand`/`category` specifically, and at candidate
+   counts large enough to be Solr-comparison-informative (matching
+   color's 2,002+ range), were not run in this pass.
 3. **Extend past P6D-E01's own 320,780-candidate ceiling** to determine
    whether the observed margin-narrowing trend continues, plateaus, or
    reverses at organically larger (not just replication-scaled)
@@ -207,11 +258,13 @@ and is the version committed.
 
 ## What should explicitly not be built yet
 
-- **Wiring `facet_counts_ordinal` as the sole/default facet-counting
-  path without first extending it to `MultiEnum` and the dedicated
-  brand/category/product_type facets** — doing so today would silently
-  regress any real caller that needs those, since the ordinal path
-  currently only covers single-valued `Enum` attributes.
+- **Wiring any of the ordinal methods (`color`, `brand`, `category`,
+  `product_type`) as an unconditional default facet-counting path** —
+  P6D-E02 found this would be an outright regression for the typed-ID
+  facets below their own real crossover point (n<~100-1,000 depending on
+  field), and `MultiEnum` attributes have no ordinal path at all yet. Any
+  real integration needs the candidate-count/dictionary-size-aware
+  selection named above, not a blanket switch.
 - **A distributed/sharded ordinal-dictionary design** (per-shard local
   ordinals needing global reconciliation) — this phase's `CatalogIndex`
   remains single-node/single-process, consistent with CLAUDE.md's
@@ -233,41 +286,66 @@ and is the version committed.
 
 ## What this decision does and does not claim
 
-**Does claim**: an ordinal/dictionary-based facet-counting method,
-correctness-gated exactly against both `facet_counts_by_scan` (unit
-test) and Solr's own live facet response (21/21 real-data matches at
-WANDS' natural 1x scale, plus 35/35 more across the full Phase 6B 2x-20x
-scale ladder — 56/56 total), beats Solr at every checkpoint tested
-across the *entire* 1x-20x range (2,002-320,780 candidates), by 2.5x to
-72.6x with zero exceptions, and beats commerce-native's own existing
-scan-based method by 20.6x-327.0x. This confirms the facet crossover
-this project has repeatedly measured (Phase 5, 6A, 6B, P6C-E00) is a
-property of naive per-candidate scanning specifically, not an inherent
-ceiling on commerce-native's own architecture, and that this holds
-across a genuine, controlled-stress scale range, not just WANDS' natural
-1x scale.
+**Does claim**: for the generic `Enum` field this project's own
+repeated facet-crossover finding was built on (`color`), an ordinal/
+dictionary-based facet-counting method, correctness-gated exactly
+against both `facet_counts_by_scan` (unit test) and Solr's own live
+facet response (21/21 real-data matches at WANDS' natural 1x scale,
+plus 35/35 more across the full Phase 6B 2x-20x scale ladder — 56/56
+total), beats Solr at every checkpoint tested across the *entire* 1x-20x
+range (2,002-320,780 candidates), by 2.5x to 72.6x with zero exceptions,
+and beats commerce-native's own existing scan-based method by
+20.6x-327.0x. This confirms the facet crossover this project has
+repeatedly measured (Phase 5, 6A, 6B, P6C-E00) is a property of naive
+per-candidate scanning specifically, not an inherent ceiling on
+commerce-native's own architecture, for fields whose naive baseline pays
+a real per-candidate allocation cost.
+
+**Also does claim (P6D-E02, an adversarial finding, not a coverage
+extension)**: the ordinal technique is not a universal, unconditional
+win. Extended to the dedicated `brand`/`category`/`product_type` facets
+— whose existing `_by_scan` baselines never paid the attribute-map-clone
+cost `color`'s baseline did — the ordinal method has its own real
+crossover, correctness-gated the same way: **slower than the existing
+scan method at small candidate counts** (4.8x-5.2x slower at n=2,
+1.9x-2.4x slower at n=13) **and faster only past a real threshold**
+(2.3x faster at n=121, 6.2x faster at n=1,103), because it trades a
+fixed, dictionary-size-proportional per-call cost (zeroing a counter
+array sized to the full attribute dictionary) for per-candidate savings
+that are smaller when there's no clone to remove.
 
 **Does not claim**: that the margin over Solr is scale-invariant or
-grows with scale — it narrows, converging toward roughly 2.5x-3x at the
-largest candidate counts tested (P6D-E01's own real, disclosed nuance);
-that this margin holds for facet fields other than `color` (untested,
-though architecturally identical); that it holds beyond the ~320,780
-candidates tested here, or under organic (not replication-scaled) facet
-cardinality growth; that the new structures' memory cost is negligible
-(estimated, not measured); that `MultiEnum` attributes or the dedicated
-brand/category/product_type facets are covered (explicitly out of scope
-for this pass); that any real query-serving path has been changed to
-prefer this method (it has not — this is an additive, benchmarked-only
-method); or that commerce-native's ordinal approach is faster or slower
-than Lucene's own equivalent module specifically (not directly compared
-in the same session).
+grows with scale for `color` — it narrows, converging toward roughly
+2.5x-3x at the largest candidate counts tested (P6D-E01's own real,
+disclosed nuance); that the ordinal technique wins unconditionally for
+any facet field — P6D-E02 shows it does not, for the dedicated typed-ID
+facets below their own crossover point; that this crossover point is
+precisely known (bracketed between n=13 and n=121 for `product_type`,
+not pinpointed); that `brand`/`category` have real-data (not just
+unit-test) benchmark coverage (they do not); that it holds beyond the
+~320,780 candidates tested for `color`, or under organic (not
+replication-scaled) facet cardinality growth; that the new structures'
+memory cost is negligible (estimated, not measured); that `MultiEnum`
+attributes are covered (explicitly out of scope); that any real
+query-serving path has been changed to prefer either method by default
+(it has not, and P6D-E02 shows an unconditional default would be wrong
+for the typed-ID facets specifically); or that commerce-native's ordinal
+approach is faster or slower than Lucene's own equivalent module
+specifically (not directly compared in the same session).
 
 **Decision: PROCEED.** This phase answers the single highest-value
 question P6C-E01 surfaced, with a result more decisive than that
-question's own framing anticipated: not merely "can commerce-native
-close its facet crossover the way Lucene did," but "commerce-native's
-own architecture, given a comparably specialized counting strategy,
-substantially exceeds both Solr and Lucene's own margin over Solr, on
-this real workload." The unresolved risks above are real scope
-boundaries on a genuinely positive result, not reasons to doubt it —
-every claim above is correctness-gated, not asserted from timing alone.
+question's own framing anticipated for the field it was tested on:
+commerce-native's own architecture, given a comparably specialized
+counting strategy, substantially exceeds both Solr and Lucene's own
+margin over Solr for `color`-like generic `Enum` attributes. But this
+phase's own adversarial follow-up (P6D-E02) earned its keep by finding
+the real boundary of that result: the technique is not free, and not
+universal — it has its own crossover for fields whose naive baseline
+was already cheap. That is not a weaker result; it is a more honest and
+more useful one, because it tells a future implementer exactly when to
+reach for this technique and when not to, rather than leaving them to
+discover the crossover the hard way in production. The unresolved risks
+above are real scope boundaries on a genuinely positive, now
+better-characterized result, not reasons to doubt it — every claim
+above is correctness-gated, not asserted from timing alone.
