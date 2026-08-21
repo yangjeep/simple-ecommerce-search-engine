@@ -311,6 +311,31 @@ required measurement list with an honest, mixed picture rather than a
 uniformly favorable one — exactly the kind of result this project's own
 falsification discipline exists to surface.
 
+**First Phase 8 result (correlated retail burst / BFCM elasticity —
+first pass, `PHASE8_DECISION.md`)**: before attempting Phase 8's full
+required-measurement list, a feasibility check against this
+environment's real constraints (`PHASE8_FEASIBILITY.md`) found roughly
+two-thirds of it testable now by extending Phase 7's own validated
+methodologies with a burst multiplier, and named the remainder
+(request-admission/backpressure control, true multi-node
+redistribution, and a direct comparison against generic cluster/shard
+scale-out) as genuinely out of reach without new product surface or
+infrastructure this epic has deliberately not yet built — consistent
+with this project's own sequencing (single-node thesis first). The
+first Phase 8 measurement directly tested Phase 8's own stated thesis:
+does a correlated demand burst hitting a SUBSET of tenants (not all of
+them) leave an unrelated tenant's own latency untouched? A group of 10
+real tenants (of 55) had their traffic weight multiplied tenfold
+mid-experiment, simulating a sudden, correlated sale event; a separate,
+tracked tenant's own p50/p99 stayed essentially flat across 3
+independent runs even as the bursting group's own throughput grew
+roughly tenfold and the whole population's aggregate throughput rose
+by around 40%. The steady-state isolation properties this project
+already measured for the native path extend cleanly to this
+correlated-burst regime, at least for query load — a real, positive
+result, honestly scoped to what this single-node environment can
+actually test.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

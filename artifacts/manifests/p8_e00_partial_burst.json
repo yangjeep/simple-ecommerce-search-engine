@@ -1,0 +1,27 @@
+{
+  "experiment_id": "P8-E00",
+  "phase": "8",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p8_e00_partial_burst.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS all 55 real tenants (Zipfian-weighted); burst group: 10 lowest-weight tenants; bystander: Baby & Kids (rank 10)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, all 55 real tenants in-process, 4 threads, shared Zipfian WeightedIndex, two sequential phases per run (steady, burst)"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p8_e00_partial_burst_run1/",
+  "analysis_version": "docs/experiments/PHASE8_LOG.md#P8-E00",
+  "decision": "PHASE8_DECISION.md",
+  "headline_result": {
+    "h16_status": "CONFIRMED, reproduced cleanly across 3 runs",
+    "bystander_p99_ratio_burst_over_steady_range": [0.95, 1.03],
+    "bystander_p50_ratio_burst_over_steady_range": [0.98, 1.01],
+    "burst_group_rps_growth_range": [9.80, 10.58],
+    "intended_burst_multiplier": 10.0,
+    "aggregate_rps_steady_range": [1104.5, 1112.2],
+    "aggregate_rps_burst_range": [1532.5, 1567.0],
+    "named_limitation": "only one burst multiplier (10x) and one burst-group size (10/55) tested; does not combine with H14 (rebuild churn) or H15 (shared-Solr contention), Phase 7's two known real isolation gaps"
+  }
+}

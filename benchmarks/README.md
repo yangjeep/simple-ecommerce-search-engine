@@ -105,6 +105,13 @@ same as Phases 0–5:
   reproduced across 3 runs after a self-caught JVM cold-start artifact
   was fixed) — Phase 7's third distinct isolation-gap finding; see
   `PHASE7_DECISION.md`.
+- `p8_e00_partial_burst.yaml` — Phase 8's first experiment (Issue #21
+  Regime B, partially correlated burst): a fixed group of 10 real
+  tenants' traffic weight multiplied 10x mid-experiment does not
+  measurably degrade an unrelated tenant's own latency (p99 ratio
+  0.95x-1.03x, reproduced across 3 runs) — Phase 7's steady-state
+  isolation properties extend to a correlated-burst regime; see
+  `PHASE8_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
