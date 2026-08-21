@@ -28,7 +28,7 @@ claim: >
   mature implementation), not serving-layer overhead. See
   docs/experiments/PHASE6C_LOG.md for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 89393e9253a77b5d8ecf7e773ea0c6983a04247c
 binary: lucene-direct-bench/src/main/java/org/commercenative/lucenedirect/WandsLuceneBench.java
 build_command: cd lucene-direct-bench && mvn -q package
 run_command: java -jar lucene-direct-bench/target/lucene-direct-bench-jar-with-dependencies.jar dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
