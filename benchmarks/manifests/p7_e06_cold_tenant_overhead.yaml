@@ -1,0 +1,56 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E06
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Issue #21 names "cold tenant overhead" as a required Phase 7 metric,
+  untested by H1-H8. Two size-matched real tenants (both 5 products,
+  isolating query FREQUENCY from tenant SIZE) were measured under
+  realistic 4-thread multi-tenant background contention: one queried
+  continuously ("hot"), the other queried once every 100ms ("cold").
+  Cold tenant p99 latency was 12.68-12.88x the hot tenant's across 3
+  independent runs (p50 ratio 8.85-10.00x, ruling out a rare-tail-
+  outlier explanation) -- technically falsifying the stated
+  no-material-degradation hypothesis (2x threshold). However, every
+  latency involved is on the order of microseconds (1.3-13.0us), three
+  to four orders of magnitude below real-world network/application
+  request latency; the absolute cold-tenant penalty (~10-30us) is
+  almost certainly negligible in a real deployed service. The leading,
+  disclosed-but-unconfirmed mechanism is CPU cache locality, not any
+  explicit software-level cache this architecture manages. See
+  docs/experiments/PHASE7_LOG.md for the full H9 hypothesis and result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p7_e06_cold_tenant_overhead.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e06_cold_tenant_overhead
+run_command: ./target/release/p7_e06_cold_tenant_overhead dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real tenants (two size-matched, 5-product each, selected from the middle of the real 55-tenant size distribution)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, all 55 real tenants built
+    in-process; 4 threads (1 hot, 1 cold, 2 background-noise) sharing
+    this container's real CPU count
+
+workload:
+  selection: hot tenant queried continuously by a dedicated thread; cold
+    tenant queried once every 100ms by a dedicated thread (timing only
+    the query call, not the sleep); 2 additional threads round-robin
+    through the other 53 tenants as realistic background load
+  repetitions: 3 independent in-process runs (built into the binary),
+    30 seconds each (~300 cold-tenant samples per run)
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/
+  - results.csv (all 3 runs)
+  - console.log
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE7_LOG.md for the full H9 hypothesis, the
+  pre-registered 2x ratio threshold, and the corrected interpretation
+  (falsified by ratio, negligible by absolute magnitude).

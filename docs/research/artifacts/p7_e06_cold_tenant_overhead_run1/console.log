@@ -1,0 +1,19 @@
+=== P7-E06: cold-tenant overhead under realistic background load ===
+  hot tenant="Faux Plants and Trees" products=5, cold tenant="Ergonomic Accessories" products=5 (size-matched pair)
+
+--- run 1/3 ---
+  hot: n=18047394 p50=  0.0013ms p99=  0.0030ms   cold: n=300   p50=  0.0115ms p99=  0.0391ms   p99_ratio(cold/hot)=12.83x   noisy_requests=78282
+
+--- run 2/3 ---
+  hot: n=18929090 p50=  0.0013ms p99=  0.0028ms   cold: n=300   p50=  0.0121ms p99=  0.0357ms   p99_ratio(cold/hot)=12.68x   noisy_requests=79927
+
+--- run 3/3 ---
+  hot: n=19630709 p50=  0.0013ms p99=  0.0027ms   cold: n=300   p50=  0.0130ms p99=  0.0350ms   p99_ratio(cold/hot)=12.88x   noisy_requests=72825
+
+H9 comparison (cold p99 / hot p99 ratio per run):
+  run 1: 12.83x
+  run 2: 12.68x
+  run 3: 12.88x
+  H9 verdict: FALSIFIED -- cold tenant p99 latency is materially worse (>=2x) than the same-sized hot tenant's; infrequent access carries a real cost in this architecture
+
+artifacts written to docs/research/artifacts/p7_e06_cold_tenant_overhead_run1

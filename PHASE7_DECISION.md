@@ -1,17 +1,25 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E05 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E06 first pass
 
-**Decision: PROCEED**, with one hypothesis falsified (in the good
-direction) and six hypotheses confirmed — one with a small,
-honestly-disclosed open question, five cleanly across repeated runs.
-The most important new finding (H6) is the first real, measured evidence
-for this project's own opening "statistical multiplexing" thesis: pooling
-tenants in one process has a real, quantifiable cost advantage over
-process-per-tenant isolation. A follow-on finding (H7) shows that
-advantage is even larger than H6 alone suggested: a genuinely
-long-running, actively-serving process costs more than H6's short-lived
-snapshot captured. A further follow-on (H8) confirms H7's figure is a
-stable, decelerating-toward-a-plateau measurement rather than a
-transient artifact of too short a window.
+**Decision: PROCEED**, with two hypotheses falsified (one in the good
+direction, one revealing a real but practically tiny effect) and six
+hypotheses confirmed — one with a small, honestly-disclosed open
+question, five cleanly across repeated runs. The most important new
+finding (H6) is the first real, measured evidence for this project's own
+opening "statistical multiplexing" thesis: pooling tenants in one
+process has a real, quantifiable cost advantage over process-per-tenant
+isolation. A follow-on finding (H7) shows that advantage is even larger
+than H6 alone suggested: a genuinely long-running, actively-serving
+process costs more than H6's short-lived snapshot captured. A further
+follow-on (H8) confirms H7's figure is a stable, decelerating-toward-a-
+plateau measurement rather than a transient artifact of too short a
+window. A final follow-on (H9) is Phase 7's first direct test of Issue
+#21's explicitly-named "cold tenant overhead" metric: it found a real,
+reproducible ~9-13x latency-ratio effect between an infrequently-queried
+tenant and a same-sized continuously-queried one — technically
+falsifying the stated hypothesis — but at an absolute scale (tens of
+microseconds) almost certainly negligible next to any real deployed
+service's actual request latency, a distinction this document is
+explicit about rather than leading with the more dramatic ratio alone.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -57,6 +65,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   allocator/arena warm-up from a genuine leak, and confirming H7's
   figure is a stable input rather than a transient artifact of too
   short a measurement window.
+- **H9** (P7-E06): a cold (infrequently-queried) tenant's own p50/p99
+  latency, measured against a same-sized hot (continuously-queried)
+  tenant's own p50/p99 under realistic multi-tenant background load,
+  does not show material degradation — Issue #21's explicitly-named
+  "cold tenant overhead" metric, untested by any prior Phase 7
+  hypothesis.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -303,13 +317,44 @@ H7's ~896-1,024 KB peak-growth figure for the largest real tenant is a
 stable input for a capacity model, not a transient artifact of too short
 a measurement window.
 
+**H9 — FALSIFIED by the pre-registered ratio threshold, reproduced
+across 3 runs, but at a practically tiny absolute scale (P7-E06).**
+Issue #21 explicitly names "cold tenant overhead" as a required Phase 7
+measurement; nothing in H1-H8 tested it directly. Two SIZE-MATCHED real
+tenants (both 5 products, isolating query FREQUENCY from tenant size)
+were measured under realistic 4-thread background contention: one
+("hot") queried continuously, the other ("cold") queried once every
+100ms. Cold tenant p99 latency was **12.68-12.88x** the hot tenant's
+across all 3 runs, decisively clearing the pre-registered 2x threshold
+— and the p50 ratio (8.85-10.00x) was nearly as large, ruling out a
+rare-tail-outlier explanation in favor of a genuine, systematic shift
+across the whole cold-tenant latency distribution.
+
+**Critical context**: every latency involved, hot and cold alike, is on
+the order of MICROSECONDS (1.3-13.0 microseconds) — three to four
+orders of magnitude below typical real-world network/application
+request latency. The absolute cold-tenant penalty (~10-30 microseconds)
+is almost certainly negligible next to any real deployed service's
+actual per-request overhead, none of which Phase 7 measures. The
+leading, disclosed-but-unconfirmed mechanism is CPU cache locality (not
+any explicit software-level cache this architecture manages) — a real,
+physical, hardware-level "cold tenant" cost orthogonal to the "no shared
+software state to lose" reasoning H2's isolation finding already
+established.
+
+**Named limitations**: only one size-matched tenant pair (both 5
+products) and one cold-query interval (100ms) were tested; whether the
+ratio holds at other tenant sizes, or scales with cache staleness, is
+untested and named as a natural follow-up.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
 `docs/research/artifacts/p7_e02_packing_ceiling_run1/`,
 `docs/research/artifacts/p7_e03_cross_process_run1/`,
 `docs/research/artifacts/p7_e04_long_running_run1/`,
-`docs/research/artifacts/p7_e05_extended_duration_run1/`.
+`docs/research/artifacts/p7_e05_extended_duration_run1/`,
+`docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -363,6 +408,11 @@ renamed rather than deleted.
    stops, continues at a much slower rate, or behaves differently over a
    real service's minutes-to-hours lifetime (vs. this experiment's
    180-second window) is untested.
+6. **H9's cold-tenant-overhead mechanism (CPU cache locality) is
+   disclosed, not profiled or confirmed.** Only one size-matched tenant
+   pair (both 5 products) and one cold-query interval (100ms) were
+   tested; whether the ~9-13x ratio holds at other tenant sizes, or
+   scales with how stale the cache is, is untested.
 
 ## What would be built next if scaling up
 
@@ -378,6 +428,13 @@ highly window-length-sensitive), and names 2 as explicit, undelivered
 gaps (tenants-per-envelope-at-SLO; backend requests avoided) rather than
 silently omitting them.
 
+**Cold-tenant overhead (Issue #21's explicit metric) is now measured**
+(H9, P7-E06) — a real, reproducible ~9-13x latency-ratio effect between
+an infrequently-queried tenant and a same-sized continuously-queried
+one, at a practically tiny absolute scale (tens of microseconds),
+plausibly attributable to CPU cache locality rather than any explicit
+software-level cache this architecture manages.
+
 Still to build: an aggregate throughput-under-realistic-load experiment
 (P7-E01 tested breadth of touched tenants at fixed per-tenant demand,
 not aggregate QPS at a realistic multi-tenant demand mix, which Issue
@@ -389,8 +446,10 @@ with H2/H4's latency/isolation evidence to produce the still-missing
 admission-rate evidence with a multi-tenant request-volume model to
 produce "backend requests avoided"; profiling to identify the specific
 allocator mechanism behind H7/H8's growth pattern and residual tail
-creep, if a real deployment's memory budget needs tighter precision than
-"decelerates toward roughly a known bound."
+creep, and the CPU-cache-locality hypothesis behind H9's cold-tenant
+effect, if a real deployment's memory/latency budget needs tighter
+precision than "decelerates toward roughly a known bound" / "plausibly
+cache locality."
 
 ## What should explicitly not be built yet
 
@@ -447,6 +506,20 @@ input, not a transient artifact of too short a measurement window; idle-
 resident's finding is now confirmed completely stable with zero further
 growth over the same 9x longer window.
 
+A cold (infrequently-queried) tenant's own latency IS measurably worse
+than a same-sized hot (continuously-queried) tenant's — 12.68-12.88x at
+p99, 8.85-10.00x at p50, reproduced across 3 runs (H9, technically
+falsifying the stated no-material-degradation hypothesis) — but the
+absolute magnitude (~10-30 microseconds on top of 1.3-13.0-microsecond
+baseline latencies) is almost certainly negligible next to any real
+deployed service's actual request latency, and this document is explicit
+about that distinction rather than leading with the more dramatic ratio
+alone. A first-pass economic cost-per-tenant model
+(`docs/research/PHASE7_ECONOMIC_MODEL.md`) combines H1/H5/H6/H7/H8 into
+an explicit pooled-vs-isolated deployment cost formula, addressing 4 of
+Issue #21's 7 required "Economic output" metrics well, one partially,
+and naming 2 as explicit undelivered gaps.
+
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants is a discovered
 hardware or architectural ceiling (it is a self-imposed safety bound —
@@ -459,23 +532,31 @@ steady state (a small, real residual tail creep persists in 2 of 3 runs,
 roughly two orders of magnitude smaller than the initial climb, and
 whether it fully stops over a much longer real lifetime is untested);
 that the specific allocator mechanism behind H7/H8's growth is confirmed
-(a thread-local-arena hypothesis is named, not verified); that aggregate
-QPS under a realistic multi-tenant demand mix or a full economic
-cost-per-tenant model (both explicitly named in Issue #21's Phase 7)
+(a thread-local-arena hypothesis is named, not verified); that H9's
+cache-locality mechanism is confirmed (named, not profiled), or that its
+~9-13x ratio generalizes beyond the one size-matched tenant pair and one
+cold-query interval tested; that aggregate QPS under a realistic
+multi-tenant demand mix, "tenants per envelope at target SLO," or
+"backend requests avoided" (all explicitly named in Issue #21's Phase 7)
 have been answered — this is a first pass on memory (including at
-scale), pairwise isolation, fixed-tenant throughput-under-breadth, and
+scale), pairwise isolation, fixed-tenant throughput-under-breadth,
 process-baseline floors (short-lived, and a longer-resident window that
-decelerates toward but has not been proven to fully reach a bound) only.
+decelerates toward but has not been proven to fully reach a bound), a
+first cold-vs-hot latency comparison, and a first economic-model
+synthesis only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (combining
-H1/H5/H6/H7/H8's results into a first real economic cost-per-tenant
-model, and/or aggregate QPS under a realistic multi-tenant demand mix)
-without changing the underlying commerce-native mechanism. The
-favorable, adversarially-corrected H1 result, its clean confirmation at
-scale via H5, the robust H2/H4 results, and H6/H7/H8's real, reproduced,
+**Decision: PROCEED** to the next Phase 7 sub-experiment (aggregate QPS
+under a realistic multi-tenant demand mix; combining H2/H4 with the
+economic model for an SLO-conditioned tenant count; or combining Phase
+3/4's admission-rate evidence for "backend requests avoided") without
+changing the underlying commerce-native mechanism. The favorable,
+adversarially-corrected H1 result, its clean confirmation at scale via
+H5, the robust H2/H4 results, H6/H7/H8's real, reproduced,
 now-stability-confirmed measurement of the pooling advantage this
-project's own thesis assumed are real evidence in favor of the
-architecture's packing-density potential, but are explicitly a floor on
-the claim (single-process, short-lived-process, or
-180-second-resident-process measurements, one tenant model, one
-self-imposed safety bound), not a ceiling on what remains to be tested.
+project's own thesis assumed, the first economic cost-per-tenant model,
+and H9's honestly-scaled cold-tenant finding are real evidence in favor
+of the architecture's packing-density and latency-predictability
+potential, but are explicitly a floor on the claim (single-process,
+short-lived-process, or 180-second-resident-process measurements, one
+tenant model, one self-imposed safety bound, one size-matched
+hot/cold pair), not a ceiling on what remains to be tested.

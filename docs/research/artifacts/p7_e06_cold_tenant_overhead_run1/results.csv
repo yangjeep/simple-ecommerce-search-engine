@@ -1,0 +1,4 @@
+run,hot_tenant,hot_products,cold_tenant,cold_products,hot_n,hot_p50_ms,hot_p99_ms,cold_n,cold_p50_ms,cold_p99_ms,p99_ratio_cold_over_hot,noisy_total_requests
+1,Faux Plants and Trees,5,Ergonomic Accessories,5,18047394,0.0013,0.0030,300,0.0115,0.0391,12.8302,78282
+2,Faux Plants and Trees,5,Ergonomic Accessories,5,18929090,0.0013,0.0028,300,0.0121,0.0357,12.6778,79927
+3,Faux Plants and Trees,5,Ergonomic Accessories,5,19630709,0.0013,0.0027,300,0.0130,0.0350,12.8821,72825

@@ -754,6 +754,108 @@ a bound rather than growing without limit, which is exactly the
 property a real capacity-planning model needs before treating H7's
 figure as a stable input. Idle-resident's finding is now confirmed
 completely stable over a 9x longer window with literally zero
+
+## P7-E06: cold-tenant overhead under realistic background load (H9, stated before implementation)
+
+Issue #21's Phase 7 "Experiments" list explicitly names "cold tenant
+overhead" and "hot tenant saturation" as required measurements.
+Nothing in H1-H8 tested this directly: H2 compared one heavily-loaded
+tenant against a quiet tenant's latency, but both were otherwise
+equally available, not genuinely "cold" (infrequently queried over a
+long window while OTHER tenants dominate the process). P7-E01 varied
+the BREADTH of other tenants touched, not the QUERY FREQUENCY of any
+one tenant. P7-E06 asks directly whether infrequent access itself costs
+anything in this architecture, given each tenant's `CatalogIndex` is a
+fully independent, immutable structure with no shared warm-cache/LRU
+state to lose -- the same mechanistic reasoning H2's isolation finding
+already rests on.
+
+**H9**: a cold tenant's (infrequently queried) own p50/p99 latency,
+measured against a SAME-SIZED hot tenant's (continuously queried) own
+p50/p99, within the same process under realistic multi-tenant
+background load, does NOT show material degradation -- since there is
+no explicit software-level cache/warm-up state for infrequent access to
+lose.
+
+**Design** (isolating query FREQUENCY from tenant SIZE): pick two
+tenants of near-identical product count from the real 55-tenant
+population (adjacent in a size-sorted ranking, taken from the middle of
+the distribution to avoid re-testing H6/H7/H8's already-covered
+largest/smallest extremes). One ("hot") is queried continuously by a
+dedicated thread; the other ("cold") is queried only once every 100ms
+(simulating a genuinely low-QPS tenant) by a second dedicated thread,
+timing ONLY the query call itself (not the sleep) so scheduler wakeup
+jitter is excluded from the measured latency by construction. Two
+additional threads continuously hammer the OTHER 53 tenants
+(round-robin, matching P7-E01's established background-load pattern),
+so both hot and cold tenants are measured under realistic multi-tenant
+CPU contention (4 threads total, matching this container's real CPU
+count), not in an otherwise-idle process. Run for 30 seconds (giving
+~300 cold-tenant samples), repeated 3x.
+
+**Pass/fail defined in advance**: if the cold tenant's p99 latency is
+>=2x the same-sized hot tenant's p99 (the same material-regression
+threshold used throughout Phase 7, e.g. H2), H9 is FALSIFIED --
+infrequent access carries a real cost. Below that, H9 is CONFIRMED.
+
+## P7-E06 result: H9 FALSIFIED by the pre-registered ratio threshold, reproduced across 3 runs -- but the absolute magnitude is tiny
+
+The real 55-tenant population's median-adjacent pair both happened to
+be 5-product tenants: "Faux Plants and Trees" (hot) and "Ergonomic
+Accessories" (cold).
+
+| run | hot p50 (ms) | hot p99 (ms) | cold p50 (ms) | cold p99 (ms) | p50 ratio | p99 ratio |
+|---|---|---|---|---|---|---|
+| 1 | 0.0013 | 0.0030 | 0.0115 | 0.0391 | 8.85x | 12.83x |
+| 2 | 0.0013 | 0.0028 | 0.0121 | 0.0357 | 9.31x | 12.68x |
+| 3 | 0.0013 | 0.0027 | 0.0130 | 0.0350 | 10.00x | 12.88x |
+
+**H9 is FALSIFIED by the pre-registered 2x threshold**, decisively and
+reproducibly: the cold tenant's p99 latency is 12.68-12.88x the hot
+tenant's across all 3 runs, and -- importantly -- the p50 ratio
+(8.85-10.00x) is nearly as large as the p99 ratio. This rules out a
+"rare tail-outlier" explanation (which would inflate p99 much more than
+p50) in favor of a genuine, systematic shift across the ENTIRE cold-
+tenant latency distribution, reproducibly across all 3 independent
+runs.
+
+**Critical context the ratio alone does not convey**: every single one
+of these latencies, hot AND cold, is on the order of MICROSECONDS
+(1.3-13.0 microseconds), three to four orders of magnitude below
+typical real-world network/application request latencies (usually
+single-digit-to-double-digit MILLISECONDS). The absolute cold-tenant
+penalty here -- roughly 10-30 microseconds -- is almost certainly
+negligible next to any real deployed service's actual per-request
+overhead (network round-trip, serialization, connection handling, none
+of which Phase 7 measures). A 12x RATIO sounds dramatic; a "costs an
+extra 20 microseconds" absolute figure does not, and for a real
+production system the latter framing is the practically relevant one.
+
+**Named, disclosed-but-unconfirmed mechanism**: the leading hypothesis
+is CPU cache locality, not any explicit software-level cache this
+architecture manages -- H2's own finding (no material regression from
+cross-tenant contention) already established there is no SOFTWARE state
+for a cold tenant to lose. But a tenant queried once every 100ms while
+three OTHER threads continuously touch different tenants' data very
+plausibly has its own small working set evicted from L1/L2 CPU cache
+between accesses, while the continuously-hammered hot tenant's data
+stays resident in cache -- a real, physical, hardware-level "cold
+tenant" cost that exists ORTHOGONAL to any explicit warm-cache
+mechanism, and one this architecture does not currently do anything to
+mitigate. This is a plausible, mechanistically consistent explanation,
+not a profiled and confirmed one.
+
+**Named limitations, not resolved this pass**: only one size-matched
+tenant pair (both 5 products) was tested; whether the ratio holds,
+grows, or shrinks for a larger size-matched pair is untested. Only one
+cold-query interval (100ms) was tested; whether the ratio scales with
+how stale the cache is (e.g., a 10ms vs. 1000ms interval) -- which would
+further support the cache-locality hypothesis if confirmed -- is
+untested and named as a natural follow-up. This measures latency only,
+under a specific 4-thread contention pattern; it says nothing about
+whether this microsecond-scale effect would be visible at all once real
+network/serialization overhead dominates a genuine multi-tenant
+service's total request latency.
 additional growth observed.
 
 **Named limitations, not resolved this pass**: only a single 180-second

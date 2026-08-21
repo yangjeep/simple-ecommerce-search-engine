@@ -221,9 +221,21 @@ stable measurement or an artifact of too short a window: growth
 decelerates sharply toward what looks like a bound (roughly 98% of the
 total growth happens in the first half of the window, in all 3 runs),
 confirming the earlier figure is a stable input rather than a
-measurement-window artifact. Aggregate QPS under a realistic
-multi-tenant demand mix and a full economic cost model combining all of
-Phase 7's findings remain open for the next Phase 7 pass.
+measurement-window artifact. A first economic cost-per-tenant model
+then combined all of these findings into an explicit pooled-vs-isolated
+deployment cost formula, addressing most of Issue #21's required
+"economic output" metrics and naming the rest as explicit gaps rather
+than silently omitting them. A final measurement tested Issue #21's
+explicitly-named "cold tenant overhead" metric directly for the first
+time: a real, reproducible ~9-13x latency-ratio effect exists between an
+infrequently-queried tenant and a same-sized continuously-queried one,
+plausibly attributable to CPU cache locality rather than any explicit
+software-level cache this architecture manages — but at an absolute
+scale (tens of microseconds) almost certainly negligible next to any
+real deployed service's actual request latency, a distinction stated
+explicitly rather than leading with the more dramatic ratio alone.
+Aggregate QPS under a realistic multi-tenant demand mix remains open for
+the next Phase 7 pass.
 
 ## What this project is not
 

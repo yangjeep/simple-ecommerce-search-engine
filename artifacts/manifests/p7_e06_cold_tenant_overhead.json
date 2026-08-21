@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P7-E06",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e06_cold_tenant_overhead.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS real tenants (two size-matched 5-product tenants: Faux Plants and Trees, Ergonomic Accessories)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, all 55 real tenants in-process, 4 contending threads"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E06",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h9_status": "FALSIFIED by ratio threshold, reproduced across 3 runs; absolute magnitude negligible",
+    "p99_ratio_cold_over_hot_range": [12.68, 12.88],
+    "p50_ratio_cold_over_hot_range": [8.85, 10.00],
+    "hot_p99_ms_range": [0.0027, 0.0030],
+    "cold_p99_ms_range": [0.0350, 0.0391],
+    "leading_mechanism_unconfirmed": "CPU cache locality, not an explicit software-level cache"
+  }
+}

@@ -67,6 +67,11 @@ same as Phases 0–5:
   confirming P7-E04's still-rising RSS curve for the largest real tenant
   decelerates toward a plateau rather than growing without bound; see
   `PHASE7_DECISION.md`.
+- `p7_e06_cold_tenant_overhead.yaml` — Issue #21's explicitly-named "cold
+  tenant overhead" metric: a real, reproducible latency-ratio effect
+  between an infrequently- and a continuously-queried same-sized
+  tenant, at a practically negligible absolute scale; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
