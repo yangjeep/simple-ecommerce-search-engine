@@ -366,19 +366,31 @@ renamed rather than deleted.
 
 ## What would be built next if scaling up
 
-An aggregate throughput-under-realistic-load experiment (P7-E01 tested
-breadth of touched tenants at fixed per-tenant demand, not aggregate QPS
-at a realistic multi-tenant demand mix, which Issue #21's "per-tenant
-and aggregate QPS" metric also asks for); extending H4 (query throughput
-under breadth) to the hundreds-to-thousands tenant counts H5 already
-reached for memory; a full economic cost model (Issue #21's Phase 7
-"economic output" section) combining H1/H5's negligible in-process
-marginal cost with H6/H7/H8's now-measured and now-confirmed-stable
-per-process and per-long-running-process baselines to produce a real
-cost-per-tenant-at-scale estimate for the first time; profiling to
-identify the specific allocator mechanism behind H7/H8's growth pattern
-and residual tail creep, if a real deployment's memory budget needs
-tighter precision than "decelerates toward roughly a known bound."
+**A first-pass economic cost-per-tenant model is now done** — see
+`docs/research/PHASE7_ECONOMIC_MODEL.md`, which combines H1/H5's
+in-process marginal cost, H6's per-process floor, and H7/H8's
+long-running active-serving overhead into an explicit pooled-vs-isolated
+deployment cost formula, with worked examples at the real 55-tenant
+scale and up to 6,500 controlled-stress-replicated tenants. It addresses
+4 of Issue #21's 7 required "Economic output" metrics well, one
+partially (a memory-only "cost per million requests" proxy, shown to be
+highly window-length-sensitive), and names 2 as explicit, undelivered
+gaps (tenants-per-envelope-at-SLO; backend requests avoided) rather than
+silently omitting them.
+
+Still to build: an aggregate throughput-under-realistic-load experiment
+(P7-E01 tested breadth of touched tenants at fixed per-tenant demand,
+not aggregate QPS at a realistic multi-tenant demand mix, which Issue
+#21's "per-tenant and aggregate QPS" metric also asks for); extending H4
+(query throughput under breadth) to the hundreds-to-thousands tenant
+counts H5 already reached for memory; combining Phase 7's memory model
+with H2/H4's latency/isolation evidence to produce the still-missing
+"tenants per envelope at target SLO" metric; combining Phase 3/4's
+admission-rate evidence with a multi-tenant request-volume model to
+produce "backend requests avoided"; profiling to identify the specific
+allocator mechanism behind H7/H8's growth pattern and residual tail
+creep, if a real deployment's memory budget needs tighter precision than
+"decelerates toward roughly a known bound."
 
 ## What should explicitly not be built yet
 
