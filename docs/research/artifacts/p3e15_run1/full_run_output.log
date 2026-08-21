@@ -1,0 +1,39 @@
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 20.77s
+     Running `target/release/p3e15_ambiguous_plus_lexical_corrected_eval`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+compiling every real query...
+querying Solr for every real query with the CORRECTED (ambiguous-span-recovering) baseline construction...
+  done in 213.1s (22458 queries)
+
+whole-workload CORRECTED pure-Solr-only baseline NDCG@10: 0.2544 (P3-E06's uncorrected baseline was 0.2335)
+
+resolving tractable ambiguous queries by catalog-frequency-dominant candidate, lexically narrowing any leftover residual (identical logic to P3-E13)...
+  1173/5005 ambiguous-rejected queries are tractable (identical to P3-E13's own count)
+  variant-correctness violations: 0 (must be 0)
+
+=== P3-E15 CORRECTED-baseline ambiguity+lexical frontier (cap<=250) ===
+     ratio>=   admitted  cov%_amb   cov%_all native_ndcg solr_ndcg_sub   ndcg_delta whole_wl_ndcg  wl_degrad
+           1       1110    22.18%     4.94%     0.1212     0.2700    -0.1488       0.2471    +0.0074
+           2       1106    22.10%     4.92%     0.1213     0.2701    -0.1488       0.2471    +0.0073
+           3       1103    22.04%     4.91%     0.1215     0.2707    -0.1491       0.2471    +0.0073
+           5       1097    21.92%     4.88%     0.1222     0.2714    -0.1492       0.2471    +0.0073
+          10       1067    21.32%     4.75%     0.1245     0.2739    -0.1495       0.2473    +0.0071
+          20        853    17.04%     3.80%     0.1289     0.2751    -0.1462       0.2489    +0.0056
+          50        194     3.88%     0.86%     0.1277     0.2745    -0.1467       0.2531    +0.0013
+         100         71     1.42%     0.32%     0.0971     0.2756    -0.1786       0.2538    +0.0006
+
+=== relevance-budget calibration (Issue #14 RQ2, CORRECTED baseline) ===
+  budget<=0.0%: no swept ratio threshold stays within this budget
+  budget<=0.5%: best ratio_threshold=50, coverage=194/22458 (0.86% of whole corpus)
+  budget<=1.0%: best ratio_threshold=50, coverage=194/22458 (0.86% of whole corpus)
+  budget<=2.0%: best ratio_threshold=50, coverage=194/22458 (0.86% of whole corpus)
+
+artifacts written to dataset_cache/p3e15_artifacts

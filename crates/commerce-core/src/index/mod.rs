@@ -482,6 +482,21 @@ impl CatalogIndex {
         rank::execute_ranked(self, query, catalog, k)
     }
 
+    /// Issue #14 P3-E03: `execute_ranked`, further narrowed by an
+    /// externally-supplied ordinal bitmap (e.g. `lexical_and_candidates`'s
+    /// AND-narrowing over residual free-text tokens). See
+    /// `rank::execute_ranked_narrowed_by`'s doc comment for the full
+    /// correctness/safety contract.
+    pub fn execute_ranked_narrowed_by(
+        &self,
+        query: &CommerceQuery,
+        narrow_by: &RoaringBitmap,
+        catalog: &Catalog,
+        k: usize,
+    ) -> Vec<RankedHit> {
+        rank::execute_ranked_narrowed_by(self, query, narrow_by, catalog, k)
+    }
+
     /// Approximate on-heap index size in bytes (Gate 7's "index size"
     /// metric): the sum of every `RoaringBitmap`'s
     /// [`RoaringBitmap::serialized_size`] plus the flat byte size of the

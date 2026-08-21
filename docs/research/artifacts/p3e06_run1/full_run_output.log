@@ -1,0 +1,42 @@
+   Compiling round1-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/round1-eval)
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 23.03s
+     Running `target/release/p3e06_combined_admission_frontier`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+compiling every real query...
+querying Solr for every real query (whole-corpus pure-Solr baseline, persisted for reuse)...
+  done in 70.4s (22458 queries) -- persisted to whole_corpus_solr_ndcg.csv for future reuse
+
+whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+
+computing structural admit()-eligible population (cap-independent)...
+  185 structurally eligible queries (matches P3-E02's own count)
+
+computing structurally-anchored lexical-narrowing eligible population (cap-independent)...
+  1557 structurally-anchored lexically-narrowed eligible queries (matches P3-E05's own count)
+  disjointness check: 0 overlap between the two eligible populations (confirmed)
+
+=== P3-E06 combined safe-offload Pareto frontier ===
+   s_cap    l_cap   structural     anchored       cov%   whole_ndcg     degrad weighted_lat_ms
+      50        1           82          240      1.43%       0.2322   +0.0013         2.5236
+      50       20           82         1110      5.31%       0.2290   +0.0045         2.4245
+      50      250           82         1526      7.16%       0.2265   +0.0070         2.3771
+     250        1          164          240      1.80%       0.2319   +0.0016         2.5143
+     250       20          164         1110      5.67%       0.2288   +0.0048         2.4152
+     250      250          164         1526      7.53%       0.2262   +0.0073         2.3678
+
+=== RQ4 analytical note: does p50 move onto the native path? ===
+  best combined coverage across this grid: 7.53% of whole corpus.
+  Admission is content-based (ambiguity/residual/structural-constraint shape), not latency-based, and P3-E01 found Solr's own per-query latency has a tight CI (uncorrelated with which queries get admitted). At any coverage fraction below 50%, every percentile at or above that fraction is still governed by solr_baseline's own already-measured distribution (P3-E01: p50=2.5698ms) -- only the bottom 7.53% of the sorted latency array shifts toward the near-zero native means. Since 7.53% is far below the 50% RQ4 itself names as the threshold for p50 to move, p50/p95/p99 stay effectively unchanged from solr_baseline's own distribution at every grid point measured here -- confirming RQ4's own prediction analytically rather than requiring a new synthetic combined-latency campaign to discover it.
+  [manifest] experiment=p3e06_combined_admission_frontier method=structural_cap_x_anchored_lexical_cap_grid commit=dca864fd4a95 dirty=false host=vm cpus=4 os=linux seed=7 warmup=0 reps=1
+  [manifest] dataset=dataset_cache/export/catalog.jsonl (size=1520400382b_mtime=1787206455)  query_set=dataset_cache/export/queries.jsonl (size=41184952b_mtime=1787206462)
+  [manifest] config={"anchored_eligible":1557,"anchored_lexical_cap_grid":[1,20,250],"solr_base_url":"http://localhost:8983/solr/commerce_bench","structural_cap_grid":[50,250],"structural_eligible":185,"total_queries":22458}
+
+artifacts written to dataset_cache/p3e06_artifacts

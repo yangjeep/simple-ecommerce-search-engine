@@ -1,0 +1,59 @@
+   Compiling round1-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/round1-eval)
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 23.54s
+     Running `target/release/p3e03_lexical_narrowing_eval`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+compiling every real query...
+querying Solr for every real query (whole-corpus pure-Solr baseline)...
+  done in 73.6s (22458 queries)
+
+whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+
+finding UnresolvedResidual-rejected queries + lexical-narrowing eligibility...
+  17268/22458 queries rejected for UnresolvedResidual (76.89% of corpus)
+  5474/17268 blocked outright by an out-of-vocabulary residual token (cap-independent)
+  11794/17268 have a real combined candidate count (cap-independent, will be swept below)
+  variant-correctness violations: 0 (must be 0 -- commerce_core always exactly re-verifies hard constraints)
+
+native lexically-narrowed execution latency (n=20 small-combined-candidate-set queries, 30 reps each, 600 individual samples):
+  native_execute_lexically_narrowed: n=600 mean=6.1395ms sd=2.0704ms | p10=5.4036 p25=6.4850 p50=6.7954 p75=7.0319 p90=7.2021 p95=7.2740 p99=7.5934 | min=0.0072 max=7.9640ms
+  [manifest] experiment=p3e03_lexical_narrowing_eval method=max_lexical_narrowed_candidates_sweep commit=85844c0b4cf2 dirty=false host=vm cpus=4 os=linux seed=7 warmup=0 reps=1
+  [manifest] dataset=dataset_cache/export/catalog.jsonl (size=1520400382b_mtime=1787206455)  query_set=dataset_cache/export/queries.jsonl (size=41184952b_mtime=1787206462)
+  [manifest] config={"eligible_queries":11794,"oov_blocked":5474,"rejected_residual_count":17268,"solr_base_url":"http://localhost:8983/solr/commerce_bench","sweep":[1,2,3,5,10,20,30,50,75,100,150,250,500,1000,2500,5000,10000,50000,200000],"total_queries":22458}
+
+=== P3-E03 lexical-narrowing coverage/relevance frontier (isolated marginal contribution) ===
+       cap   admitted cov%_resid  cov%_all native_ndcg solr_ndcg_sub ndcg_delta whole_wl_ndcg  wl_degrad  false_pos
+         1        783      4.53%     3.49%     0.1456     0.2902    -0.1446       0.2285    +0.0050        126
+         2       1358      7.86%     6.05%     0.1879     0.3303    -0.1424       0.2249    +0.0086        182
+         3       1815     10.51%     8.08%     0.2098     0.3467    -0.1369       0.2224    +0.0111        220
+         5       2547     14.75%    11.34%     0.2433     0.3680    -0.1247       0.2194    +0.0141        264
+        10       3711     21.49%    16.52%     0.3043     0.4101    -0.1058       0.2160    +0.0175        313
+        20       5097     29.52%    22.70%     0.3426     0.4478    -0.1052       0.2096    +0.0239        446
+        30       5862     33.95%    26.10%     0.3272     0.4433    -0.1162       0.2032    +0.0303        673
+        50       6765     39.18%    30.12%     0.2992     0.4286    -0.1294       0.1945    +0.0390       1121
+        75       7435     43.06%    33.11%     0.2787     0.4167    -0.1380       0.1878    +0.0457       1525
+       100       7901     45.76%    35.18%     0.2649     0.4060    -0.1411       0.1839    +0.0496       1817
+       150       8550     49.51%    38.07%     0.2469     0.3911    -0.1443       0.1786    +0.0549       2223
+       250       9328     54.02%    41.54%     0.2274     0.3739    -0.1465       0.1727    +0.0608       2720
+       500      10227     59.23%    45.54%     0.2081     0.3542    -0.1461       0.1670    +0.0665       3239
+      1000      10878     63.00%    48.44%     0.1957     0.3398    -0.1442       0.1637    +0.0698       3558
+      2500      11398     66.01%    50.75%     0.1867     0.3282    -0.1415       0.1617    +0.0718       3768
+      5000      11611     67.24%    51.70%     0.1833     0.3231    -0.1397       0.1613    +0.0722       3829
+     10000      11706     67.79%    52.12%     0.1818     0.3206    -0.1388       0.1612    +0.0724       3848
+     50000      11782     68.23%    52.46%     0.1807     0.3187    -0.1380       0.1611    +0.0724       3859
+    200000      11791     68.28%    52.50%     0.1805     0.3184    -0.1379       0.1611    +0.0724       3859
+
+=== relevance-budget calibration (Issue #14 RQ2, applied to this mechanism's isolated contribution) ===
+  budget<=0.0%: no swept cap value stays within this budget
+  budget<=0.5%: no swept cap value stays within this budget
+  budget<=1.0%: no swept cap value stays within this budget
+  budget<=2.0%: no swept cap value stays within this budget
+
+artifacts written to dataset_cache/p3e03_artifacts

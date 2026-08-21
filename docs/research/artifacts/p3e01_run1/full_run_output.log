@@ -1,0 +1,26 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+
+=== whole-corpus admission pass (max_candidates=50) ===
+  admitted: 82/22458 (0.37%)
+  rejected [ambiguous]: 5005/22458 (22.29%)
+  rejected [unresolved_residual]: 17268/22458 (76.89%)
+  rejected [not_selective_enough]: 103/22458 (0.46%)
+
+=== fallback-tax latency sub-experiment: 20 rejected queries, 30 reps/arm ===
+  [manifest] experiment=p3e01_fallback_baseline method=solr_baseline_vs_admission_then_solr commit=e1edb9ea05e4 dirty=true host=vm cpus=4 os=linux seed=7 warmup=5 reps=30
+  [manifest] dataset=dataset_cache/export/catalog.jsonl (size=1520400382b_mtime=1787206455)  query_set=dataset_cache/export/queries.jsonl (size=41184952b_mtime=1787206462)
+  [manifest] config={"latency_reps":30,"latency_sample_size":20,"max_candidates":50,"solr_base_url":"http://localhost:8983/solr/commerce_bench"}
+  solr_baseline: n=30 mean=2.5603ms sd=0.4102ms | p10=2.0794 p25=2.2620 p50=2.5698 p75=2.7995 p90=2.9749 p95=3.1338 p99=3.6625 | min=1.9666 max=3.8526ms
+  admission_then_solr: n=30 mean=2.4983ms sd=0.2702ms | p10=2.1812 p25=2.3115 p50=2.4985 p75=2.7133 p90=2.8021 p95=2.8154 p99=3.0039 | min=1.8099 max=3.0794ms
+
+fallback tax (admission_then_solr - solr_baseline), ms: diff=-0.0620 ci=[-0.2377, 0.1050] excludes_zero=false
+fallback tax as % of solr_baseline mean (2.5603ms): -2.42%
+Issue #14 invariant 1 target: <=5% fallback tax -- MET
+
+artifacts written to dataset_cache/p3e01_artifacts

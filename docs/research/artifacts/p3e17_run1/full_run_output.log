@@ -1,0 +1,26 @@
+loading whole-corpus Solr baseline from "docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv"...
+  22458 queries loaded; whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+loading structurally-eligible queries from "docs/research/artifacts/p3e02_run1/eligible_queries_raw.csv"...
+  185 queries
+loading structurally-anchored lexically-narrowed eligible queries from "docs/research/artifacts/p3e05_run1/eligible_queries_raw.csv"...
+  1557 queries
+deriving single-token pure-lexical eligible population from "docs/research/artifacts/p3e03_run1/eligible_queries_raw.csv" (residual_token_count==1, excluding anchored qids)...
+  824 queries
+
+=== budget<=0.5% promoted point: structural_cap=2, anchored_cap=1, single_token_cap=2 ===
+  admitted: 313/22458 (1.39% coverage) -- 5000 paired bootstrap resamples, alpha=0.05
+  whole-workload NDCG: point=0.2323, 95% CI=[0.2285, 0.2362]
+  degradation vs. Solr-only (baseline - policy): point=0.0012 (0.50% relative), 95% CI=[0.0009, 0.0015] (0.38%, 0.62% relative)
+  CI excludes zero: true (a CI including zero would mean this degradation is not statistically distinguishable from no degradation at all, at this corpus size)
+
+=== budget<=1.0% promoted point: structural_cap=50, anchored_cap=1, single_token_cap=20 ===
+  admitted: 601/22458 (2.68% coverage) -- 5000 paired bootstrap resamples, alpha=0.05
+  whole-workload NDCG: point=0.2313, 95% CI=[0.2275, 0.2352]
+  degradation vs. Solr-only (baseline - policy): point=0.0022 (0.94% relative), 95% CI=[0.0018, 0.0026] (0.76%, 1.12% relative)
+  CI excludes zero: true (a CI including zero would mean this degradation is not statistically distinguishable from no degradation at all, at this corpus size)
+
+=== budget<=2.0% promoted point: structural_cap=2, anchored_cap=20, single_token_cap=10 ===
+  admitted: 1303/22458 (5.80% coverage) -- 5000 paired bootstrap resamples, alpha=0.05
+  whole-workload NDCG: point=0.2289, 95% CI=[0.2251, 0.2327]
+  degradation vs. Solr-only (baseline - policy): point=0.0046 (1.98% relative), 95% CI=[0.0041, 0.0052] (1.76%, 2.22% relative)
+  CI excludes zero: true (a CI including zero would mean this degradation is not statistically distinguishable from no degradation at all, at this corpus size)

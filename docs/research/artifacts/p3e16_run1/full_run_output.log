@@ -1,0 +1,17 @@
+loading whole-corpus Solr baseline from "docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv"...
+  22458 queries loaded; whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+loading structural admit() frontier from "docs/research/artifacts/p3e02_run1/frontier_sweep.csv"...
+  19 cap points
+loading structurally-anchored lexical frontier from "docs/research/artifacts/p3e05_run1/frontier_sweep.csv"...
+  19 cap points
+loading single-token lexical frontier from "docs/research/artifacts/p3e09_run1/frontier_sweep.csv"...
+  19 cap points
+
+=== P3-E16 fine-grained three-way combined Pareto frontier: 19 x 19 x 19 = 6859 grid points ===
+
+--- Pareto-optimal point per RQ2 budget (max coverage subject to relative degradation <= budget) ---
+budget<= 0.5%: structural_cap=2       anchored_cap=1       single_token_cap=2       combined_admitted=313    coverage=  1.39% degradation= 0.50% relative
+budget<= 1.0%: structural_cap=50      anchored_cap=1       single_token_cap=20      combined_admitted=601    coverage=  2.68% degradation= 0.94% relative
+budget<= 2.0%: structural_cap=2       anchored_cap=20      single_token_cap=10      combined_admitted=1303   coverage=  5.80% degradation= 1.98% relative
+
+full 6859-point grid written to dataset_cache/p3e16_artifacts/finegrained_combined_frontier.csv
