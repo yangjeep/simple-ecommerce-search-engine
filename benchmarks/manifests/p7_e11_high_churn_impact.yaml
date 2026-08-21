@@ -26,7 +26,7 @@ claim: >
   docs/experiments/PHASE7_LOG.md for the full H14 hypothesis and
   result.
 
-git_sha: PENDING
+git_sha: 316988b
 binary: crates/phase7-eval/src/bin/p7_e11_high_churn_impact.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e11_high_churn_impact
 run_command: ./target/release/p7_e11_high_churn_impact dataset_cache/wands/catalog.jsonl

@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e11_high_churn_impact.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "316988b",
   "dataset": {
     "name": "WANDS 2 real tenants: Rugs (quiet/low-churn, from H2/P7-E00), Furniture (high-churn, repeatedly rebuilt)"
   },
