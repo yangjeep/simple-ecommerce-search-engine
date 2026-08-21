@@ -1,0 +1,48 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E02
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  H3 (packing ceiling), left untested by P7-E00/P7-E01 since WANDS' real
+  category partition tops out at 55 tenants at ~50MB RSS, is answered by
+  proxy: replicating the real 55-tenant population via controlled-stress
+  tenant-count replication (distinct synthetic names per copy, mirroring
+  Phase 6B's catalog-size replication discipline) shows RSS scaling
+  cleanly linearly with total product count -- KB/product stays at
+  1.260-1.265 across the entire range from 100 to 6,500 tenants (100 to
+  4.93M products), a ~0.4% spread over a 65x range -- all the way to a
+  self-imposed 6GB RSS safety cap, reproduced across 2 independent runs.
+  This is a self-imposed safety bound, not a discovered hardware/
+  architectural ceiling.
+
+git_sha: (fill in after commit)
+binary: crates/phase7-eval/src/bin/p7_e02_packing_ceiling.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e02_packing_ceiling
+run_command: ./target/release/p7_e02_packing_ceiling dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real 55-tenant category_depth_1 population, replicated K
+    times with synthetic per-copy tenant names
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  disclosure: >
+    Controlled-stress replication of TENANT COUNT (not catalog size, as
+    in Phase 6B) -- explicitly not a claim about organic tenant growth.
+
+engine:
+  native: commerce_core::index::CatalogIndex, built incrementally one
+    tenant at a time up to a 6GB self-process-RSS safety cap
+
+workload:
+  selection: incremental build of replicated real tenants, RSS snapshot
+    every 100 tenants
+  repetitions: 2 independent process runs
+
+seed: "n/a (deterministic real-data replication, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e02_packing_ceiling_run1/
+  - results_run{1,2}.csv
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H5 hypothesis and result.

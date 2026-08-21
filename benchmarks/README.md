@@ -52,6 +52,9 @@ same as Phases 0–5:
 - `p7_e01_qps_scaling.yaml` — fixed-tenant throughput/latency as the
   breadth of other, concurrently-touched tenants grows; see
   `PHASE7_DECISION.md`.
+- `p7_e02_packing_ceiling.yaml` — controlled-stress tenant-count
+  replication testing the packing ceiling (H3) by proxy; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

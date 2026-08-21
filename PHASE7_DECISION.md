@@ -1,9 +1,8 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 + P7-E01 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 + P7-E01 + P7-E02 first pass
 
 **Decision: PROCEED**, with one hypothesis falsified (in the good
-direction), one hypothesis confirmed with a small, honestly-disclosed
-open question, and one hypothesis confirmed cleanly across repeated
-runs.
+direction) and three hypotheses confirmed — one with a small,
+honestly-disclosed open question, two cleanly across repeated runs.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -27,6 +26,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   degrade as the BREADTH of other, distinct, concurrently-touched tenants
   grows, at fixed worker concurrency — Issue #21's explicit "tenants/node
   at fixed latency SLO" metric.
+- **H5** (P7-E02): given H1's finding, RSS should scale linearly with
+  total product count (not tenant count) as the real 55-tenant
+  population is replicated into the hundreds/thousands via Phase 6B's
+  controlled-stress methodology applied to tenant count — testing H3
+  by proxy, since the real category partition alone could not reach any
+  resource ceiling.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -104,11 +109,11 @@ unconfirmed cause (a cache-locality hypothesis is named, not asserted).
 **The core claim holds robustly: no material p99 regression from an
 unrelated tenant's sustained heavy concurrent load.**
 
-**H3 — not tested.** The real `category_depth_1` partition tops out at
-55 real tenants, reaching only ~50 MB peak marginal RSS — nowhere near
-this container's ~15 GB budget. The packing ceiling was never actually
-approached; this is recorded honestly as untested rather than
-extrapolated, per this project's standing discipline.
+**H3 — not directly tested by real category partitions, but answered by
+proxy via H5/P7-E02 below.** The real `category_depth_1` partition tops
+out at 55 real tenants, reaching only ~50 MB peak marginal RSS —
+nowhere near this container's ~15 GB budget. No real-category packing
+ceiling was ever approached.
 
 **H4 — CONFIRMED, robust across 3 independent runs (P7-E01).** A fixed
 tenant's ("Rugs") own query throughput and p99 latency (694-816 rps,
@@ -134,9 +139,28 @@ tenants as N grows), not a real tenant-count effect. Caught and corrected
 before any external review was needed, by holding one tenant's own query
 completely fixed and varying only the breadth of other tenants touched.
 
+**H5 — CONFIRMED, cleanly linear, reproduced across 2 independent runs
+(P7-E02).** The real 55-tenant population was replicated via
+controlled-stress tenant-count replication (distinct synthetic names per
+copy, same disclosure discipline as Phase 6B's catalog-size replication)
+up to a self-imposed 6 GB RSS safety cap, reached at **6,500 tenants
+(118x the real population) and 4,929,348 total products** in both runs
+(RSS within 0.01% of each other: ~6,223 MB). KB/product stayed at
+1.260-1.265 across the ENTIRE range from 100 to 6,500 tenants (100 to
+4.93M products) — a ~0.4% spread over a 65x range in tenant count. No
+sign of super-linear degradation at any point. **This answers H3 by
+proxy**: packing cost in this architecture is governed by total product
+count, not tenant count, holding cleanly two orders of magnitude beyond
+WANDS' real 55-tenant ceiling. **Named limitation, stated precisely**:
+6,500 tenants is a self-imposed safety-capped bound chosen to avoid
+risking a real OOM in this shared container (not a discovered
+architectural or hardware ceiling); the real ceiling on this or a larger
+machine is very likely materially higher, deliberately not pursued here.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
-`docs/research/artifacts/p7_e01_qps_scaling_run1/`.
+`docs/research/artifacts/p7_e01_qps_scaling_run1/`,
+`docs/research/artifacts/p7_e02_packing_ceiling_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -161,11 +185,13 @@ log rather than silently rewritten.
    difference (H2) has no confirmed mechanism.** A cache-locality
    hypothesis is plausible but unverified; would need profiling to
    confirm.
-3. **H3 was never actually tested.** The real category partition's
-   natural ceiling (55) was reached long before any hardware resource
-   limit. A genuine packing-ceiling test needs finer real partitioning
-   or controlled-stress replication of tenant COUNT (distinct from Phase
-   6B's replication of catalog SIZE).
+3. **H3's real-category ceiling (55) never reached any hardware limit,
+   but H5's controlled-stress replication answered the same question by
+   proxy up to a self-imposed 6 GB safety cap (6,500 tenants).** The
+   actual hardware/architectural ceiling (if one exists at all before
+   available RAM runs out) remains genuinely untested beyond that point
+   — this experiment deliberately stopped short of finding it rather
+   than risk a real OOM in a shared container.
 4. Only one tenant model (real category-based partitions of one real
    catalog) has been tested. Real SaaS tenants would have completely
    independent catalogs (not partitions of the same source), likely with
@@ -176,55 +202,65 @@ log rather than silently rewritten.
 ## What would be built next if scaling up
 
 A cross-process or cross-container tenant-isolation measurement to
-capture the per-tenant fixed cost this single-process design cannot see;
-a genuine packing-ceiling test (finer real partitions or controlled-
-stress tenant-count replication) to actually exercise H3 and to test H4
-at tenant counts beyond WANDS' real 55-category ceiling; an aggregate
-throughput-under-realistic-load experiment (P7-E01 tested breadth of
-touched tenants at fixed per-tenant demand, not aggregate QPS at a
-realistic multi-tenant demand mix, which Issue #21's "per-tenant and
-aggregate QPS" metric also asks for).
+capture the per-tenant fixed cost this single-process design cannot see
+(the most important remaining gap — H5 confirms in-process packing is
+cheap, but says nothing about per-process overhead in a real
+deployment); an aggregate throughput-under-realistic-load experiment
+(P7-E01 tested breadth of touched tenants at fixed per-tenant demand,
+not aggregate QPS at a realistic multi-tenant demand mix, which Issue
+#21's "per-tenant and aggregate QPS" metric also asks for); extending H4
+(query throughput under breadth) to the hundreds-to-thousands tenant
+counts H5 already reached for memory, to check whether the "no
+degradation" finding also holds at that scale for query latency, not
+just RSS.
 
 ## What should explicitly not be built yet
 
-No tenant-aware planner/admission changes based on this single pass —
-H1's favorable result and H2's pass are encouraging but rest on one
-tenant model (real category partitions of one catalog) and one machine
-configuration; no economic cost model (Issue #21's Phase 7 "economic
-output" section) should be built until the cross-process fixed-cost gap
-above is closed, since that is very likely to dominate any real
-per-tenant cost estimate.
+No tenant-aware planner/admission changes based on this pass — H1/H4/H5's
+favorable results and H2's pass are encouraging but rest on one tenant
+model (real category partitions, or controlled-stress replicas of them)
+and one machine configuration; no economic cost model (Issue #21's Phase
+7 "economic output" section) should be built until the cross-process
+fixed-cost gap above is closed, since that is very likely to dominate
+any real per-tenant cost estimate regardless of how cheap in-process
+packing is.
 
 ## What this decision does and does not claim
 
 **Does claim**: in this single-process architecture, per-tenant memory
 overhead is negligible and total memory cost tracks aggregate product
-count, not tenant count (H1, corrected and adversarially validated); one
-tenant's heavy concurrent load does not cause material latency
-regression for another tenant sharing the same process (H2, confirmed
-across repeated runs); a fixed tenant's own throughput/latency does not
-degrade as the breadth of other, distinct, concurrently-touched tenants
-grows up to WANDS' real ceiling (H4, confirmed across repeated runs); the
-specific numeric first-draft "27-590 KB per-tenant fixed cost" estimate
-and the first-draft P7-E01 "~19.8x throughput increase" are both
-withdrawn — the former a build-order/allocator artifact, the latter a
-workload-mix artifact — neither a real property of the architecture.
+count, not tenant count, confirmed cleanly from the real 55-tenant scale
+up to 6,500 tenants / ~4.93M products (H1 + H5, corrected and
+adversarially/independently validated); one tenant's heavy concurrent
+load does not cause material latency regression for another tenant
+sharing the same process (H2, confirmed across repeated runs); a fixed
+tenant's own throughput/latency does not degrade as the breadth of
+other, distinct, concurrently-touched tenants grows up to WANDS' real
+ceiling (H4, confirmed across repeated runs); the specific numeric
+first-draft "27-590 KB per-tenant fixed cost" estimate and the
+first-draft P7-E01 "~19.8x throughput increase" are both withdrawn — the
+former a build-order/allocator artifact, the latter a workload-mix
+artifact — neither a real property of the architecture.
 
 **Does not claim**: that this generalizes to a real multi-process/multi-
 container SaaS deployment (the in-process measurement cannot see
 per-process fixed costs); that the small cross-vs-same-tenant latency
-difference in H2 is understood; that a packing ceiling has been found
-(H3 untested, and H4 only tested up to the same real ceiling); that
-aggregate QPS under a realistic multi-tenant demand mix or economic
-cost-per-tenant questions (both explicitly named in Issue #21's Phase 7)
-have been answered — this is a first pass on memory, pairwise isolation,
-and fixed-tenant throughput-under-breadth only.
+difference in H2 is understood; that 6,500 tenants is a discovered
+hardware or architectural ceiling (it is a self-imposed safety bound —
+the real ceiling is very likely materially higher and was deliberately
+not pursued); that H4's no-degradation finding holds at the
+hundreds-to-thousands tenant counts H5 reached for memory (H4 itself was
+only tested up to WANDS' real 54-other-tenant ceiling); that aggregate
+QPS under a realistic multi-tenant demand mix or economic cost-per-tenant
+questions (both explicitly named in Issue #21's Phase 7) have been
+answered — this is a first pass on memory (including at scale),
+pairwise isolation, and fixed-tenant throughput-under-breadth only.
 
 **Decision: PROCEED** to the next Phase 7 sub-experiment (a cross-process
-fixed-cost measurement, and/or a genuine packing-ceiling test beyond
-WANDS' real 55-category limit) without changing the underlying
-commerce-native mechanism. The favorable, adversarially-corrected H1
-result and the robust H2/H4 results are real evidence in favor of the
+fixed-cost measurement is the most important remaining gap) without
+changing the underlying commerce-native mechanism. The favorable,
+adversarially-corrected H1 result, its clean confirmation at scale via
+H5, and the robust H2/H4 results are real evidence in favor of the
 architecture's packing-density potential, but are explicitly a floor on
-the claim (single-process, one tenant model, one real ceiling), not a
-ceiling on what remains to be tested.
+the claim (single-process, one tenant model, one self-imposed safety
+bound), not a ceiling on what remains to be tested.

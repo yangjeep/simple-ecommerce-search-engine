@@ -316,3 +316,82 @@ whether this holds at materially larger tenant counts (hundreds to
 thousands, the scale Issue #21's Phase 7 ultimately asks about) is
 untested and would need the same finer-partition or controlled-stress
 extension named for H3.
+
+## P7-E02: packing ceiling via controlled-stress tenant-count replication (H5, stated before implementation)
+
+H3 was named as a hypothesis in P7-E00 but never tested: the real
+`category_depth_1` partition tops out at 55 tenants at ~50 MB RSS,
+nowhere near this container's ~15 GB budget (currently ~10 GB
+available, Solr's JVM already resident at ~4.8 GB RSS). P7-E02 uses the
+same controlled-stress replication discipline Phase 6B established for
+catalog SIZE, applied instead to TENANT COUNT: the real 55-tenant
+population is replicated K times, with each copy's tenant names
+suffixed (e.g. `Rugs-copy3`) to keep them distinct, to reach tenant
+counts in the hundreds to thousands. **This is explicitly not a claim
+about organic tenant growth** — real independent SaaS tenants would not
+be K copies of the same 55 real categories; this isolates tenant COUNT
+as a variable, holding per-tenant data/schema shape fixed, the same
+disclosure discipline `replicate_wands_scale.py` used for catalog size.
+
+**H5**: given H1's finding that per-tenant fixed memory overhead is
+negligible and total memory cost tracks aggregate PRODUCT count, RSS
+should scale roughly linearly with total product count as the 55-tenant
+population is replicated K times (i.e., with K itself, since each
+replica carries the same real product count) — not degrade faster than
+linear as raw tenant COUNT grows into the hundreds/thousands.
+
+**Pass/fail defined in advance**: track RSS per replication step; if it
+stays within roughly linear bounds of K (say, within 2x of the linear
+prediction) up to a safety-capped ceiling (this process's own RSS kept
+below ~6 GB, leaving headroom under the container's real ~15 GB budget
+so a real OOM is never risked), H5 holds and the achieved tenant count
+is recorded as a real, non-extrapolated tested bound — not evidence
+about tenant counts beyond it, per this project's "record the tested
+bound rather than extrapolating" discipline. If RSS grows materially
+faster than linear before the safety cap, H5 is falsified and that
+becomes the reported (still tested, not extrapolated) ceiling.
+
+## P7-E02 result: H5 CONFIRMED, cleanly linear all the way to the safety cap
+
+Run twice independently (`docs/research/artifacts/p7_e02_packing_ceiling_run1/results_run{1,2}.csv`),
+reaching the same point both times: **6,500 tenants (118x the real
+55-tenant population), 4,929,348 total products**, before the 6 GB
+self-imposed safety cap was reached (RSS ~6,223 MB both runs, within
+0.01% of each other).
+
+| tenants | products | RSS (KB) | KB/product |
+|---|---|---|---|
+| 100 | 82,866 | 104,448 | 1.260 |
+| 1,000 | 785,548 | 991,060 | 1.262 |
+| 3,000 | 2,279,055 | 2,877,140 | 1.263 |
+| 6,000 | 4,547,648 | 5,752,436 | 1.265 |
+| 6,500 | 4,929,348 | 6,223,372 | 1.263 |
+
+KB/product stays at 1.260-1.265 across the entire range — a ~0.4%
+spread over a 65x range in tenant count and 59x range in product count.
+This is essentially perfectly linear, with no sign whatsoever of
+super-linear degradation as tenant count grows into the thousands.
+**H5 CONFIRMED**: packing cost in this architecture is governed by total
+product count, not tenant count, holding cleanly from WANDS' real
+55-tenant scale all the way to 6,500 tenants.
+
+**What this is and is not evidence of**: 6,500 tenants / ~50 MB-per-1000-
+tenants-worth-of-real-data-volume is a **self-imposed safety-capped
+bound**, chosen to avoid risking a real OOM in this shared container (15
+GB total, ~10 GB available at the start of this experiment, Solr's own
+JVM already resident at ~4.8 GB) — it is NOT a discovered architectural
+or hardware ceiling. The real ceiling on this hardware, or on a
+dedicated/larger machine, is very likely materially higher; this
+experiment deliberately stopped short of finding it, per this project's
+"record the tested bound rather than extrapolating" discipline, rather
+than push toward an actual OOM in a shared, multi-purpose container.
+Build time also scaled close to linearly (a mild super-linear component:
+~66x build-time growth for a 65x tenant-count increase), consistent with
+the same mild super-linear build-cost signal P7-E00/H1 already found and
+attributed to real per-item construction cost, not to tenant count
+specifically.
+
+H3 (the original packing-ceiling hypothesis from P7-E00) is now answered
+by proxy: no non-linear packing-cost wall was found anywhere between the
+real 55-tenant scale and this experiment's self-imposed 6,500-tenant
+safety bound.

@@ -192,10 +192,20 @@ small but real "~27-590 KB per-tenant fixed cost" did not survive a
 reversed-build-order control, and was corrected (not just softened) to a
 stronger, more favorable finding: per-tenant memory overhead is
 negligible in this architecture, and total memory cost tracks aggregate
-product count rather than tenant count. Cross-tenant latency isolation
-held robustly across repeated runs. Both findings are explicitly scoped
-to a single-process measurement — cross-process fixed cost and
-QPS-scaling under load remain open for the next Phase 7 pass.
+product count rather than tenant count. A second self-caught issue in a
+follow-on QPS-scaling experiment (an apparent throughput increase that
+turned out to be a workload-mix artifact, not a real tenant-count
+effect) was corrected the same way before any external review was
+needed. The corrected findings then reproduced cleanly at much larger
+scale: a controlled-stress replication of the real tenant population up
+to 6,500 tenants (~4.93M products) showed per-product memory cost
+staying within 0.4% across a 65x range, with no sign of degradation
+before a self-imposed safety cap. Cross-tenant latency isolation held
+robustly across repeated runs, both for pairwise contention and for
+breadth of concurrently-touched tenants. All of this is explicitly
+scoped to a single-process measurement — cross-process fixed cost and
+aggregate QPS under a realistic demand mix remain open for the next
+Phase 7 pass.
 
 ## What this project is not
 
