@@ -24,6 +24,7 @@ The project has moved through several falsification rounds, each ending in a wri
 | Phase 3 (Issue #14) | Safe fast-path admission frontier over Solr | **NARROW SUPPORT** — [`PHASE3_DECISION.md`](PHASE3_DECISION.md) |
 | Phase 4 (Issue #16) | Learned semantic implication rules | **NARROW SUPPORT** — [`PHASE4_DECISION.md`](PHASE4_DECISION.md) |
 | Phase 5 (Issue #17) | Browse/PLP as a commerce-native workload vs. a fair Solr baseline | **REVISE / NARROW BUT PUBLISHABLE** — [`PHASE5_DECISION.md`](PHASE5_DECISION.md) |
+| Phase 6A (Issue #23) | Do Phase 5's PLP breakpoints reproduce on an independent, genuinely hierarchical dataset (WANDS, substituted for the unreachable Amazon Reviews 2023)? | **PROCEED** — [`PHASE6A_DECISION.md`](PHASE6A_DECISION.md) |
 
 **The active epic is [Issue #21](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/21)** (Phases 6–9): cross-dataset/cross-engine validation, multi-tenant SMB/mid-market economics, correlated-burst (BFCM) elasticity, and an integrated, falsifiable system. See `docs/WHY.md` for why the project reframed around this after Phases 2–5.
 
@@ -33,7 +34,7 @@ The project is intended to measure, not assume. The original Gate-era questions 
 
 - What fraction of realistic ecommerce queries can be resolved structurally without a model call in the hot path? (Phases 2–4: a real but small slice — see `docs/WHY.md`.)
 - Does that advantage hold for browse/PLP-style structural traffic, and where does it break down by cardinality? (Phase 5: yes for filter/pagination/concurrency, no for facet/large-sort past a measured breakpoint.)
-- Does the result generalize across independent datasets/verticals and against a second specialized engine (Havenask)? (Phase 6, not yet run.)
+- Does the result generalize across independent datasets/verticals and against a second specialized engine (Havenask)? (Phase 6A: filter/pagination/concurrency robustly reproduce on WANDS; facet's crossover threshold shifts but is mechanistically explained; Havenask comparison and further datasets not yet run.)
 - Does commerce specialization reduce per-tenant fixed cost and increase safe tenant packing density? (Phase 7, not yet run.)
 - What happens to this architecture when a correlated retail event (BFCM) breaks normal statistical multiplexing? (Phase 8, not yet run.)
 - Is the smallest coherent integrated system (native + Solr, native + Havenask) actually better than operating either backend directly for the target market? (Phase 9, not yet run.)

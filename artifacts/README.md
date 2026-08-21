@@ -25,22 +25,25 @@ and would violate `CLAUDE.md`'s "do not rewrite history" rule and Issue
 #21's own archive discipline ("never silently edit historical experiment
 conclusions"). They stay exactly where they are.
 
-`artifacts/manifests/` currently holds three **worked-example** records —
+`artifacts/manifests/` currently holds five **worked-example** records —
 written after the fact, alongside their matching `benchmarks/manifests/`
-entries — for Phase 3/4/5's actual headline promoted results:
+entries — for Phase 3/4/5's and Phase 6A's actual headline promoted
+results:
 
 - `p3e16_finegrained_frontier.json`
 - `p4e01_implication_propose_replay_promote.json`
 - `p5e03_facet_scan_crossover.json`
+- `p6a_e00_wands_plp_benchmark.json`
+- `p6a_e01_concurrency_sweep.json`
 
-Each points at its real `docs/research/artifacts/pXeNN_run1/` location
-rather than duplicating the data. `artifacts/summaries/` and
-`artifacts/figures/` are **not yet populated**: no chart-generation
-tooling exists in this repository yet, and adding placeholder or
-retroactively-generated figures for Phases 0–5 would overstate what has
-actually been built. This is stated explicitly rather than filled with
-stand-ins.
+Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
+`p6a_e0N_*_run1/`) location rather than duplicating the data.
+`artifacts/summaries/` and `artifacts/figures/` are **not yet
+populated**: no chart-generation tooling exists in this repository yet,
+and adding placeholder or retroactively-generated figures would overstate
+what has actually been built. This is stated explicitly rather than
+filled with stand-ins.
 
-Phase 6 onward should archive new promoted results directly under this
-structure as they are produced, rather than repeating Phase 0–5's
+Phase 6B onward should archive new promoted results directly under this
+structure as they are produced, rather than repeating Phases 0–6A's
 per-binary-console-output convention.

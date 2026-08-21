@@ -1,0 +1,56 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6A-E00
+phase: 6A
+issue: 23
+decision_document: PHASE6A_DECISION.md
+claim: >
+  Commerce-native structural filter/subtree-browse/pagination clear
+  Issue #18's 80x physical-multiplier floor at every real WANDS size
+  tested (8,020x-26,769x), robustly matching Phase 5's ESCI findings in
+  order of magnitude. Facet and sort reproduce Phase 5's qualitative
+  breakpoint pattern; facet's native-loss crossover occurs at a real,
+  substantially lower candidate count (~2,072-2,175) than ESCI's
+  (~9,000-12,000), explained (not merely observed) by WANDS' richer
+  per-product attribute map.
+
+git_sha: 64a207f
+binary: crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs
+build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
+run_command: ./target/release/p6a_e00_wands_vs_native_eval
+
+dataset:
+  name: WANDS (Wayfair ANnotation Dataset)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  acquisition_script: scripts/datasets/fetch_wands.sh
+  preparation_script: scripts/datasets/prepare_wands.py
+  size: 42994 products
+  substitution_note: >
+    Substituted for Issue #23's named Amazon Reviews 2023 metadata, which
+    is unreachable from this environment -- see PHASE6A_DECISION.md's
+    "Dataset blocker and substitution" section.
+
+engine:
+  native: commerce_core::index::CatalogIndex (category_facet_counts_by_scan,
+    product_type_facet_counts_by_scan, facet_counts_by_scan, indexed_candidates,
+    select_nth_unstable-based top-K sort)
+  baseline: Apache Solr, indexed via scripts/datasets/solr_index_wands.py
+    (docValues on every filter/sort/facet field, dedicated title_sort field,
+    fair-baseline discipline applied from the start, not retrofitted)
+
+workload:
+  selection: real category-leaf and category-depth-3 groups sampled across
+    real size buckets (seeded ChaCha8Rng, seed=7), plus a targeted
+    depth-1 crossover-characterization sweep using real named subtrees
+  repetitions: 30 (WARMUP=5) per request, per system
+
+seed: 7
+
+raw_results: docs/research/artifacts/p6a_e00_run1/
+  - results.csv
+  - full_run_output.log
+
+analysis: printed directly by the binary; correctness gate (41/41 true
+  candidate-count matches) verified before any timing claim; two real
+  methodology bugs found and fixed (casing-representation mismatch,
+  facet-bucket-sum-as-candidate-count) -- see docs/experiments/PHASE6A_LOG.md

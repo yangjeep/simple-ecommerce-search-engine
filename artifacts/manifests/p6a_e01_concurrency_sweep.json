@@ -1,0 +1,29 @@
+{
+  "experiment_id": "P6A-E01",
+  "phase": "6A",
+  "issue": 23,
+  "benchmark_manifest": "benchmarks/manifests/p6a_e01_concurrency_sweep.yaml",
+  "git_sha": "c7e53eb",
+  "dataset": {
+    "name": "WANDS (Wayfair ANnotation Dataset)",
+    "source": "https://github.com/wayfair/WANDS",
+    "pinned_commit": "3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5",
+    "products": 42994
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex::indexed_candidates, shared via Arc",
+    "baseline": "Apache Solr, same instance as P6A-E00",
+    "concurrency_levels": [1, 2, 4, 8],
+    "run_duration_per_level_seconds": 3
+  },
+  "raw_results_path": "docs/research/artifacts/p6a_e01_concurrency_run1/",
+  "analysis_version": "docs/experiments/PHASE6A_LOG.md#P6A-E01",
+  "decision": "PHASE6A_DECISION.md",
+  "headline_result": {
+    "native_single_thread_rps": 3023100.0,
+    "solr_best_8_worker_rps": 4219.3,
+    "min_speedup": 717,
+    "max_speedup": 2578,
+    "esci_speedup_range": [460, 1780]
+  }
+}
