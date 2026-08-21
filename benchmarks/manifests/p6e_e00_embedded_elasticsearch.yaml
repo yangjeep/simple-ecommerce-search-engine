@@ -26,7 +26,7 @@ claim: >
   method remains dramatically faster than both. See
   docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: bf95577672a721d695a64bc778dcbbf3598fea46
 binary: es-direct-bench/pom.xml, es-direct-bench/src/test/java/org/commercenative/esdirect/WandsEsBenchTest.java
 build_command: cd es-direct-bench && mvn test-compile
 run_command: cd es-direct-bench && mvn test -Dcatalog.path=/tmp/wands_catalog.jsonl -Drepo.root=..
