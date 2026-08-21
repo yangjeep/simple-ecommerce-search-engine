@@ -1,0 +1,63 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P8-E01
+phase: 8
+issue: 21
+decision_document: PHASE8_DECISION.md
+claim: >
+  Does a correlated burst make H14's already-confirmed rebuild-churn
+  isolation gap worse? Three conditions measured in the same run:
+  TRUE_BASELINE (quiet tenant "Rugs" alone), IDLE_CHURN (Rugs plus a
+  dedicated thread continuously rebuilding co-located tenant
+  "Furniture" -- reproducing H14/P7-E11 exactly), BURST_CHURN
+  (identical Rugs+churn threads, plus 4 background worker threads
+  issuing Zipfian-weighted queries across the other 53 tenants,
+  including Furniture's own live snapshot). First pass (3 runs) gave
+  amplification factors too scattered to trust (1.04x/3.21x/0.90x);
+  fixed by raising to 10 runs and switching to a median-based verdict.
+  Result: median amplification (burst_ratio/idle_ratio) = 3.62x,
+  clearing the pre-registered 1.25x bar. More actionable secondary
+  statistic: using Phase 7's 2.0x material-regression bar, IDLE_CHURN
+  showed a >=2x degradation event in only 3/10 runs (30%), while
+  BURST_CHURN showed one in 10/10 runs (100%) -- burst converts an
+  intermittent tail-latency coincidence into a near-certainty. H17
+  CONFIRMED. See docs/experiments/PHASE8_LOG.md for the full H17
+  hypothesis and result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p8_e01_burst_amplified_churn.rs
+build_command: cargo build --release -p phase7-eval --bin p8_e01_burst_amplified_churn
+run_command: ./target/release/p8_e01_burst_amplified_churn dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS all 55 real tenants (same tenant model as Phase 7); quiet
+    tenant = "Rugs" (2002 products); churn tenant = "Furniture" (16039
+    products); burst pool = remaining 54 tenants (Zipfian-weighted,
+    includes Furniture's own live churning snapshot)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, quiet tenant queried via
+    a fixed Arc<CatalogIndex>; churn tenant continuously rebuilt with
+    no sleep between rebuilds via Mutex<Arc<CatalogIndex>> hot-swap
+    (H14/P7-E11's own mechanism); 4 burst worker threads sampling the
+    other 53 tenants (plus Furniture's live snapshot) via a shared
+    rand::distributions::WeightedIndex (weight ~ 1/rank)
+
+workload:
+  selection: TRUE_BASELINE (500 fixed reps, no interference);
+    IDLE_CHURN (500 reps or 5s deadline, churn thread only);
+    BURST_CHURN (500 reps or 5s deadline, churn thread + 4 burst
+    workers), all three measured per run
+  repetitions: 10 independent in-process runs (built into the binary,
+    raised from an initial 3-run pass after a self-caught methodology
+    issue -- see docs/experiments/PHASE8_LOG.md)
+
+seed: "deterministic: ChaCha8Rng::seed_from_u64(3000 + run*100 + 1000 + worker_id) for burst workers"
+
+raw_results: docs/research/artifacts/p8_e01_burst_amplified_churn_run1/
+  - results.csv (all 10 runs, all 3 conditions)
+  - console.log
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE8_LOG.md for the full H17 hypothesis and result.

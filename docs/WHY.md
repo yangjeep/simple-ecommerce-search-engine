@@ -336,6 +336,30 @@ correlated-burst regime, at least for query load — a real, positive
 result, honestly scoped to what this single-node environment can
 actually test.
 
+**Second Phase 8 result — burst amplifies the known rebuild-churn gap
+(`PHASE8_DECISION.md`)**: the first Phase 8 result's own most important
+named follow-up was whether a correlated burst makes either of Phase
+7's two real isolation gaps worse. Testing that directly for the
+rebuild-churn gap (the one this architecture's own mutation model makes
+unavoidable — a full index rebuild is the only path to reflect updated
+catalog state), the answer is yes, and more sharply than a simple
+ratio conveys. Three conditions were measured in the same run: a quiet
+tenant queried alone, the same tenant queried while a co-located tenant
+is continuously rebuilt (reproducing Phase 7's own H14 exactly), and a
+third condition adding realistic background query load across the rest
+of the tenant population, including the rebuilding tenant itself (a
+shopper population plausibly browsing the same sale item while it
+churns). A first pass of 3 runs gave a result too noisy to trust — a
+self-caught methodology issue, fixed by widening to 10 runs and
+reporting the median rather than any single run. The result: under an
+otherwise-idle system, the rebuild-driven tail-latency hit is an
+intermittent coincidence, showing up in roughly 3 of 10 measurement
+windows; under the same rebuild load with realistic background
+traffic, it showed up in all 10. Burst does not make Phase 7's known
+gap merely bigger — it makes it dependable. No mitigation for this
+exists yet in this codebase; it is named explicitly as necessary future
+work rather than smoothed over.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

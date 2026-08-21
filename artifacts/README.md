@@ -49,6 +49,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p7_e11_high_churn_impact.json`
 - `p7_e12_lexical_backend_contention.json`
 - `p8_e00_partial_burst.json`
+- `p8_e01_burst_amplified_churn.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

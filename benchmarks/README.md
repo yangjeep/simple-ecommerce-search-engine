@@ -112,6 +112,14 @@ same as Phases 0–5:
   0.95x-1.03x, reproduced across 3 runs) — Phase 7's steady-state
   isolation properties extend to a correlated-burst regime; see
   `PHASE8_DECISION.md`.
+- `p8_e01_burst_amplified_churn.yaml` — does a correlated burst make
+  H14's already-confirmed rebuild-churn isolation gap worse? Yes:
+  median amplification 3.62x across 10 runs (after a self-caught fix
+  from an initial too-noisy 3-run pass), and more importantly, burst
+  converts an intermittent >=2x-degradation coincidence (3/10 idle
+  runs) into a near-certain one (10/10 burst runs) — a genuine new
+  isolation gap under burst that neither H14 nor H16 alone could
+  surface; see `PHASE8_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
