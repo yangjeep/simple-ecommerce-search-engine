@@ -1,0 +1,31 @@
+{
+  "experiment_id": "P5-E03-facet-cardinality",
+  "phase": 5,
+  "issue": 17,
+  "benchmark_manifest": "benchmarks/manifests/p5e03_facet_scan_crossover.yaml",
+  "git_sha": "2b8a0ba",
+  "dataset": {
+    "name": "Amazon Shopping Queries Dataset (ESCI)",
+    "source": "amazon-science/esci-data",
+    "revision": "main",
+    "products": 1215854,
+    "facet_field": "color",
+    "distinct_values": 175292
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex::brand_facet_counts_by_scan",
+    "baseline": "Apache Solr with docValues + title_sort fair-baseline fixes"
+  },
+  "repetitions": 30,
+  "warmup": 5,
+  "seed": null,
+  "raw_results_path": "docs/research/artifacts/p5e03_run1/",
+  "analysis_version": "docs/experiments/PHASE5_LOG.md#P5-E03-facet-cardinality",
+  "decision": "PHASE5_DECISION.md",
+  "headline_result": {
+    "crossover_candidate_count_band_low": 8910,
+    "crossover_candidate_count_band_high": 12000,
+    "native_win_ratio_at_low_end": 1.04,
+    "native_loss_ratio_at_high_end": 0.74
+  }
+}

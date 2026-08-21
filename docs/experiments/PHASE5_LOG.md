@@ -466,10 +466,27 @@ top-k sort) was checked against this floor directly, using the exact
 | filter-only (brand or color) | **yes**, 2,799x-18,354x across every size, tiny through huge | never |
 | deep pagination | **yes**, 5,331x-12,715x across every size tested | never |
 | concurrency (basic filter, 1-8 workers) | **yes**, native's single thread alone beats Solr's best 8-worker throughput by ~460-1,780x | never |
-| facet (color-under-brand direction) | **no** | already below floor at "medium" (86 candidates, 67.0x); further below at "large" (437 candidates, 4.26x) |
-| facet (brand-under-color direction) | **no** | holds through "medium" (104 candidates, 186.0x); fails at "large" (841, 4.32x); fully reverses to a **loss** at "huge" (1,844, 0.74x) |
-| sort-by-title (brand-scoped) | **no** | holds through "medium" (86 candidates in-group, 193.7x); fails at "large" (1,249-product group, 16.97x) |
+| facet (color-under-brand direction) | **no** | already below floor at "medium" (116 candidates, 67.0x); further below at "large" (1,249 candidates, 4.26x) |
+| facet (brand-under-color direction) | **no** | holds through "medium" (106 candidates, 186.0x); fails at "large" (2,112, 4.32x); fully reverses to a **loss** at "huge" (11,264, 0.74x) |
+| sort-by-title (brand-scoped) | **no** | holds through "medium" (116 candidates in-group, 193.7x); fails at "large" (1,249-product group, 16.97x) |
 | sort-by-title (color-scoped) | **no** | holds through "medium" (106, 240.1x); fails at "large" (2,112, 8.62x) and "huge" (11,264, 1.67x) |
+
+**Correction (Issue #21 repo-normalization adversarial doc review)**: the
+facet rows and the "medium" sort-by-title (brand-scoped) label above
+originally carried the wrong candidate counts (86/437/104/841/1,844/86),
+copied from the raw CSV's `candidates` column for facet-type rows, which
+records the *sum of returned facet-bucket counts* rather than the true
+filtered candidate-set size — these differ whenever real products in a
+filtered group lack a value for the faceted attribute (a real skew, not a
+computation bug: e.g. many `Clear`/`Multicolored`-color products are
+generic/no-brand items, excluded from a brand facet's buckets on both
+native and Solr alike). `color_filter_first_page`/`brand_filter_first_page`'s
+own rows for the same real values give the true counts now shown
+(116/1,249/106/2,112/11,264/116). No ratio, timing, or conclusion changes.
+This also removes what looked like a real tension with P5-E03's own
+~9,000-12,000-candidate crossover band below: the corrected
+`brand-under-color` "large"/"huge" points (2,112 win at 4.32x / 11,264 loss
+at 0.74x) are consistent with that band, not contradictory to it.
 
 **This is a precise, real breakpoint, not a uniform result.** Filter,
 pagination, and concurrent basic-filter throughput comfortably clear the

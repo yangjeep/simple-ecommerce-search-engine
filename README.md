@@ -1,62 +1,53 @@
 # Commerce-Native Search Engine
 
-Experimental Rust search engine exploring a **semantic forwarding plane + learned control plane** for ecommerce retrieval.
+Experimental Rust search engine exploring a **semantic forwarding plane + learned control plane** for multi-tenant ecommerce retrieval.
 
-This repository intentionally starts from a narrower world model than a generic document search engine. Products, variants, product types, brands, categories, prices, inventory, availability, and typed commerce attributes are first-class concepts. Known commerce semantics should compile into deterministic structural retrieval; lexical search handles residual uncertainty; model-assisted reasoning belongs primarily in an offline control plane that learns and validates semantic routes before compiling them into the fast path.
+This repository intentionally starts from a narrower world model than a generic document search engine. Products, variants, product types, brands, categories, prices, inventory, availability, and typed commerce attributes are first-class concepts. Known commerce semantics compile into deterministic structural retrieval; a mature lexical engine (Solr today; Havenask as a planned second anchor) handles residual/open-ended relevance; model-assisted reasoning belongs in an offline control plane that proposes and validates semantic routes before compiling them into the fast path — never in the query hot path.
+
+Start here, in order:
+
+- **[`docs/WHY.md`](docs/WHY.md)** — the real problem this project exists to test, and which hypotheses have been falsified or narrowed so far.
+- **[`docs/WHAT.md`](docs/WHAT.md)** — the evidence-backed product/system boundary, and explicit non-goals.
+- **[`docs/architecture/README.md`](docs/architecture/README.md)** — how the system actually works today (as opposed to what a future phase targets).
 
 ## Status
 
-Research prototype / architecture experiment. The previous C/GTrie implementation remains in git history but is not the target architecture.
+Research prototype / architecture experiment, not a deployable service. The previous C/GTrie implementation remains in git history but is not the target architecture.
 
-The active experiment is tracked in **GitHub Issue #2**. Gates 0-7 have initial evidence recorded in [`docs/experiments/LOG.md`](docs/experiments/LOG.md) (E000-E007) and [`docs/adr/`](docs/adr/); the resulting decision is [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md).
+The project has moved through several falsification rounds, each ending in a written decision document:
+
+| Round | Question | Decision |
+|---|---|---|
+| Gates 0–7 (Issue #2) | Bootstrap: typed domain, Commerce IR, physical indexes, control plane, first benchmark | PROCEED — [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md) |
+| Round 1 (Issue #5) | Real catalog (1.2M products) + external Solr baseline + adversarial workloads | [`ROUND1_DECISION_TREE.md`](ROUND1_DECISION_TREE.md) |
+| Phase 2 (Issue #6) | Whole-engine 5–10x QPS/$ replacement thesis | **STOP** — [`PHASE2_DECISION.md`](PHASE2_DECISION.md) |
+| Phase 3 (Issue #14) | Safe fast-path admission frontier over Solr | **NARROW SUPPORT** — [`PHASE3_DECISION.md`](PHASE3_DECISION.md) |
+| Phase 4 (Issue #16) | Learned semantic implication rules | **NARROW SUPPORT** — [`PHASE4_DECISION.md`](PHASE4_DECISION.md) |
+| Phase 5 (Issue #17) | Browse/PLP as a commerce-native workload vs. a fair Solr baseline | **REVISE / NARROW BUT PUBLISHABLE** — [`PHASE5_DECISION.md`](PHASE5_DECISION.md) |
+
+**The active epic is [Issue #21](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/21)** (Phases 6–9): cross-dataset/cross-engine validation, multi-tenant SMB/mid-market economics, correlated-burst (BFCM) elasticity, and an integrated, falsifiable system. See `docs/WHY.md` for why the project reframed around this after Phases 2–5.
 
 ## Core questions
 
-The project is intended to measure, not assume:
+The project is intended to measure, not assume. The original Gate-era questions (below) are largely answered — see `docs/WHY.md` for the falsified/narrowed results — and Issue #21 now asks the multi-tenant/multi-dataset/burst-elasticity versions of the same questions:
 
-- What fraction of realistic ecommerce queries can be resolved structurally without general model inference?
-- What should the typed Commerce IR contain?
-- Which commerce concepts must be first-class versus extensible attributes?
-- Can product/variant-aware structural retrieval be both more correct and cheaper than generic document matching?
-- What semantic FIB representation gives a useful memory/latency tradeoff?
-- Can catalog profiling + semantic fuzzing produce a useful cold-start context without one LLM call per SKU?
-- Can unresolved queries safely teach a versioned fast path through replay and promotion gates?
-- At what scale does a single-node immutable/mmap-oriented serving model stop being the right default?
+- What fraction of realistic ecommerce queries can be resolved structurally without a model call in the hot path? (Phases 2–4: a real but small slice — see `docs/WHY.md`.)
+- Does that advantage hold for browse/PLP-style structural traffic, and where does it break down by cardinality? (Phase 5: yes for filter/pagination/concurrency, no for facet/large-sort past a measured breakpoint.)
+- Does the result generalize across independent datasets/verticals and against a second specialized engine (Havenask)? (Phase 6, not yet run.)
+- Does commerce specialization reduce per-tenant fixed cost and increase safe tenant packing density? (Phase 7, not yet run.)
+- What happens to this architecture when a correlated retail event (BFCM) breaks normal statistical multiplexing? (Phase 8, not yet run.)
+- Is the smallest coherent integrated system (native + Solr, native + Havenask) actually better than operating either backend directly for the target market? (Phase 9, not yet run.)
 
-## Initial scope
+## Scope
 
-The prototype should remain deliberately narrow:
-
-- Rust
-- single node
-- read-heavy serving
-- Product / Variant aware
-- typed attributes
-- canonical IDs and aliases
-- bitmap-based structural filtering
-- numeric/range filtering
-- minimal lexical postings
-- facets
-- top-K ranking
-- versioned compiled semantic context
-- deterministic test and benchmark fixtures
-
-Distributed coordination, generic document DSL compatibility, production multi-tenancy, HA, and elaborate UI are non-goals until measurements justify them.
+See `docs/WHAT.md` for the current evidence-backed system boundary and explicit non-goals. In short: single-node, single-process, no multi-tenancy/auth/HA/distributed coordination yet, no production polish, no LLM call in the query hot path, no generic query DSL — all deliberate, and re-evaluated only when a phase's measurements justify changing them.
 
 ## Autonomous experiment workflow
 
 Long-running coding sessions must follow [`CLAUDE.md`](CLAUDE.md) and [`docs/EXPERIMENT_LOOP.md`](docs/EXPERIMENT_LOOP.md).
 
-The project advances through measured experiment gates rather than a feature roadmap. Failed hypotheses are expected artifacts and must remain in the experiment log.
+The project advances through measured experiment gates rather than a feature roadmap. Failed and narrowed hypotheses are expected, permanent artifacts — see `docs/experiments/` for the full per-experiment logs behind every decision document above, and `docs/adr/` for architectural decisions.
 
-## Target decision
+## Reproducing results
 
-The current epic ends with `SCALE_UP_DECISION.md` containing one of:
-
-- **PROCEED** — evidence supports scaling the architecture and workload;
-- **REVISE** — core idea remains useful but a measured assumption needs redesign;
-- **STOP** — the commerce-native specialization does not provide enough advantage to justify further scale-up.
-
-Success is a defensible decision backed by reproducible data, not a large codebase.
-
-**Current decision: PROCEED** to the next round of experiments (an external baseline, a larger/real catalog, larger scale tiers) — not to production. See [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md) for the full evidence, unresolved risks, and what should explicitly not be built yet.
+Every headline number in a `PHASE*_DECISION.md` traces to raw artifacts under `docs/research/artifacts/`, generated by the experiment binaries in `crates/phase*-eval/src/bin/`. See `docs/architecture/README.md` for the crate map, and the relevant phase's experiment log (`docs/experiments/PHASE*_LOG.md`) for the exact command used to produce each result.
