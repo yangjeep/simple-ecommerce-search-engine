@@ -22,7 +22,9 @@
 //!
 //! RSS is sampled periodically during the run (not just at the end) so a
 //! genuine plateau can be distinguished from ongoing growth that this
-//! bounded window might not have fully captured.
+//! bounded window might not have fully captured. (P7-E05 asks exactly
+//! that question over a much longer window, reusing the same
+//! `phase7_eval::resident` sampling primitives this binary uses.)
 //!
 //! Usage:
 //!   orchestrator (default): cargo run --release -p phase7-eval
@@ -32,12 +34,13 @@
 
 use std::path::PathBuf;
 use std::process::Command;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-use commerce_core::domain::Catalog;
 use commerce_core::index::CatalogIndex;
+use phase7_eval::resident::{
+    current_rss_kb, fmt_samples, parse_samples, peak_kb, run_active_resident, run_idle_resident,
+};
 use phase7_eval::tenants::{
     load_single_tenant, partition_depth1, write_single_tenant_jsonl, Order,
 };
@@ -46,92 +49,6 @@ const BASELINE_CHILD_COUNT: usize = 3;
 const WORKER_THREADS: usize = 4; // matches this container's real CPU count
 const RUN_DURATION: Duration = Duration::from_secs(20);
 const SAMPLE_INTERVAL: Duration = Duration::from_secs(5);
-
-fn current_rss_kb() -> u64 {
-    let status = std::fs::read_to_string("/proc/self/status").unwrap_or_default();
-    status
-        .lines()
-        .find_map(|line| line.strip_prefix("VmRSS:"))
-        .and_then(|rest| rest.split_whitespace().next())
-        .and_then(|kb| kb.parse().ok())
-        .unwrap_or(0)
-}
-
-fn facet_scan_once(index: &CatalogIndex, catalog: &Catalog) -> usize {
-    let all = index.indexed_candidates(&[]);
-    index.facet_counts_by_scan(&all, catalog, "color").len()
-}
-
-/// Sample RSS every `SAMPLE_INTERVAL` until `RUN_DURATION` elapses,
-/// printing each sample as it's taken so the growth curve (or lack of
-/// one) is visible in the child's own stdout, not just a final number.
-fn sample_rss_for(run_duration: Duration, sample_interval: Duration) {
-    let start = Instant::now();
-    let mut elapsed_marker = sample_interval;
-    while start.elapsed() < run_duration {
-        let remaining = run_duration.saturating_sub(start.elapsed());
-        std::thread::sleep(sample_interval.min(remaining));
-        if start.elapsed() >= elapsed_marker || start.elapsed() >= run_duration {
-            let secs = elapsed_marker.as_secs().min(run_duration.as_secs());
-            println!("rss_sample_t{secs}s_kb={}", current_rss_kb());
-            elapsed_marker += sample_interval;
-        }
-    }
-}
-
-/// idle-resident: no tenant data at all. `WORKER_THREADS` real OS
-/// threads are spawned and parked alive for the whole window (a resident
-/// but idle worker/connection-handler pool -- something H6's
-/// spawn-and-exit children never allocated, since they exited before any
-/// thread pool would ever be spun up).
-fn run_idle_resident() {
-    let stop = Arc::new(AtomicBool::new(false));
-    let mut handles = Vec::new();
-    for _ in 0..WORKER_THREADS {
-        let stop = Arc::clone(&stop);
-        handles.push(std::thread::spawn(move || {
-            while !stop.load(Ordering::Relaxed) {
-                std::thread::sleep(Duration::from_millis(50));
-            }
-        }));
-    }
-    sample_rss_for(RUN_DURATION, SAMPLE_INTERVAL);
-    stop.store(true, Ordering::Relaxed);
-    for h in handles {
-        h.join().unwrap();
-    }
-}
-
-/// active-resident: `WORKER_THREADS` real OS threads continuously
-/// execute real structural queries against the one loaded tenant's
-/// index for the whole window, simulating a service actually serving
-/// sustained traffic rather than sitting idle. Returns total queries
-/// served.
-fn run_active_resident(index: Arc<CatalogIndex>, catalog: Arc<Catalog>) -> u64 {
-    let stop = Arc::new(AtomicBool::new(false));
-    let total = Arc::new(AtomicU64::new(0));
-    let mut handles = Vec::new();
-    for _ in 0..WORKER_THREADS {
-        let index = Arc::clone(&index);
-        let catalog = Arc::clone(&catalog);
-        let stop = Arc::clone(&stop);
-        let total = Arc::clone(&total);
-        handles.push(std::thread::spawn(move || {
-            let mut count = 0u64;
-            while !stop.load(Ordering::Relaxed) {
-                std::hint::black_box(facet_scan_once(&index, &catalog));
-                count += 1;
-            }
-            total.fetch_add(count, Ordering::Relaxed);
-        }));
-    }
-    sample_rss_for(RUN_DURATION, SAMPLE_INTERVAL);
-    stop.store(true, Ordering::Relaxed);
-    for h in handles {
-        h.join().unwrap();
-    }
-    total.load(Ordering::Relaxed)
-}
 
 /// Child-mode entry point. Reports RSS at t0 (matching H6's methodology
 /// exactly, for direct comparability), then either sits idle-resident or
@@ -152,7 +69,7 @@ fn run_child(mode: &str, catalog_path: &std::path::Path, tenant_name: Option<&st
 
     match (mode, tenant_name) {
         ("idle", _) => {
-            run_idle_resident();
+            run_idle_resident(WORKER_THREADS, RUN_DURATION, SAMPLE_INTERVAL);
         }
         ("active", Some(name)) => {
             let catalog = load_single_tenant(catalog_path, name);
@@ -162,7 +79,13 @@ fn run_child(mode: &str, catalog_path: &std::path::Path, tenant_name: Option<&st
             println!("tenant_name={name}");
             println!("tenant_products={products}");
             println!("with_tenant_rss_kb={with_tenant_rss}");
-            let total_queries = run_active_resident(Arc::new(index), Arc::new(catalog));
+            let total_queries = run_active_resident(
+                Arc::new(index),
+                Arc::new(catalog),
+                WORKER_THREADS,
+                RUN_DURATION,
+                SAMPLE_INTERVAL,
+            );
             println!("total_queries_served={total_queries}");
         }
         _ => panic!("active mode requires a tenant name"),
@@ -177,10 +100,6 @@ struct ChildResult {
     steady_state_rss: u64,
     products: usize,
     total_queries: u64,
-    /// (elapsed_seconds, rss_kb) samples taken DURING the resident
-    /// window -- kept so the growth curve's actual shape (monotonic
-    /// climb vs. a single noisy endpoint) is auditable, not just the
-    /// t0-vs-final summary.
     samples: Vec<(u64, u64)>,
 }
 
@@ -203,7 +122,7 @@ fn spawn_child(
         steady_state_rss: 0,
         products: 0,
         total_queries: 0,
-        samples: Vec::new(),
+        samples: parse_samples(&stdout),
     };
     for line in stdout.lines() {
         if let Some(v) = line.strip_prefix("baseline_rss_kb=") {
@@ -216,12 +135,6 @@ fn spawn_child(
             result.steady_state_rss = v.parse().unwrap_or(0);
         } else if let Some(v) = line.strip_prefix("total_queries_served=") {
             result.total_queries = v.parse().unwrap_or(0);
-        } else if let Some(rest) = line.strip_prefix("rss_sample_t") {
-            if let Some((secs_str, kb_str)) = rest.split_once("s_kb=") {
-                if let (Ok(secs), Ok(kb)) = (secs_str.parse(), kb_str.parse()) {
-                    result.samples.push((secs, kb));
-                }
-            }
         }
     }
     result
@@ -259,31 +172,21 @@ fn main() {
         "\nspawning {BASELINE_CHILD_COUNT} idle-resident bare processes (no tenant data, {WORKER_THREADS} parked worker threads, {}s window)...",
         RUN_DURATION.as_secs()
     );
-    let fmt_samples = |samples: &[(u64, u64)]| -> String {
-        samples
-            .iter()
-            .map(|(secs, kb)| format!("t{secs}s={kb}KB"))
-            .collect::<Vec<_>>()
-            .join(" ")
-    };
-
-    let peak =
-        |samples: &[(u64, u64)]| -> u64 { samples.iter().map(|&(_, kb)| kb).max().unwrap_or(0) };
 
     let mut idle_t0 = Vec::with_capacity(BASELINE_CHILD_COUNT);
     let mut idle_peak = Vec::with_capacity(BASELINE_CHILD_COUNT);
     let mut idle_post_teardown = Vec::with_capacity(BASELINE_CHILD_COUNT);
     for i in 0..BASELINE_CHILD_COUNT {
         let r = spawn_child(&exe, "idle", &catalog_path, None);
-        let peak_kb = peak(&r.samples);
+        let peak = peak_kb(&r.samples);
         println!(
-            "    idle child {i}: t0={} KB  samples: {}  peak={peak_kb} KB  post_teardown={} KB",
+            "    idle child {i}: t0={} KB  samples: {}  peak={peak} KB  post_teardown={} KB",
             r.baseline_rss,
             fmt_samples(&r.samples),
             r.steady_state_rss
         );
         idle_t0.push(r.baseline_rss);
-        idle_peak.push(peak_kb);
+        idle_peak.push(peak);
         idle_post_teardown.push(r.steady_state_rss);
     }
     let mean = |v: &[u64]| v.iter().sum::<u64>() as f64 / v.len() as f64;
@@ -326,19 +229,19 @@ fn main() {
             Some(name),
         );
         let with_tenant = r.with_tenant_rss.unwrap_or(r.baseline_rss);
-        let peak_kb = peak(&r.samples);
+        let peak = peak_kb(&r.samples);
         // PRIMARY metric: peak RSS observed while the process is still
         // actually serving (not yet torn down) vs. the immediate
         // post-load snapshot. Signed, not saturating -- a real decrease
         // is information, not noise to clip away.
-        let growth = peak_kb as i64 - with_tenant as i64;
+        let growth = peak as i64 - with_tenant as i64;
         tenant_growths.push(growth);
         println!(
-            "  tenant={name:?} products={:<7} t0_rss_kb={:<8} with_tenant_rss_kb={with_tenant:<8} peak_serving_rss_kb={peak_kb:<8} peak_growth_kb={growth:<8} post_teardown_rss_kb={:<8} total_queries_served={}  samples: {}",
+            "  tenant={name:?} products={:<7} t0_rss_kb={:<8} with_tenant_rss_kb={with_tenant:<8} peak_serving_rss_kb={peak:<8} peak_growth_kb={growth:<8} post_teardown_rss_kb={:<8} total_queries_served={}  samples: {}",
             r.products, r.baseline_rss, r.steady_state_rss, r.total_queries, fmt_samples(&r.samples)
         );
         csv.push_str(&format!(
-            "active_resident,{name},{},{},{with_tenant},{peak_kb},{growth},{},{}\n",
+            "active_resident,{name},{},{},{with_tenant},{peak},{growth},{},{}\n",
             r.products, r.baseline_rss, r.steady_state_rss, r.total_queries
         ));
     }
