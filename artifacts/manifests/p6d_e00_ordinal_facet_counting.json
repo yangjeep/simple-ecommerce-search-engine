@@ -3,7 +3,7 @@
   "phase": "6D",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6d_e00_ordinal_facet_counting.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "3088f36b01ba95b97070fe1525698b387c2159fc",
   "dataset": {
     "name": "real WANDS catalog (42,994 products), same 7 category_depth_1 checkpoints as P6A-E00/P6B-E00/P6C-E00/P6C-E01"
   },

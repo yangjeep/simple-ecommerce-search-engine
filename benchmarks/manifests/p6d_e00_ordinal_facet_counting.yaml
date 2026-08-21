@@ -26,7 +26,7 @@ claim: >
   own architecture. See docs/experiments/PHASE6D_LOG.md for the full
   hypothesis and result.
 
-git_sha: PENDING
+git_sha: 3088f36b01ba95b97070fe1525698b387c2159fc
 binary: crates/commerce-core/src/index/mod.rs (facet_counts_ordinal), crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs (benchmark)
 build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
 run_command: ./target/release/p6a_e00_wands_vs_native_eval dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
