@@ -1,0 +1,19 @@
+[package]
+name = "phase4-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Phase 4 (Issue #16, learned semantic implication rules) experiments. An offline propose/replay/promote pipeline compiles trigger-phrase-to-typed-fact rules into a static lookup table consulted before Phase 3's existing admission mechanisms; no model call in the online path."
+
+[dependencies]
+bench-harness = { path = "../bench-harness" }
+commerce-core = { path = "../commerce-core" }
+round1-eval = { path = "../round1-eval" }
+phase3-eval = { path = "../phase3-eval" }
+tantivy = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.8"
+rand_chacha = "0.3"
+roaring = "0.10"

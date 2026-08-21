@@ -845,6 +845,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "phase4-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "phase3-eval",
+ "rand",
+ "rand_chacha",
+ "roaring",
+ "round1-eval",
+ "serde",
+ "serde_json",
+ "tantivy",
+]
+
+[[package]]
 name = "phase5-eval"
 version = "0.1.0"
 dependencies = [
