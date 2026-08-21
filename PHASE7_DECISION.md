@@ -1,4 +1,4 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E11 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E12 first pass
 
 **Decision: PROCEED**, with two hypotheses falsified (one in the good
 direction, one revealing a real but practically tiny effect) and six
@@ -73,7 +73,22 @@ being REBUILT (this architecture's only mutation path, since tenant
 bundles are immutable) causes a real, reproducible 4.00-6.70x p99
 degradation for the quiet tenant across all 3 runs, even though p50
 barely moves (1.14-1.17x) — a real isolation gap query-only testing
-could never have surfaced.
+could never have surfaced. A twelfth and final experiment (H15) tested
+Issue #21's last remaining required-experiments item, "lexical-backend
+contention" — feasibility was verified directly (Solr was already
+installed in this container with real WANDS-derived cores from Phase
+6A/6B) rather than assumed out of scope. Reusing H2's exact
+methodology against Solr instead of the native path, a first draft
+(no warm-up) gave an ambiguous, borderline result across 3 runs; a
+JVM/connection-pool cold-start artifact in the very first baseline
+reading was self-caught and fixed (a 500ms warm-up phase, matching
+P7-E09/P7-E10's own precedent). The corrected result is clean and
+unambiguous: p99 degrades 2.16-2.48x in EVERY run — H15 is genuinely
+FALSIFIED, Phase 7's THIRD distinct isolation-gap finding (alongside
+H14) and the second of two real limitations this pass names honestly:
+the native in-process QUERY path (H2, H4, H11) is confirmed safe, but
+both the native REBUILD path (H14) and the shared LEXICAL BACKEND path
+(H15) show real, material cross-tenant degradation under load.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -159,6 +174,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   QUERY load — directly answering Issue #21's "high-churn tenant impact
   on low-churn tenants" metric, untested by any prior Phase 7 hypothesis
   (all of which used static, once-built catalogs).
+- **H15** (P7-E12): one tenant's heavy Solr query load does not
+  materially degrade another co-located tenant's own Solr query
+  latency, when both tenants' lexical-fallback traffic shares the same
+  Solr instance — the Solr-side analog of H2's native-path isolation
+  finding, directly answering Issue #21's "lexical-backend contention"
+  metric, the last item on Issue #21's required "Experiments" list.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -678,6 +699,55 @@ were tested; whether smaller tenants would show a proportionally
 smaller effect, and whether many small tenants churning concurrently
 would compound the effect, are both untested.
 
+**H15 — FALSIFIED, reproduced cleanly across 3 independent runs, the
+last item on Issue #21's required "Experiments" list (P7-E12).**
+Feasibility was verified directly rather than assumed out of scope:
+Solr 9.10.1 is already installed in this container with 5 real
+WANDS-derived cores from Phase 6A/6B's scale-ladder work, so no
+materially larger infrastructure was needed. Reuses H2's exact
+quiet/noisy methodology, issuing real HTTP queries to Solr instead of
+in-process `facet_scan_once`: `wands_bench` (42,994 docs) is the quiet
+tenant, `wands_bench_20x` (859,880 docs, Phase 6B's largest rung) is
+the noisy tenant.
+
+A first-draft binary (no warm-up phase) gave an ambiguous, borderline
+result: p50 ratio 1.29-1.30x (consistent) but p99 ratio 1.32x / 2.04x /
+2.13x, straddling the 2.0x threshold. Inspecting the raw numbers found
+run 1's baseline p99 (8.98ms) was more than 2x runs 2-3's (3.85ms /
+3.57ms) — a real JVM/query-cache/connection-pool cold-start artifact in
+the very first invocation, the same class of issue P7-E09 already
+learned to guard against. **Fixed** with a 500ms warm-up phase before
+the baseline measurement.
+
+| Run | Baseline p50/p99 (ms) | Cross-tenant p50/p99 (ms) | p50 ratio | p99 ratio |
+|---|---|---|---|---|
+| 1 | 2.790 / 3.904 | 3.989 / 9.676 | 1.43x | **2.48x** |
+| 2 | 2.702 / 3.624 | 3.301 / 7.818 | 1.22x | **2.16x** |
+| 3 | 2.728 / 3.574 | 3.348 / 7.836 | 1.23x | **2.19x** |
+
+Baseline p99 is now tight (3.57-3.90ms) across all 3 runs, confirming
+the fix worked. p50 ratio (1.22-1.43x) stays comfortably inside the
+pass bar. **p99 ratio (2.16-2.48x) clears the 2.0x threshold in every
+run** — a clean, unambiguous falsification. **Like H14, and unlike H2:
+a shared Solr instance is NOT safely isolated under noisy-neighbor
+query load in this design.** This is Phase 7's THIRD distinct
+isolation-gap finding: the native in-process QUERY path (H2, H4, H11)
+is confirmed safe, but both the native REBUILD path (H14) and the
+shared LEXICAL BACKEND path (H15) show real, material cross-tenant
+degradation.
+
+**Named, plausible (not profiled) mechanism**: Solr's own thread pool,
+JVM garbage collection, and shared Lucene segment-merge/cache resources
+are genuinely shared across cores in one JVM — unlike the native
+path's fully independent, immutable per-tenant structures with no
+shared mutable state.
+
+**Named limitations**: only 2 cores and one query type (`rows=24` page
+browse) were tested; only one noisy-worker count (3) was tested; this
+container's Solr uses default, out-of-the-box configuration with no
+per-core resource limits or dedicated hardware isolation a production
+deployment might apply to mitigate this — untested here.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
@@ -690,7 +760,8 @@ Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e08_extended_breadth_run1/`,
 `docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/`,
 `docs/research/artifacts/p7_e10_cpu_per_query_run1/`,
-`docs/research/artifacts/p7_e11_high_churn_impact_run1/`.
+`docs/research/artifacts/p7_e11_high_churn_impact_run1/`,
+`docs/research/artifacts/p7_e12_lexical_backend_contention_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -718,6 +789,17 @@ evidence of an unstable statistic, not a real per-run difference) is
 preserved the same way in `PHASE7_LOG.md`'s "P7-E07 self-caught
 statistical problem" section, with the superseded raw CSV/log
 (`docs/research/artifacts/p7_e07_realistic_demand_mix_run1/*_15s_undersampled_superseded.*`)
+renamed rather than deleted. P7-E09's first-draft OOM (an eager
+build-then-check pattern that got this process killed by this
+container's real 13.34 GiB cgroup memory limit) and its second
+self-caught issue (an unstable p99 at the very first in-process
+checkpoint, a cold-start artifact) are both documented in
+`PHASE7_LOG.md`'s "P7-E09" sections. P7-E12's first-draft borderline
+result (a JVM/connection-pool cold-start artifact inflating run 1's
+baseline p99, making the verdict look ambiguous) is documented in
+`PHASE7_LOG.md`'s "P7-E12 self-caught problem" section, with the
+superseded raw CSV/log
+(`docs/research/artifacts/p7_e12_lexical_backend_contention_run1/*_no_warmup_superseded.*`)
 renamed rather than deleted.
 
 ## Unresolved risks
@@ -802,6 +884,15 @@ renamed rather than deleted.
     deprioritization) has been designed or tested. Only one churn
     tenant size (the largest) and one quiet tenant were tested; the
     proposed CPU-core-contention mechanism is plausible, not profiled.
+12. **H15 is likewise a real, actionable gap: a shared Solr instance
+    does not safely isolate tenants under noisy-neighbor query load
+    (2.16-2.48x p99 degradation), and no mitigation has been designed
+    or tested** (per-core resource limits, request-rate limiting,
+    dedicated JVMs/containers per tenant tier). Only 2 cores, one
+    query type, one noisy-worker count, and this container's default
+    out-of-the-box Solr configuration were tested; a production
+    deployment with tuned resource isolation might show a materially
+    different result, untested here.
 
 ## What would be built next if scaling up
 
@@ -899,6 +990,16 @@ tenant (16,039 products) costs almost exactly 1 second of wall time —
 ~100x the cost of a single query against it. This is a genuine,
 actionable architectural gap, not a disclosed-but-tiny effect like H9's.
 
+**Lexical-backend contention (Issue #21's last remaining
+required-experiments metric) is now measured** (H15, P7-E12) — feasible
+directly (Solr was already installed with real WANDS cores from Phase
+6A/6B), so tested rather than deferred. Like H14, this is a genuine
+falsification: sharing one Solr instance across tenants degrades a
+quiet tenant's own p99 by 2.16-2.48x, reproduced across 3 runs after a
+self-caught JVM/connection-pool cold-start artifact in the first draft
+was fixed with a warm-up phase. **This completes Issue #21's required
+"Experiments" list — every named item is now tested.**
+
 Still to build: profiling to identify the specific allocator mechanism
 behind H7/H8's growth pattern and residual tail creep, the
 CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
@@ -907,17 +1008,17 @@ magnitude, the memory-pressure-vs-safety-cap hypothesis behind H11's
 n=2,000 dip, whether H12's 3,500-tenant envelope would look materially
 different on a larger machine or with less reserved headroom, the
 distinct-facet-value-cardinality hypothesis behind H13's super-linear
-CPU growth at the large end, and the CPU-core-contention hypothesis
-behind H14's rebuild-induced p99 spike, if a real deployment's
-memory/latency/CPU budget needs tighter precision than "decelerates
-toward roughly a known bound" / "plausibly cache locality" / "plausibly
-facet cardinality" / "plausibly core contention." Designing and testing
-a mitigation for H14's isolation gap (rate-limiting concurrent
-rebuilds, isolating rebuild work to a separate core/cgroup, background-
-thread deprioritization) is a genuinely new, higher-priority item this
-finding surfaces. Also still open, per Issue #21's required
-"Experiments" list: lexical-backend contention (would require live Solr
-integration in the multi-tenant harness, not yet attempted).
+CPU growth at the large end, the CPU-core-contention hypothesis behind
+H14's rebuild-induced p99 spike, and the shared-JVM-resource hypothesis
+behind H15's Solr contention, if a real deployment's memory/
+latency/CPU budget needs tighter precision than "decelerates toward
+roughly a known bound" / "plausibly cache locality" / "plausibly facet
+cardinality" / "plausibly core contention" / "plausibly shared JVM
+resources." Designing and testing mitigations for both H14's and H15's
+isolation gaps (rate-limiting concurrent rebuilds or Solr requests,
+isolating rebuild/backend work to a separate core/cgroup/JVM,
+background-thread deprioritization, per-tenant Solr resource limits)
+are the two genuinely new, highest-priority items this pass surfaces.
 
 ## What should explicitly not be built yet
 
@@ -941,6 +1042,13 @@ core/cgroup isolation for rebuild work, background-thread
 deprioritization) — that is future work, not something to build on
 faith that the problem is small, given H14's own measured 4.00-6.70x
 p99 effect.
+
+Likewise, no production deployment should assume a shared Solr backend
+safely isolates tenants under real noisy-neighbor query load without
+first addressing H15's finding (2.16-2.48x p99 degradation from a
+co-located tenant's ordinary query traffic, not even a rebuild). No
+mitigation (per-core resource limits, request-rate limiting, dedicated
+JVMs/containers per tenant tier) has been designed or tested here.
 
 ## What this decision does and does not claim
 
@@ -1046,7 +1154,13 @@ own tail latency (H14, P7-E11, reproduced across 3 runs) — p99 grows
 the largest real tenant costs almost exactly 1 second of wall time,
 ~100x a single query's own cost. This is a genuine, actionable
 isolation gap this pass's other query-focused experiments could not
-have surfaced.
+have surfaced. Finally, sharing a single Solr instance across tenants
+also shows real cross-tenant degradation under ordinary query load, not
+just rebuilds (H15, P7-E12, reproduced across 3 runs after a
+self-caught JVM/connection-pool cold-start artifact was fixed with a
+warm-up phase): p99 degrades 2.16-2.48x while p50 stays modest
+(1.22-1.43x). This completes Issue #21's required "Experiments" list —
+every named item has now been tested at least once.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants (H5) or 3,500
@@ -1094,46 +1208,56 @@ confirmed (plausible, not profiled), that its 4.00-6.70x effect
 generalizes beyond the one churn tenant (Furniture, the largest), one
 quiet tenant (Rugs), and one rebuild frequency tested, or that any
 mitigation for this isolation gap has been designed, implemented, or
-validated (explicitly not attempted this pass) — this is a first pass
-on memory (including at scale), pairwise isolation, fixed-tenant
-throughput-under-breadth (now including at memory-scale tenant counts),
-process-baseline floors (short-lived, and a longer-resident window that
-decelerates toward but has not been proven to fully reach a bound), a
-first cold-vs-hot latency comparison under two different designs, a
-first economic-model synthesis (now addressing all 7 of Issue #21's
-named "Economic output" metrics, six well and one partially), a first
-CPU-cost-per-query measurement, and a first churn-vs-query isolation
-comparison only.
+validated (explicitly not attempted this pass); that H15's shared-JVM-
+resource explanation is confirmed (plausible, not profiled), that its
+2.16-2.48x effect generalizes beyond the 2 cores, one query type, and
+one noisy-worker count tested, that this container's default Solr
+configuration represents a tuned production deployment, or that any
+mitigation for this gap has been designed, implemented, or validated —
+this is a first pass on memory (including at scale), pairwise isolation,
+fixed-tenant throughput-under-breadth (now including at memory-scale
+tenant counts), process-baseline floors (short-lived, and a
+longer-resident window that decelerates toward but has not been proven
+to fully reach a bound), a first cold-vs-hot latency comparison under
+two different designs, a first economic-model synthesis (now
+addressing all 7 of Issue #21's named "Economic output" metrics, six
+well and one partially), a first CPU-cost-per-query measurement, a
+first churn-vs-query isolation comparison, and a first lexical-backend
+contention measurement only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (Issue #21's
-one remaining required "Experiments" list item: lexical-backend
-contention, which would need live Solr integration in the multi-tenant
-harness) without changing the underlying commerce-native mechanism. The
-favorable, adversarially-corrected H1 result, its clean confirmation at
-scale via H5, the robust H2/H4 results (H4 now itself confirmed at
-memory-scale tenant counts via H11), H6/H7/H8's real, reproduced,
-now-stability-confirmed measurement of the pooling advantage this
-project's own thesis assumed, the first economic cost-per-tenant model
-(now addressing all 7 of Issue #21's named economic-output metrics),
-H9's honestly-scaled cold-tenant finding, H10's honest replication
-check (confirming the direction, correcting the magnitude), H12's
-real, empirically-reached tenants-per-envelope figure (which also
-directly discovered this container's actual hard memory limit rather
-than continuing to assume a host-level figure), the
-backend-requests-avoided synthesis combining Phase 3/4 with Phase 7's
-tenant model, and H13's first real CPU-cost measurement (revealing
+**Decision: PROCEED.** Issue #21's Phase 7 required "Experiments" list
+is now fully tested (every named item, H1 through H15) and all 7
+"Economic output" metrics are addressed (6 delivered, 1 partial) — this
+pass's remaining open items are mitigation design for H14/H15's two
+real isolation gaps, mechanism profiling for several disclosed-but-
+unconfirmed hypotheses, and the terminal Phase 7 decision synthesis
+(next). The favorable, adversarially-corrected H1 result, its clean
+confirmation at scale via H5, the robust H2/H4 results (H4 now itself
+confirmed at memory-scale tenant counts via H11), H6/H7/H8's real,
+reproduced, now-stability-confirmed measurement of the pooling
+advantage this project's own thesis assumed, the first economic
+cost-per-tenant model (now addressing all 7 of Issue #21's named
+economic-output metrics), H9's honestly-scaled cold-tenant finding,
+H10's honest replication check (confirming the direction, correcting
+the magnitude), H12's real, empirically-reached tenants-per-envelope
+figure (which also directly discovered this container's actual hard
+memory limit rather than continuing to assume a host-level figure),
+the backend-requests-avoided synthesis combining Phase 3/4 with Phase
+7's tenant model, and H13's first real CPU-cost measurement (revealing
 memory and CPU do NOT scale the same way, a genuinely new finding) are
 real evidence in favor of the architecture's packing-density and
-latency-predictability potential — but H14's genuine, material
-falsification (a co-located tenant's index rebuild degrades another
-tenant's own p99 by 4.00-6.70x) is an equally real, honestly-recorded
-LIMIT on that potential, not smoothed over or minimized: this pass
-explicitly does not claim safe isolation under real catalog churn, and
-names designing/testing a mitigation as necessary future work before
+latency-predictability potential — but H14's and H15's genuine,
+material falsifications (a co-located tenant's index rebuild degrades
+another tenant's own p99 by 4.00-6.70x; a co-located tenant's shared-
+Solr query load degrades another tenant's own p99 by 2.16-2.48x) are
+equally real, honestly-recorded LIMITS on that potential, not smoothed
+over or minimized: this pass explicitly does not claim safe isolation
+under real catalog churn or under a shared lexical backend, and names
+designing/testing mitigations for both as necessary future work before
 any such claim could be made. All of the above are explicitly a floor
 on the claim (single-process, short-lived-process, or
 180-second-resident-process measurements, one tenant model, one
 self-imposed safety bound, one size-matched hot/cold pair, one
 traffic-skew ratio, one hardware envelope, one cross-dataset admission-
-rate combination, one churn scenario), not a ceiling on what remains to
-be tested.
+rate combination, one churn scenario, one Solr configuration), not a
+ceiling on what remains to be tested.

@@ -98,6 +98,13 @@ same as Phases 0–5:
   materially degrades another tenant's own p99 latency (4.00-6.70x,
   reproduced across 3 runs) — a genuine, actionable isolation gap; see
   `PHASE7_DECISION.md`.
+- `p7_e12_lexical_backend_contention.yaml` — Issue #21's
+  "lexical-backend contention" metric, the last item on Issue #21's
+  required Experiments list: sharing one Solr instance across tenants
+  materially degrades a quiet tenant's own p99 latency (2.16-2.48x,
+  reproduced across 3 runs after a self-caught JVM cold-start artifact
+  was fixed) — Phase 7's third distinct isolation-gap finding; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

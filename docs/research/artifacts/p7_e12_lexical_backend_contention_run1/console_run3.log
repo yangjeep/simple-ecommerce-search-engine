@@ -1,0 +1,7 @@
+=== P7-E12: lexical-backend contention across tenants sharing one Solr instance (H15) ===
+(quiet tenant core='wands_bench'; noisy tenant core='wands_bench_20x'; base_url=http://localhost:8983/solr)
+  quiet alone (baseline):                 p50=2.7275ms p99=3.5744ms (n=500)
+  quiet + 3 threads hammering NOISY core (cross-tenant): p50=3.3476ms p99=7.8361ms (n=500) -- p50_ratio=1.23x p99_ratio=2.19x
+  H15 verdict: p50_ratio=1.23x p99_ratio=2.19x -- FALSIFIED: shared-Solr cross-tenant load materially degrades the quiet tenant's own latency
+
+artifacts written to docs/research/artifacts/p7_e12_lexical_backend_contention_run1

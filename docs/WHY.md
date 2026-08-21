@@ -295,7 +295,21 @@ bundles are immutable) measurably degrades a quiet tenant's own tail
 latency, reproduced consistently, even though the typical-case latency
 barely moves. This is a real, actionable limitation this pass names
 honestly rather than minimizes, and designing a mitigation for it is
-named explicitly as necessary future work.
+named explicitly as necessary future work. A twelfth and final Phase 7
+measurement tested the one remaining required experiment from this
+epic's own opening ask: does a shared, mature lexical backend show the
+same kind of noisy-neighbor risk under real multi-tenant load? Solr was
+already installed in this environment with real WANDS-derived cores
+from an earlier phase, so this was tested directly rather than deferred
+as out of scope. The answer is the same shape as the rebuild finding:
+sharing one Solr instance across tenants measurably degrades a quiet
+tenant's own tail latency under ordinary query load, reproduced
+consistently. Between the native in-process path (confirmed safe under
+query load) and these two real limitations (rebuild churn, and a
+shared lexical backend), this phase closes out Issue #21's full
+required measurement list with an honest, mixed picture rather than a
+uniformly favorable one — exactly the kind of result this project's own
+falsification discipline exists to surface.
 
 ## What this project is not
 

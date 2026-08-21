@@ -898,6 +898,7 @@ dependencies = [
  "rand_chacha",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]

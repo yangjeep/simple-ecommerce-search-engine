@@ -1482,3 +1482,106 @@ tested; whether smaller, cheaper-to-rebuild tenants would show a
 proportionally smaller effect, and whether a higher rebuild FREQUENCY
 (e.g. many small tenants churning at once, rather than one large one)
 would compound the effect, are both untested and are natural follow-ups.
+
+## P7-E12: lexical-backend contention across tenants sharing one Solr instance (H15, stated before implementation)
+
+Issue #21 explicitly names "lexical-backend contention" as a required
+Phase 7 experiment -- the LAST remaining item on Issue #21's required
+"Experiments" list. Every prior Phase 7 experiment (H1-H14) tested only
+the native `commerce_core::index::CatalogIndex` path; none of them ever
+touched Solr. Before attempting this, feasibility was verified directly
+rather than assumed out of scope: Solr 9.10.1 is already installed in
+this container (`/home/user/solr_install/solr-9.10.1`), starts cleanly
+(`bin/solr start -p 8983 --force`), and already has 5 real WANDS-derived
+cores from Phase 6A/6B's own scale-ladder work (`wands_bench` at 42,994
+docs through `wands_bench_20x` at 859,880 docs) -- no materially larger
+infrastructure was needed, so this was attempted rather than deferred.
+
+**H15**: one tenant's heavy Solr query load does not materially degrade
+another co-located tenant's own Solr query latency, when both tenants'
+lexical-fallback traffic shares the SAME Solr instance (a realistic
+shared-lexical-backend deployment) -- the Solr-side analog of H2's
+already-confirmed native in-process isolation finding. Same pass bar
+(p99 growth <2x vs. solo baseline).
+
+**Design**: reuses H2/P7-E00's exact quiet/noisy-tenant methodology
+(same `ISOLATION_REPS`=500, `ISOLATION_RUN_DURATION`=5s) so this result
+is directly comparable to H2's own null finding, but issuing real HTTP
+queries (`q=*:*&rows=24`, matching Phase 6A's own PAGE_SIZE convention)
+to Solr instead of in-process `facet_scan_once`. `wands_bench` (the
+original real corpus) is the quiet tenant; `wands_bench_20x` (Phase 6B's
+largest scale-ladder rung) is the noisy tenant, hammered by 3 worker
+threads issuing the same query.
+
+## P7-E12 self-caught problem: a JVM/connection-pool cold-start artifact in the baseline, caught before trusting a borderline verdict
+
+The first-draft binary (no warm-up phase) gave an ambiguous result
+across 3 runs: p50 ratio 1.29-1.30x (consistent, inside the pass bar),
+but p99 ratio 1.32x / 2.04x / 2.13x -- straddling the 2.0x threshold,
+2 of 3 runs technically clearing it. Inspecting the raw baseline
+numbers explained why: run 1's baseline p99 was **8.98ms**, more than
+2x runs 2-3's baseline p99 (3.85ms / 3.57ms), while the UNDER-LOAD p99
+was comparatively stable across all 3 runs (11.88 / 7.85 / 7.62ms).
+Run 1 was the very first invocation of this exact query pattern against
+this Solr instance in this session -- a real JIT/query-cache/
+connection-pool warm-up cost inflating specifically the BASELINE
+reading (taken first, before any load), the same class of cold-start
+artifact this project already learned to guard against in P7-E09's
+n=55 checkpoint. **Fixed** by adding a 500ms warm-up phase (querying
+both cores) before starting the baseline measurement, matching
+P7-E09/P7-E10's own established warm-up discipline. The undersampled
+first-draft raw CSVs/logs were renamed (not deleted) to
+`*_no_warmup_superseded.*` per this project's archive discipline.
+
+## P7-E12 result (after the fix): H15 FALSIFIED, reproduced cleanly across 3 independent runs
+
+The corrected binary gave a tight, unambiguous result. Raw data in
+`docs/research/artifacts/p7_e12_lexical_backend_contention_run1/
+results_run{1,2,3}.csv`.
+
+| Run | Baseline p50/p99 (ms) | Cross-tenant p50/p99 (ms) | p50 ratio | p99 ratio |
+|---|---|---|---|---|
+| 1 | 2.790 / 3.904 | 3.989 / 9.676 | 1.43x | **2.48x** |
+| 2 | 2.702 / 3.624 | 3.301 / 7.818 | 1.22x | **2.16x** |
+| 3 | 2.728 / 3.574 | 3.348 / 7.836 | 1.23x | **2.19x** |
+
+Baseline p99 is now tight across all 3 runs (3.57-3.90ms, vs. the
+first draft's 3.57-8.98ms spread) -- confirming the warm-up fix worked.
+p50 ratio (1.22-1.43x, mean 1.29x) stays comfortably inside the pass
+bar -- a modest, real ~22-43% slowdown. **p99 ratio (2.16-2.48x, mean
+2.28x) clears the 2.0x threshold in EVERY run** -- a clean, reproduced,
+unambiguous falsification, not a borderline one like the flawed first
+draft appeared to show.
+
+**What this means**: like H14 (native rebuild churn), and unlike H2
+(native query-only contention, confirmed safe) and H15's own
+originally-hoped-for null result, **a shared Solr instance is NOT
+safely isolated under noisy-neighbor query load in this design**. This
+is Phase 7's THIRD distinct isolation-gap finding, each at a different
+layer: H14 showed the native path's index-REBUILD path is unsafe; H15
+shows the LEXICAL BACKEND path is unsafe too (even for ordinary query
+load, not just rebuilds) -- only the native in-process QUERY path (H2,
+H4, H11) has been confirmed safe so far. This directly matches the
+architectural intuition Issue #21's own thesis document already
+anticipated (a shared, mature lexical backend is a real multi-tenant
+resource-contention risk this project's native fast path is
+specifically designed to reduce reliance on) -- but this is the first
+time Phase 7 has actually MEASURED that risk rather than assumed it.
+
+**Named, plausible (not profiled) mechanism**: Solr's own thread pool,
+JVM garbage collection pauses, and shared Lucene segment-merge/cache
+resources are all genuinely shared across cores in one JVM -- unlike
+the native path's fully independent, immutable per-tenant
+`CatalogIndex` structures with no shared mutable state, Solr's
+internal resource sharing is real and not something this project's
+architecture controls.
+
+**Named limitations**: only 2 cores (one quiet, one noisy) and one
+query type (`rows=24` page browse) were tested; only one noisy-worker
+count (3, matching H2's convention) was tested; this container's Solr
+instance uses default, out-of-the-box configuration (no per-core
+resource limits, thread-pool tuning, or dedicated hardware isolation
+that a production multi-tenant Solr deployment might apply to mitigate
+this -- untested here). Whether per-core resource isolation (e.g.
+Solr's own request-rate limiting, or running tenant cores on separate
+JVMs/containers) would close this gap is a natural, untested follow-up.
