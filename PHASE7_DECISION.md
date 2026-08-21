@@ -1,100 +1,73 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E12 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — Terminal Decision (P7-E00 through P7-E12)
 
-**Decision: PROCEED**, with two hypotheses falsified (one in the good
-direction, one revealing a real but practically tiny effect) and six
-hypotheses confirmed — one with a small, honestly-disclosed open
-question, five cleanly across repeated runs — plus a follow-on
-replication check (H10) whose magnitude did not fully replicate an
-earlier finding, itself a valuable, honestly-recorded result. The most
-important new finding (H6) is the first real, measured evidence for this
-project's own opening "statistical multiplexing" thesis: pooling tenants
-in one process has a real, quantifiable cost advantage over
-process-per-tenant isolation. A follow-on finding (H7) shows that
-advantage is even larger than H6 alone suggested: a genuinely
-long-running, actively-serving process costs more than H6's short-lived
-snapshot captured. A further follow-on (H8) confirms H7's figure is a
-stable, decelerating-toward-a-plateau measurement rather than a
-transient artifact of too short a window. A further follow-on (H9) is
-Phase 7's first direct test of Issue #21's explicitly-named "cold tenant
-overhead" metric: it found a real, reproducible ~9-13x latency-ratio
-effect between an infrequently-queried tenant and a same-sized
-continuously-queried one — technically falsifying the stated hypothesis
-— but at an absolute scale (tens of microseconds) almost certainly
-negligible next to any real deployed service's actual request latency, a
-distinction this document is explicit about rather than leading with the
-more dramatic ratio alone. A final follow-on (H10) tested whether H9's
-effect replicates under a materially different, more realistic
-full-population query-arrival pattern (Issue #21's "aggregate QPS,"
-"fairness under skewed tenant load," and "hot tenant saturation"
-metrics): the DIRECTION replicated cleanly in every run, but the
-MAGNITUDE shrank roughly 4-6x (to ~1.85-2.08x, hovering right at this
-project's own material-regression threshold) — pointing at H9's
-specific fully-dedicated-thread design, not a general architectural
-property, as the likely source of its larger observed ratio. A final
-follow-on (H11) directly closed a gap this document itself had
-previously named as still open: whether H4's breadth-independence
-finding, only tested up to WANDS' real 54-other-tenant ceiling, also
-holds at the much larger tenant counts H5 reached for memory. It does
-— confirmed cleanly at 2,000 controlled-stress-replicated tenants (36x
-H4's original ceiling), with only a small, honestly-disclosed dip right
-at the top of the tested range as RSS approached this run's safety cap.
-A ninth experiment (H12) directly answered Issue #21's "tenants per
-fixed hardware envelope at target SLO" metric for the first time this
-phase: building a query-capable tenant population (both `Catalog` and
-`CatalogIndex` resident, unlike H5's index-only memory measurement)
-incrementally, with real per-tenant RSS checks during construction,
-found this container's real, safely-reached ceiling is **3,500**
-tenants under a disclosed 9 GB self-process safety envelope — where the
-quiet tenant's own p50 latency and throughput are both essentially
-unaffected (within ~2-4% of the 55-tenant baseline) relative to the
-material-regression bar used throughout Phase 7. Getting there required
-fixing a real OOM bug in this experiment's own first draft (an eager
-build-everything-then-check pattern that transiently doubled peak
-memory and was killed by this container's real 13.34 GiB cgroup limit,
-discovered directly rather than assumed from `free -h`'s host-level
-figure), and recognizing that the very first in-process latency
-checkpoint's p99 is an unstable, cold-start-affected statistic (p50 was
-the trustworthy metric throughout). A tenth experiment (H13) measured
-Issue #21's "CPU/query and CPU/tenant" metric for the first time this
-phase — every prior Phase 7 experiment measured wall-clock only. Unlike
-memory (H1/H5's clean linear scaling), CPU cost per facet-scan query
-does NOT scale linearly with tenant product count: sub-linear from 1 to
-5 products (a fixed per-query overhead dominates at tiny sizes), then
-super-linear from 5 to 16,039 products (the largest real tenant's
-measured cost is 3.81x higher than a straight-line extrapolation from
-the two small points would predict), reproduced consistently across 3
-runs. An eleventh experiment (H14) tested Issue #21's explicitly-named
-"high-churn tenant impact on low-churn tenants" for the first time this
-phase — no prior Phase 7 experiment ever mutated a tenant's data. This
-one is a GENUINE falsification, not a technicality: while H2 already
-established that pure noisy QUERY load does not materially degrade a
-co-located tenant's own latency, a co-located tenant whose index is
-being REBUILT (this architecture's only mutation path, since tenant
-bundles are immutable) causes a real, reproducible 4.00-6.70x p99
-degradation for the quiet tenant across all 3 runs, even though p50
-barely moves (1.14-1.17x) — a real isolation gap query-only testing
-could never have surfaced. A twelfth and final experiment (H15) tested
-Issue #21's last remaining required-experiments item, "lexical-backend
-contention" — feasibility was verified directly (Solr was already
-installed in this container with real WANDS-derived cores from Phase
-6A/6B) rather than assumed out of scope. Reusing H2's exact
-methodology against Solr instead of the native path, a first draft
-(no warm-up) gave an ambiguous, borderline result across 3 runs; a
-JVM/connection-pool cold-start artifact in the very first baseline
-reading was self-caught and fixed (a 500ms warm-up phase, matching
-P7-E09/P7-E10's own precedent). The corrected result is clean and
-unambiguous: p99 degrades 2.16-2.48x in EVERY run — H15 is genuinely
-FALSIFIED, Phase 7's THIRD distinct isolation-gap finding (alongside
-H14) and the second of two real limitations this pass names honestly:
-the native in-process QUERY path (H2, H4, H11) is confirmed safe, but
-both the native REBUILD path (H14) and the shared LEXICAL BACKEND path
-(H15) show real, material cross-tenant degradation under load.
+**Decision: PROCEED** — Issue #21's Phase 7 required "Experiments" list
+(15 falsifiable hypotheses, H1-H15) and all 7 "Economic output" metrics
+are now fully addressed (6 delivered well, 1 partial). This is the
+terminal decision for the Phase 7 measurement campaign: no further
+required experiment remains untested, so this document closes the
+campaign rather than opening another sub-experiment. See the "Measured
+results" quick-scan table below for every hypothesis at a glance, and
+"What this decision does and does not claim" for the exact boundary of
+what is asserted.
+
+**The headline, in three parts:**
+
+1. **The core packing/pooling thesis holds robustly.** H1/H5 confirm
+   per-tenant memory overhead is negligible and total memory tracks
+   aggregate product count (not tenant count) cleanly from 55 real
+   tenants to 6,500 controlled-stress-replicated tenants. H2/H4/H11
+   confirm the native in-process query path shows no material
+   cross-tenant degradation, holding cleanly up to 2,000
+   controlled-stress-replicated tenants (36x WANDS' real ceiling). H6 is
+   this project's first real, MEASURED evidence for its own opening
+   "statistical multiplexing" thesis (`docs/WHY.md`): pooling tenants in
+   one process has a real, quantified cost advantage over
+   process-per-tenant isolation, and H7/H8 show that advantage is even
+   larger and more stable than the first snapshot suggested. H12 combines
+   the memory and latency evidence into a concrete, empirically-reached
+   answer for Issue #21's "tenants per fixed hardware envelope at target
+   SLO": ~3,500 query-capable tenants under a disclosed 9 GB envelope on
+   this container, discovering this container's real 13.34 GiB memory
+   limit directly along the way (after a self-caught first-draft OOM).
+   The economic model (`docs/research/PHASE7_ECONOMIC_MODEL.md`) now
+   answers all 7 of Issue #21's named "Economic output" metrics.
+
+2. **Two nuanced, honestly-scaled findings temper the picture without
+   overturning it.** H9 found a real ~9-13x cold-tenant latency-ratio
+   effect, but at an absolute scale (microseconds) almost certainly
+   negligible next to real request latency — Issue #21's "cold tenant
+   overhead" metric, answered with the magnitude kept in view rather
+   than led with alone. H10's replication check found the DIRECTION of
+   H9's effect holds under a more realistic demand mix, but the
+   MAGNITUDE shrinks ~4-6x, pointing at H9's idealized dedicated-thread
+   design (not a general property) as the likely cause. H13 found CPU
+   cost per query does NOT scale linearly with tenant size the way
+   memory does — sub-linear at tiny tenant sizes, then measurably
+   super-linear for the largest real tenant — a genuinely new
+   capacity-planning nuance no memory-focused measurement could have
+   surfaced.
+
+3. **Two real, unmitigated isolation gaps were found and are not
+   smoothed over.** H14: a co-located tenant undergoing repeated index
+   REBUILDS (this architecture's only mutation path, since tenant
+   bundles are immutable) degrades a low-churn tenant's own p99 latency
+   by 4.00-6.70x — a real risk pure query-load testing (H2) could never
+   have surfaced. H15: sharing one Solr instance across tenants degrades
+   a quiet tenant's own p99 latency by 2.16-2.48x under ordinary query
+   load — the native path is safe, but the shared lexical backend is
+   not. Neither gap has a designed or tested mitigation; both are named
+   explicitly as necessary future work in "What should explicitly not be
+   built yet" below, not assumed away.
 
 This is the first phase in this project's history to build and measure
-more than one tenant's index in the same process. It does not require
-any of the currently-blocked external resources (Retailrocket, H&M,
-Amazon Reviews 2023, Havenask) — it is built entirely over the real
-WANDS catalog already validated in Phase 6A/6B.
+more than one tenant's index in the same process, the first to spawn
+real separate OS processes to test the pooling-vs-isolation thesis with
+numbers, and the first to touch an external lexical backend (Solr) from
+inside the multi-tenant harness. It does not require any of the
+currently-blocked external resources (Retailrocket, H&M, Amazon Reviews
+2023, Havenask) — it is built entirely over the real WANDS catalog
+already validated in Phase 6A/6B, plus the Solr installation and cores
+already present in this environment from that same work.
 
 ## Recap: what P7-E00/P7-E01 were asked to answer
 
@@ -219,6 +192,33 @@ distribution (1 to 16,039 products per category) rather than an
 arbitrary synthetic split.
 
 ## Measured results
+
+Quick-scan summary (full detail, raw data, and named limitations for
+every row below):
+
+| Hyp. | Question | Verdict | Headline number |
+|---|---|---|---|
+| H1 | Per-tenant memory fixed cost | FALSIFIED (favorably) | Negligible; cost tracks aggregate product count, not tenant count |
+| H2 | Cross-tenant query-load isolation (native, in-process) | CONFIRMED | p99 ratio 1.31-1.43x cross-tenant vs. 0.85-1.16x same-tenant control |
+| H3 | Packing ceiling (real 55-tenant partition) | Not directly reached; answered by proxy via H5 | Real partition tops out at ~50 MB, far under any limit |
+| H4 | Fixed-tenant throughput under breadth (native) | CONFIRMED | No trend from 1 to 54 other tenants, 694-816 rps / 1.71-2.16ms p99 |
+| H5 | Memory scaling with controlled-stress tenant replication | CONFIRMED | Linear to 6,500 tenants / 4.93M products, 1.2558-1.2881 KB/product |
+| H6 | Per-OS-process floor vs. in-process pooling | CONFIRMED | ~2,144-2,152 KB per process, paid once by pooling vs. N times isolated |
+| H7 | Long-running resident-process overhead | CONFIRMED | +244 KB idle, +196-900 KB active beyond H6's spawn-exit floor |
+| H8 | Does H7's growth plateau over 9x longer window | CONFIRMED | ~98% of growth in first half; small residual tail creep in 2/3 runs |
+| H9 | Cold-tenant overhead (simple dedicated-thread design) | FALSIFIED (tiny absolute scale) | 12.68-12.88x p99 ratio, but only 1.3-13.0 microseconds absolute |
+| H10 | Does H9 replicate under a realistic Zipfian demand mix | Direction replicates; magnitude does not | 1.85-2.08x, ~4-6x smaller than H9's idealized design |
+| H11 | H4 extended to memory-scale tenant counts (2,000) | CONFIRMED | Throughput drop 6-9%, p99 growth 5-8%, both inside the pass bar |
+| H12 | Tenants per fixed hardware envelope at target SLO | CONFIRMED | ~3,500 query-capable tenants under a disclosed 9 GB envelope |
+| H13 | CPU-seconds/query scaling with tenant size | FALSIFIED | Sub-linear at small n, super-linear at large n; Furniture 3.81x over a linear fit |
+| H14 | High-churn (index-rebuild) tenant impact on low-churn tenant | FALSIFIED (material) | p99 degrades 4.00-6.70x; a real, unmitigated isolation gap |
+| H15 | Lexical-backend (shared Solr) contention | FALSIFIED (material) | p99 degrades 2.16-2.48x; a real, unmitigated isolation gap |
+
+Plus a synthesis, not a new hypothesis: the economic cost-per-tenant
+model (`docs/research/PHASE7_ECONOMIC_MODEL.md`), now addressing all 7
+of Issue #21's named "Economic output" metrics (6 delivered, 1
+partial), including the "backend requests avoided" combination with
+Phase 3/4's admission-rate evidence.
 
 **H1 — FALSIFIED as originally stated, replaced with a stronger, more
 favorable finding.** The claimed "~27-590 KB real per-tenant fixed cost"
@@ -1228,10 +1228,12 @@ contention measurement only.
 **Decision: PROCEED.** Issue #21's Phase 7 required "Experiments" list
 is now fully tested (every named item, H1 through H15) and all 7
 "Economic output" metrics are addressed (6 delivered, 1 partial) — this
-pass's remaining open items are mitigation design for H14/H15's two
-real isolation gaps, mechanism profiling for several disclosed-but-
-unconfirmed hypotheses, and the terminal Phase 7 decision synthesis
-(next). The favorable, adversarially-corrected H1 result, its clean
+document is the terminal decision for the Phase 7 measurement campaign;
+its remaining open items are mitigation design for H14/H15's two real
+isolation gaps and mechanism profiling for several disclosed-but-
+unconfirmed hypotheses, both follow-on engineering work rather than
+unanswered required measurements. The favorable, adversarially-corrected
+H1 result, its clean
 confirmation at scale via H5, the robust H2/H4 results (H4 now itself
 confirmed at memory-scale tenant counts via H11), H6/H7/H8's real,
 reproduced, now-stability-confirmed measurement of the pooling

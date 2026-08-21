@@ -182,7 +182,7 @@ candidate range. A genuinely new operator (numeric-range filtering,
 untestable in Phase 6A for lack of a price field) showed its own
 distinct, materially higher crossover point.
 
-**First multi-tenant result (Phase 7 — PROCEED, `PHASE7_DECISION.md`)**:
+**First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
 than one tenant's index in one process, using WANDS' real category
 structure as a realistic SMB tenant model (each category becomes one
