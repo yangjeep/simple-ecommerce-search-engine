@@ -831,6 +831,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "phase3-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "rand",
+ "rand_chacha",
+ "roaring",
+ "round1-eval",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1021,6 +1035,7 @@ dependencies = [
  "commerce-core",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]

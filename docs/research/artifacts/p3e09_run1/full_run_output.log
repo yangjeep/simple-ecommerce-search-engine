@@ -1,0 +1,41 @@
+    Blocking waiting for file lock on build directory
+   Compiling round1-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/round1-eval)
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 1m 52s
+     Running `target/release/p3e09_single_token_lexical_eval`
+loading whole-corpus Solr baseline from "docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv"...
+  22458 queries loaded; whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+loading structurally-anchored qids from "docs/research/artifacts/p3e05_run1/eligible_queries_raw.csv" (to exclude -- already a disjoint, separately-measured mechanism)...
+  1557 structurally-anchored qids excluded
+loading P3-E03's eligible population, filtering to single-residual-token pure-lexical-only from "docs/research/artifacts/p3e03_run1/eligible_queries_raw.csv"...
+  824 single-residual-token, non-anchored eligible queries (3.67% of whole corpus, cap-independent)
+
+=== P3-E09 single-token pure-lexical coverage/relevance frontier (isolated marginal contribution) ===
+       cap   admitted cov%_elig   cov%_all native_ndcg solr_ndcg_sub   ndcg_delta whole_wl_ndcg  wl_degrad
+         1         20     2.43%     0.09%     0.1865     0.2348    -0.0483       0.2335    +0.0000
+         2         52     6.31%     0.23%     0.2854     0.3159    -0.0305       0.2334    +0.0001
+         3         73     8.86%     0.33%     0.2945     0.3350    -0.0404       0.2334    +0.0001
+         5        102    12.38%     0.45%     0.3362     0.3839    -0.0477       0.2333    +0.0002
+        10        172    20.87%     0.77%     0.4496     0.4961    -0.0465       0.2332    +0.0004
+        20        279    33.86%     1.24%     0.5482     0.6213    -0.0731       0.2326    +0.0009
+        30        335    40.66%     1.49%     0.5087     0.5978    -0.0891       0.2322    +0.0013
+        50        376    45.63%     1.67%     0.4689     0.5801    -0.1112       0.2316    +0.0019
+        75        407    49.39%     1.81%     0.4416     0.5632    -0.1216       0.2313    +0.0022
+       100        425    51.58%     1.89%     0.4274     0.5522    -0.1249       0.2311    +0.0024
+       150        457    55.46%     2.03%     0.3986     0.5294    -0.1309       0.2308    +0.0027
+       250        503    61.04%     2.24%     0.3627     0.4980    -0.1353       0.2305    +0.0030
+       500        559    67.84%     2.49%     0.3277     0.4656    -0.1379       0.2301    +0.0034
+      1000        620    75.24%     2.76%     0.2955     0.4319    -0.1365       0.2297    +0.0038
+      2500        673    81.67%     3.00%     0.2722     0.4037    -0.1315       0.2296    +0.0039
+      5000        722    87.62%     3.21%     0.2537     0.3784    -0.1246       0.2295    +0.0040
+     10000        767    93.08%     3.42%     0.2388     0.3574    -0.1185       0.2295    +0.0040
+     50000        816    99.03%     3.63%     0.2245     0.3363    -0.1118       0.2294    +0.0041
+    200000        823    99.88%     3.66%     0.2226     0.3334    -0.1108       0.2294    +0.0041
+
+=== relevance-budget calibration (Issue #14 RQ2, single-token pure-lexical mechanism) ===
+  budget<=0.0%: no swept cap value stays within this budget
+  budget<=0.5%: best cap=20, coverage=279/22458 (1.24% of whole corpus)
+  budget<=1.0%: best cap=75, coverage=407/22458 (1.81% of whole corpus)
+  budget<=2.0%: best cap=200000, coverage=823/22458 (3.66% of whole corpus)
+
+artifacts written to dataset_cache/p3e09_artifacts

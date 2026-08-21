@@ -1,0 +1,22 @@
+{
+  "experiment": "p3e01_fallback_baseline",
+  "method": "solr_baseline_vs_admission_then_solr",
+  "commit_sha": "e1edb9ea05e476db066bd615b6fe52d7478603ca",
+  "git_dirty": true,
+  "hostname": "vm",
+  "cpu_count": 4,
+  "os": "linux",
+  "dataset_path": "dataset_cache/export/catalog.jsonl",
+  "dataset_fingerprint": "size=1520400382b_mtime=1787206455",
+  "query_set_path": "dataset_cache/export/queries.jsonl",
+  "query_set_fingerprint": "size=41184952b_mtime=1787206462",
+  "config": {
+    "latency_reps": 30,
+    "latency_sample_size": 20,
+    "max_candidates": 50,
+    "solr_base_url": "http://localhost:8983/solr/commerce_bench"
+  },
+  "seed": 7,
+  "warmup": 5,
+  "reps": 30
+}

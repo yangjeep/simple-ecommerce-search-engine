@@ -1,0 +1,41 @@
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 9.64s
+     Running `target/release/p3e14_solr_baseline_gap_audit`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded (this is the corpus every other Phase 3 binary in this dir uses)
+
+compiling every real query...
+
+=== Population 1: P3-E05 anchored-lexical population (UnresolvedResidual-rejected AND query.constraints non-empty) ===
+  population size: 4599
+  with >=1 constraint that has NO fq substitute (per extract_brand_color's real coverage): 104/4599 (2.26%)
+  breakdown of no-fq-substitute constraint kinds found (a query may contribute to more than one kind):
+    Attribute::Numeric(size): 68
+    Structural::PriceUnderCents: 36
+
+=== Population 2: P3-E09 single-token-lexical population sanity check (residual_token_count==1, constraints empty, ambiguous empty) ===
+  population size: 977
+  of these, nonempty constraints: 0 (must be 0 by the filter's own definition)
+  of these, nonempty ambiguous: 0 (must be 0 by the filter's own definition)
+  independent check (residual_token_count==1 alone, no pre-filter): 2940 queries; nonempty constraints: 1271; nonempty ambiguous: 959
+
+=== Population 3: ambiguous-rejected + non-empty residual_lexical, P3-E12 tractable-population cross-check ===
+  total ambiguous-rejected queries: 5005
+  excluded (multi-span): 649
+  excluded (not all candidates are Constraint / <2 candidates): 0
+  single-span, all-Constraint population (P3-E12's reported '4,356'): 4356
+  of those, excluded (winner's own top catalog frequency == 0): 0
+  of those remaining, residual_lexical still non-empty (P3-E12's reported 'excluded_residual_still_nonempty', target '4,279'): 4279
+  cross-check ratio: 4279/4356 (98.23%)
+
+=== Population 4: whole-corpus bound (non-empty residual_lexical AND (>=1 no-fq-substitute constraint OR non-empty ambiguous)) ===
+  whole corpus size: 22458
+  non-empty residual_lexical: 22164 (98.69% of corpus)
+  ...of those, via a no-fq-substitute structural/attribute constraint: 123
+  ...of those, via a non-empty ambiguous span: 4896
+  TOTAL potentially affected (union): 5000/22458 (22.26% of whole corpus)
+
+done.

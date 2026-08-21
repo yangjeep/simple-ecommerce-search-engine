@@ -1,0 +1,34 @@
+   Compiling phase3-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/phase3-eval)
+    Finished `release` profile [optimized] target(s) in 10.69s
+     Running `target/release/p3e12_ambiguous_frequency_eval`
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+loading real queries + judgments...
+22458 distinct real judged queries with at least one relevant label loaded
+loading already-persisted whole-corpus Solr baseline from "docs/research/artifacts/p3e06_run1/whole_corpus_solr_ndcg.csv" (reused, no new Solr querying)...
+  whole-workload pure-Solr-only baseline NDCG@10: 0.2335
+
+resolving tractable ambiguous queries by catalog-frequency-dominant candidate...
+  29/5005 ambiguous-rejected queries are tractable (single-span, all-Constraint, resolvable, residual-lexical-empty after resolution)
+  exclusion breakdown: multi_span=649 not_all_constraint=0 zero_top_freq=0 residual_still_nonempty_after_resolution=4279 resolved_candidate_set_zero=48
+  variant-correctness violations: 0 (must be 0 -- commerce_core always exactly re-verifies hard constraints)
+
+=== P3-E12 frequency-resolved-ambiguity coverage/relevance frontier (isolated marginal contribution, cap<=250) ===
+     ratio>=   admitted  cov%_amb   cov%_all native_ndcg solr_ndcg_sub   ndcg_delta whole_wl_ndcg  wl_degrad
+           1         24     0.48%     0.11%     0.0836     0.1510    -0.0674       0.2334    +0.0001
+           2         23     0.46%     0.10%     0.0872     0.1544    -0.0672       0.2334    +0.0001
+           3         23     0.46%     0.10%     0.0872     0.1544    -0.0672       0.2334    +0.0001
+           5         23     0.46%     0.10%     0.0872     0.1544    -0.0672       0.2334    +0.0001
+          10         23     0.46%     0.10%     0.0872     0.1544    -0.0672       0.2334    +0.0001
+          20         16     0.32%     0.07%     0.1029     0.1668    -0.0638       0.2335    +0.0000
+          50          5     0.10%     0.02%     0.0535     0.0585    -0.0050       0.2335    +0.0000
+         100          2     0.04%     0.01%     0.0000     0.0212    -0.0212       0.2335    +0.0000
+
+=== relevance-budget calibration (Issue #14 RQ2, frequency-resolved-ambiguity mechanism) ===
+  budget<=0.0%: no swept ratio threshold stays within this budget
+  budget<=0.5%: best ratio_threshold=1, coverage=24/22458 (0.11% of whole corpus)
+  budget<=1.0%: best ratio_threshold=1, coverage=24/22458 (0.11% of whole corpus)
+  budget<=2.0%: best ratio_threshold=1, coverage=24/22458 (0.11% of whole corpus)
+
+artifacts written to dataset_cache/p3e12_artifacts

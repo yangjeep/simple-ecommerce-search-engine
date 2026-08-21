@@ -1,0 +1,42 @@
+{
+  "experiment": "p3e02_coverage_frontier",
+  "method": "max_candidates_sweep",
+  "commit_sha": "486bef57b66d5bb1624a62ba5c6ef5036dfde3b6",
+  "git_dirty": false,
+  "hostname": "vm",
+  "cpu_count": 4,
+  "os": "linux",
+  "dataset_path": "dataset_cache/export/catalog.jsonl",
+  "dataset_fingerprint": "size=1520400382b_mtime=1787206455",
+  "query_set_path": "dataset_cache/export/queries.jsonl",
+  "query_set_fingerprint": "size=41184952b_mtime=1787206462",
+  "config": {
+    "eligible_queries": 185,
+    "solr_base_url": "http://localhost:8983/solr/commerce_bench",
+    "sweep": [
+      1,
+      2,
+      3,
+      5,
+      10,
+      20,
+      30,
+      50,
+      75,
+      100,
+      150,
+      250,
+      500,
+      1000,
+      2500,
+      5000,
+      10000,
+      50000,
+      200000
+    ],
+    "total_queries": 22458
+  },
+  "seed": 7,
+  "warmup": 0,
+  "reps": 1
+}

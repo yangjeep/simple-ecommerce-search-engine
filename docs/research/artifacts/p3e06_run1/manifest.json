@@ -1,0 +1,31 @@
+{
+  "experiment": "p3e06_combined_admission_frontier",
+  "method": "structural_cap_x_anchored_lexical_cap_grid",
+  "commit_sha": "dca864fd4a95982839ad3a52436055b56cde8b6a",
+  "git_dirty": false,
+  "hostname": "vm",
+  "cpu_count": 4,
+  "os": "linux",
+  "dataset_path": "dataset_cache/export/catalog.jsonl",
+  "dataset_fingerprint": "size=1520400382b_mtime=1787206455",
+  "query_set_path": "dataset_cache/export/queries.jsonl",
+  "query_set_fingerprint": "size=41184952b_mtime=1787206462",
+  "config": {
+    "anchored_eligible": 1557,
+    "anchored_lexical_cap_grid": [
+      1,
+      20,
+      250
+    ],
+    "solr_base_url": "http://localhost:8983/solr/commerce_bench",
+    "structural_cap_grid": [
+      50,
+      250
+    ],
+    "structural_eligible": 185,
+    "total_queries": 22458
+  },
+  "seed": 7,
+  "warmup": 0,
+  "reps": 1
+}
