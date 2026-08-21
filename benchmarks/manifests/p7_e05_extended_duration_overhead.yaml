@@ -21,7 +21,7 @@ claim: >
   run). See docs/experiments/PHASE7_LOG.md for the full H8 hypothesis
   and result.
 
-git_sha: PENDING
+git_sha: 4e056ed
 binary: crates/phase7-eval/src/bin/p7_e05_extended_duration_overhead.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e05_extended_duration_overhead
 run_command: ./target/release/p7_e05_extended_duration_overhead dataset_cache/wands/catalog.jsonl

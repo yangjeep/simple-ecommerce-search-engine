@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e05_extended_duration_overhead.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "4e056ed",
   "dataset": {
     "name": "WANDS real tenant (Furniture, largest category_depth_1)"
   },
