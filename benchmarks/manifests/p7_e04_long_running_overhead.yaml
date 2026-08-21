@@ -19,7 +19,7 @@ claim: >
   inverted the sign of the effect for the largest tenant) was found and
   fixed before trusting any number -- see docs/experiments/PHASE7_LOG.md.
 
-git_sha: PENDING
+git_sha: c87efbd
 binary: crates/phase7-eval/src/bin/p7_e04_long_running_overhead.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e04_long_running_overhead
 run_command: ./target/release/p7_e04_long_running_overhead dataset_cache/wands/catalog.jsonl
