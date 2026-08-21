@@ -16,7 +16,7 @@ claim: >
   This is a self-imposed safety bound, not a discovered hardware/
   architectural ceiling.
 
-git_sha: (fill in after commit)
+git_sha: 3f53fd4
 binary: crates/phase7-eval/src/bin/p7_e02_packing_ceiling.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e02_packing_ceiling
 run_command: ./target/release/p7_e02_packing_ceiling dataset_cache/wands/catalog.jsonl

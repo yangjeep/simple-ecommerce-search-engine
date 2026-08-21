@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e02_packing_ceiling.yaml",
-  "git_sha": "PLACEHOLDER",
+  "git_sha": "3f53fd4",
   "dataset": {
     "name": "WANDS real 55-tenant population, controlled-stress replicated by tenant count"
   },
