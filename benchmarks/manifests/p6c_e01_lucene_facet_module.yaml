@@ -31,7 +31,7 @@ claim: >
   ordinal-based counting approach. See docs/experiments/PHASE6C_LOG.md
   for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 9206ee59272e941ca3f13cf5601520d04d42b3e5
 binary: lucene-direct-bench/src/main/java/org/commercenative/lucenedirect/WandsLuceneBench.java
 build_command: cd lucene-direct-bench && mvn -q package
 run_command: java -jar lucene-direct-bench/target/lucene-direct-bench-jar-with-dependencies.jar dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench

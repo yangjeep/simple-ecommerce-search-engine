@@ -3,7 +3,7 @@
   "phase": "6C",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6c_e01_lucene_facet_module.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "9206ee59272e941ca3f13cf5601520d04d42b3e5",
   "dataset": {
     "name": "real WANDS catalog (42,994 products), same 7 category_depth_1 checkpoints as P6A-E00/P6B-E00/P6C-E00"
   },
