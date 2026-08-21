@@ -74,6 +74,70 @@ Native Retrieval Share =
   all commerce retrieval requests
 ```
 
+## Target-market workload context hypothesis
+
+The target-market workload may be materially different from the marketplace/search-heavy context that motivated systems such as Havenask. This must be treated as a **testable workload hypothesis**, not as an assumed market fact.
+
+For many North American independent-merchant / DTC / branded ecommerce experiences, the dominant critical path is plausibly browse-led:
+
+```text
+SEO / homepage / campaign landing
+  -> category / collection
+  -> PLP
+  -> facet / filter / sort / pagination
+  -> PDP
+```
+
+Explicit site search is often a supplementary product-finding path rather than the primary entry point. In contrast, large marketplace experiences may be much more search- and recommendation-driven, with category navigation appearing later or in narrower contexts such as merchant/storefront browsing.
+
+This distinction matters because it changes what a commerce-native engine should optimize first. A system optimized for a marketplace/search-heavy workload can reasonably emphasize broad query retrieval, ranking, and large distributed indexes. A system optimized for browse-heavy independent merchants should place much more weight on category/collection/PLP execution, repeated structural refinement, inventory-aware filtering, low fixed cost, and multi-tenant isolation.
+
+The current working hypothesis is therefore:
+
+> **Commerce-engine specialization is workload-distribution dependent. The optimal physical architecture for browse-heavy independent merchants may differ materially from the optimal architecture for hyperscale marketplace search, even when both are 'ecommerce search' systems.**
+
+Havenask remains the performance anchor, but not necessarily the workload-design template.
+
+### Required production-log validation
+
+Do not promote the market/workload distinction into a paper claim until it is measured from real production traffic.
+
+Use sanitized production request logs to characterize the target workload at the backend-request level, not only by sessions. At minimum derive:
+
+```text
+request class
+traffic share
+QPS / concurrency distribution
+catalog size
+category / collection cardinality
+filters per request
+facets per request
+sort distribution
+pagination depth
+free-text search share
+category / collection / PLP share
+hot vs long-tail request repetition
+inventory / price mutation frequency
+tenant-to-tenant skew
+```
+
+Where possible stratify by merchant vertical and catalog size.
+
+This analysis should become a first-class paper artifact. If the data confirms a strong browse-heavy versus marketplace/search-heavy distinction, it should motivate the architecture and benchmark design directly rather than appear as post-hoc product positioning.
+
+A likely paper flow is:
+
+```text
+real workload differs by commerce context
+  -> dominant retrieval classes differ
+  -> specialization target differs
+  -> search and browse need different percentile goals
+  -> safe semantic admission + structural execution + fallback
+  -> low-cost multi-tenant deployment for the target market
+```
+
+If the production data does not support this distinction, revise the framing rather than forcing it.
+
 ## The 80x red line
 
 Coverage growth is not allowed to turn the native system into a second general-purpose search engine.
