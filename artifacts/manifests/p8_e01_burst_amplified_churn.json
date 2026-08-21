@@ -3,7 +3,7 @@
   "phase": "8",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p8_e01_burst_amplified_churn.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "19a595310b037612ca7515f11ad1ba00d2c33ad5",
   "dataset": {
     "name": "WANDS all 55 real tenants; quiet tenant 'Rugs' (2002 products); churn tenant 'Furniture' (16039 products, continuously rebuilt); burst pool = remaining 54 tenants (Zipfian-weighted)"
   },
