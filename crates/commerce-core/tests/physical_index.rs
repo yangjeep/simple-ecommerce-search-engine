@@ -259,6 +259,49 @@ fn facet_counts_by_scan_matches_facet_counts_exactly() {
 }
 
 #[test]
+fn facet_counts_ordinal_matches_facet_counts_by_scan_exactly() {
+    // Issue #21 Phase 6D: `facet_counts_ordinal` is a dictionary/ordinal-
+    // encoded alternative to `facet_counts_by_scan`, motivated by P6C-E01
+    // (docs/experiments/PHASE6C_LOG.md) finding that Lucene's own
+    // ordinal-based facet module beats a naive per-candidate scan. Before
+    // trusting any latency comparison, it must agree byte-for-byte with
+    // `facet_counts_by_scan` on every input, including the empty-candidate
+    // edge case -- same discipline as the scan-vs-map test above.
+    use commerce_core::fixtures::cold_start_catalog;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.facet_counts_ordinal(&all, "color"),
+        index.facet_counts_by_scan(&all, &catalog, "color")
+    );
+
+    let waterproof_only =
+        index.indexed_candidates(&[ResolvedConstraint::Attribute(Constraint::Boolean {
+            attribute: "waterproof".to_string(),
+            value: true,
+        })]);
+    assert_eq!(
+        index.facet_counts_ordinal(&waterproof_only, "color"),
+        index.facet_counts_by_scan(&waterproof_only, &catalog, "color")
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index.facet_counts_ordinal(&empty, "color").is_empty());
+
+    // An attribute never indexed as a single-valued Enum at all (e.g. a
+    // typo, or brand -- which lives in its own dedicated bitmap index, not
+    // `enum_columns`) must return empty, not panic.
+    assert!(index.facet_counts_ordinal(&all, "brand").is_empty());
+    assert!(index
+        .facet_counts_ordinal(&all, "not_a_real_attribute")
+        .is_empty());
+}
+
+#[test]
 fn product_type_facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
     // Phase 6A (Issue #23): `product_type`, like `brand`, has its own
     // dedicated `product_type_bitmaps` index -- populated by every

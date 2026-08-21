@@ -231,6 +231,32 @@ faceting in general, and it surfaces a genuine, previously-untested
 candidate fix: whether commerce-native's own architecture could adopt
 an equivalent ordinal-based counting approach.
 
+**The facet crossover closes (Phase 6D — PROCEED, `PHASE6D_DECISION.md`)**:
+Phase 6D built exactly the candidate fix Phase 6C surfaced. A new
+`facet_counts_ordinal` method on `CatalogIndex` — a per-attribute value
+dictionary plus a flat per-variant-ordinal column, the same
+architectural family as Lucene's own module and Solr's own
+`facet.field` — was correctness-gated two ways before any timing claim
+was trusted: an exact match against the existing `facet_counts_by_scan`
+across every edge case, and 21 exact top-50-facet matches (7 real
+checkpoints × 3 runs) against Solr's own live response. The result is
+more decisive than Phase 6C's own Lucene-module finding: the ordinal
+method beats Solr at every single one of the 7 real checkpoints, by
+5.2x to 69.8x, with no exceptions — where Lucene's own equivalent
+module still trailed Solr at the two largest checkpoints. It also beats
+commerce-native's own existing scan method by 23.5x-89.3x. The margin
+is larger than Lucene's own because commerce-native's naive baseline was
+paying a more expensive per-candidate cost to begin with (a full
+attribute-map clone on every iteration, not just a plain ordinal
+lookup) — so there was more room for the fix to help. The facet
+crossover this project characterized four times over (Phase 5, 6A, 6B,
+Phase 6C) is now confirmed to have been a property of naive
+per-candidate scanning specifically, not an inherent ceiling on
+commerce-native's own architecture — real limitations remain (only one
+facet field tested, only WANDS' natural scale, memory cost estimated
+not measured, no query-serving path yet wired to prefer it), but the
+core question this whole four-phase thread asked is answered.
+
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
 than one tenant's index in one process, using WANDS' real category

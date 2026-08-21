@@ -158,6 +158,15 @@ same as Phases 0–5:
   remaining 2 — sharpening the facet-crossover finding into a claim
   about facet algorithms specifically, not generic-engine vs.
   commerce-native faceting; see `PHASE6C_DECISION.md`.
+- `p6d_e00_ordinal_facet_counting.yaml` — Phase 6D built the candidate
+  fix P6C-E01 surfaced: an ordinal/dictionary-based
+  `facet_counts_ordinal` on `CatalogIndex` itself, correctness-gated
+  against both `facet_counts_by_scan` (unit test) and Solr's own live
+  facets (21/21 exact matches). Result: beats Solr at every one of 7
+  real checkpoints (5.2x-69.8x, no exceptions) and beats
+  `facet_counts_by_scan` (23.5x-89.3x) — a larger, more consistent
+  margin than Lucene's own equivalent module achieved over Solr; see
+  `PHASE6D_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

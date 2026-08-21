@@ -798,6 +798,7 @@ fn main() {
                 "FACET MISMATCH color_under_depth1={name}: native={native_facets:?} solr={solr_facets:?}"
             ));
         }
+        let solr_ns_reused = solr_ns.clone();
         push_row(
             &mut rows,
             &mut mismatches,
@@ -809,6 +810,36 @@ fn main() {
             solr_n,
             native_ns,
             solr_ns,
+        );
+
+        // Issue #21 Phase 6D: the same facet request, timed against the
+        // ordinal/dictionary-based counting strategy instead of the scan
+        // (P6C-E01 found Lucene's own ordinal-based facet module closes
+        // most of the facet crossover against Solr; this tests whether
+        // the same technique does the same for commerce-native itself).
+        // Reuses the exact same `solr_ns`/`solr_n`/`solr_facets` captured
+        // just above rather than re-querying Solr a second time, so both
+        // native strategies are compared against one identical Solr
+        // measurement.
+        let (native_ordinal_ns, native_ordinal_facets_full) =
+            time_reps(|| index.facet_counts_ordinal(&candidates, "color"));
+        let native_ordinal_facets = top_n(native_ordinal_facets_full, 50);
+        if native_ordinal_facets != solr_facets {
+            mismatches.push(format!(
+                "FACET MISMATCH color_ordinal_under_depth1={name}: native_ordinal={native_ordinal_facets:?} solr={solr_facets:?}"
+            ));
+        }
+        push_row(
+            &mut rows,
+            &mut mismatches,
+            "color_facet_ordinal_under_depth1_crossover_sweep",
+            "category_depth_1",
+            name,
+            &bucket,
+            n,
+            solr_n,
+            native_ordinal_ns,
+            solr_ns_reused,
         );
     }
 

@@ -38,6 +38,22 @@ pub struct CatalogIndex {
     bool_bitmaps: HashMap<(String, bool), RoaringBitmap>,
     numeric_index: HashMap<String, Vec<(f64, Ordinal)>>,
 
+    // Issue #21 Phase 6D: a dictionary/ordinal-encoded parallel
+    // representation of single-valued Enum attributes, motivated by
+    // P6C-E01's finding that Lucene's own ordinal-based facet module
+    // beats a naive per-candidate scan. `enum_dictionary` maps each
+    // attribute to its distinct values in first-encountered order (the
+    // index into this Vec is the value's dense ordinal); `enum_columns`
+    // maps each attribute to a `Vec<u32>` indexed by variant ordinal,
+    // storing that variant's value-ordinal (or `u32::MAX` if the
+    // variant has no single-valued Enum value for this attribute).
+    // Deliberately built only from `AttributeValue::Enum`, not
+    // `MultiEnum`, to exactly match `facet_counts_by_scan`'s own
+    // semantics (see `facet_counts_ordinal`).
+    enum_dictionary: HashMap<String, Vec<String>>,
+    enum_value_ordinal: HashMap<String, HashMap<String, u32>>,
+    enum_columns: HashMap<String, Vec<u32>>,
+
     brand_bitmaps: HashMap<BrandId, RoaringBitmap>,
     product_type_bitmaps: HashMap<ProductTypeId, RoaringBitmap>,
     category_bitmaps: HashMap<CategoryId, RoaringBitmap>,
@@ -66,6 +82,7 @@ impl CatalogIndex {
         let mut idx = CatalogIndex::default();
         let mut numeric_raw: HashMap<String, Vec<(f64, Ordinal)>> = HashMap::new();
         let mut price_raw: Vec<(i64, Ordinal)> = Vec::new();
+        let mut enum_column_raw: HashMap<String, Vec<(u32, Ordinal)>> = HashMap::new();
 
         for (p_idx, product) in catalog.products.iter().enumerate() {
             idx.product_location.insert(product.id, p_idx);
@@ -93,6 +110,7 @@ impl CatalogIndex {
                     &effective_attributes(product, variant),
                     ord,
                     &mut numeric_raw,
+                    &mut enum_column_raw,
                 );
                 for token in tokenize(&product.title) {
                     idx.lexical_postings.entry(token).or_default().insert(ord);
@@ -106,6 +124,15 @@ impl CatalogIndex {
         idx.numeric_index = numeric_raw;
         price_raw.sort_by_key(|&(cents, _)| cents);
         idx.price_index = price_raw;
+
+        let total = idx.ordinals.len();
+        for (attribute, pairs) in enum_column_raw {
+            let mut column = vec![u32::MAX; total];
+            for (value_ord, ord) in pairs {
+                column[ord as usize] = value_ord;
+            }
+            idx.enum_columns.insert(attribute, column);
+        }
         idx
     }
 
@@ -114,13 +141,20 @@ impl CatalogIndex {
         attrs: &AttributeMap,
         ord: Ordinal,
         numeric_raw: &mut HashMap<String, Vec<(f64, Ordinal)>>,
+        enum_column_raw: &mut HashMap<String, Vec<(u32, Ordinal)>>,
     ) {
         for (name, value) in attrs {
             match value {
-                AttributeValue::Enum(v) => self.index_enum_value(name, v, ord),
+                AttributeValue::Enum(v) => {
+                    let value_ord = self.index_enum_value(name, v, ord);
+                    enum_column_raw
+                        .entry(name.clone())
+                        .or_default()
+                        .push((value_ord, ord));
+                }
                 AttributeValue::MultiEnum(vs) => {
                     for v in vs {
-                        self.index_enum_value(name, v, ord);
+                        let _ = self.index_enum_value(name, v, ord);
                     }
                 }
                 AttributeValue::Boolean(b) => {
@@ -141,7 +175,13 @@ impl CatalogIndex {
         }
     }
 
-    fn index_enum_value(&mut self, name: &str, value: &str, ord: Ordinal) {
+    /// Indexes `(name, value)` for ordinal `ord` in every existing
+    /// bitmap/vocabulary structure, and additionally assigns (or looks
+    /// up) `value`'s dense dictionary ordinal for `name`, returning it
+    /// so callers building the parallel single-valued `enum_columns`
+    /// representation (see `facet_counts_ordinal`) don't need a second
+    /// lookup.
+    fn index_enum_value(&mut self, name: &str, value: &str, ord: Ordinal) -> u32 {
         self.enum_bitmaps
             .entry((name.to_string(), value.to_string()))
             .or_default()
@@ -150,6 +190,17 @@ impl CatalogIndex {
             .entry(name.to_string())
             .or_default()
             .insert(value.to_string());
+
+        let dictionary = self.enum_dictionary.entry(name.to_string()).or_default();
+        let value_ordinals = self.enum_value_ordinal.entry(name.to_string()).or_default();
+        if let Some(&existing) = value_ordinals.get(value) {
+            existing
+        } else {
+            let new_ordinal = dictionary.len() as u32;
+            dictionary.push(value.to_string());
+            value_ordinals.insert(value.to_string(), new_ordinal);
+            new_ordinal
+        }
     }
 
     /// Exact entity lookup by id: O(1) via a hash map, no scan.
@@ -449,6 +500,52 @@ impl CatalogIndex {
             }
         }
         counts
+    }
+
+    /// Issue #21 Phase 6D: an ordinal/dictionary-based facet-counting
+    /// strategy, motivated by P6C-E01's finding
+    /// (`docs/experiments/PHASE6C_LOG.md`) that Lucene's own dedicated
+    /// facet module -- which pre-builds a per-field dictionary mapping
+    /// each distinct value to a dense integer ordinal, then counts by
+    /// incrementing a flat array indexed by that ordinal -- beats both
+    /// Solr and a naive per-candidate scan in most measured checkpoints.
+    /// Unlike [`Self::facet_counts_by_scan`], this needs no `Catalog`
+    /// parameter and does no per-candidate `effective_attributes`
+    /// clone, `String` hash, or map entry/insert during the scan itself
+    /// -- counting is a flat `Vec<u64>` increment per candidate, with
+    /// `String` cloning deferred to only the (typically few) non-zero
+    /// result buckets at the end. Exact semantics match
+    /// `facet_counts_by_scan` precisely, including its
+    /// `MultiEnum`-values-are-not-counted behavior (`enum_columns` is
+    /// built only from `AttributeValue::Enum`, see `index_attributes`)
+    /// -- see `facet_counts_ordinal_matches_facet_counts_by_scan_exactly`
+    /// in `tests/physical_index.rs`.
+    pub fn facet_counts_ordinal(
+        &self,
+        candidates: &RoaringBitmap,
+        attribute: &str,
+    ) -> BTreeMap<String, u64> {
+        let mut result = BTreeMap::new();
+        let Some(dictionary) = self.enum_dictionary.get(attribute) else {
+            return result;
+        };
+        let Some(column) = self.enum_columns.get(attribute) else {
+            return result;
+        };
+        let mut counts = vec![0u64; dictionary.len()];
+        for ord in candidates.iter() {
+            if let Some(&value_ord) = column.get(ord as usize) {
+                if value_ord != u32::MAX {
+                    counts[value_ord as usize] += 1;
+                }
+            }
+        }
+        for (value_ord, count) in counts.into_iter().enumerate() {
+            if count > 0 {
+                result.insert(dictionary[value_ord].clone(), count);
+            }
+        }
+        result
     }
 
     /// The scan-based sibling of [`Self::brand_facet_counts`], for the

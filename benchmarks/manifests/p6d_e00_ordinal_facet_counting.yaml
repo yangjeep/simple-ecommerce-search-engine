@@ -1,0 +1,68 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6D-E00
+phase: 6D
+issue: 21
+decision_document: PHASE6D_DECISION.md
+claim: >
+  P6C-E01 found Lucene's own ordinal-based facet module closes most of
+  the facet crossover this project has repeatedly measured (Phase 5,
+  6A, 6B, P6C-E00) and named the direct next question: could
+  commerce-native's own architecture adopt an equivalent technique?
+  Implemented facet_counts_ordinal on CatalogIndex (a per-attribute
+  value dictionary + a flat Vec<u32> per-variant-ordinal column,
+  crates/commerce-core/src/index/mod.rs), correctness-gated exactly
+  against facet_counts_by_scan (new unit test, full/filtered/empty/
+  never-indexed inputs) and against Solr's own live facet response
+  (21/21 exact top-50-facet matches across 3 runs, same 7 real WANDS
+  category_depth_1 checkpoints P6A-E00/P6B-E00/P6C-E01 all used).
+  Result: the ordinal method beats Solr at every single checkpoint
+  (5.2x-69.8x, no exceptions) and beats commerce-native's own existing
+  facet_counts_by_scan (23.5x-89.3x) -- a materially larger, more
+  consistent margin than P6C-E01 found for Lucene's own equivalent
+  module (up to 3.0x, still trailing Solr at 2 checkpoints). Confirms
+  the facet crossover was a property of naive per-candidate scanning
+  specifically (a full attribute-map clone per candidate in
+  commerce-native's case), not an inherent ceiling on commerce-native's
+  own architecture. See docs/experiments/PHASE6D_LOG.md for the full
+  hypothesis and result.
+
+git_sha: PENDING
+binary: crates/commerce-core/src/index/mod.rs (facet_counts_ordinal), crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs (benchmark)
+build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
+run_command: ./target/release/p6a_e00_wands_vs_native_eval dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+test_command: cargo test -p commerce-core --all-features
+
+dataset:
+  name: real WANDS catalog (42,994 products), identical file and 7
+    category_depth_1 checkpoints P6A-E00/P6B-E00/P6C-E00/P6C-E01 all used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native_scan: commerce_core::index::CatalogIndex::facet_counts_by_scan
+    (existing, Phase 5), re-run fresh in the same session for a genuine
+    same-session comparison
+  native_ordinal: commerce_core::index::CatalogIndex::facet_counts_ordinal
+    (new, this phase)
+  solr: Apache Solr 9.10.1, same wands_bench core P6A-E00/P6B-E00/P6C-E00
+    all used, re-queried live in the same session -- the exact same
+    Solr measurement is reused for both the scan and ordinal comparison
+    rows, so both native strategies are compared against one identical
+    Solr timing
+
+workload:
+  selection: color facet-count under category_depth_1 filter (7
+    checkpoints), same operation class P6A-E00/P6B-E00/P6C-E01 all used
+  repetitions: WARMUP=5, REPS=30 per operation (matching every prior
+    P6A/P6B/P6C measurement exactly); whole binary invoked 3 independent
+    times
+
+seed: "not applicable -- deterministic real-data queries, no RNG"
+
+raw_results: docs/research/artifacts/p6d_e00_ordinal_facet_run1/
+  - console_run1.log, console_run2.log, console_run3.log
+  - results_run1.csv, results_run2.csv, results_run3.csv
+
+analysis: printed directly by the Rust binary; see
+  docs/experiments/PHASE6D_LOG.md for the full hypothesis and result,
+  including medians computed across the 3 runs.
