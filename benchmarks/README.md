@@ -143,11 +143,21 @@ same as Phases 0–5:
   been the only baseline through Phase 8? Live re-check found
   Havenask/Elasticsearch/OpenSearch/Retailrocket/H&M/Amazon Reviews
   2023 all still blocked, but Maven Central is reachable — the first
-  raw-Apache-Lucene-direct baseline this project has ever run. Central
-  finding: Solr's own facet.field implementation frequently beats a
-  correct, direct Lucene scan (slower in 5 of 7 real checkpoints, up
-  to 3.3x-4.0x), falsifying the idea that Solr's wrapper overhead was
-  masking the native-vs-generic-engine gap; see `PHASE6C_DECISION.md`.
+  raw-Apache-Lucene-direct baseline this project has ever run. First-pass
+  finding (superseded by `p6c_e01_lucene_facet_module.yaml` below): a
+  naive, hand-rolled Lucene facet-scan loses to Solr's own facet.field
+  implementation in 5 of 7 real checkpoints (up to 3.3x-4.0x); see
+  `PHASE6C_DECISION.md`.
+- `p6c_e01_lucene_facet_module.yaml` — an adversarial self-check of
+  P6C-E00's own finding: was "Solr beats raw Lucene" actually true, or
+  only true of one naive facet-scan implementation? Re-measured with
+  Lucene's own dedicated `SortedSetDocValuesFacetCounts` module instead
+  of the hand-rolled scan. Result substantially reverses: Lucene's own
+  specialized mechanism beats Solr in 5 of 7 checkpoints (up to 3.0x),
+  trailing by a much smaller margin (1.11x-1.30x, not 3.3x-4.0x) in the
+  remaining 2 — sharpening the facet-crossover finding into a claim
+  about facet algorithms specifically, not generic-engine vs.
+  commerce-native faceting; see `PHASE6C_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

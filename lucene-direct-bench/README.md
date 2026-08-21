@@ -10,6 +10,15 @@ Lucene's own retrieval/faceting cost from Solr's HTTP/schema/facet-
 wrapper layer, using Maven Central (reachable in this environment, unlike
 every packaged distribution of Elasticsearch, OpenSearch, or Havenask).
 
+Facet counting is measured two ways: a hand-rolled, per-candidate
+DocValues scan (P6C-E00, `facetScan()`), and Lucene's own dedicated
+`lucene-facet` module (P6C-E01, `facetModuleCount()`, using
+`SortedSetDocValuesFacetField`/`SortedSetDocValuesFacetCounts`) — an
+adversarial self-check of P6C-E00's own finding that substantially
+revised it (Solr beats the naive scan, but loses to Lucene's own
+specialized module in most checkpoints). See `PHASE6C_LOG.md`'s
+P6C-E01 section for the full result.
+
 ## Why Java, not Rust
 
 Lucene is an embedded library with no HTTP interface (unlike Solr,

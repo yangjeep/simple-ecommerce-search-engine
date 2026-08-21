@@ -53,6 +53,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p8_e02_burst_amplified_solr_contention.json`
 - `p8_e03_combined_churn_solr_interaction.json`
 - `p6c_e00_lucene_direct.json`
+- `p6c_e01_lucene_facet_module.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

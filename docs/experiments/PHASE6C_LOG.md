@@ -200,3 +200,141 @@ correctness-gated only via the filter-count/range-count checks (no
 Solr-side timing for these specific operations was re-collected this
 session for a three-way table), though their absolute Lucene numbers
 are recorded in the raw CSV for future reference.
+
+## P6C-E01: adversarial check -- was P6C-E00's "raw Lucene loses to Solr" finding about Lucene itself, or about one naive implementation? (stated before implementation)
+
+**Self-directed adversarial review, before letting a surprising result
+stand.** P6C-E00's own hand-rolled facet-scan (iterate every matching
+doc, look up its `SortedDocValues` ordinal, tally in a `HashMap`) is
+*a* way to compute facet counts from raw Lucene, but it is not
+Lucene's OWN best-available mechanism for this exact task. Lucene ships
+a dedicated `lucene-facet` module with
+`SortedSetDocValuesFacetCounts` -- a specialized, purpose-built
+facet-counting implementation, analogous in spirit to Solr's own
+`facet.field` machinery, that P6C-E00 did not use. Concluding "Solr
+beats raw Lucene" from a comparison against a hand-rolled scan risks
+conflating "Solr beats a naive per-candidate scan" (unsurprising,
+consistent with this project's own native `facet_counts_by_scan`
+finding) with "Solr beats the best Lucene can do" (a much stronger,
+and, if true from a naive baseline alone, unsupported claim).
+
+**H (P6C-E01)**: Lucene's own `SortedSetDocValuesFacetCounts` module
+will show materially different -- specifically, faster and more
+competitive with Solr -- results than P6C-E00's hand-rolled scan, at
+the identical checkpoints and identical index. Falsifiable both ways:
+the specialized module could just as easily perform similarly to the
+naive scan, which would strengthen (not weaken) P6C-E00's original
+conclusion.
+
+**Design**: added `SortedSetDocValuesFacetField` entries for
+`product_class`/`color` at index time (requiring `FacetsConfig.build()`
+to rewrite them into indexable form), a single shared
+`DefaultSortedSetDocValuesReaderState` (both dimensions share Lucene's
+own default `"$facets"` indexed field), and
+`SortedSetDocValuesFacetCounts.getTopChildren()` for counting --
+Lucene's own documented, standard usage pattern for exactly this
+use case, not a custom implementation. Same correctness discipline as
+P6C-E00: the facet-sum-never-exceeds-candidates sanity check was
+re-applied to the module-based counts and passed in every run.
+
+**A note on reproducibility of this write-up itself**: an earlier
+attempt at this exact experiment, in a prior session, was lost before
+being committed (a container-lifecycle issue, not a data issue -- see
+the git history around this commit for the full account). This section
+reflects a genuine, fresh re-run of the experiment from scratch in a
+new environment instance, not a recycled write-up. The qualitative
+conclusion below matches what the lost attempt had also found, but the
+exact numbers here are freshly measured and are the only numbers this
+project actually has committed evidence for.
+
+**Correctness gate**: the same facet-sum-never-exceeds-candidates
+sanity check applied to the scan-based facets was re-applied to the
+module-based counts and passed for every checkpoint in every run (no
+`IllegalStateException` thrown); all 8/8 filter/range counts against
+the live Solr core matched exactly in all 3 fresh runs (24/24 total).
+
+## P6C-E01 result: CONFIRMED with real nuance -- the naive scan, not Lucene itself, is the main reason Solr wins, but the module is not uniformly faster either
+
+Raw data: `docs/research/artifacts/p6c_e01_lucene_facet_module_run1/`
+(3 full console logs and CSVs for the Lucene facet-module run, plus 3
+fresh same-session reruns of `p6a_e00_wands_vs_native_eval` for the
+native/Solr side of the three-way table -- all 6 runs executed back to
+back in this session against the same live Solr `wands_bench` core).
+
+**Lucene's own specialized facet module is faster than this
+experiment's own hand-rolled scan at 6 of 7 checkpoints, reproduced
+across all 3 runs** -- e.g. Furniture (16,039 candidates): scan median
+5.52ms vs. module median 2.05ms (2.7x faster); Décor & Pillows: scan
+4.25ms vs. module 1.65ms (2.6x faster); Outdoor: scan 1.91ms vs. module
+0.95ms (2.0x faster). **The one exception is the smallest, simplest
+checkpoint (Lighting, 2,072 candidates, the smallest real color-value
+cardinality of the 7): the module is 1.9x SLOWER than the scan there**
+(0.44ms vs. 0.23ms) -- consistent with the module's `FacetsCollector`
+setup carrying fixed overhead that a trivially small per-candidate scan
+can undercut, a genuine, disclosed exception rather than a uniform win
+papered over.
+
+**Updated three-way comparison (native / Solr / Lucene's own facet
+module), medians across 3 runs, color facet-scan under category
+filter**:
+
+| Checkpoint | Candidates | Native p50 (ms) | Solr p50 (ms) | Lucene facet-module p50 (ms) | Module vs. Solr |
+|---|---|---|---|---|---|
+| Rugs | 2,002 | 1.22 | 1.26 | 1.13 | 0.89x (1.1x faster) |
+| Storage & Organization | 2,175 | 1.55 | 1.33 | 0.83 | 0.62x (1.6x faster) |
+| Lighting | 2,072 | 1.31 | 1.33 | 0.44 | 0.33x (3.0x faster) |
+| Outdoor | 3,394 | 2.67 | 1.30 | 0.95 | 0.73x (1.4x faster) |
+| Décor & Pillows | 4,612 | 4.90 | 1.48 | 1.65 | 1.11x slower |
+| Home Improvement | 4,686 | 4.74 | 1.39 | 0.99 | 0.72x (1.4x faster) |
+| Furniture | 16,039 | 18.93 | 1.57 | 2.05 | 1.30x slower |
+
+**Using Lucene's own best-available facet-counting mechanism, it is
+FASTER than Solr in 5 of 7 real checkpoints** (up to 3.0x, at Lighting),
+**and slower in only 2 of 7 -- Décor & Pillows (1.11x) and Furniture
+(1.30x) -- both a much smaller margin than the naive scan's worst cases
+(P6C-E00's own 3.31x-3.99x at these same two checkpoints).**
+
+**This substantially revises P6C-E00's own headline conclusion.**
+Solr's facet implementation does not categorically outperform "raw
+Lucene" -- it outperforms a *naive per-candidate scan*, which both
+this experiment's own hand-rolled attempt and (by the same
+architectural pattern) commerce-native's own `facet_counts_by_scan`
+represent. When Lucene's own specialized, ordinal-based counting
+mechanism is used instead, the picture mostly reverses to favor Lucene,
+with Solr's own advantage persisting -- narrowed, not eliminated -- at
+the two largest, highest-color-cardinality checkpoints. That residual
+pattern (Solr still ahead specifically where candidate count and
+distinct-color-value count are both largest) is consistent with *some*
+real scale-dependent cost the module does not fully close, not with
+"Solr's advantage was entirely a naive-scan artifact."
+
+**This reframes this project's four-times-repeated facet-crossover
+finding (Phase 5, 6A, 6B, and P6C-E00 itself) with a materially more
+specific, more actionable mechanistic explanation than "Solr's
+algorithm beats any Lucene-based approach": the crossover is
+substantially -- though evidently not entirely -- a property of naive
+per-candidate facet-scanning specifically, not of generic-engine
+faceting versus commerce-native faceting in general.** A specialized,
+ordinal-based facet-counting approach -- the same class of technique
+both Solr's `facet.field` and Lucene's own
+`SortedSetDocValuesFacetCounts` module use -- is a genuine, concrete,
+previously-untested candidate fix for commerce-native's own facet
+crossover, not merely a hypothetical "Solr does something clever we
+can't access." This is the single highest-value newly-enabled question
+this experiment surfaces.
+
+**Named limitations**: only the `SortedSetDocValuesFacetCounts` variant
+was tested, not Lucene's alternative taxonomy-based faceting (which
+supports hierarchical facets and might perform differently); no
+profiling confirms *why* the module beats the scan at 6 of 7
+checkpoints or loses at the 7th (the working hypothesis -- per-segment
+ordinal counting avoiding a full per-document `HashMap` merge, traded
+against `FacetsCollector`'s own fixed setup cost -- is standard,
+documented Lucene facet-module behavior, not independently profiled
+here); the two checkpoints where the module still trails Solr (Décor &
+Pillows, Furniture) were not further investigated to determine whether
+Solr's own advantage there is itself closeable with additional tuning;
+whether commerce-native's own architecture could adopt an equivalent
+ordinal-based approach, and by how much it would close the native
+crossover, is untested -- a concrete implementation question, not yet
+an experiment.

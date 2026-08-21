@@ -1,0 +1,68 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+=== P6C-E00: raw Apache Lucene direct baseline (Issue #21 Phase 6C) ===
+catalog=dataset_cache/wands/catalog.jsonl solr_base_url=http://localhost:8983/solr/wands_bench
+loaded 42994 real WANDS products
+Aug 21, 2026 9:44:27 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+index built in 3040.0ms at /tmp/lucene-direct-wands12886574114761381595
+
+--- correctness + timing per checkpoint ---
+  filter_only                      Rugs                 candidates=2002     p50=0.1497ms mean=0.1566ms solr_count=2002 match=true
+  product_class_facet_under_category Rugs                 candidates=2002     p50=2.1710ms mean=2.2383ms solr_count=n/a match=n/a
+  color_facet_under_category       Rugs                 candidates=2002     p50=1.6152ms mean=1.6183ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Rugs                 candidates=2002     p50=1.2196ms mean=1.2109ms solr_count=n/a match=n/a
+  color_facet_module_under_category Rugs                 candidates=2002     p50=1.1253ms mean=1.2182ms solr_count=n/a match=n/a
+  sort_title_asc                   Rugs                 candidates=2002     p50=1.3018ms mean=1.3113ms solr_count=n/a match=n/a
+  sort_rating_desc                 Rugs                 candidates=2002     p50=0.3412ms mean=0.4599ms solr_count=n/a match=n/a
+  deep_pagination                  Rugs                 candidates=2002     p50=1.7066ms mean=1.8672ms solr_count=n/a match=n/a
+  filter_only                      Storage & Organization candidates=2175     p50=0.0363ms mean=0.0449ms solr_count=2175 match=true
+  product_class_facet_under_category Storage & Organization candidates=2175     p50=2.8925ms mean=3.0259ms solr_count=n/a match=n/a
+  color_facet_under_category       Storage & Organization candidates=2175     p50=0.9976ms mean=1.0209ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Storage & Organization candidates=2175     p50=1.0123ms mean=1.0470ms solr_count=n/a match=n/a
+  color_facet_module_under_category Storage & Organization candidates=2175     p50=0.8309ms mean=0.8338ms solr_count=n/a match=n/a
+  sort_title_asc                   Storage & Organization candidates=2175     p50=0.8299ms mean=0.8264ms solr_count=n/a match=n/a
+  sort_rating_desc                 Storage & Organization candidates=2175     p50=0.1574ms mean=0.1624ms solr_count=n/a match=n/a
+  deep_pagination                  Storage & Organization candidates=2175     p50=1.1794ms mean=1.3690ms solr_count=n/a match=n/a
+  filter_only                      Lighting             candidates=2072     p50=0.0198ms mean=0.0291ms solr_count=2072 match=true
+  product_class_facet_under_category Lighting             candidates=2072     p50=2.0923ms mean=2.1723ms solr_count=n/a match=n/a
+  color_facet_under_category       Lighting             candidates=2072     p50=0.2204ms mean=0.2368ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Lighting             candidates=2072     p50=0.3985ms mean=0.4322ms solr_count=n/a match=n/a
+  color_facet_module_under_category Lighting             candidates=2072     p50=0.4392ms mean=0.4465ms solr_count=n/a match=n/a
+  sort_title_asc                   Lighting             candidates=2072     p50=0.6603ms mean=0.6710ms solr_count=n/a match=n/a
+  sort_rating_desc                 Lighting             candidates=2072     p50=0.1141ms mean=0.1317ms solr_count=n/a match=n/a
+  deep_pagination                  Lighting             candidates=2072     p50=0.9060ms mean=0.9367ms solr_count=n/a match=n/a
+  filter_only                      Outdoor              candidates=3394     p50=0.0145ms mean=0.0176ms solr_count=3394 match=true
+  product_class_facet_under_category Outdoor              candidates=3394     p50=3.0729ms mean=3.1730ms solr_count=n/a match=n/a
+  color_facet_under_category       Outdoor              candidates=3394     p50=1.9092ms mean=1.9454ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Outdoor              candidates=3394     p50=0.6083ms mean=0.6428ms solr_count=n/a match=n/a
+  color_facet_module_under_category Outdoor              candidates=3394     p50=0.8778ms mean=0.8993ms solr_count=n/a match=n/a
+  sort_title_asc                   Outdoor              candidates=3394     p50=0.7166ms mean=0.7197ms solr_count=n/a match=n/a
+  sort_rating_desc                 Outdoor              candidates=3394     p50=0.1634ms mean=0.1814ms solr_count=n/a match=n/a
+  deep_pagination                  Outdoor              candidates=3394     p50=1.2867ms mean=1.3044ms solr_count=n/a match=n/a
+  filter_only                      D?cor & Pillows      candidates=4612     p50=0.0143ms mean=0.0189ms solr_count=4612 match=true
+  product_class_facet_under_category D?cor & Pillows      candidates=4612     p50=3.4550ms mean=3.5270ms solr_count=n/a match=n/a
+  color_facet_under_category       D?cor & Pillows      candidates=4612     p50=4.2528ms mean=4.3721ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category D?cor & Pillows      candidates=4612     p50=0.6470ms mean=0.6632ms solr_count=n/a match=n/a
+  color_facet_module_under_category D?cor & Pillows      candidates=4612     p50=1.6503ms mean=1.7606ms solr_count=n/a match=n/a
+  sort_title_asc                   D?cor & Pillows      candidates=4612     p50=0.8432ms mean=0.8437ms solr_count=n/a match=n/a
+  sort_rating_desc                 D?cor & Pillows      candidates=4612     p50=0.1844ms mean=0.1925ms solr_count=n/a match=n/a
+  deep_pagination                  D?cor & Pillows      candidates=4612     p50=1.3095ms mean=1.3222ms solr_count=n/a match=n/a
+  filter_only                      Home Improvement     candidates=4686     p50=0.0149ms mean=0.0214ms solr_count=4686 match=true
+  product_class_facet_under_category Home Improvement     candidates=4686     p50=3.0566ms mean=3.1096ms solr_count=n/a match=n/a
+  color_facet_under_category       Home Improvement     candidates=4686     p50=1.9175ms mean=1.9208ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Home Improvement     candidates=4686     p50=0.6707ms mean=0.6929ms solr_count=n/a match=n/a
+  color_facet_module_under_category Home Improvement     candidates=4686     p50=0.9941ms mean=1.0431ms solr_count=n/a match=n/a
+  sort_title_asc                   Home Improvement     candidates=4686     p50=0.7076ms mean=0.7152ms solr_count=n/a match=n/a
+  sort_rating_desc                 Home Improvement     candidates=4686     p50=0.2001ms mean=0.2133ms solr_count=n/a match=n/a
+  deep_pagination                  Home Improvement     candidates=4686     p50=1.4429ms mean=1.4266ms solr_count=n/a match=n/a
+  filter_only                      Furniture            candidates=16039    p50=0.0119ms mean=0.0131ms solr_count=16039 match=true
+  product_class_facet_under_category Furniture            candidates=16039    p50=19.5505ms mean=20.3879ms solr_count=n/a match=n/a
+  color_facet_under_category       Furniture            candidates=16039    p50=5.5175ms mean=5.5903ms solr_count=n/a match=n/a
+  product_class_facet_module_under_category Furniture            candidates=16039    p50=1.4660ms mean=1.5003ms solr_count=n/a match=n/a
+  color_facet_module_under_category Furniture            candidates=16039    p50=2.0090ms mean=2.0210ms solr_count=n/a match=n/a
+  sort_title_asc                   Furniture            candidates=16039    p50=1.0657ms mean=1.0952ms solr_count=n/a match=n/a
+  sort_rating_desc                 Furniture            candidates=16039    p50=0.4746ms mean=0.4796ms solr_count=n/a match=n/a
+  deep_pagination                  Furniture            candidates=16039    p50=3.3959ms mean=3.6743ms solr_count=n/a match=n/a
+  numeric_range_rating             whole_catalog        candidates=31967    p50=0.1503ms mean=0.1644ms solr_count=31967 match=true
+
+artifacts written to docs/research/artifacts/p6c_e00_lucene_direct_run1

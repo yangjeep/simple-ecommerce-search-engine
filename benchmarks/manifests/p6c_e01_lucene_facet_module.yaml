@@ -1,0 +1,81 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6C-E01
+phase: 6C
+issue: 21
+decision_document: PHASE6C_DECISION.md
+claim: >
+  A self-directed adversarial check of P6C-E00's own "raw Lucene loses
+  to Solr" facet finding: P6C-E00 measured only a hand-rolled,
+  per-candidate DocValues scan, not Lucene's own dedicated lucene-facet
+  module (SortedSetDocValuesFacetCounts) -- a specialized, purpose-built
+  facet-counting mechanism analogous in spirit to Solr's own
+  facet.field. Re-measured with the module instead of the scan, at the
+  identical 7 real category_depth_1 WANDS checkpoints, with a fresh
+  same-session native/Solr rerun (avoiding the cross-session confound
+  PHASE6B_DECISION.md flagged) and the same correctness gate (8/8
+  filter/range counts against the live Solr wands_bench core, all 3
+  runs). Result substantially reverses P6C-E00's own headline: Lucene's
+  own facet module is FASTER than Solr in 5 of 7 checkpoints (up to
+  3.0x), and slower in only 2 of 7 -- by a much smaller margin
+  (1.11x-1.30x) than the naive scan's worst cases (3.31x-3.99x at these
+  same two checkpoints). The module also beats the P6C-E00 scan
+  directly at 6 of 7 checkpoints, with one disclosed exception
+  (Lighting, the smallest checkpoint, where the module is 1.9x slower
+  than the scan -- consistent with FacetsCollector's own fixed setup
+  cost). This sharpens the facet-crossover finding this project has
+  measured four times (Phase 5, 6A, 6B, P6C) into a claim about facet
+  algorithms specifically (naive per-candidate scanning vs. specialized
+  ordinal-based counting), not generic-engine vs. commerce-native
+  faceting in general, and surfaces a concrete, previously-untested
+  candidate fix for commerce-native's own crossover: an equivalent
+  ordinal-based counting approach. See docs/experiments/PHASE6C_LOG.md
+  for the full hypothesis and result.
+
+git_sha: PENDING
+binary: lucene-direct-bench/src/main/java/org/commercenative/lucenedirect/WandsLuceneBench.java
+build_command: cd lucene-direct-bench && mvn -q package
+run_command: java -jar lucene-direct-bench/target/lucene-direct-bench-jar-with-dependencies.jar dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+comparison_run_command: cargo run --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval -- dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+
+dataset:
+  name: real WANDS catalog (42,994 products), identical file and 7
+    category_depth_1 checkpoints P6A-E00/P6B-E00/P6C-E00 all used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  lucene_facet_module: Apache Lucene 9.11.1 lucene-facet module
+    (SortedSetDocValuesFacetField / DefaultSortedSetDocValuesReaderState
+    / SortedSetDocValuesFacetCounts), via Maven Central, embedded Java
+    harness, NIOFSDirectory (same build-tooling choice as P6C-E00, see
+    PHASE6C_LOG.md)
+  solr: Apache Solr 9.10.1, same wands_bench core P6A-E00/P6B-E00/P6C-E00
+    all used, re-queried live in the same session for the 3-way
+    comparison
+  native: commerce_core::index::CatalogIndex, re-run fresh in the same
+    session (cargo run p6a_e00_wands_vs_native_eval) to avoid the
+    cross-session Solr-JVM confound PHASE6B_DECISION.md already flagged
+
+workload:
+  selection: color facet-module-count under category_depth_1 filter (7
+    checkpoints), plus product_class facet-module-count under the same
+    filter (measured but not tabulated in the 3-way table, same
+    pattern); same filter-only, sort, deep-pagination, and numeric-range
+    operations from P6C-E00 re-measured in the same 3 runs
+  repetitions: WARMUP=5, REPS=30 per operation (matching p6a_e00's own
+    convention exactly); whole binary invoked 3 independent times, back
+    to back with 3 independent native/Solr reruns
+
+seed: "not applicable -- deterministic real-data queries, no RNG"
+
+raw_results: docs/research/artifacts/p6c_e01_lucene_facet_module_run1/
+  - console_run1.log, console_run2.log, console_run3.log (Lucene bench)
+  - results_run1.csv, results_run2.csv, results_run3.csv (Lucene bench)
+  - native_solr_rerun1_console.log, native_solr_rerun2_console.log,
+    native_solr_rerun3_console.log
+  - native_solr_results_run1.csv, native_solr_results_run2.csv,
+    native_solr_results_run3.csv
+
+analysis: printed directly by the Java harness and the Rust binary; see
+  docs/experiments/PHASE6C_LOG.md for the full hypothesis and result,
+  including medians computed across the 3 runs.

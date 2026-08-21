@@ -2,6 +2,14 @@ package org.commercenative.lucenedirect;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.*;
+import org.apache.lucene.facet.FacetResult;
+import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
+import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
@@ -36,6 +44,13 @@ import java.util.*;
  * the real, currently-running Solr wands_bench core (same catalog, same
  * fields) via a plain HTTP GET before any timing claim is trusted --
  * matching Phase 6A's own "correctness before speed" discipline.
+ *
+ * P6C-E01 (adversarial self-check of P6C-E00's own "raw Lucene loses to
+ * Solr" facet finding): also measures facet counting via Lucene's own
+ * dedicated lucene-facet module (SortedSetDocValuesFacetCounts), a
+ * specialized ordinal-based mechanism distinct from the hand-rolled
+ * per-candidate DocValues scan in facetScan() below -- see
+ * PHASE6C_LOG.md for the hypothesis this tests.
  *
  * Usage: java -jar lucene-direct-bench.jar <catalog.jsonl> [solr_base_url]
  */
@@ -78,6 +93,7 @@ public class WandsLuceneBench {
         try (Directory dir = new NIOFSDirectory(indexDir);
              IndexReader reader = DirectoryReader.open(dir)) {
             IndexSearcher searcher = new IndexSearcher(reader);
+            SortedSetDocValuesReaderState facetModuleState = new DefaultSortedSetDocValuesReaderState(reader);
 
             StringBuilder csv = new StringBuilder();
             csv.append("operation,checkpoint,candidates,lucene_p50_ms,lucene_mean_ms,solr_count,count_match\n");
@@ -116,6 +132,27 @@ public class WandsLuceneBench {
                 }
                 double[] colorFacetSamples = timeReps(() -> { facetScan(searcher, reader, filter, "color_dv"); });
                 report(csv, "color_facet_under_category", checkpoint, candidates, colorFacetSamples, -1);
+
+                // P6C-E01: same two facet dimensions, counted via Lucene's own
+                // lucene-facet module instead of the hand-rolled scan above.
+                // Same sanity check: bucket-sum must never exceed candidates.
+                Map<String, Integer> productClassModule = facetModuleCount(searcher, facetModuleState, filter, "product_class_facet");
+                long pcModuleSum = productClassModule.values().stream().mapToLong(Integer::longValue).sum();
+                if (pcModuleSum > candidates) {
+                    throw new IllegalStateException("product_class facet-module sum " + pcModuleSum
+                        + " exceeds candidate count " + candidates + " for " + checkpoint + " -- real bug");
+                }
+                double[] pcModuleSamples = timeReps(() -> { facetModuleCount(searcher, facetModuleState, filter, "product_class_facet"); });
+                report(csv, "product_class_facet_module_under_category", checkpoint, candidates, pcModuleSamples, -1);
+
+                Map<String, Integer> colorModule = facetModuleCount(searcher, facetModuleState, filter, "color_facet");
+                long colorModuleSum = colorModule.values().stream().mapToLong(Integer::longValue).sum();
+                if (colorModuleSum > candidates) {
+                    throw new IllegalStateException("color facet-module sum " + colorModuleSum
+                        + " exceeds candidate count " + candidates + " for " + checkpoint + " -- real bug");
+                }
+                double[] colorModuleSamples = timeReps(() -> { facetModuleCount(searcher, facetModuleState, filter, "color_facet"); });
+                report(csv, "color_facet_module_under_category", checkpoint, candidates, colorModuleSamples, -1);
 
                 // 4. sort by title_sort asc, top PAGE_SIZE.
                 Sort titleSort = new Sort(new SortField("title_sort", SortField.Type.STRING));
@@ -227,7 +264,31 @@ public class WandsLuceneBench {
         return counts;
     }
 
+    /**
+     * P6C-E01: facet counting via Lucene's own dedicated lucene-facet
+     * module (SortedSetDocValuesFacetCounts) instead of the hand-rolled
+     * per-candidate scan in facetScan() above. All dimensions share one
+     * indexed field (FacetsConfig's default "$facets"), so one reader
+     * state serves every dimension; the dimension itself is selected via
+     * getTopChildren's own dimension-name argument.
+     */
+    static Map<String, Integer> facetModuleCount(IndexSearcher searcher, SortedSetDocValuesReaderState state,
+                                                  Query filter, String dimension) throws IOException {
+        FacetsCollector fc = new FacetsCollector();
+        FacetsCollector.search(searcher, filter, 10, fc);
+        SortedSetDocValuesFacetCounts facetCounts = new SortedSetDocValuesFacetCounts(state, fc);
+        Map<String, Integer> counts = new HashMap<>();
+        FacetResult result = facetCounts.getTopChildren(10_000, dimension);
+        if (result != null) {
+            for (LabelAndValue lv : result.labelValues) {
+                counts.put(lv.label, lv.value.intValue());
+            }
+        }
+        return counts;
+    }
+
     static void buildIndex(Path indexDir, List<Product> products) throws IOException {
+        FacetsConfig facetsConfig = new FacetsConfig();
         try (Directory dir = new NIOFSDirectory(indexDir)) {
             IndexWriterConfig cfg = new IndexWriterConfig(new StandardAnalyzer());
             cfg.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
@@ -247,10 +308,12 @@ public class WandsLuceneBench {
                     if (p.productClass() != null && !p.productClass().isEmpty()) {
                         doc.add(new StringField("product_class", p.productClass(), Field.Store.NO));
                         doc.add(new SortedDocValuesField("product_class_dv", new BytesRef(p.productClass())));
+                        doc.add(new SortedSetDocValuesFacetField("product_class_facet", p.productClass()));
                     }
                     if (p.color() != null && !p.color().isEmpty()) {
                         doc.add(new StringField("color", p.color(), Field.Store.NO));
                         doc.add(new SortedDocValuesField("color_dv", new BytesRef(p.color())));
+                        doc.add(new SortedSetDocValuesFacetField("color_facet", p.color()));
                     }
                     if (p.style() != null && !p.style().isEmpty()) {
                         doc.add(new StringField("style", p.style(), Field.Store.NO));
@@ -261,7 +324,7 @@ public class WandsLuceneBench {
                         doc.add(new NumericDocValuesField("average_rating_dv",
                             Double.doubleToRawLongBits(p.averageRating())));
                     }
-                    writer.addDocument(doc);
+                    writer.addDocument(facetsConfig.build(doc));
                 }
                 writer.commit();
             }

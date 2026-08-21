@@ -204,21 +204,32 @@ same real WANDS catalog Phase 6A/6B already used, measured the same
 operation classes at the same real category checkpoints, and
 cross-checked every filter and range count against the same
 still-running Solr instance before trusting any timing — all counts
-matched exactly, in three repeated runs. The result reverses the
-question it was built to answer: for faceting, the one operation
-measured as a genuine same-session three-way comparison, raw Lucene
-direct was *slower* than Solr's own wrapped facet API in five of seven
-real checkpoints, by as much as three-to-four-fold. Stripping away
-Solr's HTTP and schema layer did not reveal a faster engine underneath
-— it revealed that Solr's own faceting implementation is doing
-genuinely better algorithmic work than a straightforward, correct scan
-against the identical raw index. This sharpens, rather than
-undermines, the facet-crossover finding this project has now measured
-four separate times: the crossover was never evidence that Solr's
-serving overhead was being unfairly counted against commerce-native: it
-is evidence about facet algorithms specifically, and a naive
-per-candidate scan — this project's own included — loses to a mature,
-specialized one past a real complexity threshold.
+matched exactly, in three repeated runs. The first pass (P6C-E00)
+reversed the question it was built to answer: for faceting, raw Lucene
+direct measured via a hand-rolled, per-candidate scan was *slower* than
+Solr's own wrapped facet API in five of seven real checkpoints, by as
+much as three-to-four-fold. This project's own adversarial-review
+discipline did not let that surprising result stand: a self-directed
+follow-up (P6C-E01) asked whether the finding was about Lucene itself
+or about one naive implementation, and re-measured using Lucene's own
+dedicated, purpose-built facet module
+(`SortedSetDocValuesFacetCounts`) instead of the hand-rolled scan. The
+result substantially reverses: Lucene's own specialized mechanism beats
+Solr in five of seven checkpoints (up to three-fold), trailing by a
+much smaller margin (roughly 1.1x-1.3x, not three-to-four-fold) in the
+remaining two. Stripping away Solr's HTTP and schema layer did not
+reveal a uniformly faster or slower engine underneath — it revealed
+that the earlier "Solr beats raw Lucene" finding was really "Solr beats
+a naive per-candidate scan," and that a specialized, ordinal-based
+counting mechanism closes most (not all) of that gap. This sharpens,
+rather than undermines, the facet-crossover finding this project has
+now measured four separate times: the crossover is substantially,
+though evidently not entirely, a property of naive per-candidate
+facet-scanning specifically — this project's own `facet_counts_by_scan`
+included — not of generic-engine faceting versus commerce-native
+faceting in general, and it surfaces a genuine, previously-untested
+candidate fix: whether commerce-native's own architecture could adopt
+an equivalent ordinal-based counting approach.
 
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
