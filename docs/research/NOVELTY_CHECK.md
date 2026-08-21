@@ -6,71 +6,103 @@ This is a living prior-art / novelty-risk document. It is intentionally conserva
 
 Current conclusion: **most individual ingredients are known; the strongest potential novelty is in the systems composition, target workload, and evaluation objective.**
 
-The paper should therefore avoid claims such as "we introduce ecommerce query parsing", "we introduce semantic query routing", "we introduce specialized commerce indexes", or "we introduce implicit attribute inference".
+The paper should avoid claims such as "we introduce ecommerce query parsing", "we introduce semantic query routing", "we introduce specialized commerce indexes", or "we introduce implicit attribute inference".
+
+## Primary benchmark boundary: execution, not answer reuse
+
+The core performance comparison is between two systems that both execute the current request from their indexes:
+
+```text
+Solr / Elasticsearch:
+request -> index structures -> execute -> current result
+
+Commerce-native:
+request -> semantic admission -> commerce-native index structures -> execute -> current result
+```
+
+The primary comparison should **not** use query-result / response caching on either side.
+
+Index-resident acceleration is allowed and required for fairness. This includes, for example:
+
+- Solr filter/query execution paths, cached DocSets/bitsets where they are part of normal index execution, DocValues, facet optimizations, index sorting, early termination, and other native Lucene/Solr machinery;
+- commerce-native bitmaps, typed columns, compiled category/collection membership, semantic FIB structures, precomputed index metadata, and other index-resident physical structures.
+
+The boundary is:
+
+> **Index-resident acceleration is part of the execution substrate; answer memoization is outside the primary comparison.**
+
+A result cache can be placed in front of either system and is therefore orthogonal to the main research question. Cache literature such as ROSE is still useful related work because it also studies how to make common ecommerce requests cheaper, but it solves a different problem: reuse across requests rather than cheaper execution of each request.
+
+The paper should state this distinction directly rather than treating caching as a competing baseline:
+
+> Prior cache-based systems reduce cost by reusing work across requests. We study the cost of executing each request against current indexed commerce state. Result caching is orthogonal and can be composed with either serving architecture.
 
 ## Novelty matrix
 
 | Project idea | Closest known prior art | Novelty status | Implication |
 |---|---|---|---|
-| Typed ecommerce query understanding / extracting brand, category, attributes | Extensive ecommerce query parsing and attribute extraction literature; catalog-knowledge-graph methods | **Not novel** | Treat as prerequisite / mechanism only |
-| Implicit semantic fixup such as `iphone 8 -> brand=apple` or `air force 1 -> brand=nike` | Amazon Query Attribute Recommendation (RecSys 2022) and Implicit Query Parsing for Product Search (SIGIR 2023) infer implicit attributes from attribute relations + behavior | **Not novel as a concept** | #16 must be framed as a coverage mechanism inside the larger system, not a standalone contribution |
-| Offline model/LLM knowledge used to improve online retrieval without expensive model calls on every query | Query rewriting, distillation, synthetic-data pipelines, attribute-recommendation systems | **Weak standalone novelty** | Any claim must focus on compiled deterministic admission/route behavior and measured serving economics |
-| Query routing / selecting a specialized engine | Web query routing / federated search since at least the 1990s/2000s | **Not novel** | "Routing" alone is not contribution |
-| Selective search: search only a subset of corpus/shards | Large selective-search literature; MICO; distributed selective search | **Not novel** | Need to distinguish specialized physical execution from ordinary shard pruning |
-| Ecommerce-specific selective execution based on category intent | Amazon `Light Feed-Forward Networks for Shard Selection in Large-scale Product Search` (SIGIR eCom 2020): category-intent prediction, selective shard search, double-digit cost reduction without customer-experience degradation | **Very close prior art** | This is a major novelty risk. Our paper must explain why routing to a cheaper physical execution plane with transparent generic fallback and a coverage/relevance/multiplier frontier is a different problem than category-shard selection |
-| Use structure to reduce semantic product-search search space | Amazon `Embracing Structure in Data for Billion-Scale Semantic Product Search` partitions a query-product interaction graph and searches relevant partitions | **Not novel broadly** | "Structure reduces search work" is background, not contribution |
-| Multi-stage retrieval / cascades / early exits | Mature IR literature and production systems | **Not novel** | Our value must be in the admission contract, physical path, and workload economics |
-| Cache frequent/easy product-search queries instead of running expensive pipeline | Amazon ROSE (WWW 2022) explicitly covers most traffic with near-constant-time cache lookup and avoids expensive models | **Close conceptual neighbor, but materially different execution model** | Median/tail economics alone are not novel. We must prove that our gains come from executing each real application request through a cheaper commerce-native substrate, not from memoizing prior answers |
-| Commerce-specific search engine built from scratch because ecommerce differs from web | eBay Cassini architecture (SIGIR eCom 2017) | **Not novel** | Do not claim that ecommerce warrants a custom engine as novel |
-| Multiple specialized physical index types for commerce search | Havenask / IndexLib; KV/KKV, inverted, attribute/bitmap, realtime update machinery | **Not novel** | Havenask is the anchor and wheel-reinvention check |
-| Realistic end-to-end ecommerce search benchmark driven by production data | Alibaba eCommerceSearchBench / AIBench ecommerce-search benchmark | **Not novel** | Incorporate as standard external validation rather than inventing another synthetic benchmark in isolation |
-| Browse/category/PLP as a first-class physical workload | Common in production search systems, but relatively underrepresented as a paper-level specialization target compared with query search | **Potentially differentiating, not yet established novel** | Stronger if production logs prove browse-heavy North-American merchant traffic differs materially from marketplace benchmark distributions |
-| Safe asymmetric architecture: specialized fast path, immediate generic fallback on abstention | Related to cascades, selective search, fallback, QPP, federated routing | **Composition may be novel; primitive is not** | Need a crisp formal distinction and related-work section |
-| Optimize a `coverage × relevance safety × physical multiplier` frontier, with fallback tax near zero | No directly matching ecommerce systems paper found in current review | **Promising novelty candidate** | Likely central paper contribution if literature review continues to hold |
-| Extend an ~80–100x physical advantage from minority traffic toward P50 while keeping generic tail unchanged | Related to cache/early-exit/cascade systems, but no directly matching ecommerce semantic-offload formulation found | **Promising novelty candidate** | Requires strong empirical result; wording must acknowledge neighboring cache/cascade work |
-| Search target P50 + browse target P95 based on real target-market request distribution | No directly matching formulation found; depends on production data | **Potential novel workload/system framing** | Becomes strong only if production-log characterization supports it |
-| Low-cost commerce-native multi-tenancy as the deployment objective, rather than Alibaba-scale distributed search | Multi-tenant search exists broadly; no directly matching commerce-semantic isolation/cost study found in current review | **Potential systems novelty** | Requires actual isolation, noisy-neighbor, memory, and cost-per-tenant experiments |
-| Separate slow semantic state from high-churn inventory/price/availability overlays | Generic realtime/partial update systems exist; Havenask has mature realtime machinery | **Likely not novel alone** | Could contribute only if measured commerce-specific layout materially changes update/search coexistence or tenant economics |
+| Typed ecommerce query understanding / extracting brand, category, attributes | Extensive ecommerce query parsing and attribute extraction literature | **Not novel** | Treat as prerequisite / mechanism only |
+| Implicit semantic fixup such as `air force 1 -> brand=nike` | Amazon Query Attribute Recommendation (RecSys 2022); Implicit Query Parsing for Product Search (SIGIR 2023) | **Not novel as a concept** | #16 is a coverage mechanism inside the larger system, not a standalone contribution |
+| Offline model/LLM knowledge compiled into online retrieval state | Query rewriting, distillation, attribute-recommendation and knowledge-graph systems | **Weak standalone novelty** | Contribution must come from admission + serving economics, not from using an LLM offline |
+| Query routing / selecting shards or engines | Federated search, selective search, query routing literature | **Not novel** | Routing language is architectural vocabulary only |
+| Ecommerce-specific category-intent shard selection | Amazon `Light Feed-Forward Networks for Shard Selection in Large-scale Product Search` (SIGIR eCom 2020) | **Very close prior art** | Mandatory related-work comparison and ablation target |
+| Use structure to reduce retrieval search space | Selective search and structured semantic-search literature | **Not novel broadly** | Background, not contribution |
+| Multi-stage retrieval / cascades / early exits | Mature IR literature | **Not novel** | Need to distinguish correctness-aware admission to a different physical path |
+| Cache frequent/easy product-search queries | Amazon ROSE and related cache systems | **Orthogonal prior art** | Discuss as reuse-across-requests; do not make it the primary comparator |
+| Commerce-specific search engine because ecommerce differs from web search | eBay Cassini and other production systems | **Not novel** | Do not claim vertical search itself as new |
+| Multiple specialized physical index types | Havenask / IndexLib; KV/KKV, inverted, bitmap/attribute, realtime machinery | **Not novel** | Havenask is the physical-performance anchor |
+| End-to-end ecommerce benchmark from production-derived data | Alibaba eCommerceSearchBench / AIBench | **Not novel** | Incorporate as external standard validation |
+| Browse/category/PLP as a first-class optimization target | Common in production systems, less common as the central research target | **Potentially differentiating** | Strong only if production logs establish the target-market traffic distribution and native execution survives strong Solr/Havenask baselines |
+| Safe asymmetric architecture: specialized fast path, immediate mature fallback on abstention | Related to cascades, selective search, QPP, federated routing | **Composition may be novel; primitive is not** | Requires crisp distinction and empirical evidence |
+| `coverage × relevance safety × physical multiplier × fallback tax` frontier | No directly matching ecommerce systems formulation found in current review | **Promising novelty candidate** | Likely central paper contribution if deeper review continues to hold |
+| Extend an ~80–100x physical execution advantage toward search P50 | Related to selective processing/cascades, but no directly matching ecommerce formulation found | **Promising novelty candidate** | Requires strong result and explicit prior-art positioning |
+| Search target P50 + browse target P95 based on target-market request distribution | No directly matching formulation found | **Potential workload/system novelty** | Depends on production-log validation |
+| Low-cost commerce-native multi-tenancy | Multi-tenant search exists broadly | **Potential systems novelty** | Needs actual isolation/noisy-neighbor/cost-per-tenant experiments |
+| Separate slow semantic state from high-churn operational state | Generic realtime/partial update systems exist; Havenask has mature realtime machinery | **Likely not novel alone** | Contributes only if commerce-specific layout changes update/search coexistence or tenant economics materially |
 
 ## Closest prior work that must be discussed explicitly
 
 ### 1. Amazon category-intent shard selection (SIGIR eCom 2020)
 
-This is the closest prior work to the semantic-offload story found so far.
+Amazon's work predicts product-category intent and searches only relevant category shards, reducing infrastructure cost while preserving customer experience.
 
-It observes that ecommerce product shards correspond to categories and that queries imply category intent. A lightweight model predicts relevant shards, so only those shards are searched. The system is evaluated in terms of infrastructure cost and relevance/customer-experience impact and reports double-digit cost reduction without customer-experience degradation.
-
-Why this is close:
+The similarity is real:
 
 ```text
 commerce semantics
-  -> lightweight routing decision
+  -> lightweight decision
   -> execute less retrieval work
   -> preserve quality
   -> reduce serving cost
 ```
 
-How our research must differ if it is to be novel:
+The distinction that must survive full-paper review is:
 
 ```text
-Amazon shard selection:
+Category-shard selection:
 query -> select subset of category shards -> run the normal retrieval engine there
 
-our hypothesis:
+Our hypothesis:
 query -> correctness-aware semantic admission
       -> execute a materially different commerce-native physical plan
       -> otherwise immediately execute the unchanged mature fallback
 ```
 
-The primary measured object is also different: not shard-recall/cost alone, but the **safe-offload frontier** under explicit relevance budgets, fallback tax, per-hit physical multiplier, overlap between mechanisms, and the point where the multiplier reaches median traffic.
+The paper should directly compare these ideas with an ablation such as:
 
-This distinction must survive a full-paper reading, not just abstract comparison.
+```text
+category/shard pruning + Solr
+vs
+commerce-native physical execution + fallback
+```
+
+If ordinary shard/category pruning captures the same benefit, the novelty claim must narrow.
 
 ### 2. Amazon Query Attribute Recommendation / Implicit Query Parsing
 
-Amazon has already published systems that infer implicit attributes not literally present in the query, using query parsing, intent classification, attribute-relation graphs, behavior data, and catalog knowledge.
+Amazon has already published systems that infer implicit attributes not literally present in the query using catalog structure, knowledge graphs, and customer behavior.
 
-Therefore examples like:
+Therefore mappings conceptually like:
 
 ```text
 iphone 8 -> brand=apple
@@ -79,163 +111,136 @@ iphone 8 -> brand=apple
 
 are established prior art.
 
-Our learned semantic implication issue (#16) is only publishable as a **mechanism contributing to safe offload coverage**, not as the paper's core novelty.
+Our learned semantic implication work (#16) is a mechanism for increasing **safe native coverage**. Its research value is measured by whether inferred structure enables a cheaper, correctness-safe physical execution path, not by the inference mechanism alone.
 
-### 3. Selective search / federated query routing
+### 3. Selective search / federated query routing / cascades
 
-Routing queries to selected collections, shards, or specialized engines is decades old. Modern selective-search systems learn partitions and route queries to a subset to reduce latency/computation while maintaining effectiveness.
+Selecting collections, shards, or processing paths is a mature research area. These systems generally answer variants of:
 
-Therefore terms such as "semantic router", "forwarding plane", and "query routing" are useful architectural vocabulary but cannot themselves carry novelty.
+> Where, or how deeply, should the ordinary retrieval pipeline run?
 
-### 4. ROSE / frequent-query caches
+Our intended distinction is:
 
-ROSE is important because it already makes a distributional systems argument: serving all product-search traffic through expensive models is unnecessary; much traffic can be covered by near-constant-time cache behavior, with long-tail handling remaining elsewhere.
+> Is the request semantically constrained enough that a **different physical execution regime** is sufficient, allowing the generic retrieval engine to be skipped entirely for that request?
 
-This is conceptually close to "make the median cheap while leaving hard tail expensive", but the distinction is deeper than simply saying that our path is "not a cache".
+This distinction must be formalized through the admission contract and validated by ablation, not asserted by terminology.
 
-ROSE's core economic win is **memoization**: a repeated/head query can avoid most downstream work because a prior result (or a representation close to the final result) is reused. That means the cheapest request is one whose answer has already effectively been computed.
+### 4. Cache-based head-query acceleration (e.g. ROSE)
 
-Our target serving model is different:
+Cache-based product-search systems are relevant background because they also reduce the cost of common/head requests. However, they optimize **reuse across requests**.
 
-```text
-hosted application request
-  -> admission / semantic route lookup
-  -> execute the request against current commerce state
-  -> return current result
-```
+Our primary performance question is about **execution cost per real request** with answer caching excluded from both sides.
 
-Every admitted request remains a **real execution request** with real CPU/memory/index work. The gain must come from the fact that commerce-native semantics make that execution substantially cheaper than the generic engine, not because the system reuses a previously computed answer from Redis/result cache.
-
-This distinction matters especially for hosted commerce applications because every incoming request is still billable serving work even if the query text or broad intent resembles a previous request. The system must remain cheap when:
-
-- the exact query string has never been seen before;
-- the same semantic request is expressed with different lexical wording;
-- filter/facet combinations differ per request;
-- inventory, price, promotion eligibility, or availability changed since the previous request;
-- tenant-specific state changes the answer;
-- long-tail category/collection requests have little or no repetition;
-- the request must be evaluated against current state rather than a cached historical result.
-
-Therefore the novelty defense against ROSE must be empirical, not rhetorical.
-
-#### Mandatory ROSE-style comparator / falsification tests
-
-At minimum measure:
+The two techniques are orthogonal and composable:
 
 ```text
-A. competent query/result cache for hot repeated requests
-B. Solr/ES baseline without result-cache help
-C. commerce-native execution with result caching disabled
+optional result cache
+       |
+      miss
+       v
+semantic admission
+   /          \
+native       Solr
+index exec   index exec
 ```
 
-Then explicitly test:
+Therefore ROSE should be discussed as a neighboring optimization layer, not as the primary baseline. The paper should not claim superiority over caching, and should not include a cache-vs-no-cache experiment as evidence for the core execution thesis.
 
-1. **Repeated identical head requests** — ROSE/cache should be allowed to win here; this establishes the strongest cache baseline.
-2. **Unseen-but-semantically-equivalent requests** — same structural intent, different lexical form; a result cache should lose most of its advantage while semantic/native execution should retain its physical advantage if the thesis is correct.
-3. **Combinatorial browse/filter requests** — category + facet/filter/sort combinations large enough that precomputing every final result is impractical.
-4. **Live-state churn** — inventory/price/availability/promotion updates between requests; cached results must either invalidate/recompute or risk staleness, while the native engine should execute against current state directly.
-5. **Multi-tenant state** — similar requests across merchants must not incorrectly share answers; measure how cache-key explosion / isolation compares with tenant-local native execution.
-6. **Long-tail requests** — quantify economics when reuse probability is low.
+### 5. Havenask / IndexLib
 
-The paper should be able to state, with data:
+Havenask already demonstrates extensive search specialization, multiple physical index forms, realtime update machinery, and hyperscale production engineering. It is the strongest obvious physical-performance anchor and wheel-reinvention check.
 
-> The measured fast-path advantage is an execution advantage on real hosted application requests, not a cache-hit advantage.
+The research question is not whether specialized indexes can work; Havenask already answers that.
 
-If a competent ROSE-style cache achieves the same whole-workload economics under realistic freshness and tenant constraints, narrow the novelty claim accordingly.
+Our differentiated target is a lower-cost deployment envelope for North American mid-market / enterprise commerce, with safe semantic admission, transparent generic fallback, browse-heavy workload optimization where supported by production data, and native multi-tenant isolation.
 
-### 5. Havenask / eCommerceSearchBench
+### 6. Alibaba eCommerceSearchBench
 
-Havenask already demonstrates extensive search-system specialization and multiple physical index types. Alibaba's eCommerceSearchBench is an end-to-end workload driven by real Taobao user logs and production-derived data, including personalized recommendation/search planning components.
+`eCommerceSearchBench` provides a production-derived ecommerce systems workload and should become standard external validation. It protects against overfitting to ESCI and provides a marketplace/search-heavy comparison point.
 
-We should treat both as prior-art/performance anchors, not as evidence that specialization itself is new.
+It should be preserved faithfully where practical, with deployment-envelope differences documented rather than normalized away.
+
+### 7. eBay Cassini / production vertical-search architectures
+
+Production systems such as Cassini already establish that ecommerce search has domain-specific requirements and can justify custom engineering. That observation is background.
+
+Our contribution must be narrower: which commerce traffic classes can safely use a materially cheaper physical plan, how that frontier grows, and whether the resulting serving model fits a lower-cost multi-tenant market.
 
 ## Current strongest novelty hypothesis
 
-The current strongest paper-level claim is **not** any individual parser, route, index, or cache mechanism.
-
-It is the following systems problem and empirical program:
+The strongest paper-level claim currently appears to be:
 
 > **Given a mature generic ecommerce-search fallback, how much real commerce retrieval traffic can be correctness-aware admitted into a materially cheaper specialized physical execution plane, while keeping abstention effectively free and preserving a large per-hit physical multiplier?**
 
 The potential contribution is the combination of:
 
-1. an asymmetric contract where the specialized system is allowed to abstain and the generic engine remains the safety net;
+1. an asymmetric contract where the specialized system can abstain and the generic engine remains the safety net;
 2. explicit semantic/correctness admission rather than generic query-difficulty or topic-shard routing;
 3. a different physical execution path, not merely fewer copies of the same retrieval engine;
 4. a measured **coverage × relevance × physical-multiplier × fallback-tax** frontier;
-5. rigorous accounting of disjoint/overlapping admission mechanisms and confidence-certified operating points;
-6. extension from free-text search to structurally dominant browse/PLP traffic;
-7. target-market workload characterization and low-cost native multi-tenancy as deployment constraints.
+5. explicit mechanism-overlap accounting and confidence-certified operating points;
+6. extension from free-text search to browse/category/PLP traffic;
+7. target-market workload characterization;
+8. low-fixed-cost native multi-tenancy if experimentally supported.
 
-This combination appears differentiated in the current search, but **must still be treated as a hypothesis pending deeper related-work review**.
+This remains a hypothesis pending deeper related-work review.
 
-## High-risk novelty questions to answer before paper submission
+## Target-market workload hypothesis
 
-### A. Is safe-offload just selective search with different terminology?
+A potentially important distinction from marketplace systems such as Alibaba/Havenask is the dominant user journey.
 
-We need to show that ordinary selective search chooses *where* to run essentially the same retrieval algorithm, whereas our system chooses *whether a different physical execution semantics is sufficient* and otherwise delegates unchanged to the general engine.
+The hypothesis to validate from real production request logs is:
 
-Ablation candidate:
+- large marketplace environments are relatively search/recommendation driven;
+- North American independent/DTC/merchant sites may be substantially more browse/category/collection/PLP driven, with site search acting as a supplementary path for many merchants.
 
-```text
-category/shard pruning + Solr
-vs
-commerce-native physical execution + fallback
-```
-
-This would directly quantify the distinction from Amazon's 2020 work.
-
-### B. Is the P50 story just caching?
-
-This is a mandatory falsification target, not a wording exercise.
-
-The system must demonstrate that its P50/whole-workload advantage survives when result caching is disabled and requests still execute against live application state. The core distinction to defend is:
+If supported, the workload difference can justify a different specialization target:
 
 ```text
-cache hit:
-reuse a prior answer / avoid execution
-
-native fast-path hit:
-execute the current request, but on a much cheaper commerce-specific physical substrate
+search: expand safe native coverage toward P50
+browse/category/PLP: drive native handling toward P95
 ```
 
-Compare against a competent ROSE-style hot-query/result cache and demonstrate which gains survive unseen-but-equivalent queries, combinatorial filters/facets, live state changes, long-tail requests, and tenant-specific data.
+This would make workload characterization part of the systems contribution rather than product-market commentary.
 
-If a normal cache gets the same economics, narrow the claim.
+## High-risk novelty questions before submission
 
-### C. Does query performance prediction / cascade literature already formalize the same safety problem?
+### A. Is safe offload only selective search under different terminology?
 
-Review QPP/selective-query-processing literature in detail. Current evidence shows related decision problems, including deciding when to trigger special processing or fallback, but not the exact ecommerce specialized-physical-execution frontier.
+Mandatory defense: compare category/shard pruning + Solr against commerce-native execution + fallback.
 
-### D. Is browse/PLP specialization genuinely a research gap?
+### B. Does the native physical path remain materially different from mature Lucene/Havenask execution?
 
-Production engines obviously execute browse/filter/facet traffic. The novelty cannot be "category pages exist". The research gap would need to be one of:
+Mandatory defense: strongest fair Solr baseline, Havenask archaeology/eCommerceSearchBench, and profiling/breakpoint analysis.
 
-- target-market workload characterization showing this class dominates a merchant segment;
-- a new physical/saturation advantage after strongest Solr/Havenask-style optimization;
-- a multi-tenant cost/isolation consequence.
+### C. Does query-performance-prediction / cascade literature already formalize the same admission problem?
 
-### E. Is native multi-tenancy sufficiently different from standard shared-index tenant filtering?
+Continue deep review of QPP, selective query processing, cascades, and vertical/federated search before freezing the novelty statement.
 
-Benchmark against realistic tenant-filtered Solr/ES patterns and existing multi-tenant search architectures. Novelty requires more than adding `tenant_id` to a bitmap.
+### D. Is browse/PLP specialization genuinely differentiated?
 
-## Immediate experimental implications of the novelty check
+The novelty cannot be that category pages exist. It must come from production-log workload characterization, a physical/saturation advantage after strongest mature baselines, and/or multi-tenant economic consequences.
 
-1. Keep #16, but **do not** present implicit semantic inference as new.
-2. Add Amazon 2020 shard selection as a mandatory baseline/ablation concept for the search-coverage paper story.
-3. Add a competent query/result-cache baseline for high-frequency/head traffic where applicable, motivated by ROSE.
-4. **For the ROSE comparison, keep result caching disabled on the native path for the primary execution claim.** The measured benefit must come from executing each admitted request cheaply against current state, not from answer reuse.
-5. Add unseen-but-semantically-equivalent, live-state-churn, combinatorial-filter, long-tail, and multi-tenant tests as mandatory cache-vs-execution discriminators.
-6. Use Havenask/eCommerceSearchBench as external specialization/workload anchors.
-7. Prioritize production-log workload characterization because it can establish a target-market difference that existing marketplace literature does not answer.
-8. Make multi-tenant cost/isolation experiments concrete; otherwise remove multi-tenancy from the claimed contributions.
-9. Continue searching related work around selective query processing, QPP, cascades, and vertical/federated search before freezing the paper's novelty statement.
+### E. Is native multi-tenancy more than standard tenant filtering?
+
+Benchmark against realistic shared-index/tenant-filter patterns. Novelty requires isolation/cost advantages beyond adding `tenant_id` to a generic index.
+
+## Immediate experimental implications
+
+1. Keep #16, but do not present implicit semantic inference as new.
+2. Add Amazon 2020 category-intent shard selection as a mandatory search ablation/reference.
+3. Treat result caching as orthogonal; exclude answer caching from the primary execution comparison on both sides.
+4. Allow all legitimate **index-resident** optimizations in Solr/ES/Havenask and the native engine.
+5. Use Havenask/eCommerceSearchBench as standard external specialization/workload anchors.
+6. Prioritize real production request-log characterization.
+7. Make multi-tenant isolation and cost concrete or remove it from claimed contributions.
+8. Continue related-work review around QPP, selective processing, cascades, routing, and vertical search.
 
 ## Current verdict
 
 **The project is not obviously duplicative, but the novelty is narrower and more systems-oriented than the original architecture language suggested.**
 
-Known / prior-art ingredients:
+Known ingredients:
 
 ```text
 commerce query parsing
@@ -245,7 +250,7 @@ selective search
 cascades / early exit
 specialized indexes
 realtime updates
-head-query caches
+vertical search engines
 ```
 
 Potentially novel contribution:
@@ -259,4 +264,4 @@ correctness-aware semantic admission
 + low-fixed-cost native multi-tenancy
 ```
 
-The paper should win on **problem formulation + end-to-end systems evidence + workload characterization**, not on claiming invention of its individual building blocks.
+The paper should win on **problem formulation + end-to-end systems evidence + workload characterization**, not on claiming invention of individual building blocks.
