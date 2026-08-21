@@ -8,6 +8,7 @@ members = [
     "crates/bench-harness",
     "crates/phase3-eval",
     "crates/phase4-eval",
+    "crates/phase5-eval",
 ]
 
 [workspace.package]

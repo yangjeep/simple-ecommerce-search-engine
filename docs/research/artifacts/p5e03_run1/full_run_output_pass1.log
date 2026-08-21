@@ -1,0 +1,40 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+
+computing real color group-size distribution...
+  175292 distinct real color values
+
+selected real color groups (closest real match to each target checkpoint):
+  "Brown/a": 497 products
+  "Matte Black": 1510 products
+  "Stainless Steel": 3104 products
+  "Orange": 4532 products
+  "black": 6027 products
+  "Multi": 7186 products
+  "Gray": 8910 products
+  "Grey": 11112 products
+  "Green": 11612 products
+  "Multicolor": 15219 products
+  "Silver": 17328 products
+  "Blue": 22782 products
+
+=== P5-E03 facet-crossover sweep result ===
+color                        candidates    n_scan_ms      solr_ms   match     n_count    s_count ratio(s/n)
+Brown/a                             497       0.0229       2.2119   false         434        432      96.66
+Matte Black                        1510       0.1662       2.3440    true         588        588      14.10
+Stainless Steel                    3104       0.5210       2.3490   false         855        846       4.51
+Orange                             4532       1.0719       3.3933   false         493        486       3.17
+black                              6027       1.6832       2.6187   false         858        845       1.56
+Multi                              7186       1.8419       2.5718   false        1993       1981       1.40
+Gray                               8910       2.5967       2.7127   false         956        944       1.04
+Grey                              11112       3.2037       2.9710   false        1423       1417       0.93
+  >>> crossover: native-scan wins at 8910 candidates (ratio 1.04), loses at 11112 candidates (ratio 0.93)
+Green                             11612       3.3391       2.9843   false        1269       1244       0.89
+Multicolor                        15219       3.7923       2.7618   false        5139       5089       0.73
+Silver                            17328       4.6971       3.0437   false        2289       2253       0.65
+Blue                              22782       6.7223       5.4855   false        1741       1701       0.82
+
+artifacts written to dataset_cache/p5e03_artifacts

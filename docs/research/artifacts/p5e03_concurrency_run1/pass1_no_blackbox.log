@@ -1,0 +1,21 @@
+loading + ingesting real catalog...
+1215854 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/commerce_bench)...
+  Solr reachable: numFound=1215854
+
+computing real brand/color group-size distributions...
+  real mixed workload: 25 brand queries + 25 color queries = 50 distinct real filter requests
+
+=== P5-E03 concurrency sweep result (4 real CPUs available -- levels >4 oversubscribe) ===
+system   workers    total_reqs throughput_rps     p50_ms     p99_ms
+native   1            11743123      3914374.3     0.0001     0.0004
+native   2            16498843      5499614.3     0.0002     0.0004
+native   4            34273836     11424612.0     0.0001     0.0004
+native   8            24168317      8056105.7     0.0003     0.0005
+solr     1                5622         1874.0     0.5198     0.9266
+solr     2               11035         3678.3     0.4847     1.3978
+solr     4               15071         5023.7     0.7143     2.1376
+solr     8               19249         6416.3     1.1255     3.2927
+
+artifacts written to dataset_cache/p5e03_concurrency_artifacts

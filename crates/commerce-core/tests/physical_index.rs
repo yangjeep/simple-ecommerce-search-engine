@@ -163,6 +163,102 @@ fn facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
 }
 
 #[test]
+fn brand_facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
+    // Issue #17 (Phase 5): brand faceting is a dedicated method, not
+    // answerable through `facet_counts("brand", ...)` -- brand lives in
+    // its own structural `brand_bitmaps` index, not the generic
+    // `enum_bitmaps` `facet_counts` reads.
+    use commerce_core::domain::BrandId;
+    use commerce_core::fixtures::cold_start_catalog;
+    use commerce_core::ir::StructuralConstraint;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    let facets = index.brand_facet_counts(&all);
+    // Brand(1): running_shoes_nike (2 variants) + hiking_boots_nike (2) = 4.
+    // Brand(2): running_shoes_aerowalk (2) + hiking_boots_aerowalk (1) = 3.
+    assert_eq!(facets.get(&BrandId(1)), Some(&4));
+    assert_eq!(facets.get(&BrandId(2)), Some(&3));
+
+    // facet_counts("brand", ...) must NOT silently answer this -- it has
+    // no "brand" entry in enum_values at all, so it returns empty.
+    assert!(index.facet_counts("brand", &all).is_empty());
+
+    let running_shoes_only = index.indexed_candidates(&[ResolvedConstraint::Structural(
+        StructuralConstraint::ProductType(commerce_core::domain::ProductTypeId(1)),
+    )]);
+    let facets = index.brand_facet_counts(&running_shoes_only);
+    assert_eq!(facets.get(&BrandId(1)), Some(&2));
+    assert_eq!(facets.get(&BrandId(2)), Some(&2));
+}
+
+#[test]
+fn facet_counts_by_scan_matches_facet_counts_exactly() {
+    // Issue #17 (Phase 5) P5-E00: `facet_counts`/`brand_facet_counts` cost
+    // O(global vocabulary) rather than O(|candidates|), which real
+    // benchmarking against Solr found to be 35-420ms vs Solr's 1-3ms. The
+    // `*_by_scan` siblings are an O(|candidates|) alternative; before
+    // trusting any latency comparison, both must agree byte-for-byte with
+    // the existing methods on every input, including the empty-candidate
+    // edge case.
+    use commerce_core::domain::BrandId;
+    use commerce_core::fixtures::cold_start_catalog;
+    use commerce_core::ir::StructuralConstraint;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.facet_counts("color", &all),
+        index.facet_counts_by_scan(&all, &catalog, "color")
+    );
+    assert_eq!(
+        index.brand_facet_counts(&all),
+        index.brand_facet_counts_by_scan(&all, &catalog)
+    );
+
+    let waterproof_only =
+        index.indexed_candidates(&[ResolvedConstraint::Attribute(Constraint::Boolean {
+            attribute: "waterproof".to_string(),
+            value: true,
+        })]);
+    assert_eq!(
+        index.facet_counts("color", &waterproof_only),
+        index.facet_counts_by_scan(&waterproof_only, &catalog, "color")
+    );
+    assert_eq!(
+        index.brand_facet_counts(&waterproof_only),
+        index.brand_facet_counts_by_scan(&waterproof_only, &catalog)
+    );
+
+    let running_shoes_only = index.indexed_candidates(&[ResolvedConstraint::Structural(
+        StructuralConstraint::ProductType(commerce_core::domain::ProductTypeId(1)),
+    )]);
+    assert_eq!(
+        index.brand_facet_counts(&running_shoes_only),
+        index.brand_facet_counts_by_scan(&running_shoes_only, &catalog)
+    );
+    assert_eq!(
+        index
+            .brand_facet_counts_by_scan(&running_shoes_only, &catalog)
+            .get(&BrandId(1)),
+        Some(&2)
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index
+        .facet_counts_by_scan(&empty, &catalog, "color")
+        .is_empty());
+    assert!(index
+        .brand_facet_counts_by_scan(&empty, &catalog)
+        .is_empty());
+}
+
+#[test]
 fn top_k_ranking_orders_by_preference_score_deterministically() {
     let catalog = combined_catalog();
     let index = CatalogIndex::build(&catalog);
