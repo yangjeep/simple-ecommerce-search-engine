@@ -284,7 +284,18 @@ with product count, CPU cost per query does not — it is dominated by a
 fixed per-query overhead at tiny tenant sizes, then grows measurably
 faster than linearly for the largest real tenant, a real, reproduced,
 and previously invisible finding this project's memory-focused
-measurements alone could never have surfaced.
+measurements alone could never have surfaced. A final measurement
+tested mutation rather than query load for the first time in this
+project's history: does a tenant undergoing frequent catalog updates
+degrade a quiet neighbor sharing the same process, distinct from the
+already-confirmed finding that pure query load does not? Here the
+answer is genuinely different — a co-located tenant whose index is
+being rebuilt (this architecture's only update path, since tenant
+bundles are immutable) measurably degrades a quiet tenant's own tail
+latency, reproduced consistently, even though the typical-case latency
+barely moves. This is a real, actionable limitation this pass names
+honestly rather than minimizes, and designing a mitigation for it is
+named explicitly as necessary future work.
 
 ## What this project is not
 

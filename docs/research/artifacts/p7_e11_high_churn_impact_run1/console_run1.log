@@ -1,0 +1,9 @@
+=== P7-E11: high-churn tenant impact on low-churn tenants (H14) ===
+(quiet/low-churn tenant = 'Rugs'; high-churn tenant = 'Furniture', repeatedly rebuilt and hot-swapped)
+quiet tenant="Rugs" (2002 products); churn tenant="Furniture" (16039 products)
+  quiet alone (baseline):        p50=1.5236ms p99=1.9084ms (n=500)
+  quiet + churn tenant rebuilding: p50=1.7445ms p99=12.7928ms (n=500) -- p50_ratio=1.15x p99_ratio=6.70x
+  churn tenant: 5 full index rebuilds in 5.0s (1.00 rebuilds/sec)
+  H14 verdict: p50_ratio=1.15x p99_ratio=6.70x -- FALSIFIED: high-churn tenant materially degrades low-churn tenant's own latency
+
+artifacts written to docs/research/artifacts/p7_e11_high_churn_impact_run1

@@ -1,4 +1,4 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E10 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E11 first pass
 
 **Decision: PROCEED**, with two hypotheses falsified (one in the good
 direction, one revealing a real but practically tiny effect) and six
@@ -63,7 +63,17 @@ does NOT scale linearly with tenant product count: sub-linear from 1 to
 super-linear from 5 to 16,039 products (the largest real tenant's
 measured cost is 3.81x higher than a straight-line extrapolation from
 the two small points would predict), reproduced consistently across 3
-runs.
+runs. An eleventh experiment (H14) tested Issue #21's explicitly-named
+"high-churn tenant impact on low-churn tenants" for the first time this
+phase — no prior Phase 7 experiment ever mutated a tenant's data. This
+one is a GENUINE falsification, not a technicality: while H2 already
+established that pure noisy QUERY load does not materially degrade a
+co-located tenant's own latency, a co-located tenant whose index is
+being REBUILT (this architecture's only mutation path, since tenant
+bundles are immutable) causes a real, reproducible 4.00-6.70x p99
+degradation for the quiet tenant across all 3 runs, even though p50
+barely moves (1.14-1.17x) — a real isolation gap query-only testing
+could never have surfaced.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -142,6 +152,13 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   — directly answering Issue #21's "CPU/query and CPU/tenant" metric,
   untested by any prior Phase 7 hypothesis (all of which measured
   wall-clock only).
+- **H14** (P7-E11): a high-churn tenant (one whose `CatalogIndex` is
+  repeatedly rebuilt and hot-swapped in a shared process) does not
+  measurably degrade a separate low-churn tenant's own query
+  latency/throughput, matching H2's own established finding for pure
+  QUERY load — directly answering Issue #21's "high-churn tenant impact
+  on low-churn tenants" metric, untested by any prior Phase 7 hypothesis
+  (all of which used static, once-built catalogs).
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -606,6 +623,61 @@ scaling shape between the sub-linear small-n region and the
 super-linear large-n region is unknown); only one query type (facet
 scan) was tested — other structural operators may scale differently.
 
+**H14 — FALSIFIED, reproduced across 3 independent runs, a genuine
+material effect (P7-E11).** Reuses H2's exact quiet-tenant methodology
+(same reps, duration, and quiet tenant "Rugs") so this result is
+directly comparable to H2's own null finding for pure query load. A
+separate "high-churn" tenant (Furniture, the largest real tenant) has
+its `CatalogIndex` continuously rebuilt and hot-swapped by a dedicated
+thread with no sleep between rebuilds — real allocation/deallocation
+churn, simulating this architecture's only mutation path (immutable
+tenant bundles must be rebuilt, not updated in place).
+
+| Run | Baseline p50/p99 (ms) | Under-churn p50/p99 (ms) | p50 ratio | p99 ratio |
+|---|---|---|---|---|
+| 1 | 1.524 / 1.908 | 1.745 / 12.793 | 1.15x | **6.70x** |
+| 2 | 1.376 / 2.127 | 1.568 / 10.746 | 1.14x | **5.05x** |
+| 3 | 1.346 / 1.925 | 1.575 / 7.702 | 1.17x | **4.00x** |
+
+p50 shows only a mild, consistent ~14-17% slowdown — well inside the
+pass bar. **p99 shows a real, reproducible 4.00-6.70x degradation in
+every run**, decisively clearing the 2x threshold. Unlike this
+project's several prior cases where an unstable p99 turned out to be a
+measurement artifact (P7-E07's undersampling, P7-E09's cold-start
+effect), this elevation is large, consistent in direction across all 3
+runs, and has a mechanistically coherent explanation — **this is a
+genuine falsification, not a technicality like H9's negligible-scale
+one.**
+
+A striking secondary finding: exactly 5 full index rebuilds completed
+in the 5-second window in EVERY run — a single `CatalogIndex::build()`
+call for Furniture (16,039 products) costs almost exactly **1 second**
+of wall time, ~100x the cost of a single query against that same
+tenant (H13's own ~10.5ms CPU/query figure). **A query-only noisy
+neighbor (H2) and a rebuild-churning noisy neighbor (H14) are NOT the
+same risk**: real commerce catalogs churn (price/inventory updates),
+and this architecture's immutable-bundle model means every such update
+pays a real, substantial rebuild cost that can materially degrade a
+co-located tenant's own tail latency while in progress — a genuine
+isolation gap none of H2/H4/H9/H10/H11 could have surfaced, since none
+of them ever mutated a tenant's data.
+
+**Named, plausible (not profiled) mechanism**: with only 4 real CPU
+cores in this container and one thread continuously CPU-bound for
+~1-second stretches, some quiet-tenant queries are plausibly scheduled
+onto the same core as the churn thread, or contend for shared
+caches/memory bandwidth/allocator locks during the rebuild's own heavy
+allocation activity — consistent with p50 barely moving while p99
+moves sharply.
+
+**Named limitations**: only 5 discrete rebuild events occur per
+5-second run — a small sample of "rebuild windows," likely why the p99
+ratio itself varies more between runs (4.00x-6.70x) than p50 does. Only
+one churn tenant (Furniture, the largest) and one quiet tenant (Rugs)
+were tested; whether smaller tenants would show a proportionally
+smaller effect, and whether many small tenants churning concurrently
+would compound the effect, are both untested.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
@@ -616,8 +688,9 @@ Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/`,
 `docs/research/artifacts/p7_e07_realistic_demand_mix_run1/`,
 `docs/research/artifacts/p7_e08_extended_breadth_run1/`,
+`docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/`,
 `docs/research/artifacts/p7_e10_cpu_per_query_run1/`,
-`docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/`.
+`docs/research/artifacts/p7_e11_high_churn_impact_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -720,6 +793,15 @@ renamed rather than deleted.
     the super-linear large-n region — and whether other structural
     operators (range filters, category membership, sort) show the same
     shape — is untested.
+11. **H14 is a real, actionable gap, not just an unconfirmed mechanism
+    question: a co-located tenant undergoing index rebuilds materially
+    degrades another tenant's own tail latency (4.00-6.70x p99),
+    something this architecture's current design does nothing to
+    prevent.** No mitigation (e.g. rate-limiting concurrent rebuilds,
+    running rebuilds on a separate core/cgroup, background-thread
+    deprioritization) has been designed or tested. Only one churn
+    tenant size (the largest) and one quiet tenant were tested; the
+    proposed CPU-core-contention mechanism is plausible, not profiled.
 
 ## What would be built next if scaling up
 
@@ -805,21 +887,36 @@ reproduced across 3 runs. A CPU/wall ratio of 0.997-1.002 in every
 measurement validated the CPU-time reading method itself before
 trusting this comparison.
 
+**High-churn tenant impact on low-churn tenants (Issue #21's last
+required-experiments metric besides lexical-backend contention) is now
+measured** (H14, P7-E11) — and unlike H2's pure-query-load null result,
+this one is a genuine, material falsification: a co-located tenant
+undergoing repeated `CatalogIndex` rebuilds (this architecture's only
+mutation path) degrades a low-churn tenant's own p99 latency by
+4.00-6.70x, reproduced across 3 runs, even though p50 barely moves
+(1.14-1.17x). A secondary finding: a single rebuild of the largest real
+tenant (16,039 products) costs almost exactly 1 second of wall time —
+~100x the cost of a single query against it. This is a genuine,
+actionable architectural gap, not a disclosed-but-tiny effect like H9's.
+
 Still to build: profiling to identify the specific allocator mechanism
 behind H7/H8's growth pattern and residual tail creep, the
 CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
 "cache dilution from interleaving" hypothesis behind H10's smaller
 magnitude, the memory-pressure-vs-safety-cap hypothesis behind H11's
 n=2,000 dip, whether H12's 3,500-tenant envelope would look materially
-different on a larger machine or with less reserved headroom, and the
+different on a larger machine or with less reserved headroom, the
 distinct-facet-value-cardinality hypothesis behind H13's super-linear
-CPU growth at the large end, if a real deployment's memory/latency/CPU
-budget needs tighter precision than "decelerates toward roughly a known
-bound" / "plausibly cache locality" / "plausibly facet cardinality."
-Also still open, per Issue #21's required "Experiments" list (distinct
-from the "Economic output" list, now fully addressed): high-churn
-tenant impact on low-churn tenants (no mutation/churn workload has been
-exercised); lexical-backend contention (would require live Solr
+CPU growth at the large end, and the CPU-core-contention hypothesis
+behind H14's rebuild-induced p99 spike, if a real deployment's
+memory/latency/CPU budget needs tighter precision than "decelerates
+toward roughly a known bound" / "plausibly cache locality" / "plausibly
+facet cardinality" / "plausibly core contention." Designing and testing
+a mitigation for H14's isolation gap (rate-limiting concurrent
+rebuilds, isolating rebuild work to a separate core/cgroup, background-
+thread deprioritization) is a genuinely new, higher-priority item this
+finding surfaces. Also still open, per Issue #21's required
+"Experiments" list: lexical-backend contention (would require live Solr
 integration in the multi-tenant harness, not yet attempted).
 
 ## What should explicitly not be built yet
@@ -834,6 +931,16 @@ proceed given H8's confirmation that H7's figure is stable rather than
 still-climbing, but should still disclose that a real service's much
 longer lifetime (minutes to hours vs. this experiment's 180 seconds)
 remains untested.
+
+No production deployment of this architecture should assume safe
+isolation under real catalog churn without first addressing H14's
+finding: a co-located tenant's index rebuild measurably degrades
+another tenant's own tail latency in this pass's design. This pass
+deliberately does not attempt a mitigation (rebuild rate-limiting,
+core/cgroup isolation for rebuild work, background-thread
+deprioritization) — that is future work, not something to build on
+faith that the problem is small, given H14's own measured 4.00-6.70x
+p99 effect.
 
 ## What this decision does and does not claim
 
@@ -930,7 +1037,16 @@ Furniture's measured CPU cost is 3.81x higher than a straight-line
 extrapolation from the two small tenants would predict. A CPU/wall
 ratio of 0.997-1.002 in every measurement validated the underlying
 `/proc/self/stat`-based CPU-time reading method before this comparison
-was trusted.
+was trusted. Finally, and in contrast to H2's own null result for pure
+query load: a co-located tenant undergoing repeated `CatalogIndex`
+rebuilds (this architecture's only mutation path, since tenant bundles
+are immutable) DOES materially degrade a separate low-churn tenant's
+own tail latency (H14, P7-E11, reproduced across 3 runs) — p99 grows
+4.00-6.70x while p50 barely moves (1.14-1.17x), and a single rebuild of
+the largest real tenant costs almost exactly 1 second of wall time,
+~100x a single query's own cost. This is a genuine, actionable
+isolation gap this pass's other query-focused experiments could not
+have surfaced.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants (H5) or 3,500
@@ -973,24 +1089,29 @@ distribution (Phase 7 never measured one); that H13's distinct-facet-
 value-cardinality hypothesis for the super-linear CPU growth is
 confirmed (disclosed, not profiled), or that its scaling shape
 generalizes beyond the 3 tenant sizes and one query type (facet scan)
-tested — this is a first pass on memory (including at scale), pairwise
-isolation, fixed-tenant throughput-under-breadth (now including at
-memory-scale tenant counts), process-baseline floors (short-lived, and
-a longer-resident window that decelerates toward but has not been
-proven to fully reach a bound), a first cold-vs-hot latency comparison
-under two different designs, a first economic-model synthesis (now
-addressing all 7 of Issue #21's named "Economic output" metrics, six
-well and one partially), and a first CPU-cost-per-query measurement
-only.
+tested; that H14's CPU-core-contention explanation for its p99 spike is
+confirmed (plausible, not profiled), that its 4.00-6.70x effect
+generalizes beyond the one churn tenant (Furniture, the largest), one
+quiet tenant (Rugs), and one rebuild frequency tested, or that any
+mitigation for this isolation gap has been designed, implemented, or
+validated (explicitly not attempted this pass) — this is a first pass
+on memory (including at scale), pairwise isolation, fixed-tenant
+throughput-under-breadth (now including at memory-scale tenant counts),
+process-baseline floors (short-lived, and a longer-resident window that
+decelerates toward but has not been proven to fully reach a bound), a
+first cold-vs-hot latency comparison under two different designs, a
+first economic-model synthesis (now addressing all 7 of Issue #21's
+named "Economic output" metrics, six well and one partially), a first
+CPU-cost-per-query measurement, and a first churn-vs-query isolation
+comparison only.
 
 **Decision: PROCEED** to the next Phase 7 sub-experiment (Issue #21's
-still-open required "Experiments" list items: high-churn tenant impact
-on low-churn tenants, not yet tested; lexical-backend contention, which
-would need live Solr integration in the multi-tenant harness) without
-changing the underlying commerce-native mechanism. The favorable,
-adversarially-corrected H1 result, its clean confirmation at scale via
-H5, the robust H2/H4 results (H4 now itself confirmed at memory-scale
-tenant counts via H11), H6/H7/H8's real, reproduced,
+one remaining required "Experiments" list item: lexical-backend
+contention, which would need live Solr integration in the multi-tenant
+harness) without changing the underlying commerce-native mechanism. The
+favorable, adversarially-corrected H1 result, its clean confirmation at
+scale via H5, the robust H2/H4 results (H4 now itself confirmed at
+memory-scale tenant counts via H11), H6/H7/H8's real, reproduced,
 now-stability-confirmed measurement of the pooling advantage this
 project's own thesis assumed, the first economic cost-per-tenant model
 (now addressing all 7 of Issue #21's named economic-output metrics),
@@ -1003,9 +1124,16 @@ backend-requests-avoided synthesis combining Phase 3/4 with Phase 7's
 tenant model, and H13's first real CPU-cost measurement (revealing
 memory and CPU do NOT scale the same way, a genuinely new finding) are
 real evidence in favor of the architecture's packing-density and
-latency-predictability potential, but are explicitly a floor on the
-claim (single-process, short-lived-process, or 180-second-resident-
-process measurements, one tenant model, one self-imposed safety bound,
-one size-matched hot/cold pair, one
+latency-predictability potential — but H14's genuine, material
+falsification (a co-located tenant's index rebuild degrades another
+tenant's own p99 by 4.00-6.70x) is an equally real, honestly-recorded
+LIMIT on that potential, not smoothed over or minimized: this pass
+explicitly does not claim safe isolation under real catalog churn, and
+names designing/testing a mitigation as necessary future work before
+any such claim could be made. All of the above are explicitly a floor
+on the claim (single-process, short-lived-process, or
+180-second-resident-process measurements, one tenant model, one
+self-imposed safety bound, one size-matched hot/cold pair, one
 traffic-skew ratio, one hardware envelope, one cross-dataset admission-
-rate combination), not a ceiling on what remains to be tested.
+rate combination, one churn scenario), not a ceiling on what remains to
+be tested.

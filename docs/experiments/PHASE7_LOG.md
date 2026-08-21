@@ -1384,3 +1384,101 @@ membership, sort) may show different scaling. CPU/tenant is reported
 only as an illustrative rate per million queries, not combined with any
 real per-tenant request-volume measurement, which Phase 7 has never
 taken.
+
+## P7-E11: high-churn tenant impact on low-churn tenants (H14, stated before implementation)
+
+Issue #21 explicitly names "high-churn tenant impact on low-churn
+tenants" as a required Phase 7 experiment. No prior Phase 7 experiment
+has tested any mutation/churn workload -- every one of them (H1-H13)
+used static, once-built catalogs. This architecture uses immutable
+tenant `CatalogIndex` bundles (Issue #21's own Phase 9 "immutable
+tenant structural bundle" concept), so "churn" here means repeated
+REBUILDS of a tenant's index (simulating real commerce price/inventory
+update cycles that would, in this architecture, produce a new
+immutable bundle to hot-swap in), not an incremental in-place update.
+
+**H14**: a high-churn tenant (one whose `CatalogIndex` is repeatedly
+rebuilt and hot-swapped in a shared process) does not measurably
+degrade a separate low-churn tenant's own query latency/throughput --
+matching H2's own established finding that noisy QUERY load does not
+cause material cross-tenant degradation. Same pass bar as H2/H4/H11/H12
+(p99 growth <2x, relative to the low-churn tenant's solo baseline).
+
+**Design**: reuses H2/P7-E00's exact quiet-tenant methodology (same
+`ISOLATION_REPS`=500, `ISOLATION_RUN_DURATION`=5s, same quiet tenant
+"Rugs") for direct comparability -- this experiment asks H2's own
+question again, but for CHURN load instead of QUERY load. A separate
+"high-churn" tenant ("Furniture", the largest real tenant, 16,039
+products) has its `CatalogIndex` continuously rebuilt from its
+unchanging `Catalog` by a dedicated thread with no sleep between
+rebuilds, hot-swapped into a `Mutex<Arc<CatalogIndex>>` after each
+build -- real allocation/deallocation churn, not merely re-reading an
+already-built structure. Baseline: Rugs queried alone. Treatment: Rugs
+queried while the churn thread runs continuously.
+
+## P7-E11 result: H14 FALSIFIED, reproduced across 3 independent runs -- a real, material effect, unlike H2's null result
+
+Raw data in `docs/research/artifacts/p7_e11_high_churn_impact_run1/
+results_run{1,2,3}.csv`.
+
+| Run | Baseline p50/p99 (ms) | Under-churn p50/p99 (ms) | p50 ratio | p99 ratio | Rebuilds completed |
+|---|---|---|---|---|---|
+| 1 | 1.524 / 1.908 | 1.745 / 12.793 | 1.15x | **6.70x** | 5 |
+| 2 | 1.376 / 2.127 | 1.568 / 10.746 | 1.14x | **5.05x** | 5 |
+| 3 | 1.346 / 1.925 | 1.575 / 7.702 | 1.17x | **4.00x** | 5 |
+
+**p50 shows only a mild, consistent ~14-17% slowdown (1.14-1.17x) --
+well inside the pass bar.** But **p99 shows a real, reproducible,
+material degradation of 4.00-6.70x in every run**, decisively clearing
+the 2x material-regression threshold. Unlike this project's several
+prior cases where an unstable p99 turned out to be a measurement
+artifact (P7-E07's undersampling, P7-E09's cold-start effect), this
+p99 elevation is NOT dismissed as noise: it is large, consistent in
+direction across all 3 runs, and has a mechanistically coherent
+explanation (below) -- **H14 is genuinely FALSIFIED, not just
+technically falsified at a negligible scale like H9 was.**
+
+**A striking secondary finding**: exactly 5 full index rebuilds
+completed in the 5-second window, in EVERY run -- meaning a single
+`CatalogIndex::build()` call for Furniture (16,039 products) costs
+**almost exactly 1 second of wall time** on this hardware. This is
+itself a new, previously-undisclosed data point (how expensive a real
+reindex/catalog-update operation is for the largest real tenant), far
+more expensive than a single query against that same tenant (~10.5ms
+CPU per facet-scan query, per P7-E10/H13) -- a ~100x difference between
+reading and rebuilding.
+
+**What this means**: a query-only noisy neighbor (H2) and a
+rebuild-churning noisy neighbor (H14) are NOT the same risk. Real
+commerce catalogs churn (price/inventory changes), and this
+architecture's immutable-bundle model means every such update pays a
+real, substantial rebuild cost (~1 second for the largest real tenant)
+that can materially degrade a co-located tenant's own tail latency
+while it is in progress -- a genuine isolation gap this project's
+query-focused experiments (H2, H4, H9, H10, H11) could not have
+surfaced, since none of them ever rebuilt an index while another
+tenant was being queried.
+
+**Named, plausible (not profiled) mechanism**: with only 4 real CPU
+cores in this container and one thread continuously CPU-bound for
+~1-second stretches building a large sorted/indexed structure, some
+quiet-tenant queries are plausibly scheduled onto the same core as the
+churn thread (or contend for shared caches/memory bandwidth/allocator
+locks during the rebuild's own heavy allocation activity), producing
+occasional large latency spikes concentrated in the tail rather than a
+uniform shift -- consistent with p50 barely moving while p99 moves
+sharply.
+
+**Named limitations**: only 5 discrete rebuild events occur per
+5-second run -- a small sample of "rebuild windows" even though 500
+quiet-tenant queries are sampled, so the exact p99 value is sensitive
+to precisely which few queries happen to land during an active
+rebuild (this is very likely why the p99 ratio itself varies more
+between runs -- 4.00x-6.70x -- than p50 does: not because the
+underlying effect is unstable, but because so few rebuild events occur
+per window). Only one churn tenant (Furniture, the largest and
+therefore most expensive to rebuild) and one quiet tenant (Rugs) were
+tested; whether smaller, cheaper-to-rebuild tenants would show a
+proportionally smaller effect, and whether a higher rebuild FREQUENCY
+(e.g. many small tenants churning at once, rather than one large one)
+would compound the effect, are both untested and are natural follow-ups.

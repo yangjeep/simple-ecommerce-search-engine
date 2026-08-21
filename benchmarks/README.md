@@ -92,6 +92,12 @@ same as Phases 0–5:
   facet-scan query is sub-linear at small tenant sizes then
   super-linear at large ones, reproduced across 3 runs; see
   `PHASE7_DECISION.md`.
+- `p7_e11_high_churn_impact.yaml` — Issue #21's "high-churn tenant
+  impact on low-churn tenants" metric: unlike H2's null result for pure
+  query load, a co-located tenant undergoing repeated index rebuilds
+  materially degrades another tenant's own p99 latency (4.00-6.70x,
+  reproduced across 3 runs) — a genuine, actionable isolation gap; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

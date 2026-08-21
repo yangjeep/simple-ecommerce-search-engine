@@ -1,0 +1,28 @@
+{
+  "experiment_id": "P7-E11",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e11_high_churn_impact.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS 2 real tenants: Rugs (quiet/low-churn, from H2/P7-E00), Furniture (high-churn, repeatedly rebuilt)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, quiet tenant queried while a separate thread continuously rebuilds and hot-swaps the churn tenant's index via Mutex<Arc<CatalogIndex>>"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e11_high_churn_impact_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E11",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h14_status": "FALSIFIED, reproduced across 3 runs -- a genuine material effect, unlike H2's null result for pure query load",
+    "p50_ratio_range": [1.14, 1.17],
+    "p99_ratio_range": [4.00, 6.70],
+    "pass_bar": "p99 growth <2x (same bar as H2/H4/H11/H12)",
+    "rebuilds_per_5s_window": 5,
+    "implied_single_rebuild_cost_seconds": "~1.0 (Furniture, 16039 products)",
+    "comparison_to_h13_query_cost": "~100x a single facet-scan query's own CPU cost",
+    "disclosed_unconfirmed_mechanism": "CPU-core contention between the churn thread and quiet-tenant query thread on this 4-core container -- not profiled or confirmed",
+    "named_limitation": "only 5 discrete rebuild events per 5s run; only one churn tenant size (largest) and one quiet tenant tested"
+  }
+}
