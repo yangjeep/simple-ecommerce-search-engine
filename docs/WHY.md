@@ -233,9 +233,19 @@ plausibly attributable to CPU cache locality rather than any explicit
 software-level cache this architecture manages — but at an absolute
 scale (tens of microseconds) almost certainly negligible next to any
 real deployed service's actual request latency, a distinction stated
-explicitly rather than leading with the more dramatic ratio alone.
-Aggregate QPS under a realistic multi-tenant demand mix remains open for
-the next Phase 7 pass.
+explicitly rather than leading with the more dramatic ratio alone. A
+final measurement then embedded that same pair in a single, realistic,
+Zipfian-weighted query stream spanning all 55 real tenants at once
+(testing this document's own opening thesis in a different, more
+production-like arrival pattern, and Issue #21's "aggregate QPS,"
+"fairness under skewed tenant load," and "hot tenant saturation"
+metrics): the DIRECTION of the cold-tenant effect replicated cleanly in
+every run, but its MAGNITUDE shrank roughly 4-6x under this realistic,
+shared/interleaved design compared to the original idealized one —
+pointing at the earlier measurement's fully-dedicated-thread setup, not
+a general architectural property, as the likely source of its larger
+observed ratio. Combining the memory model with latency evidence for an
+SLO-conditioned tenant count remains open for the next Phase 7 pass.
 
 ## What this project is not
 

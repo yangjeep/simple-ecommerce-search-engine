@@ -754,6 +754,21 @@ a bound rather than growing without limit, which is exactly the
 property a real capacity-planning model needs before treating H7's
 figure as a stable input. Idle-resident's finding is now confirmed
 completely stable over a 9x longer window with literally zero
+additional growth observed.
+
+**Named limitations, not resolved this pass**: only a single 180-second
+run's worth of samples per repetition (12 samples at 15-second
+intervals) was examined for deceleration shape; a finer-grained sample
+rate might reveal structure this coarser one misses. Only Furniture (the
+one condition that hadn't plateaued in H7) and idle were tested --
+near-empty tenants, which had already plateaued within H7's first
+5-second sample, were not re-tested at length (a reasonable scope
+choice given they showed no sign of continued growth in H7, but
+technically untested at 180s). The specific allocator mechanism remains
+a disclosed, unconfirmed hypothesis, as in H7. Whether the tiny residual
+tail creep continues, plateaus, or accelerates over an even longer
+window (minutes to hours, matching a real production service's actual
+lifetime) is untested.
 
 ## P7-E06: cold-tenant overhead under realistic background load (H9, stated before implementation)
 
@@ -856,18 +871,141 @@ under a specific 4-thread contention pattern; it says nothing about
 whether this microsecond-scale effect would be visible at all once real
 network/serialization overhead dominates a genuine multi-tenant
 service's total request latency.
-additional growth observed.
 
-**Named limitations, not resolved this pass**: only a single 180-second
-run's worth of samples per repetition (12 samples at 15-second
-intervals) was examined for deceleration shape; a finer-grained sample
-rate might reveal structure this coarser one misses. Only Furniture (the
-one condition that hadn't plateaued in H7) and idle were tested --
-near-empty tenants, which had already plateaued within H7's first
-5-second sample, were not re-tested at length (a reasonable scope
-choice given they showed no sign of continued growth in H7, but
-technically untested at 180s). The specific allocator mechanism remains
-a disclosed, unconfirmed hypothesis, as in H7. Whether the tiny residual
-tail creep continues, plateaus, or accelerates over an even longer
-window (minutes to hours, matching a real production service's actual
-lifetime) is untested.
+## P7-E07: fairness + aggregate QPS under a realistic Zipfian demand mix (H10, stated before implementation)
+
+Issue #21's Phase 7 "Experiments" list explicitly names "aggregate
+QPS," "fairness under skewed tenant load," and "hot tenant saturation"
+as required measurements. Nothing in H1-H9 tested a realistic, single,
+shared query stream spanning all 55 real tenants at once: P7-E01 (H4)
+held one tenant's own load fixed and varied only the BREADTH of other,
+uniformly-touched tenants; P7-E06 (H9) used a deliberately simple,
+artificial design (one dedicated hot thread spinning as fast as
+possible with zero interleaving, one dedicated cold thread on a fixed
+100ms interval, two background-noise threads). P7-E07 asks whether H9's
+finding (a real ~9-13x cold/hot latency-ratio effect, plausibly CPU
+cache locality) is a genuine architectural property that replicates
+under a DIFFERENT, more realistic query-arrival pattern, or an artifact
+specific to H9's fixed-interval, fully-dedicated-thread methodology.
+
+**H10**: reusing H9's exact same-size tenant-pair selection (isolating
+query FREQUENCY from tenant SIZE, so results are directly comparable to
+H9), but embedding both tenants in a single shared Zipfian-weighted
+(weight(rank) = 1/rank, a well-established real-world traffic-skew
+model) query stream spanning all 55 real tenants at once -- with the
+pair's own weights overridden to the population's max/min (~55x apart)
+-- H9's cold/hot p99 ratio replicates (stays >=2x, the same
+material-regression threshold used throughout Phase 7) under this
+materially different, more realistic arrival pattern.
+
+**Design**: 4 worker threads (matching this container's real CPU
+count), each independently sampling a tenant from the SAME shared
+weighted distribution and executing a real structural query
+(`facet_scan_once`), recording latency only for the tracked hot/cold
+pair (all other tenants' queries are counted toward aggregate
+throughput but not individually timed). Each of the 3 repeated runs
+uses the SAME per-thread RNG seed (a deterministic seed per this
+project's standing discipline), so the logical query sequence is
+identical across runs -- any run-to-run difference in the measured
+latencies is attributable to genuine runtime/scheduling noise, not
+sampling noise.
+
+**Pass/fail defined in advance**: if this design's cold/hot p99 ratio
+clears the same 2x threshold in every run, H10 REPLICATES (H9's effect
+is a real architectural property, not a methodology artifact); if it
+drops below 2x in any run, H10 DOES NOT REPLICATE (H9's effect may be
+specific to its fixed-interval, fully-dedicated-thread design).
+
+## P7-E07 self-caught statistical problem (first draft, before trusting any ratio)
+
+The first-draft run used a 15-second window. The cold tenant's assigned
+weight is a real ~55x smaller population share, and over 15 seconds it
+received only **62-63 samples** per run. With n=62, p99 is essentially
+the value of the single highest (or second-highest) observed sample --
+not a robust tail-latency estimate. This showed up immediately: using
+the IDENTICAL deterministic query sequence in all 3 runs (same RNG
+seed), the reported p99 ratio swung wildly -- **1.53x, 1.82x, 5.50x** --
+while the far more robust p50 ratio (computed from the BULK of each
+much-larger hot-tenant sample, and still meaningful even for cold's
+smaller sample) stayed essentially IDENTICAL across all 3 runs
+(2.04x, 2.08x, 2.08x). A statistic that swings 3.6x across 3 runs of an
+*identical* logical query sequence is not measuring a real per-run
+difference -- it is measuring how few cold samples landed near the
+tail. This was caught before any ratio was written up as a finding.
+
+**Fixed**: `RUN_DURATION` raised from 15s to 120s (8x), targeting
+several hundred cold-tenant samples -- enough for p99 to reflect actual
+tail behavior rather than the identity of one lucky/unlucky sample. The
+undersampled first-draft results were renamed, not deleted:
+`docs/research/artifacts/p7_e07_realistic_demand_mix_run1/results_15s_undersampled_superseded.csv`
+and its matching `.log`.
+
+## P7-E07 result (after the fix): H10 does not cleanly replicate H9's magnitude, but the DIRECTION replicates in every run
+
+| run | hot p50 (ms) | hot p99 (ms) | cold p50 (ms) | cold p99 (ms) | cold n | p99 ratio |
+|---|---|---|---|---|---|---|
+| 1 | 0.0024 | 0.0047 | 0.0050 | 0.0093 | 494 | 1.98x |
+| 2 | 0.0024 | 0.0058 | 0.0050 | 0.0121 | 487 | 2.08x |
+| 3 | 0.0024 | 0.0044 | 0.0050 | 0.0081 | 501 | 1.85x |
+
+Cold-tenant sample counts (487-501) are now comparable to H9's own
+~300-sample design, and the ratio is far more stable than the
+undersampled first draft: **1.85x-2.08x** across all 3 runs, hovering
+almost exactly on the pre-registered 2.0x line (1 of 3 runs, run 2,
+technically clears it; runs 1 and 3 fall just under). By the letter of
+the pre-registered criterion (ALL runs must clear 2.0x), **H10 does NOT
+replicate** H9's finding as a clean pass.
+
+**But this is not "no effect" -- it is a much SMALLER, still real and
+directionally consistent effect.** The p50 ratio is remarkably stable:
+cold p50 (0.0050ms) is IDENTICAL in all 3 runs, hot p50 (0.0024ms) is
+IDENTICAL in all 3 runs, giving an exact 2.083x ratio in every single
+run. Combined with the p99 ratios clustering tightly around the same
+~2x value (unlike the first draft's noisy 1.53-5.50x swing), this reads
+as a real, small, highly reproducible effect (cold measurably slower
+than hot, consistently, at both p50 and p99, in 100% of runs) -- just
+one **roughly 4-6x smaller in magnitude** than H9's originally-observed
+9-13x ratio, not one that has vanished.
+
+**Named, disclosed-but-unconfirmed hypothesis for why the magnitude
+shrank**: H9's design gave the hot tenant a fully dedicated thread with
+ZERO interleaving -- spinning on only that one tenant's data gives it an
+artificially ideal, maximally-warm CPU cache. In this design, by
+contrast, EVERY thread (including whichever one happens to serve the
+hot tenant on a given iteration) is constantly interleaved with queries
+to all 53 other real tenants via the same shared weighted stream --
+so even the hot tenant's own cache locality is diluted relative to
+H9's idealized setup, likely narrowing the observed hot/cold gap from
+both ends (cold doesn't get dramatically worse, hot doesn't get to stay
+dramatically better). This is a plausible, mechanistically coherent
+explanation for the discrepancy between the two designs' effect sizes,
+not a profiled and confirmed one.
+
+**Aggregate throughput**: 1,320-1,345 rps across all 3 runs (tight,
+consistent with the identical deterministic query sequence). As
+pre-registered, this is explicitly NOT compared directly to H4/P7-E01's
+aggregate throughput number -- which tenants are hot/cold and their
+per-query cost dominates this figure (the same workload-mix-sensitivity
+class of caveat P7-E01's own first draft had to learn the hard way), so
+no cross-experiment throughput comparison is drawn here.
+
+**What this means**: H9's cold-tenant-overhead finding is real and
+replicates in DIRECTION under a materially different, more realistic
+full-population query-arrival pattern -- but its MAGNITUDE was
+substantially inflated by H9's specific fully-dedicated-thread design.
+A realistic, shared, interleaved worker-thread pool (the architecture
+this project would actually deploy) shows a smaller, ~2x effect that
+sits right at this project's own material-regression threshold rather
+than dramatically clearing it. Both figures (H9's ~9-13x under an
+idealized design, H10's ~1.85-2.08x under a realistic one) are now
+part of the honest record, neither erasing the other.
+
+**Named limitations**: only one size-matched tenant pair (the same one
+H9 used, both 5 products) was tested; only one weight ratio (~55x) was
+tested; whether the ~2x effect grows, shrinks, or holds at a different
+traffic-skew ratio or a different-sized pair is untested. The specific
+"cache dilution from interleaving" hypothesis for why H9's and H10's
+magnitudes differ is disclosed, not profiled or confirmed. Aggregate
+throughput and per-tenant "hot tenant saturation" behavior were observed
+only as secondary context, not independently, rigorously isolated as
+their own falsifiable claims this pass.

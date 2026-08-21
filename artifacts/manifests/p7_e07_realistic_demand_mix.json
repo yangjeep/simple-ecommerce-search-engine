@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P7-E07",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e07_realistic_demand_mix.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS all 55 real tenants (Zipfian-weighted); tracked pair: Faux Plants and Trees, Ergonomic Accessories"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, all 55 real tenants in-process, 4 threads, shared Zipfian WeightedIndex"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e07_realistic_demand_mix_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E07",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h10_status": "direction replicates in all 3 runs; magnitude does not cleanly clear the pre-registered 2x threshold in every run",
+    "p99_ratio_cold_over_hot_range": [1.85, 2.08],
+    "p50_ratio_cold_over_hot": 2.083,
+    "h9_comparison_ratio_range": [9, 13],
+    "aggregate_rps_range": [1320.8, 1345.3],
+    "self_caught_issue": "first-draft 15s window gave only 62-63 cold samples, an unstable p99 statistic (swung 1.53x-5.50x on an identical deterministic query sequence); fixed by extending to 120s (487-501 samples)"
+  }
+}

@@ -1,0 +1,22 @@
+=== P7-E07: fairness + aggregate QPS under a realistic Zipfian demand mix ===
+  size-matched pair (same as H9): hot="Faux Plants and Trees" products=5, cold="Ergonomic Accessories" products=5
+  assigned traffic-weight ratio hot/cold = 55.0x (max=1.0000, min=0.018182)
+
+--- run 1/3 ---
+  aggregate: total=159646 rps=1330.4   hot: n=28820    p50=  0.0024ms p99=  0.0047ms   cold: n=494    p50=  0.0050ms p99=  0.0093ms   p99_ratio(cold/hot)=1.98x
+
+--- run 2/3 ---
+  aggregate: total=158501 rps=1320.8   hot: n=28638    p50=  0.0024ms p99=  0.0058ms   cold: n=487    p50=  0.0050ms p99=  0.0121ms   p99_ratio(cold/hot)=2.08x
+
+--- run 3/3 ---
+  aggregate: total=161434 rps=1345.3   hot: n=29141    p50=  0.0024ms p99=  0.0044ms   cold: n=501    p50=  0.0050ms p99=  0.0081ms   p99_ratio(cold/hot)=1.85x
+
+H10 comparison (this design's cold/hot p99 ratio vs. H9's established 9-13x range):
+  run 1: 1.98x
+  run 2: 2.08x
+  run 3: 1.85x
+  H10 verdict: DOES NOT REPLICATE -- this design's cold/hot p99 ratio drops below the 2x threshold in at least one run; H9's effect may be specific to its fixed-interval sampling methodology rather than a general architectural property under realistic, naturally-arriving traffic
+  (ratio range across 3 runs: 1.85x - 2.08x)
+  (note: aggregate rps depends heavily on WHICH tenants are hot/cold and their per-query cost -- it is NOT directly comparable to H4/P7-E01's aggregate throughput number, the same workload-mix caveat P7-E01's own first draft had to learn)
+
+artifacts written to docs/research/artifacts/p7_e07_realistic_demand_mix_run1

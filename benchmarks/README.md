@@ -72,6 +72,10 @@ same as Phases 0–5:
   between an infrequently- and a continuously-queried same-sized
   tenant, at a practically negligible absolute scale; see
   `PHASE7_DECISION.md`.
+- `p7_e07_realistic_demand_mix.yaml` — a replication check of P7-E06's
+  finding under a materially different, more realistic full-population
+  Zipfian query-arrival pattern: the direction replicates, the magnitude
+  does not (roughly 4-6x smaller); see `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
