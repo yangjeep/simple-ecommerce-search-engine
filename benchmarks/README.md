@@ -46,6 +46,9 @@ same as Phases 0–5:
   follow-on (Retailrocket/H&M/Amazon Reviews 2023/Havenask all confirmed
   blocked; see `PHASE6B_DECISION.md`), including the numeric-range filter
   operator never testable in Phase 6A.
+- `p7_e00_tenant_packing.yaml` — the first multi-tenant packing-density
+  measurement (Issue #21 Phase 7), using real WANDS category partitions
+  as the tenant model; see `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

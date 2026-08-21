@@ -1,0 +1,12 @@
+=== P7-E00: tenant packing density (order=reversed) ===
+loading real WANDS catalog and partitioning by category_depth_1...
+55 real distinct category_depth_1 tenants available (order=reversed)
+  N=1   cumulative_products=1       marginal_rss_kb=68        rss_kb/tenant=     68.0 cumulative_index_bytes=1292       index_bytes/tenant=   1292.0 build_ms=     0.4
+  N=5   cumulative_products=5       marginal_rss_kb=68        rss_kb/tenant=     13.6 cumulative_index_bytes=4654       index_bytes/tenant=    930.8 build_ms=     0.6
+  N=10  cumulative_products=10      marginal_rss_kb=68        rss_kb/tenant=      6.8 cumulative_index_bytes=9038       index_bytes/tenant=    903.8 build_ms=     0.8
+  N=25  cumulative_products=35      marginal_rss_kb=68        rss_kb/tenant=      2.7 cumulative_index_bytes=35608      index_bytes/tenant=   1424.3 build_ms=     1.7
+  N=55  cumulative_products=41438   marginal_rss_kb=37432     rss_kb/tenant=    680.6 cumulative_index_bytes=9843378    index_bytes/tenant= 178970.5 build_ms=   498.6
+
+(order=reversed run: H1 only, skipping H2)
+
+artifacts written to docs/research/artifacts/p7_e00_tenant_packing_run1/h1_rss_amortization_reversed.csv

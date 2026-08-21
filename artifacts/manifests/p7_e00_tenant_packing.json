@@ -1,0 +1,30 @@
+{
+  "experiment_id": "P7-E00",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e00_tenant_packing.yaml",
+  "git_sha": "PLACEHOLDER",
+  "dataset": {
+    "name": "WANDS, partitioned by category_depth_1 into 55 real tenants",
+    "source": "https://github.com/wayfair/WANDS",
+    "pinned_commit": "3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5",
+    "tenant_count": 55
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, one independent instance per tenant"
+  },
+  "repetitions": "3 independent process runs each for H1 forward/reversed and H2",
+  "raw_results_path": "docs/research/artifacts/p7_e00_tenant_packing_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E00",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h1_first_draft_per_tenant_fixed_cost_kb_claim": "27-590",
+    "h1_first_draft_status": "falsified by reversed-build-order control + deterministic approximate_size_bytes cross-check",
+    "h1_corrected_finding": "per-tenant fixed memory overhead negligible; total cost tracks aggregate product count not tenant count",
+    "h1_reversed_order_tiny_tenant_marginal_rss_kb": "68-108 (flat across N=1..25)",
+    "h2_cross_tenant_p99_ratio_range": [1.31, 1.43],
+    "h2_same_tenant_control_p99_ratio_range": [0.85, 1.16],
+    "h2_verdict": "PASS, robust across 3 runs, all ratios well under 2.0x threshold",
+    "h3_status": "not tested -- real category partition ceiling (55) reached far below hardware resource limit"
+  }
+}

@@ -1,0 +1,6 @@
+order,tenant_count,tenant_name,tenant_products,cumulative_products,marginal_rss_kb,rss_kb_per_tenant,cumulative_index_bytes,index_bytes_per_tenant,build_ms_cumulative
+reversed,1,Bath Rugs & Mats,1,1,68,68.00,1292,1292.00,0.44
+reversed,5,Hooks,1,5,68,13.60,4654,930.80,0.59
+reversed,10,Physical Education Equipment,1,10,68,6.80,9038,903.80,0.81
+reversed,25,Early Education,3,35,68,2.72,35608,1424.32,1.75
+reversed,55,Furniture,16039,41438,37432,680.58,9843378,178970.51,498.62

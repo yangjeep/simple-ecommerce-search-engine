@@ -182,6 +182,21 @@ candidate range. A genuinely new operator (numeric-range filtering,
 untestable in Phase 6A for lack of a price field) showed its own
 distinct, materially higher crossover point.
 
+**First multi-tenant result (Phase 7 — PROCEED, `PHASE7_DECISION.md`)**:
+the first phase in this project's history to build and measure more
+than one tenant's index in one process, using WANDS' real category
+structure as a realistic SMB tenant model (each category becomes one
+specialty retailer's catalog). This project's adversarial-review
+discipline caught a real problem here too — a first-draft claim of a
+small but real "~27-590 KB per-tenant fixed cost" did not survive a
+reversed-build-order control, and was corrected (not just softened) to a
+stronger, more favorable finding: per-tenant memory overhead is
+negligible in this architecture, and total memory cost tracks aggregate
+product count rather than tenant count. Cross-tenant latency isolation
+held robustly across repeated runs. Both findings are explicitly scoped
+to a single-process measurement — cross-process fixed cost and
+QPS-scaling under load remain open for the next Phase 7 pass.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

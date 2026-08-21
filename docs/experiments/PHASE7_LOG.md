@@ -99,76 +99,133 @@ reusing existing physical indexes unchanged. This deliberately tests the
 current architecture's OUT-OF-THE-BOX multi-tenant packing behavior
 before considering any tenant-aware optimization.
 
-## Raw results (P7-E00)
+## First-draft results and self-caught interpretation issue
 
-`docs/research/artifacts/p7_e00_tenant_packing_run1/{h1_rss_amortization.csv,h2_isolation.csv}`.
+The first implementation measured only RSS, baseline captured BEFORE
+partitioning (bundling the one-time whole-catalog parse into N=1's
+number), largest-tenant-first only, one run. The naive
+`cumulative_marginal_rss / N` column trivially decreased (139,680 ->
+2,731.9 KB) as N grew — but per-step decomposition showed this was
+dominated by WANDS' long-tail shape (cumulative products barely grow
+past N=10), not obviously fixed-cost amortization. The first draft
+tentatively read the per-step KB/tenant-shrinking-while-KB/product-
+growing pattern as "a real per-tenant fixed cost (~27-590 KB)."
 
-### H1: RSS at each tenant-count checkpoint
+## Adversarial review found this was not resolved, and possibly wrong
 
-| N | tenant added at this checkpoint | tenant products | cumulative products | cumulative marginal RSS (KB) | naive RSS/tenant (KB) |
-|---|---|---|---|---|---|
-| 1 | Furniture | 16,039 | 16,039 | 139,680 | 139,680.0 |
-| 5 | Storage & Organization | 2,175 | 30,906 | 139,680 | 27,936.0 |
-| 10 | Baby & Kids | 1,204 | 39,664 | 142,628 | 14,262.8 |
-| 25 | Buffet Accessories | 6 | 41,378 | 149,432 | 5,977.3 |
-| 55 | Water Filter Pitchers | 1 | 41,438 | 150,252 | 2,731.9 |
+A 3-lens adversarial review (confound analysis, statistical rigor,
+honesty/scope) found: (1) a single, untrialed RSS snapshot series cannot
+distinguish real per-tenant cost from allocator/page-granularity noise;
+(2) tenants were always built largest-first, so every "per-tenant cost"
+estimate was confounded with build ORDER (the exact confound Phase 6B's
+reversed-order check existed to rule out, not run here); (3)
+`CatalogIndex::approximate_size_bytes()` — a deterministic, allocator-
+noise-free instrument already implemented in commerce_core — was never
+used, despite being the cheapest, highest-value check available; (4) H2
+had no same-tenant control, so it could not distinguish "tenant boundary
+isolation" from "generic CPU/memory contention"; (5) leftover state
+(H1's `partitions`, 53 of H2's built-but-unused tenants) stayed
+needlessly resident during H2's timing window.
 
-### H2: quiet-tenant latency, alone vs. under concurrent cross-tenant load
+## Fixes applied, then re-measured (not just re-worded)
 
-| condition | p50 (ms) | p99 (ms) | n |
+`crates/phase7-eval/src/tenants.rs` and `p7_e00_tenant_packing.rs` were
+revised: RSS baseline now captured AFTER partitioning; each tenant's
+`approximate_size_bytes()` recorded alongside RSS; an `order` CLI arg
+(`forward`/`reversed`) added; H1's intermediate state explicitly dropped
+before H2; H2 now includes a same-tenant control condition; and — found
+while making these fixes — tenants now get independently-interned
+`CategoryId`/`ProductTypeId`/`BrandId` spaces (raw records are grouped
+by `category_depth_1` BEFORE `catalog_ingest::build_catalog` runs,
+instead of after), matching how real independent tenants would each
+bootstrap their own schema rather than sharing one canonicalized ID
+space from a single whole-catalog ingestion pass.
+
+The revised ladder was then run 3x forward and 3x reversed (order
+control) plus 3x total for H2 (same/cross-tenant conditions each run).
+Raw: `docs/research/artifacts/p7_e00_tenant_packing_run1/{forward,reversed}_run{1,2,3}.log`,
+`h1_forward_run{2,3}.csv`, `h1_reversed_run{1,2,3}.csv`, `h2_isolation.csv`.
+
+## Corrected H1 result: the original "per-tenant fixed cost" claim is FALSIFIED
+
+The deterministic `approximate_size_bytes()` metric (order-invariant by
+construction — confirmed identical, 9,843,378 bytes at N=55, in both
+forward and reversed runs) shows per-tenant fixed cost is genuinely
+small: a single-product tenant costs 1,292 bytes total. But the decisive
+result is the **reversed-order (smallest-tenant-first) RSS run**:
+
+| N (reversed order) | tenant added | products | cumulative RSS marginal (KB) |
 |---|---|---|---|
-| Rugs tenant alone | 1.1915 | 1.8225 | 500 |
-| Rugs tenant + 3 threads hammering Furniture tenant | 1.4001 | 2.7177 | 500 |
+| 1 | Bath Rugs & Mats | 1 | 68-108 (run-to-run) |
+| 5 | Hooks | 1 | 68-108 (UNCHANGED from N=1) |
+| 10 | Physical Education Equipment | 1 | 68-108 (UNCHANGED) |
+| 25 | Early Education | 3 | 68-108 (UNCHANGED) |
+| 55 | Furniture (the single large tenant, built LAST) | 16,039 | 37,432-37,476 |
 
-p50 ratio 1.18x, p99 ratio 1.49x — under the pre-registered pass/fail
-rule (material regression = >=2x), **H2 passes**: no material p99
-regression from an unrelated tenant's sustained heavy concurrent load.
+Building 54 near-empty tenants first costs **essentially zero**
+additional RSS (flat at 68-108 KB total across all of N=1 through N=25);
+essentially all real memory cost appears the moment the ONE large tenant
+(Furniture) is built, regardless of whether it is built first (forward
+order) or last (reversed order). This directly contradicts the
+forward-order run's apparent "27-590 KB per-tenant cost in the tail":
+that pattern was an **allocator/build-order artifact** — building the
+large tenant first inflates the process's heap/arena footprint
+immediately, and that inflated baseline does not shrink for later tiny
+tenants, making them look like they "cost" something when the
+deterministic metric and the reversed-order control both show they cost
+close to nothing. Cross-checking magnitudes confirms this: in the
+forward-order N=10->N=55 range, RSS grew ~7,644 KB while
+`approximate_size_bytes()` grew only ~718 KB for the identical set of
+added tenants — a ~10.6x disproportion only explicable by allocator/page
+effects, not real structural cost.
 
-## Self-caught interpretation issue: the naive RSS/tenant metric is misleading
+**Corrected finding**: in this architecture, per-tenant fixed memory
+overhead is negligible; total memory cost is overwhelmingly driven by
+aggregate PRODUCT COUNT, not tenant COUNT. This answers Issue #21's
+"idle/low-QPS tenant fixed cost" metric more directly and more
+favorably than the first draft's hedged "27-590 KB" estimate: an
+idle/near-empty tenant costs close to nothing to keep resident.
+Cross-run reproducibility was tight for both forward (RSS within ~0.3%
+across 3 runs at every checkpoint) and reversed (RSS within the
+tiny-tenant range consistently flat across 3 runs) orders, so this is
+not a one-off result.
 
-The naive `cumulative_marginal_rss / N` column trivially decreases
-(139,680 -> 2,731.9 KB) as N grows from 1 to 55 — but this is dominated
-by WANDS' own real long-tail shape, not primarily by fixed-cost
-amortization: cumulative products barely grow past N=10 (39,664 -> 41,378
--> 41,438 for N=10/25/55), so most of the added "tenants" beyond N~10 are
-each contributing only a handful of products. Dividing a roughly-flat
-total by a growing N will show this same "decreasing average" shape for
-ANY heterogeneous-size population, independent of whether real per-
-process fixed-cost amortization exists. Presenting the naive curve alone
-would overclaim.
+**Named limitation, not fixed this pass**: this experiment measures
+memory only; it says nothing about per-tenant CPU/connection/process
+overhead in a real multi-process or multi-container deployment model,
+which could have a materially different (larger) fixed cost than the
+in-process `CatalogIndex` construction measured here.
 
-The more informative decomposition is the **marginal RSS added per
-step**, separated into marginal-per-added-tenant and marginal-per-
-added-product:
+## Corrected H2 result: PASS, robust across 3 runs, with a small consistent same-vs-cross difference
 
-| step | tenants added | products added | marginal RSS (KB) | KB/tenant | KB/product |
-|---|---|---|---|---|---|
-| 1->5 | +4 | +14,867 | 0 | 0.0 | 0.000 |
-| 5->10 | +5 | +8,758 | 2,948 | 589.6 | 0.337 |
-| 10->25 | +15 | +1,714 | 6,804 | 453.6 | 3.970 |
-| 25->55 | +30 | +60 | 820 | 27.3 | 13.667 |
+| run | cross-tenant p99 ratio | same-tenant-control p99 ratio |
+|---|---|---|
+| 1 | 1.31x | 0.85x |
+| 2 | 1.43x | 1.15x |
+| 3 | 1.34x | 1.16x |
 
-KB/product *grows* in the tail (0.337 -> 3.970 -> 13.667) while KB/tenant
-*shrinks* (589.6 -> 453.6 -> 27.3) — the signature of a real, roughly
-constant **per-tenant fixed structural overhead** (bitmap/hashmap/
-dictionary scaffolding paid once per tenant regardless of size) that
-dominates cost for near-empty tenants (where there is almost no
-per-product cost to amortize it against) and is comparatively invisible
-for large tenants (where it is dwarfed by real per-product data). The
-1->5 step showing exactly 0 KB marginal RSS is itself informative: either
-below this measurement's resolution, or those 4 added tenants' data fit
-within already-committed/over-allocated pages from the first (largest)
-tenant's build — recorded as an open question, not resolved here.
+All 6 ratios (3 runs x 2 conditions) stay well below the pre-registered
+2.0x material-regression threshold — **H2 passes robustly across
+repeated runs**, not just a single lucky draw. The cross-tenant ratio is
+consistently, if modestly, higher than the same-tenant-control ratio in
+all 3 runs (mean 1.36x vs 1.05x) — a real, reproducible, but small
+difference, not dramatic enough to claim a specific tenant-boundary
+mechanism with confidence. Named as an open question (a plausible
+unproven hypothesis: accessing a different tenant's data may cost
+slightly more in cache locality than repeatedly touching the same
+tenant's already-warm data even under contention) rather than asserted.
+**The core claim — no material p99 regression from an unrelated
+tenant's sustained heavy concurrent load — holds robustly.**
 
-**This reframes H1 from "per-tenant RSS shrinks with scale" (the naive,
-overclaiming reading) to "a small, real, roughly-constant per-tenant
-fixed cost exists (approximately 27-590 KB in this measurement,
-resolution-limited) plus a much smaller genuine per-product marginal
-cost" — directly answering Issue #21's explicit Phase 7 metric "idle/
-low-QPS tenant fixed cost" more precisely than the original hypothesis
-statement anticipated.**
+## H3 (packing ceiling): not tested this pass
 
-## Adversarial review
-
-[Pending — see PHASE7_DECISION.md for the outcome before this finding is
-promoted.]
+Stated as a falsifiable hypothesis before implementation but never
+actually exercised: the binary hard-stops at N=55 (WANDS' real
+`category_depth_1` cardinality) at ~50 MB peak marginal RSS, nowhere
+near this container's ~15 GB budget. The real-category partition simply
+ran out of distinct categories before any resource ceiling was
+approached. Recorded as explicitly untested rather than silently
+dropped — a genuine packing-ceiling test needs either finer real
+partitioning (depth-2/depth-3, more but smaller real categories) or
+controlled-stress replication (Phase 6B's disclosed methodology, applied
+to tenant count rather than catalog size) as a named follow-up.

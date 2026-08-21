@@ -25,9 +25,9 @@ and would violate `CLAUDE.md`'s "do not rewrite history" rule and Issue
 #21's own archive discipline ("never silently edit historical experiment
 conclusions"). They stay exactly where they are.
 
-`artifacts/manifests/` currently holds six **worked-example** records —
+`artifacts/manifests/` currently holds seven **worked-example** records —
 written after the fact, alongside their matching `benchmarks/manifests/`
-entries — for Phase 3/4/5/6A/6B's actual headline promoted results:
+entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 
 - `p3e16_finegrained_frontier.json`
 - `p4e01_implication_propose_replay_promote.json`
@@ -35,6 +35,7 @@ entries — for Phase 3/4/5/6A/6B's actual headline promoted results:
 - `p6a_e00_wands_plp_benchmark.json`
 - `p6a_e01_concurrency_sweep.json`
 - `p6b_e00_scale_ladder.json`
+- `p7_e00_tenant_packing.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.
