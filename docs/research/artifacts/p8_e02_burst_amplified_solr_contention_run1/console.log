@@ -1,0 +1,83 @@
+=== P8-E02: burst-amplified shared-Solr contention (H18, Issue #21 Phase 8) ===
+(quiet core='wands_bench'; noisy core='wands_bench_20x'; burst cores=["wands_bench_2x", "wands_bench_5x", "wands_bench_10x"]; base_url=http://localhost:8983/solr)
+
+--- run 1/10 ---
+  TRUE_BASELINE: p50=2.6095ms p99=3.4196ms (n=500)
+  IDLE_NOISY:    p50=3.3096ms p99=6.7663ms (n=500)
+  BURST_NOISY:   p50=5.0238ms p99=12.0996ms (n=500)
+  idle_ratio=1.98x burst_ratio=3.54x amplification=1.79x
+
+--- run 2/10 ---
+  TRUE_BASELINE: p50=2.7108ms p99=3.4086ms (n=500)
+  IDLE_NOISY:    p50=3.4753ms p99=6.3946ms (n=500)
+  BURST_NOISY:   p50=4.8628ms p99=11.9509ms (n=500)
+  idle_ratio=1.88x burst_ratio=3.51x amplification=1.87x
+
+--- run 3/10 ---
+  TRUE_BASELINE: p50=2.6437ms p99=3.5035ms (n=500)
+  IDLE_NOISY:    p50=3.2313ms p99=6.6930ms (n=500)
+  BURST_NOISY:   p50=4.9563ms p99=12.1692ms (n=500)
+  idle_ratio=1.91x burst_ratio=3.47x amplification=1.82x
+
+--- run 4/10 ---
+  TRUE_BASELINE: p50=2.6228ms p99=3.3857ms (n=500)
+  IDLE_NOISY:    p50=3.1896ms p99=6.3133ms (n=500)
+  BURST_NOISY:   p50=4.9251ms p99=11.6122ms (n=500)
+  idle_ratio=1.86x burst_ratio=3.43x amplification=1.84x
+
+--- run 5/10 ---
+  TRUE_BASELINE: p50=2.6748ms p99=3.3216ms (n=500)
+  IDLE_NOISY:    p50=3.4265ms p99=7.1543ms (n=500)
+  BURST_NOISY:   p50=4.7658ms p99=12.3558ms (n=500)
+  idle_ratio=2.15x burst_ratio=3.72x amplification=1.73x
+
+--- run 6/10 ---
+  TRUE_BASELINE: p50=2.7118ms p99=3.5484ms (n=500)
+  IDLE_NOISY:    p50=3.6687ms p99=7.1454ms (n=500)
+  BURST_NOISY:   p50=5.1446ms p99=12.1774ms (n=500)
+  idle_ratio=2.01x burst_ratio=3.43x amplification=1.70x
+
+--- run 7/10 ---
+  TRUE_BASELINE: p50=2.7020ms p99=3.3815ms (n=500)
+  IDLE_NOISY:    p50=3.3060ms p99=6.8429ms (n=500)
+  BURST_NOISY:   p50=5.0483ms p99=12.1410ms (n=500)
+  idle_ratio=2.02x burst_ratio=3.59x amplification=1.77x
+
+--- run 8/10 ---
+  TRUE_BASELINE: p50=2.6418ms p99=3.2530ms (n=500)
+  IDLE_NOISY:    p50=3.3661ms p99=6.2831ms (n=500)
+  BURST_NOISY:   p50=5.1614ms p99=12.5660ms (n=500)
+  idle_ratio=1.93x burst_ratio=3.86x amplification=2.00x
+
+--- run 9/10 ---
+  TRUE_BASELINE: p50=2.6324ms p99=3.2831ms (n=500)
+  IDLE_NOISY:    p50=3.5359ms p99=7.4100ms (n=500)
+  BURST_NOISY:   p50=4.8847ms p99=11.8849ms (n=500)
+  idle_ratio=2.26x burst_ratio=3.62x amplification=1.60x
+
+--- run 10/10 ---
+  TRUE_BASELINE: p50=2.6564ms p99=3.3558ms (n=500)
+  IDLE_NOISY:    p50=3.4917ms p99=6.7176ms (n=500)
+  BURST_NOISY:   p50=5.1782ms p99=12.5244ms (n=500)
+  idle_ratio=2.00x burst_ratio=3.73x amplification=1.86x
+
+H18 verdict across 10 runs:
+  run 1: idle_ratio=1.98x burst_ratio=3.54x amplification=1.79x
+  run 2: idle_ratio=1.88x burst_ratio=3.51x amplification=1.87x
+  run 3: idle_ratio=1.91x burst_ratio=3.47x amplification=1.82x
+  run 4: idle_ratio=1.86x burst_ratio=3.43x amplification=1.84x
+  run 5: idle_ratio=2.15x burst_ratio=3.72x amplification=1.73x
+  run 6: idle_ratio=2.01x burst_ratio=3.43x amplification=1.70x
+  run 7: idle_ratio=2.02x burst_ratio=3.59x amplification=1.77x
+  run 8: idle_ratio=1.93x burst_ratio=3.86x amplification=2.00x
+  run 9: idle_ratio=2.26x burst_ratio=3.62x amplification=1.60x
+  run 10: idle_ratio=2.00x burst_ratio=3.73x amplification=1.86x
+  median idle_ratio=1.99x median burst_ratio=3.56x
+  amplification across 10 runs: median=1.80x range=[1.60x, 2.00x]
+  H18 verdict: CONFIRMED -- a correlated burst (additional tenants' traffic joining the shared Solr instance) materially amplifies H15's already-confirmed shared-Solr-contention isolation gap; the risk is worse than H15 alone showed
+
+  Secondary statistic -- how often does a >= 2x material-regression event happen at all:
+    IDLE_NOISY:  5/10 runs showed >= 2x degradation
+    BURST_NOISY: 10/10 runs showed >= 2x degradation
+
+artifacts written to docs/research/artifacts/p8_e02_burst_amplified_solr_contention_run1

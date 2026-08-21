@@ -360,6 +360,28 @@ gap merely bigger — it makes it dependable. No mitigation for this
 exists yet in this codebase; it is named explicitly as necessary future
 work rather than smoothed over.
 
+**Third Phase 8 result -- burst amplifies the shared-Solr-contention
+gap too (`PHASE8_DECISION.md`)**: the symmetric question for Phase 7's
+other known real isolation gap -- sharing one Solr instance across
+tenants -- got the same answer. Reusing that experiment's exact
+harness, three conditions were measured in the same run: one tenant's
+queries alone, the same tenant while a second tenant hammers a much
+larger shared core (reproducing the original finding exactly), and a
+third condition adding several more tenants' traffic to other cores on
+the same shared instance, modeling more merchants joining the backend
+during a sale rather than one merchant's load simply tripling. Having
+just learned from the rebuild-churn result that a handful of repeated
+runs isn't enough to trust a noisy tail statistic, this measurement
+started directly with ten repeats and a median-based verdict rather
+than re-learning that lesson the hard way -- and the result came back
+tight from the first pass, unlike the rebuild-churn case: median
+amplification of roughly 1.8x, with every individual run agreeing. The
+same qualitative shift recurs: under lighter load the degradation event
+showed up about half the time; with more tenants sharing the backend,
+it showed up every single time. Both of Phase 7's two known real
+isolation gaps now get measurably worse, not better, under a correlated
+burst, and neither has a designed mitigation yet.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

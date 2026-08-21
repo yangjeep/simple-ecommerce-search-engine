@@ -1,0 +1,64 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P8-E02
+phase: 8
+issue: 21
+decision_document: PHASE8_DECISION.md
+claim: >
+  Does a correlated burst make H15's already-confirmed shared-Solr-
+  contention isolation gap worse? Three conditions measured in the
+  same run, reusing H15/P7-E12's exact Solr harness: TRUE_BASELINE
+  (wands_bench core alone), IDLE_NOISY (3 threads hammering
+  wands_bench_20x, reproducing H15 exactly), BURST_NOISY (identical
+  noisy threads plus 1 additional worker thread each on
+  wands_bench_2x, _5x, and _10x -- modeling several more tenants
+  joining the shared Solr instance during a burst). Applied H17's
+  lesson proactively: started directly with 10 runs and a
+  median-based verdict rather than re-discovering the need for it.
+  Result: tight, low-variance from the first pass (unlike H17's noisy
+  rebuild-driven statistic) -- median amplification
+  (burst_ratio/idle_ratio) = 1.80x, every individual run's
+  amplification (1.60x-2.00x) independently clears the 1.25x bar.
+  Secondary statistic (Phase 7's 2.0x material-regression bar):
+  IDLE_NOISY showed a >=2x degradation event in 5/10 runs (50%),
+  BURST_NOISY in 10/10 runs (100%). H18 CONFIRMED. See
+  docs/experiments/PHASE8_LOG.md for the full H18 hypothesis and
+  result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p8_e02_burst_amplified_solr_contention.rs
+build_command: cargo build --release -p phase7-eval --bin p8_e02_burst_amplified_solr_contention
+run_command: ./target/release/p8_e02_burst_amplified_solr_contention http://localhost:8983/solr
+
+dataset:
+  name: real WANDS-derived Solr cores from Phase 6A/6B's scale-ladder work --
+    wands_bench (42,994 docs, quiet core), wands_bench_20x (859,880 docs,
+    noisy core, same as H15), wands_bench_2x/_5x/_10x (85,988/214,970/
+    429,940 docs, additional burst cores)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  lexical: Apache Solr 9.10.1, single standalone instance (no
+    SolrCloud/sharding), 5 pre-built cores, HTTP queries via the ureq
+    crate (q=*:*, rows=24, wt=json -- matches Phase 6A's PAGE_SIZE
+    convention)
+
+workload:
+  selection: TRUE_BASELINE (500 fixed reps, quiet core alone);
+    IDLE_NOISY (500 reps or 5s deadline, 3 threads hammering
+    wands_bench_20x); BURST_NOISY (500 reps or 5s deadline, 3 threads
+    on wands_bench_20x plus 1 thread each on wands_bench_2x/_5x/_10x),
+    all three measured per run, with a 500ms multi-core warm-up before
+    the first baseline (H15/P7-E12's own self-caught cold-start fix)
+  repetitions: 10 independent in-process runs (built into the binary,
+    started at 10 from the outset per H17's own lesson, not raised
+    after a self-caught issue)
+
+seed: "not applicable -- deterministic q=*:*&rows=24 HTTP queries, no RNG"
+
+raw_results: docs/research/artifacts/p8_e02_burst_amplified_solr_contention_run1/
+  - results.csv (all 10 runs, all 3 conditions)
+  - console.log
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE8_LOG.md for the full H18 hypothesis and result.

@@ -210,3 +210,95 @@ consistent with the data, not independently confirmed via profiling.
 This experiment still does not combine with H15 (shared-Solr
 contention) -- a three-way burst + churn + shared-backend interaction
 remains untested.
+
+## P8-E02: burst-amplified shared-Solr contention (H18, stated before implementation)
+
+H17/P8-E01 confirmed that a correlated burst materially worsens H14's
+rebuild-churn isolation gap. The symmetric question for Phase 7's
+*other* known real isolation gap (H15: sharing one Solr instance across
+tenants degrades a quiet tenant's own p99 by 2.16-2.48x under ordinary
+query load) is untested and named in `PHASE8_DECISION.md`'s own "what
+would be built next" as the next highest-value item.
+
+**H18**: a correlated burst -- additional tenants' query traffic
+joining the same shared Solr instance concurrently with the
+already-noisy tenant H15 already measured -- materially worsens the
+quiet tenant's own latency degradation beyond what the single noisy
+tenant alone causes. Falsifiable both ways.
+
+**Design**: reuses P7-E12/H15's exact quiet/noisy-tenant methodology
+and cores (`QUIET_CORE="wands_bench"`, `NOISY_CORE="wands_bench_20x"`,
+`NOISY_WORKERS=3`, `ISOLATION_REPS=500`, `ISOLATION_RUN_DURATION=5s`,
+the same warm-up-before-baseline fix H15's own first draft already
+established). Three conditions per run:
+
+1. **TRUE_BASELINE**: quiet tenant queried alone (reproduces H15's own
+   baseline).
+2. **IDLE_NOISY**: quiet tenant queried while 3 worker threads hammer
+   `wands_bench_20x` (reproduces H15/P7-E12 exactly) -- no other core
+   under load.
+3. **BURST_NOISY**: identical quiet-query and `wands_bench_20x`-noisy
+   threads, PLUS 3 additional burst worker threads, one each hammering
+   `wands_bench_2x`, `wands_bench_5x`, and `wands_bench_10x` (Phase
+   6B's other 3 real scale-ladder cores) -- simulating several more
+   tenants' traffic joining the same shared Solr instance during a
+   correlated sale event, not just the one noisy tenant H15 already
+   measured.
+
+Applying H17's own lesson proactively rather than re-discovering it:
+this experiment starts directly with **10 repeated runs and a
+median-based verdict** (full range still reported), and also reports
+the same >=2.0x material-regression hit-rate secondary statistic H17
+introduced, rather than trusting a 3-run min/max the way the original
+H15/P7-E12 and H17's own first draft did. Pass/fail bar fixed before
+running, identical to H17's: **median amplification (burst_ratio /
+idle_ratio) >= 1.25x is CONFIRMED**; **0.8x-1.25x is DISCONFIRMED
+(burst-invariant)**; **< 0.8x is a surprising attenuation**.
+
+## P8-E02 result: H18 CONFIRMED cleanly across all 10 runs, no self-caught issues this time
+
+Raw data in
+`docs/research/artifacts/p8_e02_burst_amplified_solr_contention_run1/results.csv`.
+
+Applying H17's lesson proactively paid off: unlike H17's rebuild-churn
+tail statistic (driven by only ~5 discrete events per window, hence
+wildly noisy run-to-run), Solr contention under continuous concurrent
+HTTP load produces a **tight, low-variance result from the first pass**
+-- no methodology fix was needed this time.
+
+| Statistic | Value |
+|---|---|
+| Median idle_ratio (IDLE_NOISY p99 / TRUE_BASELINE p99) | 1.99x |
+| Median burst_ratio (BURST_NOISY p99 / TRUE_BASELINE p99) | 3.56x |
+| Median amplification (burst_ratio / idle_ratio) | **1.80x** |
+| Amplification range across 10 runs | 1.60x - 2.00x (tight) |
+
+**Median amplification of 1.80x clears the pre-registered 1.25x bar:
+H18 is CONFIRMED.** Every one of the 10 individual-run amplification
+values (1.60x-2.00x) independently clears the bar too -- unlike H17,
+there is no ambiguity here even before taking the median.
+
+**Secondary statistic** (Phase 7's own 2.0x material-regression bar):
+**IDLE_NOISY showed a >=2x degradation event in 5/10 runs (50%)**
+(consistent with H15/P7-E12's own original 2.16-2.48x range sitting
+right at that boundary), while **BURST_NOISY showed one in 10/10 runs
+(100%)**. The same qualitative pattern as H17 recurs: a correlated
+burst does not just make the typical bad event bigger, it makes a
+borderline-intermittent effect dependable.
+
+**Design note**: `BURST_NOISY` kept `NOISY_CORE`'s original 3 workers
+and added only 1 additional worker per burst core (`wands_bench_2x`,
+`_5x`, `_10x`) rather than 3 workers on each -- modeling a burst as
+*more distinct tenants* joining the shared backend (each still at a
+normal single-tenant load), not one tenant's load tripling on 3 more
+cores. This is a deliberately conservative burst model; a heavier
+per-core burst load would very plausibly show an even larger effect.
+
+**Named limitations**: only one noisy-core/quiet-core pair (H15's
+original `wands_bench`/`wands_bench_20x`) and one burst configuration
+(3 additional cores, 1 worker each) were tested. The mechanism
+(Solr/JVM thread-pool or I/O contention shared across cores in one
+instance) is a plausible hypothesis, not independently profiled. This
+experiment still does not combine with H17 (rebuild-churn) -- a
+three-way burst + churn + shared-backend interaction remains untested,
+and would very plausibly be worse than either isolation gap alone.

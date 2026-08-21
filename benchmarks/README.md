@@ -120,6 +120,15 @@ same as Phases 0–5:
   runs) into a near-certain one (10/10 burst runs) — a genuine new
   isolation gap under burst that neither H14 nor H16 alone could
   surface; see `PHASE8_DECISION.md`.
+- `p8_e02_burst_amplified_solr_contention.yaml` — the symmetric
+  question for Phase 7's other known real isolation gap: does a
+  correlated burst (more tenants' traffic joining the shared Solr
+  instance) make H15's shared-Solr-contention gap worse? Yes,
+  cleanly across all 10 runs with no methodology fix needed this time
+  (H17's lesson applied proactively): median amplification 1.80x
+  (every individual run 1.60x-2.00x), and the same >=2x-degradation
+  hit-rate escalation (5/10 idle runs to 10/10 burst runs); see
+  `PHASE8_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

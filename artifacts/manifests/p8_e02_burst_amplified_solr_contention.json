@@ -1,0 +1,28 @@
+{
+  "experiment_id": "P8-E02",
+  "phase": "8",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p8_e02_burst_amplified_solr_contention.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS-derived Solr cores: wands_bench (42994, quiet), wands_bench_20x (859880, noisy, same as H15), wands_bench_2x/5x/10x (burst cores)"
+  },
+  "engine_config": {
+    "lexical": "Apache Solr 9.10.1 single standalone instance, 5 pre-built cores, HTTP via ureq, q=*:*&rows=24&wt=json"
+  },
+  "repetitions": 10,
+  "raw_results_path": "docs/research/artifacts/p8_e02_burst_amplified_solr_contention_run1/",
+  "analysis_version": "docs/experiments/PHASE8_LOG.md#P8-E02",
+  "decision": "PHASE8_DECISION.md",
+  "headline_result": {
+    "h18_status": "CONFIRMED cleanly across all 10 runs, no methodology fix needed (H17's lesson applied proactively)",
+    "median_amplification_burst_ratio_over_idle_ratio": 1.80,
+    "amplification_range_across_10_runs": [1.60, 2.00],
+    "median_idle_ratio": 1.99,
+    "median_burst_ratio": 3.56,
+    "material_regression_bar": 2.0,
+    "idle_noisy_hit_rate": "5/10 runs showed >= 2x degradation",
+    "burst_noisy_hit_rate": "10/10 runs showed >= 2x degradation",
+    "named_limitation": "burst model deliberately conservative (1 extra worker/core, not 3); mechanism (Solr/JVM thread-pool or I/O contention) is a plausible hypothesis, not independently profiled; does not combine with H17 (rebuild churn) -- a three-way interaction remains untested"
+  }
+}
