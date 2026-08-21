@@ -26,7 +26,7 @@ claim: >
   as the likely source of its larger observed ratio. See
   docs/experiments/PHASE7_LOG.md for the full H10 hypothesis and result.
 
-git_sha: PENDING
+git_sha: 98a29e8
 binary: crates/phase7-eval/src/bin/p7_e07_realistic_demand_mix.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e07_realistic_demand_mix
 run_command: ./target/release/p7_e07_realistic_demand_mix dataset_cache/wands/catalog.jsonl
