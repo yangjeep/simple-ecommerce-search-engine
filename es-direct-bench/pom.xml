@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.commercenative</groupId>
+  <artifactId>es-direct-bench</artifactId>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <es.version>8.15.0</es.version>
+    <catalog.path>../dataset_cache/wands/catalog.jsonl</catalog.path>
+    <solr.base.url>http://localhost:8983/solr/wands_bench</solr.base.url>
+    <repo.root>..</repo.root>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${es.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.elasticsearch.test</groupId>
+      <artifactId>framework</artifactId>
+      <version>${es.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <exclusions>
+        <!-- org.elasticsearch.test:framework already brings the newer
+             standalone hamcrest 2.1, which duplicates classes with
+             junit's transitive hamcrest-core 1.3 ("jar hell", fatal to
+             ES's own self-check bootstrap). -->
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- ES's own test bootstrap (BootstrapForTesting) installs a
+               legacy SecurityManager; JDK 17+ needs this flag to allow
+               System.setSecurityManager to succeed at all (JEP 411). -->
+          <argLine>-Djava.security.manager=allow -Xmx2g</argLine>
+          <systemPropertyVariables>
+            <catalog.path>${catalog.path}</catalog.path>
+            <solr.base.url>${solr.base.url}</solr.base.url>
+            <repo.root>${repo.root}</repo.root>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

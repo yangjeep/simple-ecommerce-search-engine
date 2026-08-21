@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P6E-E00",
+  "phase": "6E",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6e_e00_embedded_elasticsearch.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog, 7 real depth-1 category checkpoints (n=2,002 to n=16,039) plus whole-catalog numeric range (n=31,967)"
+  },
+  "engine_config": {
+    "elasticsearch": "8.15.0, embedded single-node via org.elasticsearch.test:framework's ESSingleNodeTestCase, in-process NodeClient",
+    "solr": "Apache Solr 9.10.1, wands_bench core, live count cross-check + same-session color-facet timing from p6a_e00_wands_vs_native_eval"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6e_e00_es_direct_run1/",
+  "analysis_version": "docs/experiments/PHASE6E_LOG.md#P6E-E00",
+  "decision": "PHASE6E_DECISION.md",
+  "headline_result": {
+    "new_route_found": "org.elasticsearch:elasticsearch and org.elasticsearch.test:framework (8.15.0) resolve cleanly from Maven Central -- a route Phase 6C's cross-engine audit never tried (it only tested the prebuilt distribution and from-source build, both blocked)",
+    "embedded_node_bootstrap": "a real single-node ES 8.15.0 cluster starts, elects itself master, and serves requests in-process, after fixing 4 concrete disclosed blockers (Maven jar-hell, JDK 21 SecurityManager opt-in, 2 file-permission denials from ES's own test security policy) -- none of them network/environment blockers",
+    "correctness_gate": "24/24 count checks (7 category filters + 1 numeric range, x3 independent runs) matched Solr's live response exactly",
+    "timing_result": "color_facet_under_category: embedded ES 1.2x-2.0x SLOWER than Solr's own facet.field at every one of 7 checkpoints tested (same-session Solr timing); commerce-native's ordinal method remains dramatically faster than both",
+    "correction_to_phase6c": "PHASE6C_DECISION.md's 'Elasticsearch/OpenSearch genuinely blocked' verdict is corrected to 'blocked via the two routes tested; a third route (Maven library) works for Elasticsearch' -- PHASE6C_DECISION.md's own text is left unedited per this project's do-not-rewrite-history rule; this manifest/decision is the correction",
+    "named_limitation": "OpenSearch's library artifacts also resolve from Maven Central but a full embedded-node bootstrap was not attempted; only color_facet_under_category has a same-session Solr timing counterpart; no genuine same-binary four-way native/Solr/Lucene-direct/ES timing comparison exists; only single-node/single-shard ES tested; the ES-slower-than-Solr mechanism is inferred, not profiled"
+  }
+}

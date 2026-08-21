@@ -58,6 +58,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p6d_e01_ordinal_facet_scale_ladder.json`
 - `p6d_e02_typed_facet_ordinal.json`
 - `p6d_e03_ordinal_facet_memory.json`
+- `p6e_e00_embedded_elasticsearch.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

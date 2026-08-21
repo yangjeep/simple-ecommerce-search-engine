@@ -296,6 +296,37 @@ unmeasured estimate implied, and a reminder that an "estimated, not
 measured" caveat is itself a real, actionable gap this loop is meant to
 close, not a permanent asterisk.
 
+**The same discipline, turned on an earlier phase's own "blocked"
+verdict, found a genuinely new cross-engine data point (Phase 6E —
+terminal decision: PROCEED, `PHASE6E_DECISION.md`).** The user's own
+standing instruction was explicit that Solr alone is "not enough" and
+that Elasticsearch/OpenSearch should be revisited rather than trusted as
+permanently blocked. Phase 6C's own cross-engine audit had tested only
+two routes for Elasticsearch (the official prebuilt distribution, and a
+from-source build) and found both blocked — but never tried the route
+that made its own raw-Lucene baseline (P6C-E00) possible: fetching the
+engine's library JARs directly from Maven Central. That route works:
+`org.elasticsearch:elasticsearch`/`org.elasticsearch.test:framework`
+(8.15.0) resolve cleanly, and a real embedded single-node Elasticsearch
+cluster boots in-process after fixing four concrete, disclosed, one-time
+blockers (a Maven jar-hell conflict, JDK 21's SecurityManager opt-in
+requirement, and two file-permission denials from ES's own
+test-framework security policy — none of them network/environment
+restrictions). A real benchmark against the real WANDS catalog then ran
+3 independent times with 24/24 correctness checks matching Solr's live
+response exactly. The result: embedded Elasticsearch's terms-aggregation
+is 1.2x-2.0x **slower** than Solr's own `facet.field` for
+color-facet-under-category at every checkpoint tested — this research
+campaign's first real Elasticsearch data point, and one that
+strengthens rather than complicates commerce-native's own dramatically
+faster ordinal-counting result (Phase 6D) rather than threatening it.
+Named limitations remain (only one operation class has a clean
+same-session Solr timing comparison; OpenSearch's own embedded-node
+bootstrap was not attempted, only its library resolution confirmed; no
+one-binary four-way timing harness exists yet), but the headline
+"genuinely blocked" framing this project carried since Phase 6C is now
+corrected, not merely repeated.
+
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
 than one tenant's index in one process, using WANDS' real category

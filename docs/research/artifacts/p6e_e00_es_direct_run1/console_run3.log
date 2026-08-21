@@ -1,0 +1,118 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[2026-08-21T23:38:20,200][WARN ][o.e.n.NativeAccess       ] [[SUITE-WandsEsBenchTest-seed#[FCFC75953D819103]]] Unable to load native provider. Native methods will be disabled.
+java.lang.UnsatisfiedLinkError: no zstd in java.library.path: /usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib
+	at java.lang.ClassLoader.loadLibrary(ClassLoader.java:2458) ~[?:?]
+	at java.lang.Runtime.loadLibrary0(Runtime.java:916) ~[?:?]
+	at java.lang.System.loadLibrary(System.java:2063) ~[?:?]
+	at org.elasticsearch.nativeaccess.jdk.JdkZstdLibrary.<clinit>(JdkZstdLibrary.java:27) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.lib.NativeLibraryProvider.getLibrary(NativeLibraryProvider.java:58) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.AbstractNativeAccess.<init>(AbstractNativeAccess.java:29) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.PosixNativeAccess.<init>(PosixNativeAccess.java:28) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.LinuxNativeAccess.<init>(LinuxNativeAccess.java:19) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.NativeAccessHolder.<clinit>(NativeAccessHolder.java:28) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.NativeAccess.instance(NativeAccess.java:22) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.bootstrap.Elasticsearch.initializeNatives(Elasticsearch.java:285) ~[elasticsearch-8.15.0.jar:8.15.0]
+	at org.elasticsearch.bootstrap.BootstrapForTesting.<clinit>(BootstrapForTesting.java:93) ~[framework-8.15.0.jar:8.15.0]
+	at org.elasticsearch.test.ESTestCase.<clinit>(ESTestCase.java:318) ~[framework-8.15.0.jar:8.15.0]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:536) ~[?:?]
+	at java.lang.Class.forName(Class.java:515) ~[?:?]
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$2.run(RandomizedRunner.java:631) ~[randomizedtesting-runner-2.8.0.jar:?]
+[2026-08-21T23:38:20,211][WARN ][o.e.n.NativeAccess       ] [[SUITE-WandsEsBenchTest-seed#[FCFC75953D819103]]] Cannot check if running as root because native access is not available
+[2026-08-21T23:38:20,327][INFO ][o.e.c.t.DateFormatters   ] [[SUITE-WandsEsBenchTest-seed#[FCFC75953D819103]]] Using java.time datetime parsers only
+Aug 21, 2026 11:38:20 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[2026-08-22T01:38:21,172][INFO ][o.e.n.Node               ] [testWandsBenchmark] version[8.15.0], pid[29333], build[unknown/1a77947f34deddb41af25e6f0ddb8e830159c179/2024-08-05T10:05:34.233336849Z], OS[Linux/6.18.44-fc-v21/amd64], JVM[Ubuntu/OpenJDK 64-Bit Server VM/21.0.10/21.0.10+7-Ubuntu-124.04]
+[2026-08-22T01:38:21,176][INFO ][o.e.n.Node               ] [testWandsBenchmark] JVM home [/usr/lib/jvm/java-21-openjdk-amd64], using bundled JDK [false]
+[2026-08-22T01:38:21,176][INFO ][o.e.n.Node               ] [testWandsBenchmark] JVM arguments [-Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12, -Djavax.net.ssl.trustStorePassword=changeit, -Djavax.net.ssl.trustStoreType=PKCS12, -Dhttps.proxyHost=127.0.0.1, -Dhttps.proxyPort=46455, -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local, -Djdk.http.auth.tunneling.disabledSchemes=, -Djdk.http.auth.proxying.disabledSchemes=, -Djava.security.manager=allow, -Xmx2g]
+[2026-08-22T01:38:21,177][INFO ][o.e.n.Node               ] [testWandsBenchmark] Default Locale [rw_RW_#Latn]
+[2026-08-22T01:38:21,181][WARN ][o.e.d.n.Node             ] [testWandsBenchmark] data_stream.dataset="deprecation.elasticsearch" data_stream.namespace="default" data_stream.type="logs" elasticsearch.event.category="settings" event.code="shared-data-path" message="setting [path.shared_data] is deprecated and will be removed in a future release"
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+kan. 22, 2026 1:38:21 AM org.apache.lucene.store.MemorySegmentIndexInputProvider <init>
+INFO: Using MemorySegmentIndexInput and native madvise support with Java 21 or later; to disable start with -Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false
+[2026-08-22T01:38:21,527][INFO ][o.e.e.NodeEnvironment    ] [testWandsBenchmark] using [1] data paths, mounts [[/ (/dev/vda)]], net usable_space [15.2gb], net total_space [251.9gb], types [ext4]
+[2026-08-22T01:38:21,528][INFO ][o.e.e.NodeEnvironment    ] [testWandsBenchmark] heap size [2gb], compressed ordinary object pointers [true]
+[2026-08-22T01:38:21,535][INFO ][o.e.n.Node               ] [testWandsBenchmark] node name [node_s_0], node ID [PmnJJ6XZTXqlCwxvy9H2Mg], cluster name [single-node-cluster-TEST_WORKER_VM=[--not-gradle--]-CLUSTER_SEED=[-7723521494679167651]-HASH=[6EB2804A301]], roles [data_content, transform, data_hot, ml, data_frozen, ingest, data_cold, data, remote_cluster_client, master, data_warm]
+[2026-08-22T01:38:22,081][INFO ][o.e.i.r.RecoverySettings ] [testWandsBenchmark] using rate limit [40mb] with [default=40mb, read=0b, write=0b, max=0b]
+[2026-08-22T01:38:22,184][INFO ][o.e.f.FeatureService     ] [testWandsBenchmark] Registered local node features [desired_node.version_deprecated, features_supported, file_settings, geoip.downloader.database.configuration, health.extended_repository_indicator, knn_retriever_supported, mapper.index_sorting_on_nested, mapper.keyword_dimension_ignore_above, mapper.pass_through_priority, mapper.range.null_values_off_by_one_fix, mapper.source.synthetic_source_fallback, mapper.track_ignored_source, mapper.vectors.bit_vectors, mapper.vectors.int4_quantization, rest.capabilities_action, retrievers_supported, script.hamming, search.vectors.k_param_supported, standard_retriever_supported, stats.include_disk_thresholds, unified_highlighter_matched_fields]
+[2026-08-22T01:38:22,347][INFO ][i.n.u.i.PlatformDependent] [testWandsBenchmark] Your platform does not provide complete low-level API for accessing direct buffers reliably. Unless explicitly requested, heap buffer will always be preferred to avoid potential system instability.
+[2026-08-22T01:38:22,400][INFO ][o.e.t.n.NettyAllocator   ] [testWandsBenchmark] creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=256kb, suggested_max_allocation_size=256kb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=1mb}]
+[2026-08-22T01:38:22,445][INFO ][o.e.d.DiscoveryModule    ] [testWandsBenchmark] using discovery type [multi-node] and seed hosts providers [settings]
+[2026-08-22T01:38:22,936][INFO ][o.e.n.Node               ] [testWandsBenchmark] initialized
+[2026-08-22T01:38:22,936][INFO ][o.e.n.Node               ] [testWandsBenchmark] starting ...
+[2026-08-22T01:38:23,015][INFO ][o.e.t.TransportService   ] [testWandsBenchmark] publish_address {127.0.0.1:13301}, bound_addresses {127.0.0.1:13301}
+[2026-08-22T01:38:23,176][INFO ][o.e.c.c.ClusterBootstrapService] [testWandsBenchmark] this node has not joined a bootstrapped cluster yet; [cluster.initial_master_nodes] is set to [node_s_0]
+[2026-08-22T01:38:23,182][INFO ][o.e.c.c.Coordinator      ] [testWandsBenchmark] setting initial configuration to VotingConfiguration{PmnJJ6XZTXqlCwxvy9H2Mg}
+[2026-08-22T01:38:23,391][INFO ][o.e.c.s.MasterService    ] [node_s_0] elected-as-master ([1] nodes joined in term 1)[_FINISH_ELECTION_, {node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}{4T2fNvyGR7K6kI440MHKOQ}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000} completing election], term: 1, version: 1, delta: master node changed {previous [], current [{node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}{4T2fNvyGR7K6kI440MHKOQ}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}]}
+[2026-08-22T01:38:23,412][INFO ][o.e.c.c.CoordinationState] [node_s_0] cluster UUID set to [TaBU2AqNSzCDNz0Ula-Ktg]
+[2026-08-22T01:38:23,426][INFO ][o.e.c.s.ClusterApplierService] [node_s_0] master node changed {previous [], current [{node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}{4T2fNvyGR7K6kI440MHKOQ}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}]}, term: 1, version: 1, reason: Publication{term=1, version=1}
+[2026-08-22T01:38:23,455][INFO ][o.e.c.c.NodeJoinExecutor ] [node_s_0] node-join: [{node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}{4T2fNvyGR7K6kI440MHKOQ}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}] with reason [completing election]
+[2026-08-22T01:38:23,460][INFO ][o.e.n.Node               ] [testWandsBenchmark] started {node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}{4T2fNvyGR7K6kI440MHKOQ}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}
+[2026-08-22T01:38:23,478][INFO ][o.e.g.GatewayService     ] [node_s_0] recovered [0] indices into cluster_state
+[2026-08-22T01:38:23,595][INFO ][o.e.c.m.MetadataIndexTemplateService] [node_s_0] adding template [one_shard_index_template] for index patterns [*]
+[2026-08-22T01:38:23,629][INFO ][o.e.h.n.s.HealthNodeTaskExecutor] [node_s_0] Node [{node_s_0}{PmnJJ6XZTXqlCwxvy9H2Mg}] is selected as the current health node.
+[2026-08-22T01:38:23,633][INFO ][o.e.c.m.MetadataIndexTemplateService] [node_s_0] adding template [random-soft-deletes-template] for index patterns [*]
+[2026-08-22T01:38:23,648][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] before test
+[2026-08-22T01:38:23,651][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] === P6E-E00: embedded Elasticsearch direct baseline (Issue #21 Phase 6E) ===
+[2026-08-22T01:38:23,651][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] catalog=/tmp/wands_catalog.jsonl solr_base_url=http://localhost:8983/solr/wands_bench
+[2026-08-22T01:38:24,223][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] loaded 42994 real WANDS products
+[2026-08-22T01:38:24,244][WARN ][o.e.d.c.m.MetadataCreateIndexService] [node_s_0] data_stream.dataset="deprecation.elasticsearch" data_stream.namespace="default" data_stream.type="logs" elasticsearch.event.category="templates" event.code="index_template_multiple_match" message="index [wands_bench_es] matches multiple legacy templates [one_shard_index_template, random-soft-deletes-template], composable templates will only match a single template"
+[2026-08-22T01:38:24,273][INFO ][o.e.c.m.MetadataCreateIndexService] [node_s_0] [wands_bench_es] creating index, cause [api], templates [one_shard_index_template, random-soft-deletes-template], shards [1]/[0]
+[2026-08-22T01:38:24,446][INFO ][o.e.c.r.a.AllocationService] [node_s_0] current.health="GREEN" message="Cluster health status changed from [YELLOW] to [GREEN] (reason: [shards started [[wands_bench_es][0]]])." previous.health="YELLOW" reason="shards started [[wands_bench_es][0]]"
+[2026-08-22T01:38:24,521][INFO ][o.e.c.m.MetadataMappingService] [node_s_0] [wands_bench_es/N6NKgprETDSThe6KTicxEg] create_mapping
+[2026-08-22T01:38:32,445][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] index built in 7898.0ms
+[2026-08-22T01:38:32,616][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Rugs                 candidates=2002     p50=1.6619ms mean=1.7240ms solr_count=2002 match=true
+[2026-08-22T01:38:32,782][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Rugs                 candidates=2002     p50=1.8926ms mean=2.0702ms solr_count=n/a match=n/a
+[2026-08-22T01:38:32,893][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Rugs                 candidates=2002     p50=2.1595ms mean=2.4561ms solr_count=n/a match=n/a
+[2026-08-22T01:38:33,815][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Rugs                 candidates=2002     p50=18.7842ms mean=22.4432ms solr_count=n/a match=n/a
+[2026-08-22T01:38:33,939][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Rugs                 candidates=2002     p50=2.7465ms mean=2.8544ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,070][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Rugs                 candidates=2002     p50=3.1146ms mean=3.3718ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,114][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Storage & Organization candidates=2175     p50=0.9142ms mean=0.9688ms solr_count=2175 match=true
+[2026-08-22T01:38:34,187][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Storage & Organization candidates=2175     p50=1.4252ms mean=1.4754ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,248][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Storage & Organization candidates=2175     p50=1.4053ms mean=1.4991ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,674][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Storage & Organization candidates=2175     p50=10.6903ms mean=12.1353ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,825][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Storage & Organization candidates=2175     p50=2.4879ms mean=4.2011ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,919][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Storage & Organization candidates=2175     p50=2.2928ms mean=2.4695ms solr_count=n/a match=n/a
+[2026-08-22T01:38:34,960][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Lighting             candidates=2072     p50=0.7344ms mean=0.9919ms solr_count=2072 match=true
+[2026-08-22T01:38:35,017][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Lighting             candidates=2072     p50=1.1796ms mean=1.2851ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,076][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Lighting             candidates=2072     p50=1.2189ms mean=1.6023ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,331][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Lighting             candidates=2072     p50=6.7888ms mean=7.2047ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,404][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Lighting             candidates=2072     p50=1.8963ms mean=2.0949ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,492][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Lighting             candidates=2072     p50=2.2880ms mean=2.5065ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,524][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Outdoor              candidates=3394     p50=0.7070ms mean=0.7381ms solr_count=3394 match=true
+[2026-08-22T01:38:35,578][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Outdoor              candidates=3394     p50=1.3745ms mean=1.3779ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,636][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Outdoor              candidates=3394     p50=1.3997ms mean=1.4287ms solr_count=n/a match=n/a
+[2026-08-22T01:38:35,918][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Outdoor              candidates=3394     p50=7.6908ms mean=8.0323ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,020][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Outdoor              candidates=3394     p50=1.8336ms mean=2.9963ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,142][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Outdoor              candidates=3394     p50=2.4406ms mean=3.5203ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,179][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      D?cor & Pillows      candidates=4612     p50=0.7216ms mean=0.7371ms solr_count=4612 match=true
+[2026-08-22T01:38:36,228][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category D?cor & Pillows      candidates=4612     p50=1.0352ms mean=1.0731ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,321][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       D?cor & Pillows      candidates=4612     p50=1.9939ms mean=2.2002ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,638][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   D?cor & Pillows      candidates=4612     p50=8.6093ms mean=8.7569ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,700][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 D?cor & Pillows      candidates=4612     p50=1.6794ms mean=1.7309ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,797][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  D?cor & Pillows      candidates=4612     p50=2.5138ms mean=2.7682ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,825][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Home Improvement     candidates=4686     p50=0.6901ms mean=0.7110ms solr_count=4686 match=true
+[2026-08-22T01:38:36,879][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Home Improvement     candidates=4686     p50=1.0366ms mean=1.3601ms solr_count=n/a match=n/a
+[2026-08-22T01:38:36,932][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Home Improvement     candidates=4686     p50=1.2383ms mean=1.3898ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,175][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Home Improvement     candidates=4686     p50=6.5702ms mean=6.7333ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,232][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Home Improvement     candidates=4686     p50=1.5758ms mean=1.6099ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,396][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Home Improvement     candidates=4686     p50=2.3686ms mean=3.6702ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,432][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   filter_only                      Furniture            candidates=16039    p50=0.6876ms mean=0.6671ms solr_count=16039 match=true
+[2026-08-22T01:38:37,480][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   product_class_facet_under_category Furniture            candidates=16039    p50=1.0694ms mean=1.0885ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,543][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   color_facet_under_category       Furniture            candidates=16039    p50=1.5763ms mean=1.5909ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,793][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_title_asc                   Furniture            candidates=16039    p50=6.5850ms mean=7.1621ms solr_count=n/a match=n/a
+[2026-08-22T01:38:37,846][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   sort_rating_desc                 Furniture            candidates=16039    p50=1.4322ms mean=1.4516ms solr_count=n/a match=n/a
+[2026-08-22T01:38:38,017][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   deep_pagination                  Furniture            candidates=16039    p50=4.8455ms mean=4.8863ms solr_count=n/a match=n/a
+[2026-08-22T01:38:38,054][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark]   numeric_range_rating             whole_catalog        candidates=31967    p50=0.4899ms mean=0.4917ms solr_count=31967 match=true
+[2026-08-22T01:38:38,056][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] artifacts written to /tmp/p6e_e00_es_direct_run1
+[2026-08-22T01:38:38,065][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] after test
+[2026-08-22T01:38:38,068][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] --> waiting for all free_context tasks to complete within a reasonable time
+[2026-08-22T01:38:38,078][INFO ][o.e.c.m.MetadataDeleteIndexService] [node_s_0] [wands_bench_es/N6NKgprETDSThe6KTicxEg] deleting index
+[2026-08-22T01:38:38,109][INFO ][o.e.n.Node               ] [suite] stopping ...
+[2026-08-22T01:38:38,125][INFO ][o.e.n.Node               ] [suite] stopped
+[2026-08-22T01:38:38,126][INFO ][o.e.n.Node               ] [suite] closing ...
+[2026-08-22T01:38:38,136][INFO ][o.e.n.Node               ] [suite] closed

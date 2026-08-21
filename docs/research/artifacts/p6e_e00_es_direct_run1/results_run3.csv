@@ -1,0 +1,44 @@
+operation,checkpoint,candidates,es_p50_ms,es_mean_ms,solr_count,count_match
+filter_only,Rugs,2002,1.6619,1.7240,2002,true
+product_class_facet_under_category,Rugs,2002,1.8926,2.0702,,n/a
+color_facet_under_category,Rugs,2002,2.1595,2.4561,,n/a
+sort_title_asc,Rugs,2002,18.7842,22.4432,,n/a
+sort_rating_desc,Rugs,2002,2.7465,2.8544,,n/a
+deep_pagination,Rugs,2002,3.1146,3.3718,,n/a
+filter_only,Storage & Organization,2175,0.9142,0.9688,2175,true
+product_class_facet_under_category,Storage & Organization,2175,1.4252,1.4754,,n/a
+color_facet_under_category,Storage & Organization,2175,1.4053,1.4991,,n/a
+sort_title_asc,Storage & Organization,2175,10.6903,12.1353,,n/a
+sort_rating_desc,Storage & Organization,2175,2.4879,4.2011,,n/a
+deep_pagination,Storage & Organization,2175,2.2928,2.4695,,n/a
+filter_only,Lighting,2072,0.7344,0.9919,2072,true
+product_class_facet_under_category,Lighting,2072,1.1796,1.2851,,n/a
+color_facet_under_category,Lighting,2072,1.2189,1.6023,,n/a
+sort_title_asc,Lighting,2072,6.7888,7.2047,,n/a
+sort_rating_desc,Lighting,2072,1.8963,2.0949,,n/a
+deep_pagination,Lighting,2072,2.2880,2.5065,,n/a
+filter_only,Outdoor,3394,0.7070,0.7381,3394,true
+product_class_facet_under_category,Outdoor,3394,1.3745,1.3779,,n/a
+color_facet_under_category,Outdoor,3394,1.3997,1.4287,,n/a
+sort_title_asc,Outdoor,3394,7.6908,8.0323,,n/a
+sort_rating_desc,Outdoor,3394,1.8336,2.9963,,n/a
+deep_pagination,Outdoor,3394,2.4406,3.5203,,n/a
+filter_only,Décor & Pillows,4612,0.7216,0.7371,4612,true
+product_class_facet_under_category,Décor & Pillows,4612,1.0352,1.0731,,n/a
+color_facet_under_category,Décor & Pillows,4612,1.9939,2.2002,,n/a
+sort_title_asc,Décor & Pillows,4612,8.6093,8.7569,,n/a
+sort_rating_desc,Décor & Pillows,4612,1.6794,1.7309,,n/a
+deep_pagination,Décor & Pillows,4612,2.5138,2.7682,,n/a
+filter_only,Home Improvement,4686,0.6901,0.7110,4686,true
+product_class_facet_under_category,Home Improvement,4686,1.0366,1.3601,,n/a
+color_facet_under_category,Home Improvement,4686,1.2383,1.3898,,n/a
+sort_title_asc,Home Improvement,4686,6.5702,6.7333,,n/a
+sort_rating_desc,Home Improvement,4686,1.5758,1.6099,,n/a
+deep_pagination,Home Improvement,4686,2.3686,3.6702,,n/a
+filter_only,Furniture,16039,0.6876,0.6671,16039,true
+product_class_facet_under_category,Furniture,16039,1.0694,1.0885,,n/a
+color_facet_under_category,Furniture,16039,1.5763,1.5909,,n/a
+sort_title_asc,Furniture,16039,6.5850,7.1621,,n/a
+sort_rating_desc,Furniture,16039,1.4322,1.4516,,n/a
+deep_pagination,Furniture,16039,4.8455,4.8863,,n/a
+numeric_range_rating,whole_catalog,31967,0.4899,0.4917,31967,true

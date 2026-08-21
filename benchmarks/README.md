@@ -193,6 +193,21 @@ same as Phases 0–5:
   Real measurement on the WANDS catalog: 2,876,248 bytes (26.2% of the
   whole index, 66.90 bytes/product) — ~16.7x the earlier ~172 KB
   unmeasured estimate; see `PHASE6D_DECISION.md`.
+- `p6e_e00_embedded_elasticsearch.yaml` — per the user's own instruction
+  that Solr alone is "not enough": revisits Phase 6C's "Elasticsearch/
+  OpenSearch genuinely blocked" verdict, which tested only the prebuilt
+  distribution and from-source build, never the Maven-library route that
+  made P6C-E00's own raw-Lucene baseline possible. That route works:
+  `org.elasticsearch:elasticsearch`/`org.elasticsearch.test:framework`
+  resolve from Maven Central, and a real embedded single-node ES 8.15.0
+  cluster boots after fixing 4 concrete, disclosed, one-time blockers
+  (Maven jar-hell, JDK 21's SecurityManager opt-in, 2 file-permission
+  denials from ES's own test security policy). Real benchmark against
+  the real WANDS catalog, 3 runs, 24/24 correctness checks matching
+  Solr's live response exactly. Result: embedded ES's terms-aggregation
+  is 1.2x-2.0x slower than Solr's own `facet.field` for
+  color-facet-under-category at every checkpoint — the campaign's first
+  real Elasticsearch data point; see `PHASE6E_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

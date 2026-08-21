@@ -1,5 +1,16 @@
 # Phase 6C Decision (Issue #21 Phase 6, extending 6A/6B — a repaired evidence-chain gap)
 
+> **Addendum (Phase 6E, `PHASE6E_DECISION.md`)**: this document's own
+> "Elasticsearch/OpenSearch genuinely blocked" verdict below tested only
+> two routes (the official prebuilt distribution, and a from-source
+> build). It never tried the Maven-library route that made this same
+> phase's own raw-Lucene baseline (P6C-E00) possible. That route works
+> for Elasticsearch — see `PHASE6E_DECISION.md` for the corrected,
+> extended finding. This document's own text is left unedited below,
+> per this project's own "do not rewrite history" discipline; treat the
+> "genuinely blocked" language that follows as accurate only for the two
+> routes it actually tested.
+
 **Decision: PROCEED**, with a genuinely new, previously-missing
 cross-engine data point added to the evidence chain, and one prior
 hypothesis about *why* the native facet crossover exists corrected
