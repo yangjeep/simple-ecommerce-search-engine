@@ -25,7 +25,7 @@ claim: >
   passed with zero mismatches. See docs/experiments/PHASE6D_LOG.md for
   the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 7f41ad27f407dfdefa3beb02a1795f13e7d231f4
 binary: crates/phase6a-eval/src/bin/p6b_e00_scale_ladder.rs (extended with facet_counts_ordinal)
 build_command: cargo build --release -p phase6a-eval --bin p6b_e00_scale_ladder
 run_command: |

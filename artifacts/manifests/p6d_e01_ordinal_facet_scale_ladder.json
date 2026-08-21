@@ -3,7 +3,7 @@
   "phase": "6D",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6d_e01_ordinal_facet_scale_ladder.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "7f41ad27f407dfdefa3beb02a1795f13e7d231f4",
   "dataset": {
     "name": "real WANDS catalog (1x) + Phase 6B's own controlled-stress replication ladder (2x/5x/10x/20x, up to 859,880 products), same 7 category_depth_1 checkpoints"
   },
