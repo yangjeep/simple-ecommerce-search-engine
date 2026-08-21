@@ -24,7 +24,7 @@ claim: >
   the baseline being replaced already was. See
   docs/experiments/PHASE6D_LOG.md for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 42f67cde8c78410f2b29b48910d0d7c66fd48d8c
 binary: crates/commerce-core/src/index/mod.rs (brand/category/product_type_facet_counts_ordinal), crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs (benchmark)
 build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
 run_command: ./target/release/p6a_e00_wands_vs_native_eval dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench

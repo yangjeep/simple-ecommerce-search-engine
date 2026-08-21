@@ -3,7 +3,7 @@
   "phase": "6D",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6d_e02_typed_facet_ordinal.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "42f67cde8c78410f2b29b48910d0d7c66fd48d8c",
   "dataset": {
     "name": "real WANDS catalog, product_class facet under 8 real leaf-category groups (n=2 to n=1,103)"
   },
