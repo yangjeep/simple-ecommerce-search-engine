@@ -1,0 +1,61 @@
+# Worked-example manifest, written after the fact (see benchmarks/README.md).
+experiment_id: P4-E01
+phase: 4
+issue: 16
+decision_document: PHASE4_DECISION.md
+claim: >
+  An offline propose -> replay -> promote pipeline, reusing the real
+  title-phrase-to-brand co-occurrence signal already validated by P1-C
+  (zero model calls), recovers 85/22458 (0.38%) newly-admitted queries with
+  an exactly-zero false-positive rate, after excluding a real sentinel-brand
+  hazard (BrandId(0), "no brand field on this real product") found via
+  self-directed adversarial review before trusting the first result.
+
+git_sha: 121371e
+binary: crates/phase4-eval/src/bin/p4e01_implication_propose_replay_promote.rs
+build_command: cargo build --release -p phase4-eval --bin p4e01_implication_propose_replay_promote
+run_command: ./target/release/p4e01_implication_propose_replay_promote
+
+dataset:
+  name: Amazon Shopping Queries Dataset (ESCI)
+  source: amazon-science/esci-data (main branch)
+  acquisition_script: scripts/round1/fetch_esci.sh
+  export_script: scripts/round1/export_esci.py
+  size: 1215854 products
+  query_corpus_size: 22458 queries
+
+engine:
+  native: commerce_core::control_plane::implication (ImplicationTable),
+    baseline admission caps fixed at P3-E16's own promoted <=2% point
+    (structural=2, anchored=20, single_token=10) -- the tight baseline,
+    not the looser draft caps an earlier version of this experiment used
+    before the baseline-cap conflation bug (see PHASE4_DECISION.md) was
+    found and fixed.
+  baseline: Apache Solr, real judgments (ESCI relevance labels) + P3-E06's
+    persisted live-Solr NDCG scores for replay validation.
+
+workload:
+  candidate_generation:
+    min_purity: 0.8
+    min_occurrence: 10
+    excludes: BrandId(0) sentinel (post-fix)
+  promotion_gate:
+    max_false_positive_rate: 0.1535  # borrowed from Phase 3's own
+                                       # worst-KEPT-mechanism FPR, not
+                                       # invented for this experiment
+  sensitivity_sweep: purity>=0.8/occurrence>=10 (loose, promoted) vs.
+    purity>=0.9/occurrence>=20 (tight, reported for comparison)
+
+repetitions: 1 (deterministic pipeline over the fixed real corpus; no
+  timing claim in this experiment, see P4-E02 for the compiled-lookup
+  latency measurement)
+seed: N/A (deterministic co-occurrence counting, no sampling)
+
+raw_results: docs/research/artifacts/p4e01_run1/
+  (full run log + per-threshold candidate/promotion CSVs)
+
+analysis: printed directly by the binary; the sentinel-brand bug (7/24
+  initially-promoted rules were spurious BrandId(0) matches) was found by
+  direct inspection of the first run's promoted-rule list, not a
+  statistical test -- recorded as a real, disclosed bug fix in
+  docs/experiments/PHASE4_LOG.md, not silently corrected.

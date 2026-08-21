@@ -1,0 +1,32 @@
+{
+  "experiment_id": "P4-E01",
+  "phase": 4,
+  "issue": 16,
+  "benchmark_manifest": "benchmarks/manifests/p4e01_implication_propose_replay_promote.yaml",
+  "git_sha": "121371e",
+  "dataset": {
+    "name": "Amazon Shopping Queries Dataset (ESCI)",
+    "source": "amazon-science/esci-data",
+    "revision": "main",
+    "products": 1215854,
+    "queries": 22458
+  },
+  "engine_config": {
+    "native": "commerce_core::control_plane::implication (ImplicationTable)",
+    "admission_caps": { "structural": 2, "anchored": 20, "single_token": 10 },
+    "candidate_generation": { "min_purity": 0.8, "min_occurrence": 10 },
+    "promotion_gate": { "max_false_positive_rate": 0.1535 }
+  },
+  "repetitions": 1,
+  "seed": null,
+  "raw_results_path": "docs/research/artifacts/p4e01_run1/",
+  "analysis_version": "docs/experiments/PHASE4_LOG.md#P4-E01",
+  "decision": "PHASE4_DECISION.md",
+  "headline_result": {
+    "candidates_generated": 813,
+    "rules_promoted": 108,
+    "queries_newly_admitted": 85,
+    "coverage_pct": 0.38,
+    "false_positive_rate": 0.0
+  }
+}

@@ -1,0 +1,46 @@
+# Artifacts — the record of what was actually run
+
+This directory is the archived-record counterpart to `benchmarks/`
+(the declarative "what to run"). It holds, per promoted result:
+
+```text
+artifacts/
+  manifests/   -- per-run archived metadata: git SHA, dataset version/checksum,
+                  seed, engine config, hardware, repetitions, raw-output
+                  location, analysis version, decision
+  summaries/   -- small normalized result tables derived from the raw output
+  figures/     -- generated charts (none yet -- see below)
+```
+
+## Why Phase 0–5's raw artifacts are not here
+
+All of Phase 0 through Phase 5's raw experiment output (per-query CSVs,
+full run logs, manifests written inline in each `full_run_output.log`)
+already lives under `docs/research/artifacts/pXeNN_run1/`, one directory
+per experiment, and is referenced by exact path from every
+`PHASE*_DECISION.md` and `docs/experiments/PHASE*_LOG.md` entry. Those
+documents are a frozen historical record — moving the underlying files to
+`artifacts/` would silently invalidate every one of those path references
+and would violate `CLAUDE.md`'s "do not rewrite history" rule and Issue
+#21's own archive discipline ("never silently edit historical experiment
+conclusions"). They stay exactly where they are.
+
+`artifacts/manifests/` currently holds three **worked-example** records —
+written after the fact, alongside their matching `benchmarks/manifests/`
+entries — for Phase 3/4/5's actual headline promoted results:
+
+- `p3e16_finegrained_frontier.json`
+- `p4e01_implication_propose_replay_promote.json`
+- `p5e03_facet_scan_crossover.json`
+
+Each points at its real `docs/research/artifacts/pXeNN_run1/` location
+rather than duplicating the data. `artifacts/summaries/` and
+`artifacts/figures/` are **not yet populated**: no chart-generation
+tooling exists in this repository yet, and adding placeholder or
+retroactively-generated figures for Phases 0–5 would overstate what has
+actually been built. This is stated explicitly rather than filled with
+stand-ins.
+
+Phase 6 onward should archive new promoted results directly under this
+structure as they are produced, rather than repeating Phase 0–5's
+per-binary-console-output convention.

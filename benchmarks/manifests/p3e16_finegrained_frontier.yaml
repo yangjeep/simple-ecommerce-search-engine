@@ -1,0 +1,58 @@
+# Worked-example manifest, written after the fact (see benchmarks/README.md
+# for why this is retroactive for Phase 0-5 rather than manifest-first).
+experiment_id: P3-E16
+phase: 3
+issue: 14
+decision_document: PHASE3_DECISION.md
+claim: >
+  Combined 3-way admission frontier (admit + admit_structurally_anchored_lexical
+  + admit_single_token_lexical) reaches 5.80% real coverage at 1.98% relative
+  relevance degradation within a <=2% budget -- the best promoted operating
+  point in the whole admission-mechanism family, found by exact algebraic
+  re-derivation over an exhaustive 19x19x19 = 6,859-point grid (no new Solr
+  querying needed, since additivity was already proven exact against P3-E10's
+  8 measured points).
+
+git_sha: 353b9a3
+binary: crates/phase3-eval/src/bin/p3e16_finegrained_three_way_frontier.rs
+build_command: cargo build --release -p phase3-eval --bin p3e16_finegrained_three_way_frontier
+run_command: ./target/release/p3e16_finegrained_three_way_frontier
+
+dataset:
+  name: Amazon Shopping Queries Dataset (ESCI)
+  source: amazon-science/esci-data (main branch)
+  acquisition_script: scripts/round1/fetch_esci.sh
+  export_script: scripts/round1/export_esci.py
+  size: 1215854 products
+  query_corpus_size: 22458 queries
+  locale_filter: us
+
+engine:
+  native: commerce_core (this repo), admission mechanisms per PHASE3_DECISION.md
+  baseline: Apache Solr (version pinned in scripts/round1/solr_index.py),
+    relevance scores persisted from P3-E06's own live-Solr run -- P3-E16 itself
+    made no new Solr requests, an explicit design choice recorded in its own
+    experiment log entry to avoid re-querying a live service for a pure
+    re-derivation over already-measured points.
+
+workload:
+  grid: cap(structural) x cap(anchored) x cap(single_token), 19 values each
+    (0..=18, i.e. 19^3 = 6859 points)
+  relevance_metric: NDCG@10 delta vs Solr baseline, whole-corpus weighted
+
+repetitions: N/A (deterministic re-derivation from persisted per-mechanism
+  measurements, not a fresh timed run)
+seed: N/A
+
+raw_results: docs/research/artifacts/p3e16_run1/
+  - finegrained_combined_frontier.csv
+  - full_run_output.log
+
+analysis: printed directly by the binary; promoted rows cross-checked in
+  docs/experiments/PHASE3_LOG.md's P3-E16 entry against all 8 of P3-E10's
+  independently-measured combined points (exact match required and confirmed)
+
+confidence_intervals: bootstrap CIs for these exact 3 operating points are a
+  separate experiment, P3-E17 (see benchmarks/README.md's traceability note --
+  P3-E17 has no manifest of its own yet; its raw output is
+  docs/research/artifacts/p3e17_run1/full_run_output.log)

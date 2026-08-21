@@ -111,10 +111,33 @@ implementation at each request class**:
 | filter-only (brand or color) | **yes** — 2,799x-18,354x, tiny through huge | never |
 | deep pagination | **yes** — 5,331x-12,715x, every size tested | never |
 | concurrency (basic filter, 1-8 workers) | **yes** — native's single thread alone beats Solr's best 8-worker throughput by ~460-1,780x | never |
-| facet (color-under-brand-filter) | **no** | already below floor at "medium" (86 candidates, 67.0x); further below at "large" (437, 4.26x) |
-| facet (brand-under-color-filter) | **no** | holds through "medium" (104, 186.0x); fails at "large" (841, 4.32x); **reverses to a loss** at "huge" (1,844, 0.74x) |
-| sort-by-title (brand-scoped) | **no** | holds through "medium" (86-product group, 193.7x); fails at "large" (1,249-product group, 16.97x) |
+| facet (color-under-brand-filter) | **no** | already below floor at "medium" (116 candidates, 67.0x); further below at "large" (1,249, 4.26x) |
+| facet (brand-under-color-filter) | **no** | holds through "medium" (106, 186.0x); fails at "large" (2,112, 4.32x); **reverses to a loss** at "huge" (11,264, 0.74x) |
+| sort-by-title (brand-scoped) | **no** | holds through "medium" (116-product group, 193.7x); fails at "large" (1,249-product group, 16.97x) |
 | sort-by-title (color-scoped) | **no** | holds through "medium" (106, 240.1x); fails at "large" (2,112, 8.62x) and "huge" (11,264, 1.67x) |
+
+**Correction (found during the Issue #21 repo-normalization adversarial doc
+review, after this document was first written)**: the candidate-count
+labels in the two `facet` rows above, and the "medium" `sort-by-title
+(brand-scoped)` label, originally read 86/437/104/841/1,844/86 instead of
+the corrected 116/1,249/106/2,112/11,264/116 shown now. Root cause: the raw
+P5-E00 CSV's `candidates` column for a facet-type row records the *sum of
+the returned facet-bucket counts*, not the true filtered candidate-set
+size — these differ whenever real products in that filtered group lack a
+value for the faceted attribute (confirmed real skew, not a computation
+bug: e.g. many `Clear`/`Multicolored`-color products are generic/no-brand
+items, excluded from a brand facet's buckets the same way on both native
+and Solr). The original write-up used that column's value as if it were
+the candidate-set size driving the scan cost; `color_filter_first_page` /
+`brand_filter_first_page`'s own (correctly-labeled) rows for the same real
+brand/color values give the true counts used above. **No ratio, timing
+value, or conclusion changes** — only the candidate-count label attached
+to each already-correct ratio. This also resolves an apparent tension with
+P5-E03's own crossover sweep (which independently re-derives a
+~9,000-12,000-candidate transition band): with the corrected labels, the
+`brand-under-color-filter` "large"/"huge" points (2,112 win at 4.32x /
+11,264 loss at 0.74x) are consistent with, not contradictory to, that
+band.
 
 **Facet-cardinality crossover, characterized precisely (P5-E03)**: the
 facet-scan method's `O(|candidates|)` cost crosses Solr's near-flat

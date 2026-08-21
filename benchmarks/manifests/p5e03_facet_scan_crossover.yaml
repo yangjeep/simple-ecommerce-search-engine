@@ -1,0 +1,59 @@
+# Worked-example manifest, written after the fact (see benchmarks/README.md).
+experiment_id: P5-E03 (facet-cardinality sub-experiment)
+phase: 5
+issue: 17
+decision_document: PHASE5_DECISION.md
+claim: >
+  CatalogIndex::facet_counts/brand_facet_counts's original implementation is
+  O(global attribute vocabulary) regardless of candidate-set size, measured
+  as a real 35-420ms cost at this catalog's 175K-206K-value cardinality vs.
+  Solr's 1-3ms. An O(|candidates|) scan-based alternative
+  (facet_counts_by_scan/brand_facet_counts_by_scan), proven byte-identical
+  to the original via a correctness parity test, resolves this to a native
+  *win* for real color-group sizes up to ~8,900-9,000 candidates, crossing
+  over to a native *loss* somewhere in a ~9,000-12,000-candidate transition
+  band (the exact boundary shifted by one data point between two
+  independent runs -- reported as a band, not overclaimed precision).
+
+git_sha: 2b8a0ba
+binary: crates/phase5-eval/src/bin/p5e03_facet_crossover_sweep.rs
+build_command: cargo build --release -p phase5-eval --bin p5e03_facet_crossover_sweep
+run_command: >
+  ./target/release/p5e03_facet_crossover_sweep dataset_cache/export/catalog.jsonl
+  http://localhost:8983/solr/commerce_bench
+
+dataset:
+  name: Amazon Shopping Queries Dataset (ESCI)
+  source: amazon-science/esci-data (main branch)
+  acquisition_script: scripts/round1/fetch_esci.sh
+  export_script: scripts/round1/export_esci.py
+  size: 1215854 products
+  facet_field: color (175292 distinct real values)
+
+engine:
+  native: commerce_core::index::CatalogIndex::brand_facet_counts_by_scan
+  baseline: Apache Solr, indexed via scripts/round1/solr_index.py with two
+    real fair-baseline fixes applied via the live Schema API before this
+    run -- docValues added to brand/color fields, a dedicated sortable
+    title_sort field added -- both confirmed via direct Schema API
+    inspection, not assumed.
+
+workload:
+  selection: 12 real color groups, sampled as the closest real match to
+    each of 12 target checkpoints spanning the suspected crossover region
+    (never fabricated sizes)
+  request: brand facet under a color filter (json.facet API, limit=50)
+  repetitions: 30 (WARMUP=5) per color group, per system
+
+seed: N/A (color groups selected by closest-real-match to fixed target
+  checkpoints, not random sampling)
+
+raw_results: docs/research/artifacts/p5e03_run1/
+  (two runs: pass1_no_diagnostics, pass2_with_mismatch_diff)
+
+analysis: printed directly by the binary (native/solr mean latency, ratio,
+  count match/mismatch per group); count mismatches investigated via a
+  dedicated MISMATCH DIFF diagnostic added mid-experiment and confirmed
+  fully explained by three non-bug mechanisms (BrandId(0) sentinel facet
+  semantics, brand-casing consolidation, and a cascading top-50 boundary
+  effect) -- see docs/experiments/PHASE5_LOG.md for the full reconciliation.
