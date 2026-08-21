@@ -21,7 +21,7 @@ claim: >
   explicit software-level cache this architecture manages. See
   docs/experiments/PHASE7_LOG.md for the full H9 hypothesis and result.
 
-git_sha: PENDING
+git_sha: eecd087
 binary: crates/phase7-eval/src/bin/p7_e06_cold_tenant_overhead.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e06_cold_tenant_overhead
 run_command: ./target/release/p7_e06_cold_tenant_overhead dataset_cache/wands/catalog.jsonl
