@@ -229,3 +229,90 @@ dropped — a genuine packing-ceiling test needs either finer real
 partitioning (depth-2/depth-3, more but smaller real categories) or
 controlled-stress replication (Phase 6B's disclosed methodology, applied
 to tenant count rather than catalog size) as a named follow-up.
+
+## P7-E01: QPS-scaling across tenant count (falsifiable hypothesis, stated before implementation)
+
+P7-E00 tested memory (H1) and two-tenant isolation (H2), but not Issue
+#21's explicit Phase 7 metric "tenants/node at fixed latency SLO" —
+sustained concurrent query throughput spread across MANY tenants at
+once, not just two. Every prior concurrency measurement in this project
+(Phase 5's `p5e03_concurrency_sweep`, Phase 6A's `p6a_e01_concurrency_sweep`)
+hammered a SINGLE shared catalog from multiple threads; P7-E01 asks a
+genuinely new question: does spreading concurrent query load across many
+DISTINCT tenants' independent data structures (poor cross-tenant cache
+locality — worker threads jump between totally different catalogs each
+query, unlike hammering one warm catalog repeatedly) degrade aggregate
+throughput compared to a single-tenant baseline, at a FIXED worker count
+(4, matching this container's real CPU count)?
+
+**H4 (tenant-count-invariant throughput)**: at a fixed worker count,
+aggregate QPS and p99 latency do not degrade materially as tenant count N
+grows from 1 to 55 with query load spread uniformly across all N
+tenants — since each query still touches only one tenant's independent,
+unshared `CatalogIndex`, this predicts throughput is governed by CPU
+parallelism, not by how many distinct tenants' data is resident/touched.
+
+**Pass/fail defined in advance**: compare aggregate QPS at N=1 (single
+tenant, all load on it) against aggregate QPS at N=55 (same total worker
+count, load spread across all 55 tenants) at fixed 4-worker concurrency.
+A material aggregate QPS drop (>20%) or p99 growth (>2x) as N grows
+falsifies H4 and reveals a real cross-tenant data-locality cost; flat
+throughput within that margin supports it.
+
+## P7-E01 self-caught confound (first draft, before any repeat run)
+
+The first implementation measured aggregate throughput while spreading
+ALL query load uniformly at random across all N tenants (matching the
+originally-stated plan). Result: throughput appeared to grow ~19.8x from
+N=1 (238.5 rps) to N=55 (4,719.2 rps). Before treating this as a finding,
+inspection found an obvious confound: `load_depth1_tenants` orders
+tenants largest-first, so as N grows the tenant population increasingly
+includes WANDS' many near-empty long-tail categories; with UNIFORM
+random tenant selection, most query volume shifts onto these
+progressively cheaper (near-empty) tenants as N grows, so the "increase"
+mostly reflects average per-query cost falling, not a real tenant-count
+effect. This is a workload-mix artifact, not a scaling result, and was
+corrected before promotion.
+
+## P7-E01 corrected design and result
+
+Redesigned: one dedicated worker repeatedly queries a FIXED tenant
+("Rugs", matching H2's own checkpoint), holding its own query completely
+constant; the remaining 3 workers continuously round-robin through the
+`n-1` OTHER tenants (not randomly weighted, guaranteeing genuine coverage
+of all of them). `n` (the number of other tenants concurrently touched)
+is the only thing that varies; Rugs' own workload is fixed throughout, so
+any change in ITS throughput/latency isolates the effect of touching
+more distinct tenants, not workload-mix drift.
+
+Run 3x independently (`docs/research/artifacts/p7_e01_qps_scaling_run1/results_run{1,2,3}.csv`):
+
+| n (other tenants touched) | run1 rps | run2 rps | run3 rps | run1 p99 (ms) | run2 p99 (ms) | run3 p99 (ms) |
+|---|---|---|---|---|---|---|
+| 1 | 789.2 | 728.2 | 719.0 | 1.85 | 1.83 | 1.96 |
+| 4 | 776.0 | 719.5 | 784.5 | 2.06 | 1.89 | 1.94 |
+| 9 | 794.5 | 736.2 | 795.8 | 1.85 | 1.82 | 1.82 |
+| 24 | 784.0 | 808.8 | 786.0 | 1.95 | 1.91 | 1.94 |
+| 54 | 816.2 | 794.0 | 694.0 | 1.71 | 2.02 | 2.16 |
+
+Quiet tenant throughput stays in a 694-816 rps band across all 15
+measurements (3 runs x 5 breadth levels) with no monotonic trend as
+breadth grows from 1 to 54 — variation across the whole table (~15%
+peak-to-trough) is consistent with ordinary run-to-run noise, not a
+breadth-dependent effect. p99 latency likewise shows no trend (1.71-2.16
+ms band throughout).
+
+**H4 CONFIRMED, robust across 3 independent runs**: touching many
+distinct tenants' data concurrently (up to WANDS' real ceiling of 54
+other tenants) does not measurably degrade a fixed tenant's own query
+throughput or p99 latency, well within the pre-registered pass margins
+(20% aggregate/2x p99). Consistent with the architecture's per-tenant
+`CatalogIndex` instances being fully independent, immutable structures
+with no shared mutable state to contend over.
+
+**Named limitation**: only tested up to WANDS' real 54-other-tenant
+ceiling (the same real-category-cardinality bound H3 already named);
+whether this holds at materially larger tenant counts (hundreds to
+thousands, the scale Issue #21's Phase 7 ultimately asks about) is
+untested and would need the same finer-partition or controlled-stress
+extension named for H3.

@@ -49,6 +49,9 @@ same as Phases 0–5:
 - `p7_e00_tenant_packing.yaml` — the first multi-tenant packing-density
   measurement (Issue #21 Phase 7), using real WANDS category partitions
   as the tenant model; see `PHASE7_DECISION.md`.
+- `p7_e01_qps_scaling.yaml` — fixed-tenant throughput/latency as the
+  breadth of other, concurrently-touched tenants grows; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

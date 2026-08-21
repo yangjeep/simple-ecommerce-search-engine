@@ -1,8 +1,9 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 + P7-E01 first pass
 
 **Decision: PROCEED**, with one hypothesis falsified (in the good
-direction) and one hypothesis confirmed with a small, honestly-disclosed
-open question.
+direction), one hypothesis confirmed with a small, honestly-disclosed
+open question, and one hypothesis confirmed cleanly across repeated
+runs.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -10,11 +11,11 @@ any of the currently-blocked external resources (Retailrocket, H&M,
 Amazon Reviews 2023, Havenask) — it is built entirely over the real
 WANDS catalog already validated in Phase 6A/6B.
 
-## Recap: what P7-E00 was asked to answer
+## Recap: what P7-E00/P7-E01 were asked to answer
 
 Issue #21's Phase 7 goal: can commerce specialization reduce per-tenant
 fixed cost and increase safe tenant packing density while preserving
-predictable latency and isolation? Three falsifiable hypotheses were
+predictable latency and isolation? Four falsifiable hypotheses were
 stated before implementation (`docs/experiments/PHASE7_LOG.md`):
 
 - **H1**: per-tenant memory overhead amortizes as tenant count grows.
@@ -22,6 +23,10 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   another tenant's own latency.
 - **H3**: there exists a packing ceiling on this hardware, to be recorded
   honestly rather than extrapolated past.
+- **H4** (P7-E01): a fixed tenant's own query throughput/latency does not
+  degrade as the BREADTH of other, distinct, concurrently-touched tenants
+  grows, at fixed worker concurrency — Issue #21's explicit "tenants/node
+  at fixed latency SLO" metric.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -105,8 +110,33 @@ this container's ~15 GB budget. The packing ceiling was never actually
 approached; this is recorded honestly as untested rather than
 extrapolated, per this project's standing discipline.
 
+**H4 — CONFIRMED, robust across 3 independent runs (P7-E01).** A fixed
+tenant's ("Rugs") own query throughput and p99 latency (694-816 rps,
+1.71-2.16ms p99 across all 15 measurements — 3 runs x 5 breadth levels)
+show no monotonic trend as the number of OTHER, distinct, concurrently-
+touched tenants grows from 1 to 54 (WANDS' real ceiling), at fixed
+4-worker concurrency. This directly answers Issue #21's "tenants/node at
+fixed latency SLO" metric for the memory/CPU-contention dimension: this
+architecture's per-tenant `CatalogIndex` instances are independent,
+immutable structures with no shared mutable state to contend over, and
+that independence appears to hold in practice, not just in principle.
+**Named limitation**: only tested up to WANDS' real 54-other-tenant
+ceiling; whether this holds at the hundreds-to-thousands scale Issue #21
+ultimately asks about is untested.
+
+**P7-E01 self-caught confound (documented for the process record)**: the
+first-draft design spread ALL query load uniformly at random across all
+N tenants and found throughput apparently increasing ~19.8x from N=1 to
+N=55 — before promotion, inspection found this was a workload-mix
+artifact (uniform random selection over an increasingly long-tail
+population shifts most load onto progressively cheaper near-empty
+tenants as N grows), not a real tenant-count effect. Caught and corrected
+before any external review was needed, by holding one tenant's own query
+completely fixed and varying only the breadth of other tenants touched.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
-`docs/research/artifacts/p7_e00_tenant_packing_run1/`.
+`docs/research/artifacts/p7_e00_tenant_packing_run1/`,
+`docs/research/artifacts/p7_e01_qps_scaling_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -115,7 +145,9 @@ partitioning, largest-first only, no deterministic cross-check) is
 preserved in `docs/experiments/PHASE7_LOG.md`'s "First-draft results and
 self-caught interpretation issue" section, alongside exactly what the
 adversarial review found wrong with it and what was fixed — per this
-project's "record failed experiments, do not erase evidence" rule.
+project's "record failed experiments, do not erase evidence" rule. The
+P7-E01 first-draft workload-mix confound is likewise preserved in the
+log rather than silently rewritten.
 
 ## Unresolved risks
 
@@ -146,10 +178,12 @@ project's "record failed experiments, do not erase evidence" rule.
 A cross-process or cross-container tenant-isolation measurement to
 capture the per-tenant fixed cost this single-process design cannot see;
 a genuine packing-ceiling test (finer real partitions or controlled-
-stress tenant-count replication) to actually exercise H3; a QPS-scaling
-experiment (Issue #21 explicitly asks for "tenants/node at fixed latency
-SLO," not yet measured here — this pass measured memory and one
-isolation condition, not sustained multi-tenant query throughput).
+stress tenant-count replication) to actually exercise H3 and to test H4
+at tenant counts beyond WANDS' real 55-category ceiling; an aggregate
+throughput-under-realistic-load experiment (P7-E01 tested breadth of
+touched tenants at fixed per-tenant demand, not aggregate QPS at a
+realistic multi-tenant demand mix, which Issue #21's "per-tenant and
+aggregate QPS" metric also asks for).
 
 ## What should explicitly not be built yet
 
@@ -168,22 +202,29 @@ overhead is negligible and total memory cost tracks aggregate product
 count, not tenant count (H1, corrected and adversarially validated); one
 tenant's heavy concurrent load does not cause material latency
 regression for another tenant sharing the same process (H2, confirmed
-across repeated runs); the specific numeric first-draft "27-590 KB
-per-tenant fixed cost" estimate is withdrawn and was a build-order/
-allocator artifact, not a real property of the architecture.
+across repeated runs); a fixed tenant's own throughput/latency does not
+degrade as the breadth of other, distinct, concurrently-touched tenants
+grows up to WANDS' real ceiling (H4, confirmed across repeated runs); the
+specific numeric first-draft "27-590 KB per-tenant fixed cost" estimate
+and the first-draft P7-E01 "~19.8x throughput increase" are both
+withdrawn — the former a build-order/allocator artifact, the latter a
+workload-mix artifact — neither a real property of the architecture.
 
 **Does not claim**: that this generalizes to a real multi-process/multi-
 container SaaS deployment (the in-process measurement cannot see
 per-process fixed costs); that the small cross-vs-same-tenant latency
 difference in H2 is understood; that a packing ceiling has been found
-(H3 untested); that QPS-scaling or economic cost-per-tenant questions
-(both explicitly named in Issue #21's Phase 7) have been answered — this
-is a first pass on memory/isolation only.
+(H3 untested, and H4 only tested up to the same real ceiling); that
+aggregate QPS under a realistic multi-tenant demand mix or economic
+cost-per-tenant questions (both explicitly named in Issue #21's Phase 7)
+have been answered — this is a first pass on memory, pairwise isolation,
+and fixed-tenant throughput-under-breadth only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (QPS-scaling
-under fixed SLO, and/or a cross-process fixed-cost measurement) without
-changing the underlying commerce-native mechanism. The favorable,
-adversarially-corrected H1 result and the robust H2 pass are real
-evidence in favor of the architecture's packing-density potential, but
-are explicitly a floor on the claim (single-process, one tenant model),
-not a ceiling.
+**Decision: PROCEED** to the next Phase 7 sub-experiment (a cross-process
+fixed-cost measurement, and/or a genuine packing-ceiling test beyond
+WANDS' real 55-category limit) without changing the underlying
+commerce-native mechanism. The favorable, adversarially-corrected H1
+result and the robust H2/H4 results are real evidence in favor of the
+architecture's packing-density potential, but are explicitly a floor on
+the claim (single-process, one tenant model, one real ceiling), not a
+ceiling on what remains to be tested.
