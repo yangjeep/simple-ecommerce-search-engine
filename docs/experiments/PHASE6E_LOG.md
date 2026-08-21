@@ -203,3 +203,123 @@ Solr's own facet component is inferred, not profiled (no JFR/perf run).
 Only a single-node, single-shard ES configuration was tested, matching
 this whole project's "avoid distributed-systems work" scoping rule
 (`CLAUDE.md`) -- not a multi-node or multi-shard ES topology.
+
+## P6E-E01: does the same route work for OpenSearch, and does it show the same qualitative result?
+
+**Hypothesis**: since `org.opensearch:opensearch:2.17.0` and
+`org.opensearch.test:framework:2.17.0` already confirmed resolvable from
+Maven Central (P6E-E00), the same Maven-library route should let a real
+embedded OpenSearch node boot, though OpenSearch's fork-specific
+bootstrap code (it diverged from Elasticsearch 7.10) may introduce its
+own distinct blockers rather than the identical four P6E-E00 found --
+falsifiable either way by attempting it and recording exactly what
+transfers and what doesn't.
+
+**Design**: mirror `es-direct-bench/`'s structure in a new
+`opensearch-direct-bench/` module. OpenSearch's own single-node
+test-bootstrap class is `org.opensearch.test.OpenSearchSingleNodeTestCase`
+(confirmed via `jar tf` on the framework JAR) rather than ES's
+`ESSingleNodeTestCase`. Start with a minimal probe test, fix whatever
+appears, then port the full benchmark.
+
+### New, OpenSearch-specific blockers found (distinct from P6E-E00's four)
+
+1. **Missing `log4j-core`**: `NoClassDefFoundError:
+   org/apache/logging/log4j/core/Layout`. `mvn dependency:tree` showed
+   OpenSearch's own POM brings `log4j-api`/`log4j-jul` but not
+   `log4j-core` -- unlike Elasticsearch's equivalent bundle, which does.
+   Fixed by adding `log4j-core:2.21.0` explicitly to `pom.xml`.
+2. **`RuntimeException: can not run opensearch as root`**, thrown from
+   `Bootstrap.initializeNatives`. This container runs every command as
+   root (confirmed via `whoami`/`id`; Solr itself needed `--force` for
+   the same reason). OpenSearch's own bootstrap explicitly checks for
+   root and refuses -- a real safety check in OpenSearch's own code.
+   Notably, **Elasticsearch's equivalent check did not hard-fail under
+   the identical condition** in P6E-E00 (it logged "Cannot check if
+   running as root because native access is not available" and
+   continued) -- the same underlying condition (native-access library
+   unavailable in this container) is handled as non-fatal by ES and
+   fatal by OpenSearch, a real, disclosed divergence between the two
+   forks, not an inconsistency in this project's own testing. **Fixed**
+   by running the benchmark as this container's existing non-root
+   `ubuntu` (uid 1000) account instead of root -- since `/root` itself
+   is mode 700 (unreadable by other users), an isolated copy of the
+   module plus a separate Maven local repository under `/tmp` (both
+   chowned to `ubuntu`) were used rather than trying to share root's own
+   `~/.m2` cache.
+3. **`org.opensearch.xcontent` package does not exist**: OpenSearch
+   2.17 (forked before ES 8.x's package reorganization) still keeps
+   `XContentBuilder` under `org.opensearch.core.xcontent` and
+   `XContentFactory` under `org.opensearch.common.xcontent` -- fixed by
+   using the correct pre-8.x package paths.
+4. **`SearchResponse` has no `decRef()` method**: ES 8.x's
+   reference-counted response objects (introduced after OpenSearch
+   forked) don't exist in OpenSearch's API -- fixed by removing the
+   `decRef()` calls the ported code carried over from `WandsEsBenchTest`.
+
+### A fifth blocker found, NOT fixed in this pass
+
+5. **Live Solr cross-check denied**: `AccessControlException: access
+   denied ("java.net.SocketPermission" "localhost:8983"
+   "connect,resolve")`. Running as non-root `ubuntu` (the fix for
+   blocker #2) also activates OpenSearch's test-framework
+   `SecurityManager`'s network restrictions, which deny outbound
+   sockets to Solr's port from the test JVM -- the identical live-count
+   cross-check succeeded without issue in P6E-E00's Elasticsearch run
+   (run as root), so this is specifically a consequence of the
+   non-root + SecurityManager combination OpenSearch's bootstrap
+   requires. Every run's `solr_count`/`count_match` columns are `n/a`
+   as a result. **Not silently worked around**: disclosed as a real,
+   unresolved limitation. See
+   `docs/research/artifacts/p6e_e01_opensearch_direct_run1/blockers_found_and_fixed/03_solr_socket_permission_denied_NOT_FIXED.log`.
+
+### Indirect correctness corroboration (since the live check was blocked)
+
+Every candidate count OpenSearch reported across all 3 runs — 2,002 /
+2,175 / 2,072 / 3,394 / 4,612 / 4,686 / 16,039 (the 7 depth-1 category
+checkpoints) and 31,967 (the numeric-range whole-catalog count) —
+matches, digit-for-digit and run-for-run, the Solr-verified ground-truth
+counts P6E-E00's Elasticsearch benchmark already confirmed against
+Solr's live response in this same session, for the identical
+checkpoints on the identical catalog. This is real, if indirect,
+corroborating evidence (a cross-process comparison against an
+already-verified number, not a live in-process check) -- reported as
+such, not inflated into a "24/24 correctness gate" claim the way
+P6E-E00's own genuinely live check earned.
+
+### Result: timing, 3 independent runs
+
+| Checkpoint | n | OpenSearch color-facet p50 (3 runs, ms) | ES color-facet p50 (P6E-E00, ms) | Solr p50 (same session, ms) | OpenSearch vs. Solr |
+|---|---|---|---|---|---|
+| Rugs | 2,002 | 1.97-2.29 | 2.08-2.16 | 1.19 | 1.7-1.9x slower |
+| Storage & Organization | 2,175 | 1.38-1.55 | 1.37-1.56 | 1.15 | 1.2-1.35x slower |
+| Lighting | 2,072 | 1.23-1.29 | 1.22-1.38 | 0.97 | 1.27-1.33x slower |
+| Outdoor | 3,394 | 1.38-1.60 | 1.37-1.56 | 1.00 | 1.4-1.6x slower |
+| Décor & Pillows | 4,612 | 2.15-2.47 | 1.99-2.22 | 1.10 | 2.0-2.25x slower |
+| Home Improvement | 4,686 | 1.36-1.76 | 1.22-1.30 | 1.06 | 1.3-1.7x slower |
+| Furniture | 16,039 | 1.53-1.92 | 1.55-1.58 | 1.18 | 1.3-1.6x slower |
+
+**OpenSearch's terms-aggregation is also slower than Solr's own
+`facet.field`** at every checkpoint (1.2x-2.25x), the same qualitative
+finding P6E-E00 made for Elasticsearch, and the two engines' own
+absolute numbers are close to each other (OpenSearch running somewhat
+higher at 2 of 7 checkpoints, comparable at the rest) -- consistent with
+both forks sharing the same Lucene core and a similar general-purpose
+aggregation-framework design, though this was not measured in the same
+process/session for either engine (each ran in its own JVM). This
+strengthens the P6E-E00 finding further: it is not an Elasticsearch-8.x
+peculiarity, but a pattern that reproduces on the other major
+Lucene-based distributed search engine too. commerce-native's own
+ordinal method remains dramatically faster than both.
+
+**Named limitations**: the live Solr correctness cross-check could not
+run in-process for this engine (blocker #5) -- correctness rests on
+indirect, cross-process candidate-count corroboration, not the same
+kind of direct 24/24 live-response match P6E-E00 achieved for
+Elasticsearch. OpenSearch and Elasticsearch were not measured in the
+same process/session, so the "OpenSearch vs. ES" comparison in the table
+above is illustrative, not a controlled same-session comparison. The
+same other limitations named in P6E-E00 apply here too: only
+`color_facet_under_category` has a clean same-session Solr timing
+counterpart; only single-node/single-shard OpenSearch was tested; the
+mechanism is inferred, not profiled.

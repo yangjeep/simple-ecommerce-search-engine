@@ -1,0 +1,28 @@
+[WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Rugs": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+
+Unlike the four blockers above and the four in P6E-E00's own log, this
+one was NOT fixed in this pass -- disclosed here rather than silently
+worked around. Running the benchmark as the non-root `ubuntu` user (the
+fix for "can not run opensearch as root", see 02_*) also activates
+OpenSearch's test-framework SecurityManager's network restrictions,
+which deny outbound socket connections to Solr's port (localhost:8983)
+from the test JVM. The identical live-Solr-count cross-check succeeded
+without issue in P6E-E00's Elasticsearch benchmark, run as root -- so
+this is specifically a consequence of the non-root + SecurityManager
+combination OpenSearch's bootstrap requires, not a general network
+policy restriction in this environment (outbound HTTP to Solr works
+fine from every other process in this session, root or not).
+
+Consequence: this run's `solr_count`/`count_match` columns are all
+"n/a" -- no live, in-process correctness cross-check against Solr ran
+for the OpenSearch numbers, unlike every other engine measured in this
+research campaign. Partial, indirect corroboration is still available:
+every candidate count OpenSearch reported (2,002 / 2,175 / 2,072 /
+3,394 / 4,612 / 4,686 / 16,039 / 31,967) matches, digit-for-digit, the
+Solr-verified ground truth counts from this same session's P6E-E00
+Elasticsearch run for the identical 7 depth-1 checkpoints and the same
+numeric-range query -- but this is a cross-process comparison against a
+separately-verified number, not a live cross-check within this test's
+own process. Named explicitly as an unresolved limitation in
+PHASE6E_LOG.md/PHASE6E_DECISION.md, not silently treated as equivalent
+to a live check.

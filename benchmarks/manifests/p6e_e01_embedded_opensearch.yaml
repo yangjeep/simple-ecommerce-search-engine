@@ -1,0 +1,78 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6E-E01
+phase: 6E
+issue: 21
+decision_document: PHASE6E_DECISION.md
+claim: >
+  Following P6E-E00's confirmation that org.opensearch:opensearch:2.17.0
+  and org.opensearch.test:framework:2.17.0 resolve cleanly from Maven
+  Central: does the same embedded-node approach actually work for
+  OpenSearch, and does it show the same qualitative result as
+  Elasticsearch? A real embedded single-node OpenSearch 2.17.0 cluster
+  does boot and serve a real benchmark against the real WANDS catalog,
+  after fixing four blockers distinct from P6E-E00's four (missing
+  log4j-core, OpenSearch's own bootstrap hard-refusing to run as root
+  -- unlike ES's equivalent check, which only warned -- wrong pre-8.x
+  xcontent package paths, and a missing decRef() method). A fifth
+  blocker (live Solr cross-check denied under the non-root
+  SecurityManager) was found but NOT fixed in this pass -- disclosed,
+  not silently worked around; correctness rests instead on indirect,
+  cross-process candidate-count corroboration against P6E-E00's own
+  already Solr-verified counts, which match digit-for-digit across all
+  3 runs. Timing result: OpenSearch's terms-aggregation is also
+  1.2x-2.25x SLOWER than Solr's own facet.field for
+  color-facet-under-category at every checkpoint tested, the same
+  qualitative finding as Elasticsearch's own (P6E-E00) -- not an
+  Elasticsearch-8.x peculiarity, but a pattern reproducing on the other
+  major Lucene-based distributed engine too. See
+  docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.
+
+git_sha: PENDING
+binary: opensearch-direct-bench/pom.xml, opensearch-direct-bench/src/test/java/org/commercenative/opensearchdirect/WandsOpenSearchBenchTest.java
+build_command: cd opensearch-direct-bench && mvn test-compile
+run_command: |
+  Requires running as a non-root user (see PHASE6E_DECISION.md's
+  "can not run opensearch as root" blocker): this session ran it as the
+  container's existing non-root `ubuntu` account with an isolated Maven
+  local repo, since /root is unreadable by other users:
+    cd opensearch-direct-bench && mvn test \
+      -Dmaven.repo.local=/tmp/opensearch-nonroot/repo \
+      -Dcatalog.path=/tmp/wands_catalog.jsonl -Drepo.root=..
+test_command: same as run_command (this module's own test IS the
+  benchmark + best-effort correctness check combined)
+
+dataset:
+  name: real WANDS catalog (42,994 products), same 7 depth-1 category
+    checkpoints P6A-E00/P6C-E00/P6E-E00 all used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  opensearch: 2.17.0, embedded single-node via
+    org.opensearch.test:framework's OpenSearchSingleNodeTestCase,
+    in-process NodeClient, run as a non-root user
+  solr: Apache Solr 9.10.1, wands_bench core; live count cross-check
+    could NOT run in-process for this engine (network-permission
+    blocker); correctness rests on cross-process candidate-count
+    corroboration against P6E-E00's own live-verified counts instead;
+    color-facet timing comparison sourced from the same session's
+    p6a_e00_wands_vs_native_eval run (used for P6D-E03/P6E-E00)
+
+workload:
+  selection: filter_only (category count), product_class/color facet
+    under category, sort_title_asc, sort_rating_desc, deep_pagination
+    (per checkpoint), plus one whole-catalog numeric_range_rating --
+    identical operation set to P6E-E00's Elasticsearch benchmark
+  repetitions: WARMUP=5, REPS=30 per operation; whole test invoked 3
+    independent times via `mvn test`
+
+seed: "N/A -- deterministic given a fixed catalog and index-build code path"
+
+raw_results: docs/research/artifacts/p6e_e01_opensearch_direct_run1/
+  - console_run1.log, console_run2.log, console_run3.log
+  - results_run1.csv, results_run2.csv, results_run3.csv
+  - blockers_found_and_fixed/ (4 fixed + 1 unresolved blocker, preserved
+    per this project's "record failed experiments" rule)
+
+analysis: printed directly by the JUnit test; see
+  docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.

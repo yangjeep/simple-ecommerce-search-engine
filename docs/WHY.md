@@ -321,11 +321,30 @@ campaign's first real Elasticsearch data point, and one that
 strengthens rather than complicates commerce-native's own dramatically
 faster ordinal-counting result (Phase 6D) rather than threatening it.
 Named limitations remain (only one operation class has a clean
-same-session Solr timing comparison; OpenSearch's own embedded-node
-bootstrap was not attempted, only its library resolution confirmed; no
-one-binary four-way timing harness exists yet), but the headline
-"genuinely blocked" framing this project carried since Phase 6C is now
-corrected, not merely repeated.
+same-session Solr timing comparison; no one-binary comparison harness
+exists yet), but the headline "genuinely blocked" framing this project
+carried since Phase 6C is now corrected, not merely repeated.
+
+**The same route then worked for OpenSearch too (P6E-E01).** A real
+embedded single-node OpenSearch 2.17.0 cluster boots after fixing four
+more blockers distinct from Elasticsearch's own four — most notably,
+OpenSearch's own bootstrap hard-refuses to run as root, where
+Elasticsearch's equivalent check only warned under the identical
+condition in this container, so the benchmark had to run as this
+container's existing non-root `ubuntu` account instead. That fix in turn
+triggered a fifth blocker this pass did not resolve: OpenSearch's own
+`SecurityManager` network policy denies the benchmark's live Solr
+cross-check when run as non-root. Rather than silently treat the result
+as equivalently verified, this is disclosed plainly: OpenSearch's
+candidate counts are corroborated indirectly (they match, digit for
+digit, the already Solr-verified counts from the Elasticsearch run) but
+not confirmed by a live in-process check the way Elasticsearch's own
+were. The timing result still stands on its own: OpenSearch's
+terms-aggregation is also 1.2x-2.25x slower than Solr's own
+`facet.field` at every checkpoint — the same qualitative finding as
+Elasticsearch's, meaning this is a property of general-purpose
+aggregation frameworks on Lucene, not a quirk of one engine's 8.x
+release line.
 
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more

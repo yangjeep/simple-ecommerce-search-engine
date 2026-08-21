@@ -208,6 +208,20 @@ same as Phases 0–5:
   is 1.2x-2.0x slower than Solr's own `facet.field` for
   color-facet-under-category at every checkpoint — the campaign's first
   real Elasticsearch data point; see `PHASE6E_DECISION.md`.
+- `p6e_e01_embedded_opensearch.yaml` — the same Maven-library route,
+  attempted for OpenSearch. A real embedded single-node OpenSearch
+  2.17.0 cluster boots after fixing 4 more blockers distinct from
+  Elasticsearch's own (missing `log4j-core`, OpenSearch's own bootstrap
+  hard-refusing to run as root — unlike ES's equivalent check, which
+  only warned — wrong pre-8.x `xcontent` package paths, a missing
+  `decRef()` method). A fifth blocker was found but NOT fixed: running
+  as the non-root user the root-refusal required also denies the live
+  Solr cross-check under OpenSearch's own SecurityManager network
+  policy — correctness rests on indirect corroboration (candidate
+  counts matching P6E-E00's own already-verified counts digit-for-digit)
+  rather than a live in-process check. Timing result: also 1.2x-2.25x
+  slower than Solr's own `facet.field` at every checkpoint — the same
+  qualitative finding as Elasticsearch's own; see `PHASE6E_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

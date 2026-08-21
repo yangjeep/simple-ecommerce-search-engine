@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P6E-E01",
+  "phase": "6E",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6e_e01_embedded_opensearch.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog, 7 real depth-1 category checkpoints (n=2,002 to n=16,039) plus whole-catalog numeric range (n=31,967) -- identical to P6E-E00"
+  },
+  "engine_config": {
+    "opensearch": "2.17.0, embedded single-node via org.opensearch.test:framework's OpenSearchSingleNodeTestCase, run as non-root user",
+    "solr": "Apache Solr 9.10.1, wands_bench core; live in-process cross-check blocked (see named_limitation); indirect corroboration via P6E-E00's own already-verified counts"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6e_e01_opensearch_direct_run1/",
+  "analysis_version": "docs/experiments/PHASE6E_LOG.md#P6E-E01",
+  "decision": "PHASE6E_DECISION.md",
+  "headline_result": {
+    "embedded_node_bootstrap": "a real single-node OpenSearch 2.17.0 cluster starts and serves requests in-process, after fixing 4 concrete disclosed blockers distinct from P6E-E00's four (missing log4j-core, OpenSearch's own bootstrap hard-refusing to run as root -- unlike ES's equivalent check which only warned --, wrong pre-8.x xcontent package paths, missing decRef() method)",
+    "unfixed_blocker": "running as the non-root user required to fix the root-refusal also activates OpenSearch's SecurityManager network restrictions, denying the live Solr HTTP cross-check -- disclosed as unresolved, not worked around",
+    "correctness_evidence": "indirect: every candidate count OpenSearch reported (2002/2175/2072/3394/4612/4686/16039/31967) across all 3 runs matches digit-for-digit the Solr-verified ground truth P6E-E00's own live check already established for the identical checkpoints -- weaker evidence than a live in-process check",
+    "timing_result": "color_facet_under_category: OpenSearch 1.2x-2.25x SLOWER than Solr's own facet.field at every one of 7 checkpoints tested, comparable to Elasticsearch's own 1.2x-2.0x range (P6E-E00) -- same qualitative finding reproduces on the other major Lucene-based engine",
+    "named_limitation": "OpenSearch and Elasticsearch not measured in the same process/session; no live Solr correctness check for OpenSearch in this pass; only single-node/single-shard OpenSearch tested; mechanism inferred not profiled"
+  }
+}
