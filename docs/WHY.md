@@ -271,12 +271,20 @@ reached a real, safely-confirmed ceiling of about 3,500 query-capable
 tenants under a disclosed, conservative memory envelope, with
 quiet-tenant throughput and latency both essentially unaffected there
 — a materially lower, but now genuinely query-capable, number than the
-earlier memory-only ceiling. A last synthesis combined Phase 3/4's own
-already-promoted admission-rate evidence with this multi-tenant
+earlier memory-only ceiling. A further synthesis combined Phase 3/4's
+own already-promoted admission-rate evidence with this multi-tenant
 population to answer the remaining named economic output directly:
 tens of thousands of backend requests avoided per million real queries
 per tenant, closing the final gap in this document's own required
-economic-output list without leaving anything silently undelivered.
+economic-output list without leaving anything silently undelivered. A
+last measurement then turned to CPU cost, a dimension every prior
+Phase 7 experiment had left entirely unmeasured (all of them tracked
+wall-clock time only): unlike memory, which scales cleanly and linearly
+with product count, CPU cost per query does not — it is dominated by a
+fixed per-query overhead at tiny tenant sizes, then grows measurably
+faster than linearly for the largest real tenant, a real, reproduced,
+and previously invisible finding this project's memory-focused
+measurements alone could never have surfaced.
 
 ## What this project is not
 

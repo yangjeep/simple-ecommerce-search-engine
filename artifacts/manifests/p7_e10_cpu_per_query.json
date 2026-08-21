@@ -1,0 +1,34 @@
+{
+  "experiment_id": "P7-E10",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e10_cpu_per_query.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS 3 real tenants (Water Filter Pitchers, Faux Plants and Trees, Furniture -- same sizes as H6/H7/H8/H9)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, single-threaded, no concurrent load, /proc/self/stat-based CPU-time accounting"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e10_cpu_per_query_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E10",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h13_status": "FALSIFIED -- CPU cost is NOT linear in product count, reproduced across 3 runs",
+    "cpu_us_per_query_mean": {
+      "water_filter_pitchers_1_product": 0.397,
+      "faux_plants_and_trees_5_products": 1.087,
+      "furniture_16039_products": 10534.77
+    },
+    "cpu_wall_ratio_range": [0.997, 1.002],
+    "scaling_shape": "sub-linear from 1 to 5 products (2.74x growth vs 5.0x product-count growth); super-linear from 5 to 16039 products (9694.6x growth vs 3207.8x product-count growth)",
+    "linear_extrapolation_vs_actual": "furniture actual (10534.77 us/query) is 3.81x higher than a straight-line fit through the two small tenants predicts (2767 us/query)",
+    "illustrative_cpu_per_million_queries": {
+      "water_filter_pitchers": "0.40 CPU-seconds",
+      "faux_plants_and_trees": "1.09 CPU-seconds",
+      "furniture": "10535 CPU-seconds (~2.93 CPU-hours)"
+    },
+    "disclosed_unconfirmed_mechanism": "distinct facet (color) value cardinality growing with tenant size, compounding candidate-count scanning cost -- not profiled or confirmed"
+  }
+}

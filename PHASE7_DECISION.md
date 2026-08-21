@@ -1,4 +1,4 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E09 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E10 first pass
 
 **Decision: PROCEED**, with two hypotheses falsified (one in the good
 direction, one revealing a real but practically tiny effect) and six
@@ -54,7 +54,16 @@ memory and was killed by this container's real 13.34 GiB cgroup limit,
 discovered directly rather than assumed from `free -h`'s host-level
 figure), and recognizing that the very first in-process latency
 checkpoint's p99 is an unstable, cold-start-affected statistic (p50 was
-the trustworthy metric throughout).
+the trustworthy metric throughout). A tenth experiment (H13) measured
+Issue #21's "CPU/query and CPU/tenant" metric for the first time this
+phase — every prior Phase 7 experiment measured wall-clock only. Unlike
+memory (H1/H5's clean linear scaling), CPU cost per facet-scan query
+does NOT scale linearly with tenant product count: sub-linear from 1 to
+5 products (a fixed per-query overhead dominates at tiny sizes), then
+super-linear from 5 to 16,039 products (the largest real tenant's
+measured cost is 3.81x higher than a straight-line extrapolation from
+the two small points would predict), reproduced consistently across 3
+runs.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -127,6 +136,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   and latency stay within Phase 7's material-regression bar relative to
   the n=55 real-tenant baseline — directly answering Issue #21's
   "tenants per fixed hardware envelope at target SLO" metric.
+- **H13** (P7-E10): this architecture's per-query CPU cost (user+system
+  time) for a facet-scan operation scales roughly linearly with tenant
+  product count, mirroring H1/H5's clean linear memory-scaling finding
+  — directly answering Issue #21's "CPU/query and CPU/tenant" metric,
+  untested by any prior Phase 7 hypothesis (all of which measured
+  wall-clock only).
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -538,6 +553,59 @@ container) were tested; dollar-cost implications are deliberately kept
 separate from this architecture-normalized tenant count, per Issue
 #21's own instruction.
 
+**H13 — FALSIFIED, reproduced across 3 independent runs (P7-E10).**
+Answers Issue #21's "CPU/query and CPU/tenant" metric for the first
+time this phase — every prior Phase 7 experiment measured wall-clock
+only. Reusing H6/H7/H8/H9's exact 3 real tenant sizes
+(largest/middle/smallest), CPU time was measured single-threaded, with
+no concurrent noisy load (CPU-time accounting via `/proc/self/stat` is
+process-wide, so concurrent load would contaminate the signal).
+
+A first sanity check passed cleanly: the CPU/wall-clock ratio was
+0.997-1.002 for every tenant in every run — essentially exactly 1.0,
+as expected for a single-threaded, CPU-bound, uncontended loop with no
+I/O inside `facet_scan_once`, validating the `/proc/self/stat`-based
+CPU-time method before trusting any comparison built on it.
+
+H13 itself (linear CPU scaling with product count) does NOT hold:
+from 1 to 5 products (5.0x), CPU/query grows only 2.74x — sub-linear,
+consistent with a fixed per-query overhead dominating at tiny sizes
+(the same shape H1's "near-empty tenants show flat marginal memory
+cost" finding has, now shown for CPU). From 5 to 16,039 products
+(3,207.8x), CPU/query grows 9,694.6x — clearly super-linear. A
+straight-line fit through the two small points predicts ~2,767
+us/query for Furniture; the actual measured cost is **10,534.77
+us/query — 3.81x higher**, reproduced consistently (under 1% spread
+across all 3 runs). **Unlike memory (H1/H5's clean linear scaling),
+CPU cost per query is NOT well-described by a single linear law across
+this size range** — a capacity model estimating CPU cost purely from
+aggregate product count would underestimate the largest real tenant's
+true cost.
+
+**Illustrative CPU/tenant figure** (matching the "per million requests"
+convention already used elsewhere in Phase 7's economic model, for
+comparability): ~0.40 CPU-seconds per million queries for a near-empty
+tenant, ~1.09 for a 5-product tenant, and **~10,535 CPU-seconds
+(~2.93 CPU-hours) per million queries for Furniture** — an illustrative
+rate, not combined with any real measured per-tenant request volume
+(Phase 7 has never measured one, the same disclosure the
+backend-requests-avoided synthesis made).
+
+**Named, disclosed-but-unconfirmed mechanism hypothesis**:
+`facet_counts_by_scan` groups candidates by their `color` value; cost
+may depend on the number of DISTINCT color values touched, not just
+candidate count, and a large diverse catalog like Furniture plausibly
+has far more distinct colors than a tiny niche category — compounding
+into faster-than-linear growth. Disclosed, not profiled or confirmed,
+joining H7/H8's allocator-arena hypothesis and H9/H10's
+cache-locality/interleaving hypothesis as a candidate for future
+profiling.
+
+**Named limitations**: only 3 real tenant sizes were tested (the exact
+scaling shape between the sub-linear small-n region and the
+super-linear large-n region is unknown); only one query type (facet
+scan) was tested — other structural operators may scale differently.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
@@ -548,6 +616,7 @@ Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/`,
 `docs/research/artifacts/p7_e07_realistic_demand_mix_run1/`,
 `docs/research/artifacts/p7_e08_extended_breadth_run1/`,
+`docs/research/artifacts/p7_e10_cpu_per_query_run1/`,
 `docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
@@ -643,6 +712,14 @@ renamed rather than deleted.
    proportionally larger, or a qualitatively different tenant ceiling
    is untested; only one quiet tenant and one query type were tested at
    this envelope.
+10. **H13's super-linear CPU-cost growth at the large end (Furniture,
+    16,039 products) has a disclosed, unconfirmed mechanism hypothesis
+    (distinct-facet-value cardinality growing with tenant size), not a
+    profiled or confirmed one.** Only 3 real tenant sizes were tested;
+    the exact scaling shape between the sub-linear small-n region and
+    the super-linear large-n region — and whether other structural
+    operators (range filters, category membership, sort) show the same
+    shape — is untested.
 
 ## What would be built next if scaling up
 
@@ -716,22 +793,34 @@ illustrative even-traffic-split assumption, added to
 named "Economic output" metrics without silently leaving any
 undelivered.
 
+**CPU/query and CPU/tenant (Issue #21's explicit required-experiments
+metric) is now measured** (H13, P7-E10) — reusing H6/H7/H8/H9's exact 3
+real tenant sizes, single-threaded with no concurrent noisy load to
+keep the process-wide `/proc/self/stat` CPU-time reading uncontaminated.
+Unlike memory's clean linear scaling (H1/H5), CPU cost per query is
+sub-linear from 1 to 5 products then super-linear from 5 to 16,039
+products — Furniture's measured cost is 3.81x higher than a
+straight-line extrapolation from the two small tenants would predict,
+reproduced across 3 runs. A CPU/wall ratio of 0.997-1.002 in every
+measurement validated the CPU-time reading method itself before
+trusting this comparison.
+
 Still to build: profiling to identify the specific allocator mechanism
 behind H7/H8's growth pattern and residual tail creep, the
 CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
 "cache dilution from interleaving" hypothesis behind H10's smaller
 magnitude, the memory-pressure-vs-safety-cap hypothesis behind H11's
-n=2,000 dip, and whether H12's 3,500-tenant envelope would look
-materially different on a larger machine or with less reserved
-headroom, if a real deployment's memory/latency budget needs tighter
-precision than "decelerates toward roughly a known bound" / "plausibly
-cache locality." Also still open, per Issue #21's required
-"Experiments" list (distinct from the "Economic output" list, now
-fully addressed): CPU/query and CPU/tenant (Phase 7 has measured only
-wall-clock so far); high-churn tenant impact on low-churn tenants (no
-mutation/churn workload has been exercised); lexical-backend contention
-(would require live Solr integration in the multi-tenant harness, not
-yet attempted).
+n=2,000 dip, whether H12's 3,500-tenant envelope would look materially
+different on a larger machine or with less reserved headroom, and the
+distinct-facet-value-cardinality hypothesis behind H13's super-linear
+CPU growth at the large end, if a real deployment's memory/latency/CPU
+budget needs tighter precision than "decelerates toward roughly a known
+bound" / "plausibly cache locality" / "plausibly facet cardinality."
+Also still open, per Issue #21's required "Experiments" list (distinct
+from the "Economic output" list, now fully addressed): high-churn
+tenant impact on low-churn tenants (no mutation/churn workload has been
+exercised); lexical-backend contention (would require live Solr
+integration in the multi-tenant harness, not yet attempted).
 
 ## What should explicitly not be built yet
 
@@ -831,7 +920,17 @@ quiet-tenant p50 latency and throughput both essentially flat (within
 ~2-4%) relative to the 55-tenant baseline. This also made explicit an
 important distinction that had been implicit until now: H5's own
 6,500-tenant figure describes an index-only configuration that cannot
-actually serve queries, not a query-capable ceiling.
+actually serve queries, not a query-capable ceiling. CPU/query and
+CPU/tenant (Issue #21's remaining required-experiments metric) is
+measured for the first time this phase (H13, P7-E10, reproduced across
+3 runs): unlike memory's clean linear scaling, CPU cost per facet-scan
+query is sub-linear from 1 to 5 products (a fixed per-query overhead
+dominates at tiny sizes) then super-linear from 5 to 16,039 products —
+Furniture's measured CPU cost is 3.81x higher than a straight-line
+extrapolation from the two small tenants would predict. A CPU/wall
+ratio of 0.997-1.002 in every measurement validated the underlying
+`/proc/self/stat`-based CPU-time reading method before this comparison
+was trusted.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants (H5) or 3,500
@@ -870,22 +969,25 @@ Phase 7's WANDS-based tenant population, a disclosed cross-dataset
 combination, not an admission-rate measurement run against WANDS'
 own real queries; or that the illustrative even-split-across-55-
 tenants traffic assumption reflects any measured per-tenant traffic
-distribution (Phase 7 never measured one) — this is a first pass on
-memory (including at scale), pairwise isolation, fixed-tenant
-throughput-under-breadth (now including at memory-scale tenant
-counts), process-baseline floors (short-lived, and a longer-resident
-window that decelerates toward but has not been proven to fully reach
-a bound), a first cold-vs-hot latency comparison under two different
-designs, and a first economic-model synthesis (now addressing all 7 of
-Issue #21's named "Economic output" metrics, six well and one
-partially) only.
+distribution (Phase 7 never measured one); that H13's distinct-facet-
+value-cardinality hypothesis for the super-linear CPU growth is
+confirmed (disclosed, not profiled), or that its scaling shape
+generalizes beyond the 3 tenant sizes and one query type (facet scan)
+tested — this is a first pass on memory (including at scale), pairwise
+isolation, fixed-tenant throughput-under-breadth (now including at
+memory-scale tenant counts), process-baseline floors (short-lived, and
+a longer-resident window that decelerates toward but has not been
+proven to fully reach a bound), a first cold-vs-hot latency comparison
+under two different designs, a first economic-model synthesis (now
+addressing all 7 of Issue #21's named "Economic output" metrics, six
+well and one partially), and a first CPU-cost-per-query measurement
+only.
 
 **Decision: PROCEED** to the next Phase 7 sub-experiment (Issue #21's
-still-open required "Experiments" list items: CPU/query and
-CPU/tenant, not yet measured; high-churn tenant impact on low-churn
-tenants, not yet tested; lexical-backend contention, which would need
-live Solr integration in the multi-tenant harness) without changing the
-underlying commerce-native mechanism. The favorable,
+still-open required "Experiments" list items: high-churn tenant impact
+on low-churn tenants, not yet tested; lexical-backend contention, which
+would need live Solr integration in the multi-tenant harness) without
+changing the underlying commerce-native mechanism. The favorable,
 adversarially-corrected H1 result, its clean confirmation at scale via
 H5, the robust H2/H4 results (H4 now itself confirmed at memory-scale
 tenant counts via H11), H6/H7/H8's real, reproduced,
@@ -896,12 +998,14 @@ H9's honestly-scaled cold-tenant finding, H10's honest replication
 check (confirming the direction, correcting the magnitude), H12's
 real, empirically-reached tenants-per-envelope figure (which also
 directly discovered this container's actual hard memory limit rather
-than continuing to assume a host-level figure), and the
+than continuing to assume a host-level figure), the
 backend-requests-avoided synthesis combining Phase 3/4 with Phase 7's
-tenant model are real evidence in favor of the architecture's
-packing-density and latency-predictability potential, but are
-explicitly a floor on the claim (single-process, short-lived-process,
-or 180-second-resident-process measurements, one tenant model, one
-self-imposed safety bound, one size-matched hot/cold pair, one
+tenant model, and H13's first real CPU-cost measurement (revealing
+memory and CPU do NOT scale the same way, a genuinely new finding) are
+real evidence in favor of the architecture's packing-density and
+latency-predictability potential, but are explicitly a floor on the
+claim (single-process, short-lived-process, or 180-second-resident-
+process measurements, one tenant model, one self-imposed safety bound,
+one size-matched hot/cold pair, one
 traffic-skew ratio, one hardware envelope, one cross-dataset admission-
 rate combination), not a ceiling on what remains to be tested.

@@ -27,6 +27,32 @@ pub fn current_rss_kb() -> u64 {
         .unwrap_or(0)
 }
 
+/// This process's total CPU time (user+system, all threads combined)
+/// consumed since it started, in seconds. Parses `/proc/self/stat`
+/// directly (no new crate dependency, matching `current_rss_kb`'s own
+/// `/proc`-parsing style) rather than adding `libc` for `getrusage`.
+/// `comm` (the second field) is parenthesized and can itself contain
+/// spaces or parentheses, so this splits on the LAST `)` rather than
+/// assuming fixed whitespace-separated field positions from the start
+/// of the line. After that point, `utime` is field 14 and `stime` is
+/// field 15 (1-indexed from the very start of the line), i.e. index 11
+/// and 12 (0-indexed) counting from directly after `)`. Both are in
+/// clock ticks; this assumes the standard Linux `USER_HZ` of 100 (10ms
+/// per tick) rather than querying `sysconf(_SC_CLK_TCK)` at runtime --
+/// universal on essentially all modern Linux distributions/containers,
+/// disclosed here rather than silently assumed.
+pub fn cpu_time_seconds() -> f64 {
+    const CLK_TCK_HZ: f64 = 100.0;
+    let stat = std::fs::read_to_string("/proc/self/stat").unwrap_or_default();
+    let Some((_, after_comm)) = stat.rsplit_once(')') else {
+        return 0.0;
+    };
+    let fields: Vec<&str> = after_comm.split_whitespace().collect();
+    let utime: f64 = fields.get(11).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+    let stime: f64 = fields.get(12).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+    (utime + stime) / CLK_TCK_HZ
+}
+
 pub fn facet_scan_once(index: &CatalogIndex, catalog: &Catalog) -> usize {
     let all = index.indexed_candidates(&[]);
     index.facet_counts_by_scan(&all, catalog, "color").len()

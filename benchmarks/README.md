@@ -87,6 +87,11 @@ same as Phases 0–5:
   then safely reaching ~3,500 query-capable tenants under a disclosed
   envelope with throughput/latency essentially unaffected; see
   `PHASE7_DECISION.md`.
+- `p7_e10_cpu_per_query.yaml` — Issue #21's "CPU/query and CPU/tenant"
+  metric: unlike memory's clean linear scaling (H1/H5), CPU cost per
+  facet-scan query is sub-linear at small tenant sizes then
+  super-linear at large ones, reproduced across 3 runs; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

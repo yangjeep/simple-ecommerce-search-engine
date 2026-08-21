@@ -1,0 +1,7 @@
+=== P7-E10: CPU-seconds/query and CPU/tenant (H13) ===
+(single-threaded, no concurrent noisy load -- isolates one tenant's own CPU cost)
+  tenant=Water Filter Pitchers    products=1       iterations=10180736  cpu_us_per_query=     0.39 wall_us_per_query=     0.39 cpu/wall=0.997
+  tenant=Faux Plants and Trees    products=5       iterations=3932002   cpu_us_per_query=     1.02 wall_us_per_query=     1.02 cpu/wall=1.000
+  tenant=Furniture                products=16039   iterations=380       cpu_us_per_query= 10552.63 wall_us_per_query= 10542.79 cpu/wall=1.001
+
+artifacts written to docs/research/artifacts/p7_e10_cpu_per_query_run1

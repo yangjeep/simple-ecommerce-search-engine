@@ -1262,3 +1262,125 @@ changes. The n=55 checkpoint's own p99 instability (cold-start
 artifact, not a real per-run difference) means this experiment's p99
 numbers at n=55 specifically should not be over-read; p50 is the
 trustworthy metric for this experiment's conclusion.
+
+## P7-E10: CPU-seconds/query and CPU/tenant (H13, stated before implementation)
+
+Issue #21 explicitly names "CPU/query and CPU/tenant" as required Phase
+7 measurements. Every prior Phase 7 QPS/latency experiment (P7-E01,
+P7-E06 through P7-E09) measured WALL-CLOCK time only; none measured CPU
+time. This experiment closes that gap directly, reusing H6/H7/H8/H9's
+exact 3 real tenant sizes (largest/middle/smallest already sampled
+throughout this phase) for continuity: "Water Filter Pitchers" (1
+product), "Faux Plants and Trees" (5 products), "Furniture" (16,039
+products).
+
+**H13**: this architecture's per-query CPU cost (user+system time) for
+a facet-scan operation scales roughly linearly with tenant product
+count -- since `facet_scan_once`'s two steps (`indexed_candidates`,
+`facet_counts_by_scan`) both appear to be O(candidate count) by
+inspection.
+
+**Design**: single-threaded, ONE tenant at a time, deliberately with NO
+concurrent noisy load -- unlike every other Phase 7 QPS experiment's
+quiet/noisy design. CPU-time accounting here is PROCESS-WIDE
+(`/proc/self/stat`'s `utime+stime`, summed across all threads, parsed
+directly with no new crate dependency, matching `current_rss_kb`'s own
+`/proc`-parsing style, and assuming the standard Linux `USER_HZ` of 100
+-- 10ms per clock tick, disclosed rather than silently assumed), so a
+concurrent noisy thread would contaminate the one signal this
+experiment isolates: one tenant's own CPU cost, uncontended. Each
+tenant is measured for a fixed 4-second wall-clock window (after a
+500ms warm-up, matching P7-E09's own cold-start-avoidance discipline),
+counting iterations completed and reading the CPU-time delta over that
+same window -- bounding runtime regardless of tenant size, rather than
+fixing an iteration count that could run arbitrarily long for the
+largest tenant.
+
+**Pass/fail defined in advance**: if CPU-seconds/query grows
+proportionally with product count across the 3 tested sizes (within a
+reasonable tolerance, given only 3 points), H13 is CONFIRMED (a clean
+capacity-planning input: CPU/tenant ~ CPU/query x product count). If
+growth is clearly sub-linear or super-linear, H13 is FALSIFIED, and the
+actual shape is reported honestly rather than forced into a linear
+frame.
+
+## P7-E10 result: H13 FALSIFIED -- CPU cost is NOT linear in product count, reproduced across 3 independent runs
+
+Raw data in `docs/research/artifacts/p7_e10_cpu_per_query_run1/
+results_run{1,2,3}.csv`.
+
+| Tenant | Products | CPU us/query (run1/2/3) | Wall us/query (run1/2/3) | CPU/wall ratio |
+|---|---|---|---|---|
+| Water Filter Pitchers | 1 | 0.39 / 0.40 / 0.40 | 0.39 / 0.40 / 0.40 | 0.997-1.000 |
+| Faux Plants and Trees | 5 | 1.02 / 1.09 / 1.15 | 1.02 / 1.09 / 1.15 | 1.000 |
+| Furniture | 16,039 | 10552.63 / 10471.20 / 10580.47 | 10542.79 / 10491.21 / 10559.78 | 0.998-1.002 |
+
+**First sanity check, passed**: the CPU/wall ratio is 0.997-1.002 across
+every tenant and every run -- essentially exactly 1.0, exactly what a
+correct CPU-time reading should show for a single-threaded, CPU-bound,
+uncontended loop with no I/O or blocking inside `facet_scan_once`. This
+validates the `/proc/self/stat`-based CPU-time method itself before
+trusting any cross-tenant comparison built on it.
+
+**H13 is FALSIFIED**: CPU cost per query does NOT scale linearly with
+product count. Using the mean of all 3 runs (0.397 / 1.087 / 10,534.77
+us/query for 1 / 5 / 16,039 products): from 1 to 5 products (a 5.0x
+increase), CPU/query grows only **2.74x** -- clearly SUB-linear,
+consistent with a real fixed per-query overhead that dominates at tiny
+tenant sizes (the same shape H1's own "near-empty tenants show flat
+marginal memory cost" finding has, now shown for CPU too). But from 5
+to 16,039 products (a 3,207.8x increase), CPU/query grows **9,694.6x**
+-- clearly SUPER-linear. Fitting a straight line through the two SMALL
+points and extrapolating to Furniture's real product count predicts
+~2,767 us/query; the ACTUAL measured cost is **10,534.77 us/query --
+3.81x higher than the linear extrapolation**, reproduced consistently
+across all 3 runs (spread under 1%).
+
+**What this means**: unlike memory (H1/H5 confirmed clean linear
+scaling with product count, holding cleanly from the real 55-tenant
+scale to 6,500 controlled-stress-replicated tenants), CPU cost per
+query is NOT well-described by a single linear law across the tested
+size range. A capacity model that estimated CPU cost purely from
+aggregate product count (the same approach that works well for memory)
+would UNDERESTIMATE the largest real tenant's true CPU cost. This is a
+genuinely new finding this phase's memory-focused experiments (H1
+through H12) could not have surfaced, since none of them measured CPU
+time.
+
+**Illustrative CPU/tenant figure** (matching the "per million requests"
+convention already used by the economic model's memory-cost proxy and
+the backend-requests-avoided synthesis, for direct comparability):
+Water Filter Pitchers costs ~0.40 CPU-seconds per million facet-scan
+queries; Faux Plants and Trees ~1.09 CPU-seconds per million; Furniture
+~10,535 CPU-seconds (**~2.93 CPU-hours**) per million. This is an
+illustrative rate, not a real measured per-tenant request volume --
+Phase 7 has never measured organic per-tenant QPS (P7-E01/H4's own
+~700-800 rps figures are synthetic benchmark saturation rates under
+continuous load, not real-world traffic, and are not used here for
+that reason, the same disclosure the backend-requests-avoided synthesis
+made).
+
+**Named, disclosed-but-unconfirmed mechanism hypothesis for the
+super-linear growth**: `facet_counts_by_scan` groups candidates by
+their `color` value, plausibly via a hash-map-like structure whose
+cost may depend on the number of DISTINCT color values touched, not
+just the candidate count scanned. WANDS' real categories likely have
+far more distinct color values in a large, diverse catalog like
+Furniture than in a tiny 1-5-product niche category -- if so, cost
+would scale with candidate count AND (separately) with distinct-value
+cardinality, both of which plausibly grow with tenant size, compounding
+into faster-than-linear growth. This is a plausible, disclosed
+hypothesis, not a profiled or confirmed one -- joining H7/H8's
+allocator-arena hypothesis and H9/H10's cache-locality/interleaving-
+dilution hypothesis as a candidate for future profiling.
+
+**Named limitations**: only 3 real tenant sizes were tested (the same
+3 H6/H7/H8/H9 already used) -- a genuine scaling curve across many more
+intermediate sizes was not measured, so the exact shape between the
+sub-linear small-n region and the super-linear large-n region is
+unknown, only that both ends were observed. Only one query type (facet
+scan) was tested; other structural operators (range filters, category
+membership, sort) may show different scaling. CPU/tenant is reported
+only as an illustrative rate per million queries, not combined with any
+real per-tenant request-volume measurement, which Phase 7 has never
+taken.
