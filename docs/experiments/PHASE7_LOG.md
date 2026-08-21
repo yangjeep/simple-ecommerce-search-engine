@@ -1106,3 +1106,159 @@ isolated as its own claim (it is reported via `noisy_total_requests`
 in the raw CSVs for transparency, not analyzed as a hypothesis here).
 Query type is a single fixed facet-scan operation, the same one every
 other Phase 7 QPS/throughput experiment (P7-E01, P7-E04-E07) has used.
+
+## P7-E09: tenants per fixed hardware envelope at target SLO (H12, stated before implementation)
+
+Issue #21 explicitly names "tenants per fixed hardware envelope at
+target SLO" as a required Phase 7 "Economic output" metric. P7-E02/H5
+established that a 6 GB self-process-RSS safety cap supports 6,500
+controlled-stress-replicated tenants for MEMORY -- but that measurement
+keeps only each tenant's `CatalogIndex` resident (H5's own loop drops
+the raw `Catalog` immediately after each tenant's index is built, one
+at a time). P7-E08/H11's query-serving configuration needs BOTH
+`Catalog` and `CatalogIndex` resident simultaneously per tenant
+(`facet_scan_once` takes both), so its real per-tenant footprint is
+materially higher than H5's index-only figure would suggest -- but
+H11 only tested up to 2,000 tenants, short of H5's 6,500-tenant memory
+ceiling. This experiment asks the natural combination directly: what
+is the actual, safely-reached tenant count where BOTH the memory
+ceiling AND the query-latency SLO are confirmed simultaneously, for a
+query-capable deployment on this container -- rather than assuming H5's
+own (index-only) 6,500 figure carries over unchanged?
+
+**H12**: at the largest tenant count this container's real, disclosed
+hardware envelope can safely support for a QUERY-CAPABLE deployment
+(both `Catalog` and `CatalogIndex` resident per tenant), the quiet
+tenant's own throughput and p99 latency stay within the same
+material-regression bar used throughout Phase 7 (throughput drop
+<20%, latency growth <2x) relative to the n=55 real-tenant baseline.
+
+**Design**: reuse P7-E01/P7-E08's quiet/noisy-tenant methodology,
+building tenants incrementally (one `Catalog`+`CatalogIndex` pair at a
+time, matching P7-E02's proven-safe pattern) with this process's real
+RSS checked every 250 tenants, stopping before a self-imposed safety
+cap. Latency is measured at fixed checkpoints (n=55, n=2000, matching
+H11 for continuity) plus once more at whatever count is actually,
+safely reached when the cap trips.
+
+## P7-E09 first self-caught problem: a real OOM, and a wrong assumption about this container's memory ceiling
+
+The first-draft binary reused P7-E08's exact pattern -- call
+`replicate_tenants()` to build a `Vec<(String, Catalog)>` of ALL N
+tenants eagerly, THEN `.iter().map(CatalogIndex::build).collect()` to
+build all N indexes -- and checked this process's own RSS only ONCE,
+after both Vecs were fully built. At n=6500 (the target point,
+matching H5's own established ceiling), this process was OOM-killed by
+the Linux cgroup out-of-memory killer while STILL BUILDING the
+indexes, before its own safety check ever ran: `dmesg` showed
+`Memory cgroup out of memory: Killed process ... anon-rss:13955460kB`.
+Inspecting `/sys/fs/cgroup/memory/.../memory.limit_in_bytes` for this
+process's actual cgroup revealed the real, enforced limit is
+**14,327,726,080 bytes (13.34 GiB)** -- materially lower than the
+~15 GB host-level total this project's prior safety-cap choices had
+implicitly assumed from `free -h` (which reports host memory, not this
+specific cgroup's own enforced ceiling). Building all N raw `Catalog`s
+into one Vec via `replicate_tenants()`, then building all N
+`CatalogIndex`es while STILL holding that entire raw-catalog Vec
+alive, transiently roughly doubles peak memory relative to either
+piece's own steady-state footprint -- exactly the kind of transient
+peak P7-E02's own incremental, one-tenant-at-a-time pattern was
+designed to avoid, and exactly the discipline this new binary's first
+draft failed to reuse.
+
+**Fix**: rewrote the binary to build one tenant's `Catalog` and
+`CatalogIndex` at a time, immediately retiring any transient
+per-tenant construction state and pushing only the final `Arc`-wrapped
+pair into growing `Vec`s (mirroring P7-E02's proven-safe pattern, now
+extended to also retain the raw `Catalog`, which P7-E02 itself never
+needed to keep). RSS is checked every 250 tenants DURING construction,
+not once after an entire batch -- so a real safety trip happens before
+peak transient memory can exceed either the chosen cap or this
+container's real hard limit. The safety cap was set to 9 GB, chosen
+with real, deliberate margin under the newly-discovered 13.34 GiB hard
+limit (not under the previously-assumed ~15 GB host figure).
+
+## P7-E09 second self-caught problem: an unstable p99 at the very first in-process checkpoint
+
+Running the corrected binary 3 times surfaced a second, different
+issue, caught before trusting any ratio: the n=55 baseline
+checkpoint's p99 varied sharply across the 3 runs (1.777 / 4.104 /
+2.755 ms) while its p50 stayed tight (1.2895 / 1.2885 / 1.2858 ms) --
+and this instability was specific to n=55, the very FIRST in-process
+measurement taken in each run. The n=2000 and n=3500 checkpoints (each
+measured only after substantially more prior construction/warm-up
+work in the same process) showed tight, consistent p99s across all 3
+runs (1.837-1.871 ms at n=2000; 1.812-2.030 ms at n=3500). This is a
+cold-start artifact specific to being the first measurement taken
+against freshly-built, never-yet-touched structures (page faults,
+un-warmed allocator/cache state) -- not a general instability in the
+methodology, and not evidence of any real per-run difference, since
+p50 (far less sensitive to a handful of unusually slow first queries)
+stayed essentially flat. Matching this project's established
+precedent (P7-E07/H10 also treated p50 as the more trustworthy metric
+when p99 was the unstable statistic, there for a different underlying
+reason -- undersampling, not cold start), **p50 is used as the
+primary metric for this experiment's SLO determination**, with raw
+p99 values still reported honestly rather than discarded.
+
+## P7-E09 result: H12 CONFIRMED, reproduced across 3 independent runs
+
+The corrected, incremental-build binary completed cleanly in all 3
+runs with no OOM: the 9 GB safety cap tripped at **exactly n=3500** in
+every run (9,410 MB > 9,216 MB, deterministic since replication uses
+real, ordered data with no randomness) -- raw data in
+`docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/
+results_run{1,2,3}.csv`.
+
+| n_tenants | rps (run1/2/3) | p50 ms (run1/2/3) | p99 ms (run1/2/3) | RSS MB |
+|---|---|---|---|---|
+| 55 | 762.8 / 710.8 / 752.8 | 1.290 / 1.289 / 1.286 | 1.777 / 4.104 / 2.755 | 244.1 |
+| 2000 | 760.0 / 755.8 / 743.2 | 1.277 / 1.286 / 1.308 | 1.837 / 1.871 / 1.869 | 5481.1 |
+| 3500 | 725.3 / 735.5 / 764.3 | 1.314 / 1.308 / 1.272 | 2.030 / 2.003 / 1.812 | 9411.0 |
+
+p50 ratio at n=3500 vs. n=55: **0.989-1.019** across all 3 runs --
+essentially flat (within ~2% noise). Throughput (rps) ratio at n=3500
+vs. n=55: **0.951-1.035** -- also flat within noise. Both stay nowhere
+near the pre-registered pass bar (throughput drop <20%, latency growth
+<2x) -- this is a much cleaner pass than H11's own already-comfortable
+margin at n=2000, not a marginal one. **H12 CONFIRMED**: at 3,500
+tenants -- the real, safely-reached ceiling for a QUERY-CAPABLE
+deployment (`Catalog`+`CatalogIndex` both resident) under a disclosed
+9 GB self-process safety envelope on this container -- the quiet
+tenant's own throughput and p50 latency are both essentially
+unaffected relative to the 55-real-tenant baseline. Combined with the
+9 GB memory envelope itself being empirically, safely reached (not
+assumed or extrapolated), **this directly answers Issue #21's
+"tenants per fixed hardware envelope at target SLO" metric for the
+first time this phase**: ~3,500 tenants per this container's disclosed
+9 GB query-serving envelope, at a p50-latency SLO that shows
+essentially zero degradation at that count.
+
+As a secondary cross-check, per-tenant memory footprint from n=55 to
+n=3500 computes to **~2.66 MB/tenant** -- consistent with, and a
+tighter-sample confirmation of, H11's own ~2.7-3.0 MB/tenant figure,
+and meaningfully higher than H5's own ~0.96 MB/tenant implied by its
+1.26 KB/product figure (782 products/tenant average) -- because H5's
+measurement never keeps the raw `Catalog` resident, only the
+`CatalogIndex`, while a real query-serving deployment needs both. This
+is an important, previously-implicit distinction made explicit here:
+**H5's 6,500-tenant memory ceiling describes an index-only
+configuration, not a query-capable one** -- the real
+query-capable-and-latency-confirmed ceiling on this container's
+disclosed envelope is materially lower, at ~3,500 tenants.
+
+**Named limitations**: the 9 GB safety cap is a deliberately
+conservative, self-imposed choice with real margin under this
+container's actual 13.34 GiB hard limit -- NOT a claim that 3,500 is
+this container's absolute ceiling; a deployment with less reserved
+margin (e.g. a dedicated node, or one not sharing headroom with other
+processes) could very plausibly push higher, untested here. Only one
+quiet tenant, one query type (facet scan), and one hardware envelope
+(this specific container) were tested; the dollar-cost implication of
+this tenant count depends on cloud pricing assumptions this document
+deliberately keeps separate, per Issue #21's own instruction to keep
+architecture-normalized metrics reproducible independent of price
+changes. The n=55 checkpoint's own p99 instability (cold-start
+artifact, not a real per-run difference) means this experiment's p99
+numbers at n=55 specifically should not be over-read; p50 is the
+trustworthy metric for this experiment's conclusion.

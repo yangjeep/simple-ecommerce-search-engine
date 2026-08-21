@@ -244,7 +244,7 @@ every run, but its MAGNITUDE shrank roughly 4-6x under this realistic,
 shared/interleaved design compared to the original idealized one —
 pointing at the earlier measurement's fully-dedicated-thread setup, not
 a general architectural property, as the likely source of its larger
-observed ratio. A final measurement closed a gap this project's own
+observed ratio. A further measurement closed a gap this project's own
 decision document had previously named as still open: whether the
 fixed-tenant breadth-independence finding (originally tested only up to
 WANDS' real 54-other-tenant ceiling) also holds at the much larger
@@ -255,9 +255,25 @@ and p99 growing only 5-8% across that entire range, reproduced across 3
 runs — with a small, honestly-disclosed dip at the very top of the
 tested range coinciding with resident memory approaching this run's
 self-imposed safety cap, named as an unconfirmed candidate mechanism
-rather than a resolved one. Combining the memory model with latency
-evidence for an SLO-conditioned tenant count remains open for the next
-Phase 7 pass.
+rather than a resolved one. A final measurement combined the memory
+model with this latency evidence to directly answer this project's
+"tenants per fixed hardware envelope at target SLO" metric for the
+first time: building a query-capable tenant population (needing both
+the raw catalog and its index resident together, unlike the earlier
+memory-scaling measurement, which only ever kept the index resident)
+first hit a real out-of-memory kill at the scale the memory-only
+measurement had reached, which led to discovering this container's
+actual enforced memory limit directly from its own control group
+rather than continuing to assume the host-level total — materially
+lower than assumed. Rebuilding incrementally with real memory checked
+during construction (rather than only after a whole batch was built)
+reached a real, safely-confirmed ceiling of about 3,500 query-capable
+tenants under a disclosed, conservative memory envelope, with
+quiet-tenant throughput and latency both essentially unaffected there
+— a materially lower, but now genuinely query-capable, number than the
+earlier memory-only ceiling. Combining Phase 3/4's admission-rate
+evidence with a multi-tenant request-volume model for "backend
+requests avoided" remains open for the next Phase 7 pass.
 
 ## What this project is not
 

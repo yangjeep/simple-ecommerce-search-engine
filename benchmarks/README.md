@@ -80,6 +80,13 @@ same as Phases 0–5:
   throughput/latency-under-breadth finding from WANDS' real 54-other-
   tenant ceiling to 2,000 controlled-stress-replicated tenants (36x
   larger), confirmed cleanly across 3 runs; see `PHASE7_DECISION.md`.
+- `p7_e09_slo_tenant_envelope.yaml` — Issue #21's "tenants per fixed
+  hardware envelope at target SLO" metric: combines P7-E02/H5's memory
+  model with P7-E01/P7-E08's latency findings, discovering this
+  container's real cgroup memory limit directly after a first-draft OOM,
+  then safely reaching ~3,500 query-capable tenants under a disclosed
+  envelope with throughput/latency essentially unaffected; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

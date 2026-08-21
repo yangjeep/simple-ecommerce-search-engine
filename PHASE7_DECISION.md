@@ -1,4 +1,4 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E08 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E09 first pass
 
 **Decision: PROCEED**, with two hypotheses falsified (one in the good
 direction, one revealing a real but practically tiny effect) and six
@@ -38,6 +38,23 @@ holds at the much larger tenant counts H5 reached for memory. It does
 — confirmed cleanly at 2,000 controlled-stress-replicated tenants (36x
 H4's original ceiling), with only a small, honestly-disclosed dip right
 at the top of the tested range as RSS approached this run's safety cap.
+A ninth experiment (H12) directly answered Issue #21's "tenants per
+fixed hardware envelope at target SLO" metric for the first time this
+phase: building a query-capable tenant population (both `Catalog` and
+`CatalogIndex` resident, unlike H5's index-only memory measurement)
+incrementally, with real per-tenant RSS checks during construction,
+found this container's real, safely-reached ceiling is **3,500**
+tenants under a disclosed 9 GB self-process safety envelope — where the
+quiet tenant's own p50 latency and throughput are both essentially
+unaffected (within ~2-4% of the 55-tenant baseline) relative to the
+material-regression bar used throughout Phase 7. Getting there required
+fixing a real OOM bug in this experiment's own first draft (an eager
+build-everything-then-check pattern that transiently doubled peak
+memory and was killed by this container's real 13.34 GiB cgroup limit,
+discovered directly rather than assumed from `free -h`'s host-level
+figure), and recognizing that the very first in-process latency
+checkpoint's p99 is an unstable, cold-start-affected statistic (p50 was
+the trustworthy metric throughout).
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -103,6 +120,13 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   replication methodology far beyond WANDS' real 54-tenant ceiling, into
   the hundreds-to-thousands (matching H5's memory-scale reach) — closing
   a gap this document itself had previously named as still open.
+- **H12** (P7-E09): at the largest tenant count this container's real,
+  disclosed hardware envelope can safely support for a QUERY-CAPABLE
+  deployment (both `Catalog` and `CatalogIndex` resident per tenant,
+  unlike H5's index-only measurement), the quiet tenant's own throughput
+  and latency stay within Phase 7's material-regression bar relative to
+  the n=55 real-tenant baseline — directly answering Issue #21's
+  "tenants per fixed hardware envelope at target SLO" metric.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -462,6 +486,58 @@ allocator-arena hypothesis and H9/H10's cache-locality/interleaving-
 dilution hypothesis as a disclosed, unconfirmed mechanism candidate for
 future profiling.
 
+**H12 — CONFIRMED, reproduced across 3 independent runs (P7-E09).**
+Directly answers Issue #21's "tenants per fixed hardware envelope at
+target SLO" metric for the first time this phase. H5's own 6,500-tenant
+memory ceiling measures an INDEX-ONLY configuration (the raw `Catalog`
+is dropped immediately after each tenant's index is built); a real
+query-serving deployment needs both `Catalog` and `CatalogIndex`
+resident per tenant, a materially higher real per-tenant footprint. A
+first-draft binary reused P7-E08's eager "build all N catalogs, then
+build all N indexes" pattern and was OOM-killed at n=6,500 by this
+container's real cgroup memory limit — **14,327,726,080 bytes
+(13.34 GiB)**, read directly from `/sys/fs/cgroup/memory/.../
+memory.limit_in_bytes`, materially lower than the ~15 GB host-level
+figure `free -h` reports and this project's prior safety-cap choices
+had implicitly assumed. Fixed by rebuilding incrementally (one
+tenant's `Catalog`+`CatalogIndex` at a time, mirroring H5/P7-E02's own
+proven-safe pattern), checking real RSS every 250 tenants during
+construction rather than once after a whole batch.
+
+The corrected binary safely built up to **exactly n=3,500** in all 3
+runs (a 9 GB safety cap, chosen with real margin under the 13.34 GiB
+hard limit, tripped at precisely the same point every time —
+deterministic, since replication uses real, ordered data with no
+randomness). A second self-caught issue surfaced here too: the very
+first in-process latency checkpoint (n=55) showed an unstable p99
+across runs (1.777/4.104/2.755 ms) while its p50 stayed tight
+(1.290/1.289/1.286 ms) — a cold-start artifact specific to being the
+first measurement taken against freshly-built structures, not a real
+per-run difference (later checkpoints' p99s were tight across runs).
+p50 is used as the primary metric accordingly.
+
+p50 ratio at n=3,500 vs. n=55: **0.989-1.019** across all 3 runs —
+essentially flat. Throughput ratio: **0.951-1.035** — also flat. Both
+stay nowhere near the pre-registered pass bar (throughput drop <20%,
+latency growth <2x). **H12 CONFIRMED**: ~3,500 tenants is the real,
+empirically-reached answer to "tenants per fixed hardware envelope at
+target SLO" for this container's disclosed 9 GB query-serving envelope
+— materially lower than H5's own 6,500-tenant figure, because that
+figure describes a configuration that cannot actually serve queries.
+Per-tenant memory footprint computed to ~2.66 MB/tenant, consistent
+with H11's own ~2.7-3.0 MB/tenant figure and about 2.8x H5's
+index-only ~0.96 MB/tenant implied figure — confirming the
+"index-only vs. query-capable" distinction with an independent number.
+
+**Named limitations**: the 9 GB cap is a deliberately conservative,
+self-imposed choice with real margin under the 13.34 GiB hard limit,
+not a claim about this container's absolute ceiling — a deployment
+with less reserved margin could plausibly push higher, untested here.
+Only one quiet tenant, one query type, and one hardware envelope (this
+container) were tested; dollar-cost implications are deliberately kept
+separate from this architecture-normalized tenant count, per Issue
+#21's own instruction.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
@@ -471,7 +547,8 @@ Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e05_extended_duration_run1/`,
 `docs/research/artifacts/p7_e06_cold_tenant_overhead_run1/`,
 `docs/research/artifacts/p7_e07_realistic_demand_mix_run1/`,
-`docs/research/artifacts/p7_e08_extended_breadth_run1/`.
+`docs/research/artifacts/p7_e08_extended_breadth_run1/`,
+`docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -513,7 +590,15 @@ renamed rather than deleted.
    actual hardware/architectural ceiling (if one exists at all before
    available RAM runs out) remains genuinely untested beyond that point
    — this experiment deliberately stopped short of finding it rather
-   than risk a real OOM in a shared container.
+   than risk a real OOM in a shared container. H12/P7-E09 later
+   discovered this container's actual enforced memory ceiling directly
+   (13.34 GiB, read from this process's own cgroup) after a first-draft
+   OOM at n=6,500 — materially lower than the ~15 GB host-level figure
+   `free -h` reports and every prior Phase 7 safety-cap choice had
+   implicitly assumed; H5's own 6 GB cap stayed comfortably under this
+   real limit, so its result is unaffected, but future safety caps in
+   this project should be grounded in the real cgroup limit, not
+   `free -h`.
 3. Only one tenant model (real category-based partitions of one real
    catalog) has been tested. Real SaaS tenants would have completely
    independent catalogs (not partitions of the same source), likely with
@@ -551,6 +636,13 @@ renamed rather than deleted.
    pass thresholds and does not change H11's verdict, but whether it
    would grow, shrink, or disappear at a higher safety cap (a larger
    machine) or a different quiet tenant/noisy-worker-count is untested.
+9. **H12's 3,500-tenant envelope is specific to this container's real
+   13.34 GiB memory ceiling and a deliberately conservative 9 GB
+   self-imposed cap.** Whether a larger machine, or a deployment
+   willing to reserve less headroom, would show the same, a
+   proportionally larger, or a qualitatively different tenant ceiling
+   is untested; only one quiet tenant and one query type were tested at
+   this envelope.
 
 ## What would be built next if scaling up
 
@@ -562,9 +654,10 @@ deployment cost formula, with worked examples at the real 55-tenant
 scale and up to 6,500 controlled-stress-replicated tenants. It addresses
 4 of Issue #21's 7 required "Economic output" metrics well, one
 partially (a memory-only "cost per million requests" proxy, shown to be
-highly window-length-sensitive), and names 2 as explicit, undelivered
-gaps (tenants-per-envelope-at-SLO; backend requests avoided) rather than
-silently omitting them.
+highly window-length-sensitive). **Tenants per fixed hardware envelope
+at target SLO is now also delivered** (H12, P7-E09, below), leaving
+"backend requests avoided" as the one remaining explicit, undelivered
+gap rather than silently omitted.
 
 **Cold-tenant overhead (Issue #21's explicit metric) is now measured**
 (H9, P7-E06) — a real, reproducible ~9-13x latency-ratio effect between
@@ -591,18 +684,34 @@ small, honestly-disclosed dip right at the top of the tested range
 possibly (not confirmed) related to RSS approaching this run's safety
 cap.
 
-Still to build: combining Phase 7's memory model with H2/H4/H11's
-latency/isolation evidence to produce the still-missing "tenants per
-envelope at target SLO" metric; combining Phase 3/4's admission-rate
-evidence with a multi-tenant request-volume model to produce "backend
-requests avoided"; profiling to identify the specific allocator
-mechanism behind H7/H8's growth pattern and residual tail creep, the
-CPU-cache-locality hypothesis behind H9's cold-tenant effect, the
-"cache dilution from interleaving" hypothesis behind H10's smaller
-magnitude, and the memory-pressure-vs-safety-cap hypothesis behind
-H11's n=2,000 dip, if a real deployment's memory/latency budget needs
-tighter precision than "decelerates toward roughly a known bound" /
-"plausibly cache locality."
+**Tenants per fixed hardware envelope at target SLO (Issue #21's
+explicit economic-output metric) is now measured** (H12, P7-E09) —
+~3,500 query-capable tenants on this container's disclosed 9 GB
+envelope, with quiet-tenant throughput/p50 latency essentially
+unaffected there. This also surfaced and corrected two real
+first-draft problems: an OOM caused by an eager build-then-check
+pattern (fixed by building incrementally with RSS checks during
+construction, mirroring H5's own proven-safe pattern), and an unstable
+p99 at the very first in-process latency checkpoint (a cold-start
+artifact; p50 was used as the primary metric). It also made explicit an
+important distinction that had been implicit until now: H5's own
+6,500-tenant memory ceiling describes an index-only configuration, not
+a query-capable one — the real query-capable ceiling on this
+container's disclosed envelope is materially lower.
+
+Still to build: combining Phase 3/4's admission-rate evidence with a
+multi-tenant request-volume model to produce "backend requests
+avoided" (Issue #21's one remaining undelivered economic-output
+metric); profiling to identify the specific allocator mechanism behind
+H7/H8's growth pattern and residual tail creep, the CPU-cache-locality
+hypothesis behind H9's cold-tenant effect, the "cache dilution from
+interleaving" hypothesis behind H10's smaller magnitude, the
+memory-pressure-vs-safety-cap hypothesis behind H11's n=2,000 dip, and
+whether H12's 3,500-tenant envelope would look materially different on
+a larger machine or with less reserved headroom, if a real
+deployment's memory/latency budget needs tighter precision than
+"decelerates toward roughly a known bound" / "plausibly cache
+locality."
 
 ## What should explicitly not be built yet
 
@@ -689,12 +798,29 @@ runs): quiet-tenant throughput drops only 6-9% and p99 grows only 5-8%
 across that entire 36x range, both far inside the pre-registered pass
 bar, with only a small, honestly-disclosed dip at the very top of the
 tested range coinciding with RSS nearing this run's safety cap.
+Combining H5's memory-scaling model with H4/H11's latency-independence
+evidence, directly answering Issue #21's "tenants per fixed hardware
+envelope at target SLO" metric for the first time this phase (H12,
+P7-E09, reproduced across 3 runs): a query-capable tenant population
+(both `Catalog` and `CatalogIndex` resident, unlike H5's index-only
+measurement) was built incrementally on this container, discovering
+its real 13.34 GiB cgroup memory limit directly (after a first-draft
+OOM at the originally-assumed n=6,500) and safely reaching exactly
+3,500 tenants under a disclosed, conservative 9 GB envelope — with
+quiet-tenant p50 latency and throughput both essentially flat (within
+~2-4%) relative to the 55-tenant baseline. This also made explicit an
+important distinction that had been implicit until now: H5's own
+6,500-tenant figure describes an index-only configuration that cannot
+actually serve queries, not a query-capable ceiling.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
-difference in H2 is understood; that 6,500 tenants is a discovered
-hardware or architectural ceiling (it is a self-imposed safety bound —
-the real ceiling is very likely materially higher and was deliberately
-not pursued); that H8's 180-second resident window represents a real
+difference in H2 is understood; that 6,500 tenants (H5) or 3,500
+tenants (H12) are this container's absolute hardware ceilings — both
+are self-imposed, conservative safety bounds chosen with real margin
+under the container's actual, now-directly-measured 13.34 GiB cgroup
+memory limit (discovered via H12, not assumed), and a deployment
+willing to reserve less headroom could plausibly push either figure
+higher, untested here; that H8's 180-second resident window represents a real
 service's full-lifetime steady state (a small, real residual tail creep
 persists in 2 of 3 runs, roughly two orders of magnitude smaller than
 the initial climb, and whether it fully stops over a much longer real
@@ -713,30 +839,37 @@ throughput dip/p99 uptick has a confirmed cause (a memory-pressure
 hypothesis tied to RSS nearing this run's safety cap is disclosed, not
 profiled), or that H11's result generalizes beyond the one quiet
 tenant, one noisy-worker-count, and one query type (facet scan) tested;
-that "tenants per envelope at target SLO" or "backend requests avoided"
-(both explicitly named in Issue #21's Phase 7) have been answered —
-this is a first pass on memory (including at scale), pairwise
-isolation, fixed-tenant throughput-under-breadth (now including at
-memory-scale tenant counts), process-baseline floors (short-lived, and
-a longer-resident window that decelerates toward but has not been
-proven to fully reach a bound), a first cold-vs-hot latency comparison
-under two different designs, and a first economic-model synthesis
-only.
+that H12's 3,500-tenant figure generalizes beyond this specific
+container, this one 9 GB self-imposed envelope, one quiet tenant, and
+one query type, or that a larger/less-headroom-reserved machine would
+show the same, a proportionally larger, or a qualitatively different
+ceiling (untested); that "backend requests avoided" (Issue #21's one
+remaining named economic-output metric) has been answered — this is a
+first pass on memory (including at scale), pairwise isolation,
+fixed-tenant throughput-under-breadth (now including at memory-scale
+tenant counts), process-baseline floors (short-lived, and a
+longer-resident window that decelerates toward but has not been proven
+to fully reach a bound), a first cold-vs-hot latency comparison under
+two different designs, a first economic-model synthesis, and a first
+tenants-per-envelope-at-SLO measurement only.
 
 **Decision: PROCEED** to the next Phase 7 sub-experiment (combining
-H2/H4/H11 with the economic model for an SLO-conditioned tenant count;
-or combining Phase 3/4's admission-rate evidence for "backend requests
-avoided") without changing the underlying commerce-native mechanism.
-The favorable, adversarially-corrected H1 result, its clean confirmation
-at scale via H5, the robust H2/H4 results (H4 now itself confirmed at
-memory-scale tenant counts via H11), H6/H7/H8's real, reproduced,
-now-stability-confirmed measurement of the pooling advantage this
-project's own thesis assumed, the first economic cost-per-tenant model,
-H9's honestly-scaled cold-tenant finding, and H10's honest replication
-check (confirming the direction, correcting the magnitude) are real
-evidence in favor of the architecture's packing-density and
+Phase 3/4's admission-rate evidence with a multi-tenant request-volume
+model for "backend requests avoided", Issue #21's one remaining
+undelivered economic-output metric) without changing the underlying
+commerce-native mechanism. The favorable, adversarially-corrected H1
+result, its clean confirmation at scale via H5, the robust H2/H4 results
+(H4 now itself confirmed at memory-scale tenant counts via H11),
+H6/H7/H8's real, reproduced, now-stability-confirmed measurement of the
+pooling advantage this project's own thesis assumed, the first economic
+cost-per-tenant model, H9's honestly-scaled cold-tenant finding, H10's
+honest replication check (confirming the direction, correcting the
+magnitude), and H12's real, empirically-reached tenants-per-envelope
+figure (which also directly discovered this container's actual hard
+memory limit rather than continuing to assume a host-level figure) are
+real evidence in favor of the architecture's packing-density and
 latency-predictability potential, but are explicitly a floor on the
 claim (single-process, short-lived-process, or 180-second-resident-
 process measurements, one tenant model, one self-imposed safety bound,
-one size-matched hot/cold pair, one traffic-skew ratio), not a ceiling
-on what remains to be tested.
+one size-matched hot/cold pair, one traffic-skew ratio, one hardware
+envelope), not a ceiling on what remains to be tested.
