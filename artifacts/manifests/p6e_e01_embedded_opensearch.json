@@ -3,7 +3,7 @@
   "phase": "6E",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6e_e01_embedded_opensearch.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "61b961394d29870f27899970f4f57ad89cf84bc1",
   "dataset": {
     "name": "real WANDS catalog, 7 real depth-1 category checkpoints (n=2,002 to n=16,039) plus whole-catalog numeric range (n=31,967) -- identical to P6E-E00"
   },

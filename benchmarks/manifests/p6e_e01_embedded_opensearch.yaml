@@ -27,7 +27,7 @@ claim: >
   major Lucene-based distributed engine too. See
   docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.
 
-git_sha: PENDING
+git_sha: 61b961394d29870f27899970f4f57ad89cf84bc1
 binary: opensearch-direct-bench/pom.xml, opensearch-direct-bench/src/test/java/org/commercenative/opensearchdirect/WandsOpenSearchBenchTest.java
 build_command: cd opensearch-direct-bench && mvn test-compile
 run_command: |
