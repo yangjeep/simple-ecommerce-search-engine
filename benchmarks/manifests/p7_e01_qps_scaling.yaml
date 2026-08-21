@@ -17,7 +17,7 @@ claim: >
   a real tenant-count effect, and was withdrawn in favor of the
   corrected, fixed-tenant design above.
 
-git_sha: (fill in after commit)
+git_sha: 6a95ac9
 binary: crates/phase7-eval/src/bin/p7_e01_qps_scaling.rs
 build_command: cargo build --release -p phase7-eval --bin p7_e01_qps_scaling
 run_command: ./target/release/p7_e01_qps_scaling dataset_cache/wands/catalog.jsonl

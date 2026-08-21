@@ -3,7 +3,7 @@
   "phase": "7",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p7_e01_qps_scaling.yaml",
-  "git_sha": "PLACEHOLDER",
+  "git_sha": "6a95ac9",
   "dataset": {
     "name": "WANDS, category_depth_1 tenant partitions",
     "quiet_tenant": "Rugs"
