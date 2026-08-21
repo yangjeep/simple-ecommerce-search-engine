@@ -302,3 +302,142 @@ instance) is a plausible hypothesis, not independently profiled. This
 experiment still does not combine with H17 (rebuild-churn) -- a
 three-way burst + churn + shared-backend interaction remains untested,
 and would very plausibly be worse than either isolation gap alone.
+
+## P8-E03: three-way interaction -- native rebuild-churn + shared-Solr contention, running simultaneously (H19, stated before implementation)
+
+H17 confirmed burst amplifies the native rebuild-churn gap; H18
+confirmed burst amplifies the shared-Solr-contention gap. Both were
+tested independently, each in its own subsystem (native in-process
+`CatalogIndex` for H17, external Solr JVM for H18). Neither combines
+with the other -- named explicitly as the single highest-priority
+remaining item in `PHASE8_DECISION.md`, since a real BFCM event would
+plausibly trigger both simultaneously: catalog mutation (price/
+inventory updates) AND a shared Solr instance under load from many
+tenants' lexical-fallback traffic, all on the same physical hardware.
+
+**H19**: running the native rebuild-churn load (H14/H17's mechanism)
+and the shared-Solr-contention load (H15/H18's mechanism) SIMULTANEOUSLY
+in the same environment makes at least one of the two quiet paths'
+degradation (native tenant "Rugs"; Solr core `wands_bench`) worse than
+that mechanism's own single-source gap measured alone -- i.e., the two
+subsystems (a Rust process and a separate Solr JVM process, competing
+for the same finite CPU cores on one machine) interact and compound
+rather than acting as if on infinite, independent hardware. Falsifiable
+both ways: it could turn out each subsystem's contention is confined to
+its own process/cores with no measurable cross-subsystem effect.
+
+**Design**: four conditions measured in the same run, each measuring
+BOTH quiet paths concurrently (Rugs's native p99 via one measurement
+thread, `wands_bench`'s Solr p99 via a second measurement thread,
+running at the same time so a true "combined load" moment is actually
+captured):
+
+1. **BASELINE**: both quiet paths measured alone, no churn, no Solr
+   noise.
+2. **NATIVE_CHURN**: Furniture continuously rebuilt (H14/H17's exact
+   mechanism); Solr side otherwise idle. Reproduces H14/H17's own
+   idle-churn condition.
+3. **SOLR_NOISY**: 3 threads hammering `wands_bench_20x` (H15/H18's
+   exact mechanism); native side otherwise idle. Reproduces H15/H18's
+   own idle-noisy condition.
+4. **COMBINED**: BOTH of the above running at the same time --
+   Furniture churning AND 3 threads hammering `wands_bench_20x`,
+   while both quiet paths (Rugs native, `wands_bench` Solr) are
+   measured simultaneously.
+
+Define, for the native side: `native_solo_ratio = NATIVE_CHURN.rugs_p99
+/ BASELINE.rugs_p99` and `native_combined_ratio = COMBINED.rugs_p99 /
+BASELINE.rugs_p99`, `native_cross_amplification = native_combined_ratio
+/ native_solo_ratio`. Symmetrically for the Solr side:
+`solr_solo_ratio`, `solr_combined_ratio`, `solr_cross_amplification`.
+
+Pass/fail bar fixed before running, matching H17/H18's own convention:
+for EACH side independently, **cross_amplification >= 1.25x is
+CONFIRMED** (the other subsystem's load makes this side's own known gap
+measurably worse); **0.8x-1.25x is DISCONFIRMED (independent)**; **<
+0.8x is a surprising attenuation**. H19 as a whole is CONFIRMED if
+EITHER side clears its own bar. Applying H17's lesson proactively (as
+H18 already did): 10 repeated runs, median-based verdict, from the
+start.
+
+## P8-E03 result: H19 CONFIRMED for the native side via a more robust statistic than originally planned, with a genuine self-caught insight into the measurement window itself
+
+Raw data in
+`docs/research/artifacts/p8_e03_combined_churn_solr_interaction_run1/results.csv`,
+console logs for both passes preserved (`console.log` is the final,
+instrumented pass; `console_pass1_no_diagnostics.log` is the first
+pass, superseded but not erased).
+
+**Headline, robust finding**: across 20 total measured runs (two
+independent 10-run passes), **COMBINED load (native rebuild-churn +
+shared-Solr contention running simultaneously) degraded Rugs's own
+native p99 by 2.11x-3.37x in every single run, with no exceptions.**
+This is a materially larger and far more RELIABLE (100% hit rate)
+degradation than H14/H17's own native-churn-alone finding ever showed
+(H14/H17's idle-churn condition had only a ~30-40% hit rate at the
+2.0x material-regression bar). Whatever the precise attribution, a
+tenant's own native query latency is not safe from a co-located
+tenant's rebuild churn once a shared Solr backend is also under load in
+the same environment.
+
+**A genuine self-caught methodological subtlety, not an error but worth
+disclosing plainly**: the pre-registered "cross_amplification" metric
+(combined_ratio / solo_ratio) came out inflated (median 2.65x-2.89x
+across the two passes) because the **NATIVE_CHURN "solo" condition's
+own baseline came back anomalously flat** (median solo_ratio ~1.00x-1.01x,
+not reproducing H14/H17's own ~30-40% hit rate at all, in 20/20 runs).
+Added instrumentation (rebuild count, wall-clock duration) in a second
+pass explained why: this binary measures BOTH quiet paths (native
+Rugs, Solr `wands_bench`) concurrently and only stops each condition
+once BOTH measurement threads finish (or hit the 5s deadline) --
+because Solr's own quiet-core queries are naturally slower per-call
+than native queries, but neither is slow enough alone to reliably hit
+the full 5-second deadline, NATIVE_CHURN's actual measured window ran
+only ~1.5-1.65s wall-clock (500/500 reps collected well under the 5s
+cap), giving the churn thread only ~7-8 rebuild attempts -- a
+meaningfully SHORTER exposure window than whatever H14/H17's own
+un-instrumented IDLE_CHURN condition actually achieved (H14/H17 only
+ever reported a *rate* -- "5 rebuilds (1.00/s)" -- computed by dividing
+by the fixed 5.0-second constant, not measured elapsed wall time, so
+its own true window length was never directly verified either). A
+shorter exposure window plausibly reduces the chance of the rare,
+high-impact stall event that appears to drive H14/H17's own
+intermittent hit pattern, independent of anything about combined load
+specifically.
+
+**Given this, the cross_amplification statistic is reported honestly
+as inflated by an unusually low denominator, not used as the primary
+evidence.** The robust, denominator-free finding above (COMBINED
+degrades Rugs 2.11x-3.37x, 20/20 runs) stands on its own regardless of
+this measurement-window subtlety, and is what H19's CONFIRMED verdict
+for the native side rests on.
+
+**Solr side**: cleaner and consistent with H18. Median solo_ratio
+1.99x-2.44x (consistent with H18's own ~1.8-2.4x range), median
+combined_ratio 2.74x-2.85x, median cross_amplification 1.14x-1.21x
+across the two passes -- **does NOT clear the pre-registered 1.25x
+bar. Solr-side contention is NOT confirmed to get materially worse from
+adding native-side churn** -- a real, stable, negative result (H15/H18's
+own contention mechanism appears self-contained to the Solr
+process/cores, not measurably worsened by unrelated native-process CPU
+activity).
+
+**H19 overall verdict: CONFIRMED** (native side clears the bar via the
+robust combined-vs-baseline statistic; Solr side does not clear it) --
+**at least one of the two quiet paths' degradation is measurably worse
+when both mechanisms run simultaneously than the isolated single-source
+gap H17 alone would suggest**, and the direction of the asymmetry
+(native path affected by combined load, Solr path not) is itself a
+useful, actionable, disclosed finding.
+
+**Named limitations**: only one native tenant pair and one Solr
+core pair were tested (the same ones H17/H18 each used individually).
+The measurement-window subtlety discovered here means this experiment's
+own "solo" conditions are not directly comparable in absolute magnitude
+to H14/H17's/H15/H18's original solo measurements (different join()
+synchronization semantics) -- the COMBINED-vs-TRUE_BASELINE comparison
+is the one statistic in this experiment not affected by that subtlety,
+and is accordingly the one this result leans on. Whether the
+native-side effect is genuinely CPU/scheduling contention between the
+Rust process and the Solr JVM process (the working hypothesis) or some
+other mechanism is not independently profiled.

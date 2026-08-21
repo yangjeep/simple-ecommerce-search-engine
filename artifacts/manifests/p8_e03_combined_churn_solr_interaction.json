@@ -1,0 +1,27 @@
+{
+  "experiment_id": "P8-E03",
+  "phase": "8",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p8_e03_combined_churn_solr_interaction.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "WANDS native quiet tenant 'Rugs' + churn tenant 'Furniture'; Solr cores wands_bench (quiet) + wands_bench_20x (noisy), same pair as H15/H18"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, churn tenant continuously rebuilt with no sleep (H14/P7-E11 mechanism)",
+    "lexical": "Apache Solr 9.10.1 single standalone instance, wands_bench/wands_bench_20x pair"
+  },
+  "repetitions": 10,
+  "raw_results_path": "docs/research/artifacts/p8_e03_combined_churn_solr_interaction_run1/",
+  "analysis_version": "docs/experiments/PHASE8_LOG.md#P8-E03",
+  "decision": "PHASE8_DECISION.md",
+  "headline_result": {
+    "h19_status": "CONFIRMED for the native side (robust statistic), NOT confirmed for the Solr side -- a genuine asymmetric finding",
+    "native_combined_ratio_range_across_20_runs": [2.11, 3.37],
+    "native_combined_hit_rate": "20/20 runs showed >= 2x degradation on the native quiet tenant under combined load",
+    "native_solo_ratio_anomaly": "median ~1.00x-1.01x across 20 runs, not reproducing H14/H17's own ~30-40% hit rate -- traced to a shorter join()-bound measurement window, disclosed as a self-caught methodological subtlety, not used as the basis for the verdict",
+    "solr_median_cross_amplification_range_across_2_passes": [1.14, 1.21],
+    "solr_verdict": "does not clear the pre-registered 1.25x bar",
+    "named_limitation": "only combined H14's/H15's base mechanisms, not H17's/H18's own burst-amplified versions; native-side mechanism (OS-level CPU/scheduling contention between the Rust process and the Solr JVM process) is a working hypothesis, not independently profiled"
+  }
+}

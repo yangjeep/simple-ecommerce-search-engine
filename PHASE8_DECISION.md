@@ -1,17 +1,23 @@
-# Phase 8 Decision (Issue #21 Phase 8) — first pass (P8-E00, P8-E01, P8-E02)
+# Phase 8 Decision (Issue #21 Phase 8) — first pass (P8-E00 through P8-E03)
 
-**Decision: PROCEED, with two real new isolation gaps confirmed.** H16
-(pure query-load burst) is confirmed clean across 3 independent runs.
-H17 (does burst make the already-known rebuild-churn gap worse) and H18
+**Decision: PROCEED, with three real findings confirmed.** H16 (pure
+query-load burst) is confirmed clean across 3 independent runs. H17
+(does burst make the already-known rebuild-churn gap worse) and H18
 (does burst make the already-known shared-Solr-contention gap worse)
 are BOTH confirmed — burst reliably makes each of Phase 7's two known
 real isolation gaps worse, not just in magnitude but in kind: both
 convert a borderline/intermittent degradation into a near-certain one.
-This is a first pass, not a terminal decision — see
-`PHASE8_FEASIBILITY.md` for the full item-by-item assessment of what
-this environment can and cannot test toward Issue #21's complete Phase
-8 required-measurements list, and "What would be built next" below for
-the specific remaining items.
+H19 (does running the native rebuild-churn and shared-Solr-contention
+mechanisms SIMULTANEOUSLY compound them beyond either alone) is also
+confirmed for the native side — combined load degrades the native
+quiet tenant's own latency by 2.11x-3.37x in every one of 20 measured
+runs, a materially more RELIABLE trigger than either mechanism showed
+alone — though not for the Solr side, a genuine asymmetry. This is a
+first pass, not a terminal decision — see `PHASE8_FEASIBILITY.md` for
+the full item-by-item assessment of what this environment can and
+cannot test toward Issue #21's complete Phase 8 required-measurements
+list, and "What would be built next" below for the specific remaining
+items.
 
 ## Recap: what Phase 8 was asked to answer
 
@@ -42,6 +48,12 @@ experiment.
   already-confirmed shared-Solr-contention isolation gap (2.16-2.48x at
   steady demand) materially worse, the symmetric question for Phase 7's
   *other* known real isolation gap.
+- **H19** (P8-E03): does running H17's native rebuild-churn mechanism
+  and H18's shared-Solr-contention mechanism SIMULTANEOUSLY (a
+  realistic BFCM combination: catalog mutation and shared-backend load
+  both happening at once) compound the two isolation gaps beyond
+  either alone — the single highest-priority remaining item this
+  pass's own prior "Unresolved risks" section named.
 
 ## Architecture tested
 
@@ -149,6 +161,60 @@ a dependable one.
 Full details, raw CSV: `docs/experiments/PHASE8_LOG.md`,
 `docs/research/artifacts/p8_e02_burst_amplified_solr_contention_run1/`.
 
+**H19 — CONFIRMED for the native side via a more robust statistic than
+originally planned, with a genuine self-caught insight into the
+measurement window (P8-E03).** Four conditions per run, each measuring
+BOTH quiet paths (native tenant "Rugs"; Solr core `wands_bench`)
+concurrently: BASELINE (both alone), NATIVE_CHURN (Furniture
+continuously rebuilt, H14/H17's exact mechanism), SOLR_NOISY (3 threads
+hammering `wands_bench_20x`, H15/H18's exact mechanism), and COMBINED
+(both simultaneously).
+
+**Headline, robust finding**: across 20 total measured runs (two
+independent 10-run passes), **COMBINED load degraded Rugs's own native
+p99 by 2.11x-3.37x in every single run, with no exceptions** — a
+materially more reliable (100% hit rate) trigger than H14/H17's own
+native-churn-alone finding (~30-40% hit rate).
+
+**A genuine self-caught subtlety, disclosed rather than smoothed over**:
+the pre-registered cross_amplification statistic (combined_ratio /
+solo_ratio) came out inflated (median 2.65x-2.89x) because
+NATIVE_CHURN's own "solo" condition came back anomalously flat (median
+solo_ratio ~1.00x-1.01x in 20/20 runs, not reproducing H14/H17's own
+hit rate at all). Added instrumentation traced this to how this
+binary's join()-based synchronization (waiting for BOTH quiet-path
+measurement threads before stopping) produces a shorter measured
+window (~1.5-1.65s wall-clock, 7-8 rebuild attempts) than whatever
+H14/H17's own un-instrumented condition actually achieved — H14/H17
+only ever reported a *rate* ("5 rebuilds (1.00/s)") computed by
+dividing by the fixed 5.0-second constant, never a directly-measured
+elapsed time, so a shorter real exposure window here plausibly explains
+reduced odds of catching the rare stall event that drives the
+intermittent hit pattern, independent of anything about combined load
+itself. **The cross_amplification statistic is reported as inflated by
+this low denominator, not used as primary evidence** — the
+denominator-free COMBINED-vs-TRUE_BASELINE finding above is what H19's
+native-side CONFIRMED verdict rests on.
+
+**Solr side**: cleaner. Median solo_ratio 1.99x-2.44x (consistent with
+H18), median combined_ratio 2.74x-2.85x, median cross_amplification
+1.14x-1.21x across the two passes — **does NOT clear the 1.25x bar.
+Solr-side contention is not confirmed to worsen from added native-side
+churn** — a real, stable negative result: H15/H18's own contention
+mechanism appears self-contained to the Solr process, not measurably
+affected by unrelated native-process CPU activity.
+
+**H19 overall: CONFIRMED** (native side clears the bar via the robust
+statistic; Solr side does not) — at least one of the two quiet paths'
+degradation is measurably worse when both mechanisms run
+simultaneously than either mechanism's own isolated gap alone, and the
+asymmetry (native path affected, Solr path not) is itself a useful,
+disclosed finding.
+
+Full details, raw CSV: `docs/experiments/PHASE8_LOG.md`,
+`docs/research/artifacts/p8_e03_combined_churn_solr_interaction_run1/`
+(both passes' console logs preserved).
+
 ## Failed / fixed experiments (preserved, not erased)
 
 **P8-E01's first draft** used only 3 repeated runs with a per-run
@@ -166,6 +232,23 @@ for the full account.
 from its first draft) and needed no further correction — its result was
 tight (amplification range 1.60x-2.00x) from the start, consistent with
 Solr contention being a continuous rather than discrete-event effect.
+
+**P8-E03's first pass** used the pre-registered cross_amplification
+statistic without instrumenting the measurement window itself, and its
+NATIVE_CHURN "solo" condition came back anomalously flat (no
+methodology error, but a real, unexplained discrepancy from H14/H17's
+own ~30-40% hit rate). Rather than either trusting the resulting
+inflated amplification number or discarding the finding, a second pass
+added rebuild-count and wall-clock instrumentation, which traced the
+discrepancy to this experiment's join()-based synchronization producing
+a shorter real measurement window than H14/H17's own (never directly
+measured) condition. The fix was not re-running with different
+parameters but reporting the robust, denominator-free
+COMBINED-vs-TRUE_BASELINE statistic as primary evidence instead of the
+fragile ratio-of-ratios. Both passes' raw console logs are preserved
+(`console_pass1_no_diagnostics.log`, `console.log`). See
+`docs/experiments/PHASE8_LOG.md`'s "P8-E03 result" section for the full
+account.
 
 ## Unresolved risks
 
@@ -186,9 +269,15 @@ Solr contention being a continuous rather than discrete-event effect.
    thread-pool or I/O contention shared across cores in one instance)
    is a plausible hypothesis, not independently profiled. **No
    mitigation for this gap has been designed or tested either.**
-4. **Neither H17 nor H18 combines with the other** — a three-way burst
-   + rebuild-churn + shared-lexical-backend interaction, which would
-   plausibly compound further than either alone, remains untested.
+4. **H19 only combined H14's and H15's BASE mechanisms, not H17's/H18's
+   own burst-amplified versions** — whether a full three-way burst +
+   churn + shared-backend interaction (all three at once) compounds
+   even further than H19 already found remains untested, and is
+   plausibly worse given H17's and H18's own individual burst findings.
+   H19's own native-side mechanism (working hypothesis: OS-level
+   CPU/scheduling contention between the Rust process and the separate
+   Solr JVM process, both on the same finite-core hardware) is not
+   independently profiled either.
 5. **This is single-node testing only**, per `PHASE8_FEASIBILITY.md`'s
    own disclosed scope boundary — true multi-node scale-out,
    redistribution, and the immutable-bundle-vs-cluster-lifecycle
@@ -196,24 +285,26 @@ Solr contention being a continuous rather than discrete-event effect.
 
 ## What would be built next if scaling up
 
-Per `PHASE8_FEASIBILITY.md`'s remaining feasible-now items: the
-three-way burst + rebuild-churn + shared-lexical-backend interaction
-(combining H17's and H18's own setups — the single highest-priority
-remaining item, since both individual gaps are now confirmed and
-compounding them is the realistic worst case), the
-packing-density-reduction-under-burst test (extending H12's
-methodology), warmup-time-to-SLO and bundle-load-time measurements
-(extending H1/H7/H8), and the normal-day-vs-burst economic-cost
-synthesis (extending `PHASE7_ECONOMIC_MODEL.md`'s own discipline).
-Separately, and now higher-priority given both H17's and H18's
-confirmed findings: designed mitigations for rebuild-churn-under-burst
-(e.g., scheduling non-urgent rebuilds away from detected burst windows,
-or a rebuild strategy that avoids the allocation-heavy disruption
-`CatalogIndex::build()` currently causes) and for shared-Solr
-contention under burst (e.g., per-tenant request queuing/prioritization,
-or the SolrCloud sharding this epic has deliberately not yet built) are
-worth exploring before any production deployment relies on this
-architecture during a real BFCM event.
+Per `PHASE8_FEASIBILITY.md`'s remaining feasible-now items: the full
+three-way interaction combining H17's and H18's own burst-amplified
+versions (not just H14/H15's base mechanisms, which H19 already
+combined), the packing-density-reduction-under-burst test (extending
+H12's methodology), warmup-time-to-SLO and bundle-load-time
+measurements (extending H1/H7/H8), and the normal-day-vs-burst
+economic-cost synthesis (extending `PHASE7_ECONOMIC_MODEL.md`'s own
+discipline). Separately, and now higher-priority given H17's, H18's,
+and H19's confirmed findings: designed mitigations for
+rebuild-churn-under-burst (e.g., scheduling non-urgent rebuilds away
+from detected burst windows, or a rebuild strategy that avoids the
+allocation-heavy disruption `CatalogIndex::build()` currently causes)
+and for shared-Solr contention under burst (e.g., per-tenant request
+queuing/prioritization, or the SolrCloud sharding this epic has
+deliberately not yet built) are worth exploring before any production
+deployment relies on this architecture during a real BFCM event — H19
+adds that a co-located tenant's rebuild churn becomes an even more
+reliable risk to a quiet native tenant specifically when a shared Solr
+backend is also under load, so any mitigation strategy should account
+for both mechanisms interacting, not just each in isolation.
 
 ## What should explicitly not be built yet
 
@@ -241,32 +332,42 @@ tenants' traffic joining a shared Solr instance — materially worsens
 H15's already-confirmed shared-Solr-contention gap the same way,
 converting a borderline-intermittent (50%) degradation into a
 near-certain (100%) one, tightly reproduced across all 10 runs with no
-methodology fix needed — H18.
+methodology fix needed — H18. (4) Running H14's rebuild-churn and
+H15's shared-Solr-contention mechanisms SIMULTANEOUSLY degrades a
+native quiet tenant's own latency by 2.11x-3.37x in every one of 20
+measured runs (two independent 10-run passes) — more reliably than
+either mechanism alone — while the symmetric effect on the Solr side is
+NOT confirmed (adding native churn does not measurably worsen Solr-side
+contention beyond what Solr noise alone causes) — H19, a genuine
+asymmetric finding.
 
 **Does not claim**: that H16's clean result holds at other burst
 multipliers, burst-group sizes, or under Regime C's majority/all-tenant
-burst; that H17 and H18 combined (a three-way burst + rebuild-churn +
-shared-lexical-backend interaction) would show the same or a worse
-magnitude — untested, and plausibly worse given each individual gap's
-own confirmed direction; that a mitigation exists for either H17's or
-H18's confirmed gap — none has been designed or tested for either; that
-any of Phase 8's genuinely blocked items (admission/backpressure
-control, real multi-node redistribution, the
-immutable-bundle-vs-cluster-lifecycle comparison) have been answered —
-see `PHASE8_FEASIBILITY.md` for why they remain out of scope for this
-environment.
+burst; that H17's and H18's own burst-amplified mechanisms combined (as
+opposed to H19's test of their underlying H14/H15 base mechanisms
+combined) would show the same or a worse magnitude — untested, and
+plausibly worse given H19's own confirmed direction; that a mitigation
+exists for H17's, H18's, or H19's confirmed gaps — none has been
+designed or tested for any of them; that H19's own cross_amplification
+statistic (as opposed to its robust combined-vs-baseline statistic) is
+trustworthy — it is reported as inflated by a measurement-window
+artifact, disclosed rather than hidden; that any of Phase 8's genuinely
+blocked items (admission/backpressure control, real multi-node
+redistribution, the immutable-bundle-vs-cluster-lifecycle comparison)
+have been answered — see `PHASE8_FEASIBILITY.md` for why they remain
+out of scope for this environment.
 
-**Decision: PROCEED**, carrying both H17 and H18 forward as real,
+**Decision: PROCEED**, carrying H17, H18, and H19 forward as real,
 disclosed isolation gaps rather than smoothing them over — the same
 discipline Phase 7 applied to H14 and H15 in the first place. The next
-Phase 8 sub-experiment is named above as the single highest-priority
-remaining item: the three-way burst + rebuild-churn + shared-backend
-interaction, combining H17's and H18's own setups, since realistic BFCM
-conditions would plausibly trigger both simultaneously. H16's clean
-confirmation and H17's/H18's confirmed, now-quantified gaps are all
-real evidence — this architecture's steady-state multi-tenant isolation
+Phase 8 sub-experiment is named above: the full three-way interaction
+combining H17's and H18's own burst-amplified versions (H19 combined
+only their base H14/H15 mechanisms). H16's clean confirmation and
+H17's/H18's/H19's confirmed, now-quantified gaps are all real
+evidence — this architecture's steady-state multi-tenant isolation
 properties mostly extend to a correlated-burst regime for pure query
-load, but BOTH of Phase 7's known mutation- and shared-backend-related
-exceptions get reliably worse, not better, under burst, and that must
+load, but Phase 7's known mutation- and shared-backend-related
+exceptions get reliably worse, not better, under burst, AND compound
+with each other on the native path specifically (H19) — and that must
 be treated as a real production risk, not an edge case, for any
 deployment planning to operate through a genuine BFCM-scale event.

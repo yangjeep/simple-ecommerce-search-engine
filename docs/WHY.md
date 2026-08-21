@@ -382,6 +382,31 @@ it showed up every single time. Both of Phase 7's two known real
 isolation gaps now get measurably worse, not better, under a correlated
 burst, and neither has a designed mitigation yet.
 
+**Fourth Phase 8 result -- the two gaps compound with each other, on
+one side (`PHASE8_DECISION.md`)**: with both known gaps individually
+confirmed to worsen under burst, the natural next question was whether
+running both mechanisms at once -- catalog mutation and shared-backend
+contention happening simultaneously, exactly the kind of thing a real
+BFCM event would produce -- makes things worse than either alone. The
+answer turned out asymmetric. Combining a rebuild-churning tenant with
+a Solr instance under noisy load, and measuring both an affected native
+tenant and an affected Solr core at the same time, the native side
+degraded materially in every single one of twenty measured runs across
+two independent passes -- a far more reliable trigger than either
+mechanism alone ever produced. The Solr side, however, did not get
+measurably worse from adding native-side churn on top of its own
+already-known contention. Getting to that result also surfaced a
+genuine measurement subtlety worth naming plainly: the planned
+ratio-based statistic came out inflated because the "churn alone"
+condition in this particular design happened to under-measure its own
+effect, traced to how the measurement window's length depends on which
+of two concurrently-measured signals finishes first. Rather than either
+trusting the inflated ratio or discarding the result, the write-up
+leans on the more direct, denominator-free comparison instead, and
+says plainly why. Two of Phase 7's isolation gaps are now not only
+worse individually under burst, but interact with each other on at
+least one side, and no mitigation for either exists yet.
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

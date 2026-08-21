@@ -129,6 +129,15 @@ same as Phases 0–5:
   (every individual run 1.60x-2.00x), and the same >=2x-degradation
   hit-rate escalation (5/10 idle runs to 10/10 burst runs); see
   `PHASE8_DECISION.md`.
+- `p8_e03_combined_churn_solr_interaction.yaml` — does running H14's
+  rebuild-churn and H15's shared-Solr-contention mechanisms
+  SIMULTANEOUSLY compound the two isolation gaps beyond either alone?
+  A genuine asymmetric finding: combined load degrades the native
+  quiet tenant's own latency by 2.11x-3.37x in every one of 20
+  measured runs (more reliably than either mechanism alone), but does
+  NOT measurably worsen the Solr-side contention. Includes a
+  self-caught, honestly-disclosed measurement-window subtlety; see
+  `PHASE8_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

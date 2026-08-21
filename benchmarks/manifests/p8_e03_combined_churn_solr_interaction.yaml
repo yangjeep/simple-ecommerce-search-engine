@@ -1,0 +1,71 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P8-E03
+phase: 8
+issue: 21
+decision_document: PHASE8_DECISION.md
+claim: >
+  Does running H14's native rebuild-churn mechanism and H15's
+  shared-Solr-contention mechanism SIMULTANEOUSLY compound the two
+  isolation gaps beyond either alone? Four conditions per run, each
+  measuring BOTH quiet paths (native tenant "Rugs"; Solr core
+  wands_bench) concurrently: BASELINE, NATIVE_CHURN (Furniture
+  continuously rebuilt), SOLR_NOISY (3 threads hammering
+  wands_bench_20x), COMBINED (both at once). Headline, robust finding
+  across 20 runs (two independent 10-run passes): COMBINED load
+  degraded Rugs's own native p99 by 2.11x-3.37x in every single run
+  -- more reliably (100% hit rate) than H14/H17's native-churn-alone
+  finding (~30-40% hit rate). A self-caught subtlety: the
+  cross_amplification statistic came out inflated because the
+  NATIVE_CHURN "solo" condition's own baseline came back anomalously
+  flat, traced via added instrumentation to this experiment's
+  join()-based synchronization producing a shorter measured window
+  than H14/H17's own un-instrumented condition -- reported honestly,
+  not used as primary evidence; the robust COMBINED-vs-TRUE_BASELINE
+  statistic is what H19's native-side CONFIRMED verdict rests on.
+  Solr side: cross_amplification 1.14x-1.21x, does NOT clear the
+  1.25x bar -- adding native churn does not measurably worsen
+  Solr-side contention. H19 CONFIRMED for the native side, not
+  confirmed for the Solr side -- a genuine asymmetric finding. See
+  docs/experiments/PHASE8_LOG.md for the full H19 hypothesis and
+  result.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p8_e03_combined_churn_solr_interaction.rs
+build_command: cargo build --release -p phase7-eval --bin p8_e03_combined_churn_solr_interaction
+run_command: ./target/release/p8_e03_combined_churn_solr_interaction dataset_cache/wands/catalog.jsonl http://localhost:8983/solr
+
+dataset:
+  name: WANDS quiet tenant "Rugs" (2002 products), churn tenant "Furniture"
+    (16039 products, native); Solr cores wands_bench (quiet) and
+    wands_bench_20x (noisy, same pair as H15/H18)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, quiet tenant fixed, churn
+    tenant continuously rebuilt with no sleep between rebuilds
+    (H14/P7-E11 mechanism, no hot-swap slot needed since nothing
+    queries the churn tenant's own index in this experiment)
+  lexical: Apache Solr 9.10.1 single standalone instance, same
+    wands_bench/wands_bench_20x pair as H15/P7-E12/H18/P8-E02
+
+workload:
+  selection: BASELINE (both quiet paths alone, 500 fixed reps each);
+    NATIVE_CHURN (churn thread active, both quiet paths measured
+    concurrently, 500 reps or 5s deadline each); SOLR_NOISY (3 Solr
+    noisy workers active, same); COMBINED (both loads active, same),
+    all four measured per run with both quiet-path measurement
+    threads run CONCURRENTLY (not sequentially) so a true simultaneous
+    "combined load" moment is captured
+  repetitions: 10 independent in-process runs per pass, 2 independent
+    passes taken during development (both preserved) -- 20 total runs
+
+seed: "not applicable -- no RNG; deterministic native facet-scan queries and q=*:*&rows=24 Solr HTTP queries"
+
+raw_results: docs/research/artifacts/p8_e03_combined_churn_solr_interaction_run1/
+  - results.csv (final pass, 10 runs x 4 conditions)
+  - console.log (final, instrumented pass)
+  - console_pass1_no_diagnostics.log (first pass, superseded but preserved)
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE8_LOG.md for the full H19 hypothesis and result.
