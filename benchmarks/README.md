@@ -59,6 +59,10 @@ same as Phases 0–5:
   overhead vs. in-process pooling, the first measured test of
   `docs/WHY.md`'s statistical-multiplexing thesis; see
   `PHASE7_DECISION.md`.
+- `p7_e04_long_running_overhead.yaml` — genuinely long-running (not
+  spawn-and-exit) resident-process RSS, closing the gap between P7-E03's
+  short-lived floor and a real deployed service's actual cost; see
+  `PHASE7_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)

@@ -521,3 +521,147 @@ captures. Only 3 real tenant sizes were sampled (largest, middle,
 smallest by real WANDS distribution), not a full sweep. This measures
 memory only, not per-process CPU/scheduling overhead, which a real
 multi-tenant capacity model would also need.
+
+## P7-E04: long-running resident-process overhead (H7, stated before implementation)
+
+H6 closed the in-process-vs-cross-process gap, but every unresolved-risk
+note since P7-E03 named the same remaining gap: H6's child processes are
+SHORT-LIVED -- spawn, (optionally) load one tenant, print RSS, exit, all
+in well under a second. A real deployed service does not exit
+immediately: it stays resident, keeps a worker/connection-handler thread
+pool alive, and serves a sustained query stream. P7-E04 tests whether
+that distinction actually matters for RSS.
+
+**H7**: a genuinely long-running resident process's RSS, measured WHILE
+it is still alive and actively behaving like a service, is materially
+higher than H6's immediate spawn-and-exit snapshot -- because a real
+service keeps worker threads resident (thread stacks, per-thread
+allocator arenas) and performs sustained allocation/deallocation churn
+serving real queries, neither of which a process that exits in
+milliseconds ever exercises.
+
+**Pass/fail defined in advance**: two resident conditions, mirroring H6's
+bare/tenant split, each held alive for a fixed `RUN_DURATION` (20
+seconds) with RSS sampled every 5 seconds:
+- **idle-resident**: no tenant data; `WORKER_THREADS` (4, matching this
+  container's real CPU count) real OS threads spawned and parked alive
+  for the whole window -- a resident but idle connection-handler pool,
+  something H6's children never allocated since they exited before any
+  pool would exist.
+- **active-resident**: one real tenant's data loaded (largest/mid/
+  smallest, same three tenants H6 used for direct comparability);
+  `WORKER_THREADS` threads continuously execute real structural queries
+  (the same `facet_scan_once` helper P7-E01 used) against it for the
+  whole window.
+
+Compare the PEAK of the periodic RSS samples taken while the process is
+still live and serving against the immediate post-load snapshot
+(matching H6's `with_tenant_rss_kb` methodology exactly). A growth of
+>=20% for the idle condition, or >=200 KB for any tenant condition (the
+same order of magnitude as H6's own smallest-tenant marginal cost, a
+principled anchor rather than an arbitrary number) is material and
+CONFIRMS H7; growth below that stays close to H6's existing floor and
+FALSIFIES H7 for this workload.
+
+## P7-E04 self-caught methodology issue: the wrong RSS reading was almost used as the primary metric
+
+The first-draft binary reported a "steady_state_rss_kb" taken AFTER the
+worker threads had already been `.join()`-ed (torn down) at the end of
+the window, and used THAT as the primary comparison against the
+immediate post-load snapshot. Running it once produced a deeply
+counterintuitive result: the largest tenant (Furniture, 16,039 products)
+showed a NEGATIVE "growth" of roughly -472 to -480 KB (steady-state
+LOWER than the immediate snapshot), while the two near-empty tenants
+each showed +324 KB despite serving ~80-200 million trivial queries in
+the same window.
+
+Inspecting the newly-added per-sample printout (added specifically so
+the growth curve's shape, not just its two endpoints, would be
+auditable) resolved this immediately: the samples taken WHILE the
+process was still actively serving showed a real, monotonically
+increasing-then-decelerating climb (e.g. Furniture: 53,976 -> 54,008 ->
+54,032 -> 54,044 KB across the 20-second window, still rising, not yet
+fully plateaued) that was **materially higher** than either the
+immediate post-load snapshot OR the "steady-state" reading taken after
+thread teardown. The post-join reading was actively misleading: joining
+the worker threads reclaims real memory (thread stacks, and very likely
+per-thread allocator arena high-water marks built up from the sustained
+alloc/dealloc churn of millions of `facet_scan_once` calls), so for a
+tenant whose worker threads did substantial real work (Furniture), the
+post-teardown number dropped BELOW even the immediate snapshot -- hiding
+a real, large, in-service-only increase (~900 KB peak growth) rather than
+revealing it. A real long-running service does not tear down its worker
+pool mid-life, so a metric that only looks correct after teardown was
+measuring the wrong thing entirely.
+
+**Fixed** (before trusting any number, using the same "does this number
+make sense" discipline as every other Phase 6B/Phase 7 self-correction):
+the binary now tracks and reports the PEAK of the periodic in-service
+samples as the primary H7 metric, and keeps the post-teardown reading
+only as a clearly-labeled secondary data point about shutdown behavior,
+explicitly excluded from the H7 verdict.
+
+## P7-E04 result (after the fix): H7 CONFIRMED, reproduced across 3 independent runs
+
+| condition | run1 (KB) | run2 (KB) | run3 (KB) |
+|---|---|---|---|
+| idle-resident: t0 mean | 2186.7 | 2186.7 | 2188.0 |
+| idle-resident: peak mean | 2430.7 | 2430.7 | 2432.0 |
+| idle-resident: peak growth | 244.0 | 244.0 | 244.0 |
+| idle-resident: post-teardown mean (secondary) | 2558.7 | 2558.7 | 2560.0 |
+| Furniture (16,039 products): with-tenant snapshot | 53,148 | 53,212 | 53,132 |
+| Furniture: peak-serving | 54,044 | 54,108 | 54,032 |
+| Furniture: peak growth | 896 | 896 | 900 |
+| Furniture: post-teardown (secondary) | 52,668 | 52,732 | 52,656 |
+| Faux Plants and Trees (5 products): peak growth | 196 | 196 | 196 |
+| Water Filter Pitchers (1 product): peak growth | 196 | 196 | 196 |
+
+Every one of these figures is essentially exact across all 3 independent
+process runs -- the idle-resident peak growth is identically 244.0 KB in
+all 3 runs, and both near-empty tenants show identically 196 KB peak
+growth in every run. The idle-resident growth (244 KB, 11.2% of its own
+t0 baseline) stays below the pre-registered 20% idle threshold on its
+own, but the active-resident tenant growth clears the 200 KB threshold
+decisively for the realistic case (Furniture: 896-900 KB, ~1.7% of its
+~53 MB total footprint but ~42% of H6's entire per-process baseline
+~2,148-2,152 KB) -- **H7 CONFIRMED** via the tenant-growth criterion,
+reproduced across all 3 runs.
+
+The per-sample trace shows two qualitatively different shapes: the
+near-empty tenants' RSS jumps once (within the first 5-second sample)
+and then stays perfectly flat for the rest of the window, while
+Furniture's RSS keeps climbing, decelerating but not fully plateaued,
+across the entire 20-second window -- consistent with real, ongoing
+allocator/arena effects driven by the VOLUME of real work being churned
+(Furniture's worker threads allocate and free real per-query
+candidate/facet-count structures over its full 16,039-product index;
+the near-empty tenants' equivalent structures are almost too small to
+matter, so their growth saturates almost immediately).
+
+**Named limitation, not resolved this pass**: the specific allocator
+mechanism behind this growth (thread-local arena high-water marks from
+sustained alloc/dealloc churn is the most likely candidate, given the
+shape and the fact that it partially reverses on thread teardown) is a
+plausible, disclosed hypothesis, not a profiled and confirmed one --
+matching how H2's small cross-vs-same-tenant latency gap was handled.
+The post-teardown secondary reading shows its own small but exactly
+reproducible curiosity (a consistent +128 KB bump above the flat
+plateau for idle/near-empty-tenant conditions in every single run,
+across every child), also named as an open, unconfirmed observation
+rather than asserted. Only a 20-second window at 4 worker threads was
+tested; whether the still-rising Furniture curve would continue growing
+materially further over minutes/hours of real sustained service, or
+plateau shortly past this window, is untested.
+
+**What this means for the economic model**: H6 established a real
+per-process baseline (~2,148-2,152 KB) that isolation pays once per
+tenant while pooling pays once total. H7 shows that baseline
+UNDERSTATES a genuinely long-running, actively-serving process's real
+footprint by a further, real, reproducible amount -- negligible for
+near-empty tenants (+196 KB) but substantial for tenants doing real
+sustained work (+896-900 KB for the largest real tenant, on top of its
+own ~51 MB in-process data cost). This strengthens, not weakens, H6's
+qualitative conclusion (pooling has a real cost advantage over
+process-per-tenant isolation): the true per-process cost a
+one-process-per-tenant deployment would pay is higher than H6's
+short-lived floor alone suggested.

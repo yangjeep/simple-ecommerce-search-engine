@@ -39,6 +39,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p7_e01_qps_scaling.json`
 - `p7_e02_packing_ceiling.json`
 - `p7_e03_cross_process_fixed_cost.json`
+- `p7_e04_long_running_overhead.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

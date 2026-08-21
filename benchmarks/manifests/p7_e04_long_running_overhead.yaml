@@ -1,0 +1,54 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E04
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  A genuinely long-running resident process's PEAK RSS, measured while
+  it is still alive and actively serving (not a spawn-and-exit
+  snapshot), is materially higher than P7-E03/H6's short-lived-process
+  floor. Idle-resident processes (no tenant data, 4 parked worker
+  threads) grow by an exactly-reproducible 244.0 KB (11.2% of baseline,
+  3 runs). Active-resident processes serving real structural queries
+  against one real tenant grow further: 196 KB for near-empty tenants,
+  896-900 KB for the largest real tenant (Furniture, 16,039 products) --
+  all exactly reproducible across 3 independent runs. This strengthens
+  H6's pooling-advantage conclusion rather than weakening it. A
+  self-caught methodology issue (the first-draft binary used RSS
+  measured AFTER worker-thread teardown as its primary metric, which
+  inverted the sign of the effect for the largest tenant) was found and
+  fixed before trusting any number -- see docs/experiments/PHASE7_LOG.md.
+
+git_sha: PENDING
+binary: crates/phase7-eval/src/bin/p7_e04_long_running_overhead.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e04_long_running_overhead
+run_command: ./target/release/p7_e04_long_running_overhead dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real tenants (largest/middle/smallest by category_depth_1 size)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, built and queried in
+    long-running (20-second) spawned child OS processes
+    (std::process::Command), 4 worker threads each
+
+workload:
+  selection: 3 idle-resident bare child processes (no tenant data, 4
+    parked worker threads) + 3 active-resident children each serving
+    real structural queries (facet_scan_once) against one real tenant's
+    own data file for the full 20-second window
+  repetitions: 3 independent orchestrator runs
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e04_long_running_run1/
+  - results_run{1,2,3}.csv
+  - run{1,2,3}.log
+  - *_postjoin_metric_superseded.{csv,log} (first-draft, withdrawn metric,
+    preserved not deleted)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H7 hypothesis, the
+  self-caught methodology issue, and the corrected result.

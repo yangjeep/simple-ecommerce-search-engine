@@ -1,0 +1,5 @@
+condition,tenant_name,tenant_products,t0_rss_kb,with_tenant_rss_kb,peak_serving_rss_kb,peak_growth_kb,post_teardown_rss_kb,total_queries_served
+idle_resident_mean,,,2186.7,,2430.7,244.0,2558.7,
+active_resident,Furniture,16039,2184,53148,54044,896,52668,5986
+active_resident,Faux Plants and Trees,5,2248,2464,2660,196,2788,83577319
+active_resident,Water Filter Pitchers,1,2184,2372,2568,196,2696,198121457

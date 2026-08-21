@@ -208,9 +208,17 @@ claim directly: pooling avoids a real, measured per-process baseline
 (~2.1-2.2 MB, reproduced across 3 runs) that a one-process-per-tenant
 deployment would pay once per tenant — the first real evidence for the
 statistical-multiplexing thesis this document opens with, rather than an
-assumed advantage. A genuinely long-running resident process's real
-overhead (versus this short-lived-process floor) and aggregate QPS under
-a realistic demand mix remain open for the next Phase 7 pass.
+assumed advantage. A further follow-on measurement then held that same
+kind of process alive and actively serving real queries for a sustained
+window (rather than exiting immediately) and found the true cost is
+even larger: peak resident RSS grows by an exactly-reproducible 244 KB
+for an idle process and by 196-900 KB for one serving real query
+traffic (scaling with the tenant's own data size), reproduced across 3
+runs — strengthening, not weakening, the pooling-advantage finding.
+Aggregate QPS under a realistic multi-tenant demand mix, a
+longer-duration resident-process run, and a full economic cost model
+combining all of Phase 7's findings remain open for the next Phase 7
+pass.
 
 ## What this project is not
 

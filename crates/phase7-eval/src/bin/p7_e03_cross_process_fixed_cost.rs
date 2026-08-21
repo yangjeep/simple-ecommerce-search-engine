@@ -18,65 +18,9 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use phase6a_eval::{catalog as catalog_ingest, data};
-use phase7_eval::tenants::{partition_depth1, Order};
-
-/// Load and build ONLY the named tenant's catalog -- unlike
-/// `partition_depth1`, which materializes all 55 tenants' fully-built
-/// `Catalog`s in one `Vec` before any caller can select a subset (a real
-/// bug this binary's first draft hit: every "single tenant" child
-/// process was actually paying the memory cost of building all 55
-/// tenants, since `.into_iter().find()` over an already-fully-built
-/// `Vec` doesn't avoid constructing the other 54 -- it just discards
-/// them after the fact). This filters raw records to the one target
-/// tenant BEFORE calling `build_catalog`, so only that tenant's data is
-/// ever constructed. Callers should also pass a catalog_path that
-/// ALREADY contains only this tenant's raw lines (see
-/// `write_single_tenant_jsonl` below) -- otherwise `data::load_catalog`
-/// itself pays the cost of parsing the entire shared multi-tenant file
-/// before this filter even runs, a second real confound this binary's
-/// first draft also hit (every "single tenant" child showed ~37 MB
-/// regardless of tenant size, dominated by parsing all 42,994 raw
-/// records, not by that one tenant's real data).
-fn load_single_tenant(
-    catalog_path: &std::path::Path,
-    target_name: &str,
-) -> commerce_core::domain::Catalog {
-    let products = data::load_catalog(catalog_path);
-    let raw: Vec<_> = products
-        .into_iter()
-        .filter(|p| p.category_depth_1.as_deref() == Some(target_name))
-        .collect();
-    assert!(!raw.is_empty(), "tenant {target_name} not found");
-    catalog_ingest::build_catalog(&raw).catalog
-}
-
-/// Write a temporary JSONL file containing ONLY the named tenant's raw
-/// lines from the shared multi-tenant catalog, so a child process
-/// pointed at it never pays the cost of parsing every other tenant's
-/// data -- the realistic analogue of a real single-tenant deployment
-/// that would hold only its own tenant's data file in the first place.
-fn write_single_tenant_jsonl(catalog_path: &std::path::Path, target_name: &str) -> PathBuf {
-    let raw_text = std::fs::read_to_string(catalog_path).expect("read catalog.jsonl");
-    let mut out = String::new();
-    for line in raw_text.lines() {
-        let value: serde_json::Value = serde_json::from_str(line).expect("parse catalog line");
-        if value.get("category_depth_1").and_then(|v| v.as_str()) == Some(target_name) {
-            out.push_str(line);
-            out.push('\n');
-        }
-    }
-    assert!(!out.is_empty(), "tenant {target_name} not found");
-    let dir = PathBuf::from("dataset_cache/p7_e03_single_tenant_tmp");
-    std::fs::create_dir_all(&dir).ok();
-    let safe_name: String = target_name
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect();
-    let path = dir.join(format!("{safe_name}.jsonl"));
-    std::fs::write(&path, out).expect("write single-tenant jsonl");
-    path
-}
+use phase7_eval::tenants::{
+    load_single_tenant, partition_depth1, write_single_tenant_jsonl, Order,
+};
 
 const BASELINE_CHILD_COUNT: usize = 20;
 
@@ -185,7 +129,11 @@ fn main() {
     csv.push_str(&format!("bare_process_mean,,,{mean_baseline:.1},,\n"));
 
     for name in [largest.as_str(), mid.as_str(), smallest.as_str()] {
-        let single_tenant_path = write_single_tenant_jsonl(&PathBuf::from(&catalog_path), name);
+        let single_tenant_path = write_single_tenant_jsonl(
+            &PathBuf::from(&catalog_path),
+            name,
+            "p7_e03_single_tenant_tmp",
+        );
         let (baseline, with_tenant, products) = spawn_child(
             &exe,
             single_tenant_path.to_str().expect("valid utf8 path"),
