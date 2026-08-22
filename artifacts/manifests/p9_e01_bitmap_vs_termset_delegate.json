@@ -3,7 +3,7 @@
   "phase": "9",
   "issue": 34,
   "benchmark_manifest": "benchmarks/manifests/p9_e01_bitmap_vs_termset_delegate.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "62b3af7",
   "dataset": {
     "name": "synthetic (deliberately scoped, not a real-catalog claim)",
     "documents": 500000,

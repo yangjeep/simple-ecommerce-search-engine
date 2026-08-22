@@ -26,7 +26,7 @@ claim: >
   by this experiment's own correctness criterion (document set, not raw
   score). See docs/experiments/PHASE9_LOG.md P9-E01 for full detail.
 
-git_sha: PENDING
+git_sha: 62b3af7
 binary: crates/phase9-eval/src/bin/p9_e01_bitmap_vs_termset_delegate.rs
 build_command: cargo build --release -p phase9-eval --bin p9_e01_bitmap_vs_termset_delegate
 run_command: ./target/release/p9_e01_bitmap_vs_termset_delegate
