@@ -3,7 +3,7 @@
   "phase": "issue-38",
   "issue": 38,
   "benchmark_manifest": "benchmarks/manifests/i38_e1_hardcoded_vs_compiled_vs_generic_vs_solr.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "3b0b7fc4008d1e5e24fb0a682e70412f4298c9cb",
   "dataset": {
     "name": "real WANDS catalog (identical to Phase 9)",
     "products": 42994,
