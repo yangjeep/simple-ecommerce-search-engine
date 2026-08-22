@@ -559,3 +559,286 @@ when no entity constraint is found, or extending `compile_lexicon` with
 H2c-style plural tolerance) needs its own falsifiable design-first cycle,
 named as the concrete next step in `PHASE9_DECISION.md`, not implemented
 speculatively in this pass.
+
+## P9-E05: resolution-priority defect fix (Issue #38's mandated repair, before any new evidence is trusted)
+
+Issue #38 opens by requiring the P9-E03/P9-E04-localized
+`compile_lexicon`/`compile()` defect be repaired, with RED tests first,
+*before* the H1/H3 evidence behind P9-E02/P9-E04 is treated as a valid
+baseline for anything new. This entry is that repair; P9-E06 re-runs
+H1/H3 from the corrected baseline.
+
+**Old behavior**: `compile()` scans left to right, and at each position
+tries the longest lexicon-registered phrase first, then shorter ones. The
+moment *any* phrase — of any length, from any source — resolved to a
+single candidate, it became an unconditional hard constraint, with no
+regard for whether the query ever resolved a real commerce entity
+(`Brand`/`ProductType`/`Category`) anywhere else. This is correct as a
+rule for picking *between two readings of the same span* (longer,
+more-specific matches should win over shorter ones), but it was silently
+carrying a second claim it never earned: that a match's mere existence
+made it equally trustworthy regardless of length. P9-E03 established that
+real entity phrases (e.g. "Coffee & Cocktail Tables") essentially never
+appear verbatim in shopper queries; P9-E04 established the consequence —
+the scan falls through to a single coincidental token (a color/material
+word already seeded in the lexicon from unrelated products, e.g. "coffee"
+in "smart coffee table") and commits it as a confident hard filter that
+excludes nearly every genuinely relevant product.
+
+**Intended behavior**: a hard attribute constraint resolved via the open,
+collision-prone phrase-lexicon lookup is trustworthy as an *exclusionary
+filter* only when corroborated by a real entity constraint
+(`Brand`/`BrandAny`/`ProductType`/`Category`) somewhere else in the same
+compiled query. `PriceUnderCents`/`PriceOverCents` do not count — they
+come from a separate, unambiguous `under`/`over` keyword parse and
+disambiguate nothing about a coincidental word collision. When no entity
+constraint exists anywhere in the query, every lexicon-derived attribute
+constraint is demoted, at the end of the scan, to an additive
+`Preference::Boost` (never a filter) with its originating phrase kept in
+`residual_lexical` — reusing this compiler's own existing "a soft signal
+must never hide its own phrase from lexical search" contract (Issue #6
+P1-B), rather than inventing a new one.
+
+**Why the old priority was incorrect**: longest-match-first is a sound
+disambiguation rule only when there is something to compare against at
+the *same* scan position. When the real multi-word entity phrase is
+absent from the lexicon (the common case per P9-E03), there is nothing to
+compare against, so the shorter, structurally different, and much more
+collision-prone attribute match was accepted with the same unconditional
+confidence a genuine entity match would have earned. Treating "the
+longest match that happened to resolve" as equivalent to "the correct
+reading of shopper intent" conflated two different questions.
+
+**Why the new rule generalizes**: it is not "entities always win" — an
+attribute constraint that coexists with a real entity constraint is left
+exactly as before, a hard filter (`same_attribute_word_stays_a_hard_filter_when_an_entity_is_also_present`).
+A lone attribute constraint is never deleted, only demoted to an additive
+preference plus residual text, so a query whose entire real intent is a
+bare attribute value (no entity exists at all, e.g. a standalone color
+search) still surfaces that value as ranking signal and stays lexically
+searchable (`standalone_legitimate_attribute_query_is_demoted_but_never_dropped`)
+— the exact "legitimate attribute resolution" failure mode
+`PHASE9_DECISION.md` named as the risk to guard against. The rule is keyed
+only on *how* a constraint was resolved (open lexicon lookup vs. a
+reserved deterministic keyword) and *what else* the query resolved, never
+on which specific attribute/value pair is involved, so it is not a
+special case for "coffee"/"chrome"/"pearl"/"clear"/"pearl" or any other
+disclosed example — and it does not touch the already-correct case where
+the real entity phrase *is* registered, since longest-match-first already
+prefers it at the very same scan position
+(`registered_multiword_entity_phrase_already_wins_over_the_shorter_attribute_word`).
+
+**Implementation**: `crates/commerce-core/src/ir/query.rs`. `compile()`
+now tracks every lexicon-derived `Attribute` constraint (never a
+`Structural` entity match — those are trusted immediately) alongside its
+originating phrase in a side list as it scans, exactly as before for
+everything else (order, existing same-slot-conflict handling, negation,
+ambiguity are all untouched). After the scan, if `result.constraints`
+contains no entity-type `Structural` constraint, every tracked attribute
+constraint is removed from `constraints`, converted to a
+`Preference::Boost` (weight 0.5, matching this compiler's existing
+convention for a soft, non-decisive signal), and its phrase is added to
+`residual_lexical` if not already present.
+
+**RED tests first**: `crates/commerce-core/tests/ir_resolution_priority.rs`
+(new, 11 tests) written and confirmed failing (7 of 11) against the
+unmodified compiler before any production code changed. Cases covered:
+the exact "smart coffee table" reproduction; the same collision staying a
+hard filter when an entity *is* present (the direct "does not simply make
+entities always win" test); the already-correct registered-multiword-phrase
+case (regression lock); a standalone legitimate attribute-only query
+(never silently dropped); a price bound *not* corroborating (Price isn't
+an entity); `Boolean`- and `MultiEnumContains`-sourced constraints demoted
+the same way as `Enum`; two independent lone attribute matches both
+demoted in scan order; an ambiguous span left completely untouched by the
+demotion pass; and both `Category` and `BrandAny` (not just plain `Brand`)
+corroborating a coexisting attribute match. All 11 pass after the fix.
+
+**Adversarial/regression check on existing behavior**: the full existing
+`ir_compiler.rs` suite (11 tests, including the representative-query
+end-to-end compile, negation, same-slot-conflict, and preference-only
+tests) required zero changes and passed unmodified — none of the fixed
+lexicons in those tests ever produce a lone attribute-only match with no
+entity present, so nothing in the existing coverage exercised this
+defect. One real, disclosed downstream consequence surfaced outside the
+new test file: `control_plane.rs`'s
+`observes_every_residual_term_from_the_representative_query_set` expected
+11 residual terms and got 12 — `"New Balance waterproof shoes"` in
+`REPRESENTATIVE_QUERY_SET` resolves no entity at all ("New Balance" is
+out-of-vocabulary, bare "shoes" is never a registered phrase — only
+"running shoes" is), so "waterproof" used to compile to an unconfirmed
+hard filter and is now correctly demoted, adding it to what
+`observe_residual_terms` observes as residual text. The test's expected
+value was updated (with the mechanism explained in a comment), not
+special-cased around — a real, intended behavior change from a real
+fixture query, not a fixed example manufactured for this defect.
+
+**Quality gate**: `cargo fmt --all -- --check` clean, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean, `cargo
+test --workspace --all-features` 0 failures across all 103 test binaries
+(commerce-core's own suite: 42 unit + 11 `ir_compiler` + 11 new
+`ir_resolution_priority` + 20 `admission` + 6 `cold_start` + 9
+`control_plane` + others, all passing), `cargo build --workspace
+--release` clean.
+
+**What this does and does not establish**: fixes the precise,
+P9-E03/P9-E04-localized resolution-priority defect at its root cause (a
+general corroboration rule, not a special case for any disclosed
+example), with adversarial collision/ambiguity/legitimate-attribute-intent
+coverage proving it does not overcorrect into "entities always win." Does
+**not** yet re-measure whether this closes, narrows, or leaves unchanged
+the P9-E02/P9-E04 relevance gap — that is P9-E06, run from this corrected
+baseline before any of it is trusted as evidence for Issue #38's E1.
+
+## P9-E06: re-run H1/H3 from the corrected baseline — before/after comparison
+
+Both original binaries (`p9_e02_wands_physical_advantage`,
+`p9_e04_isolated_ranking_and_execution`) are unmodified — they call
+`commerce_core::ir::compile`/`compile_lexicon` directly, so re-running
+them against the P9-E05-corrected library exercises the fix without
+touching the measurement harness itself. Same datasets, query cohorts,
+planner policy, warmup passes, and repetition counts (3 runs for P9-E02,
+6 for P9-E04) as the original checkpoints.
+
+**Decision criteria (stated before running)**: independently re-verdict
+H1 and H3 using the same thresholds P9-E04 itself established (>=10%
+relative NDCG gap for H1; >=2x latency ratio for H3) — CONFIRMED,
+FALSIFIED, or, if the routing composition changes enough to make the
+comparison no longer well-posed (e.g. the population becomes too small
+or qualitatively different), INCONCLUSIVE with the reason stated. Report
+before/after side by side; do not silently replace old numbers.
+
+### Routing composition: the fix's first, largest visible effect
+
+| | before (defect present) | after (P9-E05 fix) |
+|---|---|---|
+| routing distribution | FastPath=15, Hybrid=135, Punt=330 | FastPath=7, Hybrid=14, Punt=459 |
+| structural_routed share | 150/480 (31.25%) | 21/480 (4.375%) |
+
+**86% of what was previously counted as "structural" traffic (129 of 150
+queries) is gone, now Punt-routed instead.** This is not a side effect —
+it is the fix working exactly as designed: P9-E04's own before-fix data
+already measured that 92 of 136 evaluated structural_routed queries
+(67.6%) had only an attribute-level constraint with no entity, the exact
+population P9-E05 demotes. The remaining 21 are, by construction, the
+entity-anchored population (`n=11` of them carry a `ProductType`/
+`Category` constraint with judged Exact-labeled ground truth; the rest
+carry an entity constraint without an Exact judgment, or a `Price`-only
+constraint alongside one — `plan()`'s FastPath/Hybrid routing keys on
+*any* non-empty constraint set, so a lone `Price` bound, unaffected by
+the fix, can still route structurally on its own).
+
+### H1 (ranking quality): re-verdict — still FALSIFIED, more decisively
+
+| | before | after |
+|---|---|---|
+| n (evaluated) | 136 | 15 |
+| native NDCG@10 | 0.1521 | 0.4586 |
+| solr-restricted NDCG@10 | 0.1537 | 0.4396 |
+| relative gap | -1.05% | **+4.33%** |
+
+Native's ranking signal was never the problem, and remains not the
+problem on the smaller, corrected population — if anything it now edges
+ahead of Solr's BM25 on the identical candidate set. **H1: FALSIFIED
+(unchanged verdict, both before and after).**
+
+### H3 (execution-speed advantage, relevance-controlled): re-verdict — still FALSIFIED, but the story changes
+
+| | before (6 runs) | after (6 runs) |
+|---|---|---|
+| latency ratio (solr/native) range | 0.71x – 1.14x | 0.42x – 0.60x |
+| native mean latency | ~1.4-2.0ms | 3.44-4.30ms |
+| solr-restricted mean latency | ~1.2-2.1ms | 1.80-2.15ms |
+| candidate-set median size | **6** | **568** |
+
+**H3: FALSIFIED both before and after — but not for the same reason.**
+Before the fix, native's median candidate set was 6 documents: a
+degenerate, narrow bitmap produced by a single coincidental attribute
+match (e.g. `color=coffee`). Ranking 6 documents is nearly free, so
+native's latency looked roughly comparable to Solr's (a near-parity
+0.71x-1.14x reading). After the fix, the surviving entity-anchored
+population's median candidate set is 568 documents (~95x larger) — a
+realistic structural admission (e.g. a `ProductType` match over
+thousands of products before any further narrowing) — and native's own
+`execute_ranked` cost visibly **scales with candidate-set size**,
+producing a stable, reproducible 0.42x-0.60x ratio across all 6 runs:
+native is now consistently *slower* than Solr's identically-restricted
+query, not merely short of the 2x bar.
+
+**This is a new finding, not previously visible.** The before-fix
+near-parity H3 reading was itself partly a defect-contaminated artifact:
+it measured native's ranking cost almost exclusively over degenerate,
+tiny candidate sets the resolution-priority defect was manufacturing,
+not over the realistic candidate-set sizes a genuine structural
+admission produces. Whether this scaling cost is fundamental (a linear
+scan-and-sort is an inherent property of "rank every candidate before
+truncating to top-K") or implementation-specific (e.g. `execute_ranked`
+could adopt a partial top-K selection instead of a full sort) is
+explicitly **not determined here** — it is named as a required input to
+Issue #38 E1's own physical-execution-advantage measurement, which must
+now budget for candidate-set-size scaling explicitly rather than assume
+native's ranking pass is close to free.
+
+### Candidate-set relevant-document recall: the smaller population is a real, meaningful structural constraint
+
+| | before | after |
+|---|---|---|
+| mean relevant-doc recall | 0.0841 | **0.4460** |
+| Exact recall (n) | 0.1152 (n=103) | 0.4757 (n=11) |
+| Partial recall (n) | 0.0803 (n=134) | 0.4099 (n=15) |
+| entity-constraint queries' Exact recall (n) | 0.4757 (n=11) | **0.4757 (n=11)** |
+| attribute-only, no-entity queries' Exact recall (n) | 0.0721 (n=92) | **0.0000 (n=0)** |
+
+The entity-anchored subset's own Exact recall is **byte-for-byte
+identical before and after (0.4757, n=11)** — a strong internal
+consistency check that the fix is precisely scoped: it never touches a
+query that already had a real entity constraint. The attribute-only,
+no-entity bucket is now **vacuous (n=0)**: by construction, such a query
+can no longer reach structural routing at all, since its only
+would-be-constraint is demoted to a `Preference` and the query falls
+through to `Punt`. The aggregate 6.6x recall gap P9-E04 measured between
+these two populations is not "fixed" so much as it is *resolved* — the
+losing population no longer participates in the structural-routed
+comparison, which is the intended effect of correctly routing it to
+`Punt` instead.
+
+### P9-E02 (traffic-weighted, per-class): still REVISE on structural_routed, on a much smaller population
+
+| | before | after (3 runs) |
+|---|---|---|
+| structural_routed n | 150 | 21 |
+| structural_routed relative NDCG gap | -20.81% | -25.05% (identical across all 3 runs — deterministic) |
+| structural_routed latency ratio | 2.55x | 2.15x – 3.91x (3 runs) |
+| verdict | REVISE | REVISE (unchanged) |
+
+The remaining 21-query population still fails the 10% relevance bar
+despite clearing the 2x latency bar in all 3 runs — this is a genuinely
+different, smaller population than before (only entity-anchored
+queries), and it is *not* the same 0.60x reversal P9-E04 found: P9-E02's
+own latency comparison is end-to-end (full delegate-restricted Solr
+round-trip vs. native's full `execute_planned`, including the cheaper
+`Hybrid`/`FastPath` retrieval step, not P9-E04's isolated
+identical-candidate-set ranking-only comparison), so the two are
+answering different questions and are not expected to agree numerically
+— both are reported rather than reconciled into one number.
+
+**Quality gate**: unchanged from P9-E05 (no production code changed in
+this checkpoint, only re-running existing binaries) — `cargo fmt --all
+-- --check`, `cargo clippy --workspace --all-targets --all-features --
+-D warnings`, `cargo test --workspace --all-features`, `cargo build
+--workspace --release` all confirmed clean in the P9-E05 checkpoint this
+one is built directly on top of.
+
+**What this does and does not establish**: independently confirms H1
+and H3 remain FALSIFIED after the defect repair — this is not a case
+where fixing the defect flips either hypothesis. It does, however,
+surface a materially new fact the before-fix measurement could not have
+revealed: native's ranking-pass execution cost scales with candidate-set
+size, and the previous "roughly comparable" H3 reading was itself an
+artifact of the defect producing unrealistically tiny candidate sets.
+Does **not** determine whether that scaling cost is fundamental or
+implementation-specific (explicitly deferred to Issue #38 E1). Does
+**not** change the P9-E02 structural_routed verdict (REVISE, both
+before and after) — the corrected baseline is smaller and cleaner, not
+suddenly a KEEP. This is the frozen, corrected Phase 9 baseline Issue
+#38 requires before E1 may begin.
