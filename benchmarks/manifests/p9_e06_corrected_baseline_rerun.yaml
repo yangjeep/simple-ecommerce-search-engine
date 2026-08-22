@@ -52,7 +52,7 @@ claim: >
   fix is precisely scoped: it never touches queries that already had an
   entity constraint.
 
-git_sha: PENDING
+git_sha: 2f8d9cbdc8855c02d62f4603957f8e14edfcc41e
 binaries:
   - crates/phase9-eval/src/bin/p9_e02_wands_physical_advantage.rs (unmodified)
   - crates/phase9-eval/src/bin/p9_e04_isolated_ranking_and_execution.rs (unmodified)

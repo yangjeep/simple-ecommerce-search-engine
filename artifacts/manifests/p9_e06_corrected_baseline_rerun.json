@@ -3,7 +3,7 @@
   "phase": "9",
   "issue": 34,
   "benchmark_manifest": "benchmarks/manifests/p9_e06_corrected_baseline_rerun.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "2f8d9cbdc8855c02d62f4603957f8e14edfcc41e",
   "dataset": {
     "name": "real WANDS catalog + queries + judgments",
     "products": 42994,
