@@ -323,3 +323,75 @@ same other limitations named in P6E-E00 apply here too: only
 `color_facet_under_category` has a clean same-session Solr timing
 counterpart; only single-node/single-shard OpenSearch was tested; the
 mechanism is inferred, not profiled.
+
+## P6E-E02: re-verifying Havenask's own "blocked" verdict, now that Docker itself unexpectedly runs
+
+**Why this was checked**: per the standing loop-rule discipline
+("do not assume earlier blocker decisions are still sufficient"),
+finding that the Maven-library route unblocked two of Havenask's three
+sibling engines (P6E-E00/E01) is exactly the kind of result that should
+prompt re-checking whether Havenask's own two independent blockers
+(Phase 6B/6C: Docker daemon absent; `registry.cn-hangzhou.aliyuncs.com`
+unreachable) still hold, rather than assuming a two-phases-old verdict
+is unchanged.
+
+**Hypothesis**: if either of Havenask's two independent blockers has
+changed in this environment, a live re-check should reveal it --
+falsifiable by directly testing both.
+
+**Design and result**: `which docker dockerd` now finds both binaries
+present (`docker` 29.3.1, `dockerd`) -- a real change from Phase 6B/6C's
+"Docker daemon absent" finding. `systemctl` doesn't work in this
+container (no systemd as PID 1), but `dockerd` starts successfully when
+launched directly (`nohup dockerd &`): containerd boots, the API socket
+comes up, `docker info`/`docker version` succeed against a live server.
+**This part of the prior blocker is now resolved.**
+
+However, actually pulling any container image fails uniformly across
+every registry tested:
+
+| Registry | Registry/auth API | Actual blob/image download |
+|---|---|---|
+| Docker Hub | reachable (401, normal) | `production.cloudfront.docker.com` -- 403 Forbidden |
+| ghcr.io | reachable (401, normal) | `pkg-containers.githubusercontent.com` -- 403 Forbidden |
+| AWS public ECR mirror | reachable | CloudFront-backed blob URL -- 403 Forbidden |
+| `registry.cn-hangzhou.aliyuncs.com` (Havenask's own) | **`CONNECT tunnel failed, 403`** -- blocked at the connection level entirely, unchanged from Phase 6B/6C | n/a |
+
+The pattern is consistent and general, not registry-specific: this
+environment's network policy allowlists container-registry *API* hosts
+(manifest/auth endpoints) but blocks the actual large-blob/CDN storage
+hosts every registry delegates real image data to (CloudFront for
+Docker Hub and the AWS mirror, `pkg-containers.githubusercontent.com`
+for ghcr.io) -- so **no container image can be fully pulled in this
+environment via any registry tested**, independent of the
+Docker-daemon-now-works finding above. Havenask's own registry remains
+additionally blocked at the connection level, a stricter, independent
+block unaffected by the CDN-host finding. A search for a Havenask
+mirror published to Docker Hub under plausible names (`havenask/havenask`,
+`alibaba/havenask`, `havenask/ha3`, `havenask/suez`) found none ("object
+not found" for all four).
+
+**Result**: Havenask remains genuinely blocked -- the headline verdict
+is unchanged -- but the *reason* is now more precisely characterized
+than Phase 6B/6C's "Docker daemon absent": Docker itself works; the real
+blocker is a network-policy restriction on container-image blob/CDN
+hosts that is general across every registry tested, compounding with
+Havenask's own registry being separately blocked at the connection
+level. This is a real correction to a prior finding's precision, not a
+change to its conclusion -- disclosed per this project's own "revisit
+blocked verdicts rather than assume they still hold" discipline, even
+though the outcome for Havenask specifically did not change.
+
+**Named limitations**: only four registries were tested (Docker Hub,
+ghcr.io, one AWS public mirror, Aliyun); a registry whose blob storage
+happens to sit on an already-allowlisted host (e.g. one using
+`repo1.maven.org`-style infrastructure, the one CDN host confirmed
+reachable in this whole project's history) was not found, but the
+search was not exhaustive. Whether a from-source Havenask build (via
+`bazel`, itself confirmed fetchable from GitHub releases via a 302
+redirect, though not tested end-to-end) could route around the
+container-registry blocker entirely was not attempted in this pass --
+Phase 6B/6C's own finding that a from-source build needs a "large,
+distributed-system-scale dependency graph" not yet justified under
+`CLAUDE.md`'s distributed-systems sequencing rule still stands
+unchanged.

@@ -133,6 +133,37 @@ distributed search engine too, strengthening rather than narrowing the
 P6E-E00 finding. commerce-native's own ordinal method remains
 dramatically faster than both.
 
+## P6E-E02: re-verifying Havenask's own "blocked" verdict
+
+Two engines unblocking via a previously-untried route (P6E-E00/E01) is
+exactly the signal the standing loop-rule discipline says should prompt
+re-checking whether Havenask's own blockers still hold, rather than
+resting on Phase 6B/6C's two-phases-old verdict. Live re-check: **the
+`docker`/`dockerd` binaries now exist in this container and the daemon
+starts successfully when launched directly** (no systemd needed) — a
+real change from "Docker daemon absent." But actually pulling any
+container image fails uniformly: Docker Hub, ghcr.io, and an AWS public
+ECR mirror all have reachable registry/auth APIs but return `403
+Forbidden` from their actual blob/CDN storage hosts
+(`production.cloudfront.docker.com`,
+`pkg-containers.githubusercontent.com`, and another CloudFront-backed
+host respectively) — a general network-policy restriction on
+container-image blob storage, not specific to any one registry.
+Havenask's own registry (`registry.cn-hangzhou.aliyuncs.com`) remains
+additionally blocked at the connection level (`CONNECT tunnel failed,
+403`), unchanged from Phase 6B/6C. No Havenask mirror was found on
+Docker Hub under plausible names.
+
+**Result**: Havenask's headline verdict is unchanged — it remains
+genuinely blocked — but the *reason* is now more precisely
+characterized than "Docker daemon absent": Docker itself works; no
+container image can be fully pulled via any registry tested in this
+environment, and Havenask's own registry is separately blocked at the
+connection level too. A real correction to a prior finding's precision,
+not its conclusion — disclosed per this project's own discipline even
+though the outcome for Havenask specifically did not change. See
+`docs/experiments/PHASE6E_LOG.md#P6E-E02` for the full account.
+
 ## Correction to `PHASE6C_DECISION.md`
 
 Phase 6C's "Live re-verification" section and its "Does claim" /
@@ -222,6 +253,15 @@ alongside each engine's three clean final runs, matching this project's
    grant, or a different non-root sandboxing approach) was not found in
    this pass; only the workaround of accepting indirect correctness
    evidence instead.
+8. **Havenask remains blocked (P6E-E02), and this is now more precisely
+   characterized rather than resolved**: Docker itself works in this
+   environment (a real change from Phase 6B/6C's "daemon absent"), but
+   no container image can be pulled via any registry tested (blob/CDN
+   storage hosts are blocked network-wide), and Havenask's own registry
+   is separately blocked at the connection level. A from-source
+   Havenask build was not attempted — it remains a materially larger,
+   distributed-system-scale undertaking that `CLAUDE.md`'s own
+   sequencing rule cautions against pursuing before it is justified.
 
 ## What would be built next if scaling up
 
@@ -272,7 +312,12 @@ class each; that this is a genuinely new pair of cross-engine data
 points supporting (not contradicting) commerce-native's own Phase 6D
 color-facet finding; that all nine blockers hit across both engines
 were concrete, understood, and (all but one) fixed, not silently worked
-around.
+around; that Havenask's own blockers WERE re-verified live in this
+phase (P6E-E02), refining "Docker daemon absent" into a more precise
+"Docker works, but container-image blob storage is blocked network-wide,
+and Havenask's own registry is separately blocked" — a correction to
+precision, even though the headline "still blocked" conclusion is
+unchanged.
 
 **Does not claim**: that OpenSearch's numbers carry the same strength of
 correctness evidence as Elasticsearch's own (indirect cross-process
@@ -283,10 +328,10 @@ operation class this project measures; that the "aggregation slower
 than Solr facet.field" finding is mechanistically understood rather than
 observed, or that the same mechanism explains both engines' shared
 result; that a multi-node topology would show the same profile for
-either engine; that Havenask's from-source-build blockers (Phase 6B/6C,
-unchanged) have been revisited in this phase (they have not — this
-phase's scope was specifically the Maven-library route Phase 6C never
-tried for Elasticsearch/OpenSearch, not a fresh Havenask attempt).
+either engine; that a from-source Havenask build was attempted or that
+its own independent from-source blockers (Phase 6B/6C: `bazel` absent,
+a distributed-system-scale dependency graph) have changed — they were
+not re-tested in this pass, only the two container-based blockers were.
 
 **Decision: PROCEED.** This phase directly answers the user's own
 standing instruction to revisit Elasticsearch/OpenSearch rather than

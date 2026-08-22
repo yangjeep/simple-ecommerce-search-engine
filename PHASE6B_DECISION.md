@@ -1,5 +1,18 @@
 # Phase 6B Decision (Issue #21 Phase 6, continuing from Issue #23 / Phase 6A)
 
+> **Addendum (Phase 6E / P6E-E02, `PHASE6E_DECISION.md`)**: this
+> document's own Havenask "Docker daemon absent" finding (below) was
+> re-verified live in Phase 6E. The `docker`/`dockerd` binaries now
+> exist in this container and the daemon starts successfully when
+> launched directly — that specific finding no longer holds as stated.
+> Havenask remains blocked overall, but for a more precisely
+> characterized reason: no container image can be pulled via any
+> registry tested (blob/CDN storage hosts are blocked network-wide),
+> and Havenask's own registry is separately blocked at the connection
+> level, unchanged. This document's own text is left unedited below,
+> per this project's "do not rewrite history" discipline; see
+> `PHASE6E_DECISION.md` for the corrected, extended finding.
+
 **Decision: PROCEED**, with two explicit narrowings and one withdrawn
 claim from this document's own first draft.
 

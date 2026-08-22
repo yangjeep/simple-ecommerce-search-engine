@@ -60,6 +60,7 @@ entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 - `p6d_e03_ordinal_facet_memory.json`
 - `p6e_e00_embedded_elasticsearch.json`
 - `p6e_e01_embedded_opensearch.json`
+- `p6e_e02_havenask_docker_recheck.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

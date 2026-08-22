@@ -346,6 +346,20 @@ Elasticsearch's, meaning this is a property of general-purpose
 aggregation frameworks on Lucene, not a quirk of one engine's 8.x
 release line.
 
+**Two engines unblocking prompted re-checking Havenask's own blockers
+too (P6E-E02) — the verdict held, but its precision improved.**
+`docker`/`dockerd` now exist in this container and the daemon runs when
+started directly, a real change from Phase 6B/6C's "Docker daemon
+absent." But no container image can actually be pulled via any registry
+tested — Docker Hub, ghcr.io, and an AWS public ECR mirror all have
+reachable registry APIs but block their actual blob/CDN storage hosts
+network-wide — and Havenask's own registry remains separately blocked
+at the connection level, unchanged. Havenask is still genuinely
+blocked; the headline conclusion didn't change, but "Docker daemon
+absent" was itself imprecise, and re-checking it — rather than assuming
+a two-phases-old finding still holds exactly as stated — is what this
+project's own loop discipline asks for.
+
 **First multi-tenant result (Phase 7 — terminal decision: PROCEED, `PHASE7_DECISION.md`)**:
 the first phase in this project's history to build and measure more
 than one tenant's index in one process, using WANDS' real category

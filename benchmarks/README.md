@@ -222,6 +222,16 @@ same as Phases 0–5:
   rather than a live in-process check. Timing result: also 1.2x-2.25x
   slower than Solr's own `facet.field` at every checkpoint — the same
   qualitative finding as Elasticsearch's own; see `PHASE6E_DECISION.md`.
+- `p6e_e02_havenask_docker_recheck.yaml` — not a benchmark: a live
+  re-verification of Havenask's own two Phase 6B/6C blockers, prompted
+  by P6E-E00/E01 unblocking two sibling engines via a previously-untried
+  route. `docker`/`dockerd` now exist and the daemon runs (a real change
+  from "Docker daemon absent"), but no container image pulls via any
+  registry tested (Docker Hub, ghcr.io, AWS public ECR mirror all block
+  their blob/CDN hosts network-wide); Havenask's own registry remains
+  separately blocked at the connection level, unchanged. Net result:
+  Havenask still genuinely blocked, now more precisely characterized;
+  see `PHASE6E_DECISION.md`.
 
 `benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
 populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
