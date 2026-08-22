@@ -229,19 +229,139 @@ relevance or economics claim — that is exactly what P9-E02 tests next.
 `BitmapTantivyDelegate` is not yet wired into any real WANDS pipeline or
 `commerce_core::plan::execute_planned` call.
 
-## P9-E02: (next) WANDS lexicon compiler + relevance module + physical-advantage re-run
+## P9-E02: WANDS physical-advantage-by-query-class re-run — REVISE (structural-routed relevance still trails Solr)
 
-Not yet started. Requires: a WANDS-schema-aware lexicon compiler
-(Category/ProductType/attribute-aware, analogous to but distinct from
-`compile_lexicon`, which is ESCI/Brand-shaped), a WANDS relevance-grading
-module (3-way `Exact`/`Partial`/`Irrelevant` label scale — confirmed via
-direct scan of `dataset_cache/wands/label.csv`: 25,614 Exact / 146,633
-Partial / 61,201 Irrelevant across 233,448 judgments over 480 queries —
-distinct from `round1_eval::relevance::EsciLabel`'s 4-way scale, no code
-currently maps WANDS labels to NDCG grades at all), and a fresh Solr
-baseline query path (the existing `wands_bench` Solr core already indexes
-`title`/`description` as real `text_general` fields per
-`scripts/datasets/solr_index_wands.py`, so free-text relevance queries are
-already supported by the existing schema — reusable, not rebuilt), plus
-wiring `BitmapTantivyDelegate` (P9-E01) into a real `Hybrid` execution
-path against that catalog.
+**Hypothesis**: with both disclosed defects fixed (P9-E00, P9-E01), and on
+a catalog with genuine multi-entity structural data, `commerce_core`'s
+structural/hybrid execution shows a materially different (not uniformly
+STOP-leaning) relevance and/or latency picture for the structural-dominant
+query classes than Phase 2 found on ESCI.
+
+**Decision criteria, stated before implementation**: KEEP/PROCEED if
+native NDCG@10 is within 10% relative of Solr's AND native mean latency
+is >=2x lower, on the traffic that actually exercises structural
+execution; REVISE if only one axis clears; STOP/negative if relevance
+still trails materially — preserved as a genuine result, not forced.
+
+**A correction, found before implementation, not assumed**: a
+`compile_lexicon`-equivalent for WANDS was originally scoped as new work
+(see the now-superseded text this section replaced). Direct source read
+of `commerce_core::cold_start::profile::{CatalogProfile, compile_lexicon}`
+found both are already fully catalog-agnostic — `CatalogProfile::build`
+takes a generic `&Catalog` plus `&[Brand]`/`&[ProductType]`/`&[Category]`,
+and `compile_lexicon` derives hard constraints from whatever it profiles.
+No new lexicon compiler was needed; WANDS's own `IngestedCatalog.categories`/
+`.product_types` (from `phase6a_eval::catalog::build_catalog`) plug in
+directly (`brands: &[]`, since WANDS has none).
+
+**Implementation** (`crates/phase9-eval/src/bin/p9_e02_wands_physical_advantage.rs`,
+`crates/phase9-eval/src/wands_relevance.rs`): loads the real WANDS catalog/
+queries/judgments; builds a native `CatalogIndex` + lexicon via
+`CatalogProfile`/`compile_lexicon` (`min_enum_frequency=1`, no threshold
+sweep this pass — a disclosed scope limit, not a hidden one); builds a
+Tantivy index + `BitmapTantivyDelegate` (P9-E01); for each of the 480 real
+queries, compiles it, classifies it via `round1_eval::query_taxonomy::classify9`,
+executes it through the real `commerce_core::plan::execute_planned`
+(FastPath/Hybrid/Punt router, exactly the "integrated hybrid system"
+Issue #34 Section A asks for) and separately against a fresh, same-run
+Solr baseline (`wands_bench` core, re-indexed immediately before this run
+via `scripts/datasets/solr_index_wands.py`); scores both against WANDS's
+real judgments via `wands_relevance::ndcg_recall_mrr`. A full warmup pass
+(480 queries, both engines, discarded) precedes the measured pass — this
+project's own P2-E16 precedent (an unwarmed Solr latency measurement was
+previously found broken by exactly this omission) — after an initial
+unwarmed run showed Solr's mean latency artificially inflated (~4.9ms
+cold vs ~1.2-1.5ms warm).
+
+**Result, adversarially inspected before being trusted**:
+
+| routing | n | native NDCG@10 | Solr NDCG@10 | native ms | Solr ms |
+|---|---|---|---|---|---|
+| punt_routed (no structural constraint) | 330 (68.75%) | 0.666 | 0.621 | ~0.5 | ~1.1-1.4 |
+| structural_routed (FastPath+Hybrid) | 150 (31.25%) | 0.1192-0.1194 | 0.1505 | ~0.5 | ~1.2-1.6 |
+
+**The traffic-weighted overall number is real but misleading if read as a
+structural-retrieval win, and this experiment's own first version
+initially reported it that way before a routing-split breakdown was
+added and caught it**: native NDCG@10=0.4951 vs Solr's 0.4740 (+4.46%
+relative, traffic-weighted) looks like a KEEP-leaning result — but
+`execute_planned`'s `Punt` outcome (330/480 queries, chosen whenever
+`query.constraints` is empty) calls the delegate with `restrict_to: None`,
+so "native" there is just embedded Tantivy's own plain-text relevance
+against remote Solr's edismax relevance on the same title/description
+text — an engine-choice question, **not** a test of commerce-native
+structural retrieval at all. Splitting by routing outcome (added
+specifically because the per-class table alone did not make this
+distinction legible) shows the traffic-weighted "win" is driven entirely
+by that 68.75% Punt-routed majority. On the 31.25% of traffic that
+actually reaches `FastPath`/`Hybrid` — the traffic Issue #34 asks
+about — native NDCG@10 trails Solr by a stable **-20.7% to -20.8%
+relative** gap, reproduced across 6 independent runs (3 during
+development, 3 for the record;
+`docs/research/artifacts/p9_e02_wands_physical_advantage_run1/run{1,2,3}.txt`).
+Native clears only the latency bar (2.25x-2.90x across runs, the range
+itself reflecting how warm the persistent Solr server already was at
+measurement time — both engines are compared fairly within any one run,
+but the absolute Solr-side number depends on server warmth, a real,
+disclosed operational fact, not a methodology defect).
+
+**Per-class detail, not smoothed into the routing split alone**:
+`variant_scoped_structural` (n=10, the smallest class) shows the single
+worst native loss — 0.0396 vs Solr's 0.2995. Three sample queries
+("pineapple", "peacock", "industrial") were inspected directly: the first
+ties (both engines find the same lone Exact match); the second shows
+native ranking two unjudged items *above* the real Exact match Solr
+ranks first; the third shows native's entire top-3 unjudged while Solr's
+top-3 are all Exact — real evidence that, even where native's structural
+candidate set contains a match, its ranking signal (P9-E00's intrinsic
+text-overlap default, or ties falling back to id order) is not yet
+competitive with Solr's BM25 for surfacing it first. `structural_plus_lexical_residual`
+(n=103, the largest structural-routed class, mostly `Hybrid`) is close —
+native 0.1585-0.1591 vs Solr's 0.1619, within noise — showing P9-E01's
+bitmap delegate is not itself the bottleneck; the gap concentrates in the
+classes with little or no delegate involvement (`variant_scoped_structural`
+is mostly `FastPath`).
+
+**Why WANDS's richer schema didn't produce more pure-structural traffic,
+a real finding, not a bug**: zero queries classified as `structural_exact_entity`,
+`selective_multi_attribute_structural`, or `range_plus_structural`.
+Inspection of 5 sample fully-unresolved queries ("salon chair", "dinosaur",
+"chair and a half recliner", "sofa with ottoman", "driftwood mirror")
+shows why: WANDS's `category_leaf`/`product_class` vocabulary is
+compound/hierarchical ("Massage Chairs", "Furniture / Bedroom Furniture /
+Beds & Headboards / Beds / Twin Beds"), not the single free-standing nouns
+shoppers actually type ("chair"). `compile_lexicon`'s exact-lowercased-
+phrase lexicon keying (inherited unchanged from ESCI's brand-token
+design) rarely matches a WANDS query verbatim against that vocabulary —
+a real limitation of the *lexicon-compilation* step, not of WANDS's
+underlying data richness, and not fixed in this pass (out of scope for
+"the smallest experiment that can answer the question").
+
+**Quality gate**: `cargo fmt --all -- --check` clean, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean, `cargo
+test --workspace --all-features` 0 failures, `cargo build --workspace
+--release` clean.
+
+**Decision: REVISE.** Structural-routed traffic clears the latency bar
+(>=2x, comfortably) but not the relevance bar (needed within -10%
+relative, found at ~-20.7%). This is a real, reproduced negative result
+for the relevance side of the commerce-native structural-execution thesis
+on a second real catalog with genuinely richer structural entities than
+ESCI — Phase 2's STOP-leaning relevance finding replicates rather than
+reverses. It is not a clean STOP either: latency clears decisively, and
+`structural_plus_lexical_residual` (the class the bitmap-delegate fix most
+directly targets) is within noise of Solr, not a loss. See PHASE9_DECISION.md
+for the full decision writeup and what this implies for Issue #34's
+remaining scope.
+
+**Named limitations, not resolved this pass**: (a) `min_enum_frequency`
+was fixed at `1` (no threshold sweep, unlike Phase 2's {1,5,25,100}
+sweep) — a real, disclosed scope limit; (b) the lexicon-compilation gap
+identified above (compound category/product-class vocabulary rarely
+matching literal query text) was diagnosed but not fixed; (c) latency was
+measured single-shot per query (no `bench-harness::measured_repeat`
+per-query repetition), adequate for a first-pass economics signal but not
+as statistically rigorous as this project's own bootstrap-CI convention
+elsewhere; (d) Solr's own latency figure is sensitive to how warm its
+persistent server process already is, not fully isolated via a
+steady-state warmup protocol.

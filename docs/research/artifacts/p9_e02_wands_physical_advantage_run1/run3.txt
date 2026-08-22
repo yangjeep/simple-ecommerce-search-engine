@@ -1,0 +1,49 @@
+=== P9-E02: WANDS physical-advantage-by-query-class + traffic-weighted economics ===
+loading WANDS catalog...
+catalog: 42994 products, 1623 categories, 860 product types
+building native index + lexicon...
+profile: 7787 distinct structural/attribute values (min_enum_frequency=1)
+building bitmap-delegate Tantivy index...
+loading queries + labels...
+480 queries, 480 judged query groups
+warmup pass (480 queries, both engines, discarded)...
+evaluated 480 queries (0 skipped, no judgments found)
+routing distribution: {"FastPath": 15, "Hybrid": 135, "Punt": 330}
+sample fully-unresolved queries (zero constraints, 5 of 480 total): ["salon chair", "dinosaur", "chair and a half recliner", "sofa with ottoman", "driftwood mirror"]
+
+=== variant_scoped_structural sample queries (its real, disclosed native loss vs Solr) ===
+query: "pineapple"
+  native top-3: ["21789(Exact)"]
+  solr   top-3: ["21789(Exact)"]
+query: "peacock"
+  native top-3: ["7342(unjudged)", "40630(unjudged)", "40634(Exact)"]
+  solr   top-3: ["40634(Exact)"]
+query: "industrial"
+  native top-3: ["253(unjudged)", "329(unjudged)", "814(unjudged)"]
+  solr   top-3: ["25213(Exact)", "2242(Exact)", "8293(Exact)"]
+
+class                                      n nat_ndcg solr_ndcg nat_rec solr_rec nat_mrr   nat_ms  solr_ms
+variant_scoped_structural                 10   0.0396   0.2995  0.0013   0.0133  0.1444   0.0413   1.1455
+structural_plus_lexical_residual         103   0.1585   0.1619  0.0099   0.0100  0.2411   0.4254   1.1661
+structural_plus_semantic_residual          3   0.2516   0.2657  0.0240   0.0240  0.3333   0.3787   1.0976
+lexical_first                            186   0.7184   0.6554  0.0690   0.0644  0.8695   0.4130   1.0649
+ambiguous_punt                            56   0.4288   0.4442  0.0338   0.0317  0.6637   0.5736   1.0384
+long_tail_noisy                          122   0.5122   0.4939  0.0409   0.0398  0.6856   0.7261   1.0693
+
+=== traffic-weighted totals (weighted by real class frequency in this query mix) ===
+native NDCG@10: 0.4950  |  Solr NDCG@10: 0.4740
+relative NDCG@10 gap (native vs solr): +4.44%
+native mean latency: 0.5060ms  |  Solr mean latency: 1.0866ms
+mean latency ratio (solr / native): 2.15x
+
+=== routing-split breakdown (the scoping caveat above, made explicit) ===
+routing                                                     n  nat_ndcg solr_ndcg   nat_ms  solr_ms
+punt_routed (delegate-only, no structural constraint)     330    0.6659    0.6210   0.5149   1.0596
+structural_routed (FastPath+Hybrid)                       150    0.1189    0.1505   0.4866   1.1458
+
+=== overall traffic-weighted verdict (context only -- see the structural-routed-only verdict below for the actual Issue #34 decision) ===
+relevance within 10% of Solr AND >=2x latency advantage, traffic-weighted overall.
+
+=== VERDICT (structural_routed traffic only -- FastPath+Hybrid, the actual Issue #34 question) ===
+structural_routed: n=150, native NDCG@10=0.1189, solr NDCG@10=0.1505, relative gap=-21.00%, latency ratio=2.35x
+=== REVISE: one axis clears the bar, not both, on structural-routed traffic specifically ===

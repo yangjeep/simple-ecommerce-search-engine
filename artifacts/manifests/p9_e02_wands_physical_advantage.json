@@ -1,0 +1,37 @@
+{
+  "experiment_id": "P9-E02",
+  "phase": "9",
+  "issue": 34,
+  "benchmark_manifest": "benchmarks/manifests/p9_e02_wands_physical_advantage.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog + queries + judgments",
+    "products": 42994,
+    "categories": 1623,
+    "product_types": 860,
+    "queries": 480,
+    "judgments": 233448
+  },
+  "engine_config": {
+    "native": "commerce_core::plan::execute_planned + phase9_eval::bitmap_delegate::BitmapTantivyDelegate",
+    "baseline": "fresh Apache Solr 9.10.1 (wands_bench core, re-indexed same-run)"
+  },
+  "repetitions": "3 independent full-480-query runs for the record (plus 3 during development)",
+  "warmup": "one full 480-query pass per engine, discarded",
+  "seed": "n/a (deterministic real-data selection, no sampling)",
+  "raw_results_path": "docs/research/artifacts/p9_e02_wands_physical_advantage_run1/",
+  "analysis_version": "docs/experiments/PHASE9_LOG.md#p9-e02",
+  "decision": "PHASE9_DECISION.md",
+  "headline_result": {
+    "verdict": "REVISE",
+    "overall_traffic_weighted_native_ndcg10": 0.4951,
+    "overall_traffic_weighted_solr_ndcg10": 0.4740,
+    "overall_relative_gap_pct": "+4.46 (misleading in isolation, see routing_split)",
+    "routing_split": {
+      "punt_routed_share": "330/480 (68.75%), native NDCG10=0.666 vs solr=0.621 (native wins, but this is embedded-Tantivy-vs-remote-Solr on plain text, not a structural-retrieval comparison)",
+      "structural_routed_share": "150/480 (31.25%, FastPath+Hybrid), native NDCG10=0.1192-0.1194 vs solr=0.1505 across repeated runs (native loses, ~-20.7% to -20.8% relative, stable)"
+    },
+    "structural_routed_latency_ratio_range": "2.25x-2.90x (solr/native, varies with how warm the persistent Solr server already is; consistently clears the project's >=2x bar)",
+    "decision_relevant_verdict": "REVISE -- structural-routed traffic clears the latency bar but not the relevance bar; Phase 2's STOP-leaning relevance finding replicates on WANDS"
+  }
+}
