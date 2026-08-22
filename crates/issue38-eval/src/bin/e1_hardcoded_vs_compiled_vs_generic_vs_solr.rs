@@ -299,9 +299,9 @@ fn main() {
                     let start = std::time::Instant::now();
                     let mut last_len = 0;
                     for _ in 0..IN_PROCESS_BATCH {
-                        let bm = index_a.indexed_candidates(&[ResolvedConstraint::Structural(
-                            StructuralConstraint::ProductType(*id),
-                        )]);
+                        let bm = std::hint::black_box(index_a.indexed_candidates(&[
+                            ResolvedConstraint::Structural(StructuralConstraint::ProductType(*id)),
+                        ]));
                         last_len = bm.len();
                     }
                     let elapsed = start.elapsed().as_secs_f64() * 1000.0 / IN_PROCESS_BATCH as f64;
@@ -312,7 +312,7 @@ fn main() {
                     let start = std::time::Instant::now();
                     let mut last_len = 0;
                     for _ in 0..IN_PROCESS_BATCH {
-                        let bm = index_b.query_eq("product_type", name);
+                        let bm = std::hint::black_box(index_b.query_eq("product_type", name));
                         last_len = bm.len();
                     }
                     let elapsed = start.elapsed().as_secs_f64() * 1000.0 / IN_PROCESS_BATCH as f64;
@@ -323,7 +323,7 @@ fn main() {
                     let start = std::time::Instant::now();
                     let mut last_len = 0;
                     for _ in 0..IN_PROCESS_BATCH {
-                        let bm = index_b2.query_eq(name);
+                        let bm = std::hint::black_box(index_b2.query_eq(name));
                         last_len = bm.len();
                     }
                     let elapsed = start.elapsed().as_secs_f64() * 1000.0 / IN_PROCESS_BATCH as f64;
@@ -334,8 +334,9 @@ fn main() {
                     let start = std::time::Instant::now();
                     let mut last_len = 0;
                     for _ in 0..LINEAR_SCAN_BATCH {
-                        let hits =
-                            store_c.query_eq("product_type", &GenericValue::Str(name.clone()));
+                        let hits = std::hint::black_box(
+                            store_c.query_eq("product_type", &GenericValue::Str(name.clone())),
+                        );
                         last_len = hits.len() as u64;
                     }
                     let elapsed = start.elapsed().as_secs_f64() * 1000.0 / LINEAR_SCAN_BATCH as f64;

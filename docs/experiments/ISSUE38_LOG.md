@@ -63,22 +63,29 @@ small hand-built fixture with three product types, multi/single-hit and
 absent-value cases). All pass. The main experiment binary also
 cross-checks hit *counts* across all 40 real workload queries on every
 run (0 mismatches in every run recorded here) -- a benchmark comparing
-differently-correct engines would be worthless.
+differently-correct engines would be worthless. **D (Solr) is
+deliberately excluded from this specific cross-check**: it is reported as
+context only throughout this experiment, not part of the B-vs-A gate
+decision, and Solr's own tokenization/field-matching semantics for
+`product_class` are a separate, already-established concern from earlier
+Phase 9 work, not re-litigated here.
 
 ### First result: B fails the gate
 
 Path B (`CompiledEnumIndex`) vs A, p50 latency, across 5 independent
-runs:
+runs (numbers below are the final, `black_box`-corrected figures --
+see "A second methodology bug" below for the pre-correction numbers,
+which read higher and were caught and replaced, not blended in):
 
 | run | A p50 (ms) | B p50 (ms) | B overhead |
 |---|---|---|---|
-| 1 | 0.0001 | 0.0001 | +76.50% |
-| 2 | 0.0001 | 0.0001 | +74.94% |
-| 3 | 0.0001 | 0.0001 | +75.25% |
-| 4 | 0.0001 | 0.0001 | +77.13% |
-| 5 | 0.0001 | 0.0001 | +76.74% |
+| 1 | 0.0001 | 0.0001 | +63.55% |
+| 2 | 0.0001 | 0.0001 | +63.46% |
+| 3 | 0.0001 | 0.0001 | +63.03% |
+| 4 | 0.0001 | 0.0001 | +63.73% |
+| 5 | 0.0001 | 0.0001 | +64.50% |
 
-**DOES NOT PASS** the `<=5%` initial target, reproducibly (a ~75%
+**DOES NOT PASS** the `<=5%` initial target, reproducibly (a ~63-65%
 overhead band across 5 runs, not a one-off).
 
 ### Localizing the overhead, per Issue #38's own instruction
@@ -128,15 +135,16 @@ time, not baked into the domain model" property Issue #38 asks about.
 | A | 2 | 42 |
 | B2 | 2 | 42 |
 
-**Identical to A.** B2 vs A, p50 latency, across 5 independent runs:
+**Identical to A.** B2 vs A, p50 latency, across 5 independent runs
+(final, `black_box`-corrected figures):
 
 | run | A p50 (ms) | B2 p50 (ms) | B2 overhead |
 |---|---|---|---|
-| 1 | 0.0001 | 0.0001 | -13.04% |
-| 2 | 0.0001 | 0.0001 | -12.55% |
-| 3 | 0.0001 | 0.0001 | -12.10% |
-| 4 | 0.0001 | 0.0001 | -12.64% |
-| 5 | 0.0001 | 0.0001 | -10.16% |
+| 1 | 0.0001 | 0.0001 | -5.50% |
+| 2 | 0.0001 | 0.0001 | -5.24% |
+| 3 | 0.0001 | 0.0001 | -6.37% |
+| 4 | 0.0001 | 0.0001 | -4.96% |
+| 5 | 0.0001 | 0.0001 | -5.31% |
 
 **PASSES** the `<=5%` target comfortably and reproducibly -- B2 is not
 measurably slower than A at all in this measurement (the small negative
@@ -181,12 +189,45 @@ Post-fix, both B's failure and B2's pass are stable and reproducible
 across 5 independent runs (see tables above) -- the sign-flip artifact
 is gone, not merely relocated.
 
+### A second methodology bug, caught adversarially before finalizing
+
+Before drawing the final conclusion, an adversarial review question was
+asked directly: with `[profile.release] lto = true, codegen-units = 1`
+(this workspace's own release profile) and a batch loop that calls the
+*same* method with the *same* arguments 200 times, discarding every
+result but the last, is there any risk the compiler proves the repeated
+calls are redundant and hoists/elides work it should not be able to for
+an honest per-call measurement? This is a real, known class of
+microbenchmarking error in Rust, not a hypothetical one.
+
+Checked directly: the batch loops did not wrap each iteration's result in
+`std::hint::black_box`, only reading `.len()` into a variable overwritten
+every iteration. Adding `std::hint::black_box` around each iteration's
+returned bitmap (forcing the optimizer to treat every call as
+independently observable) **did change the measured numbers**: B's
+overhead dropped from the ~75% band above to a **~63-65% band** (still
+clearly failing the gate, just a less inflated failure), and B2's
+overhead dropped in magnitude from ~-10% to -13% to **~-5% to -6%**
+(still clearly passing, just not as dramatically "better than A" as the
+unguarded measurement suggested). Both qualitative conclusions
+(B fails, B2 passes) are unchanged and remain reproducible across 5
+fresh runs with the fix applied -- but the *magnitudes* reported
+everywhere in this log and in `ISSUE38_DECISION.md` are the
+`black_box`-corrected ones, not the first, uncorrected reading, which is
+not reused anywhere as evidence.
+
+This is disclosed for the same reason as the sign-flip bug above: a
+benchmark result that happens to look clean is not automatically a
+trustworthy one, and this project's own discipline is to keep checking
+until a result survives an adversarial pass, not to stop at the first
+number that supports a conclusion.
+
 ### C (runtime-generic strawman) and D (Solr): context
 
 | path | p50 ratio vs A (range across 5 runs) |
 |---|---|
-| C (`GenericStore`, linear scan) | ~8,145x - 8,232x |
-| D (Solr, cross-process) | ~9,353x - 9,477x |
+| C (`GenericStore`, linear scan) | ~7,452x - 7,595x |
+| D (Solr, cross-process) | ~7,133x - 7,851x |
 
 C's cost confirms the "accidental Rust-Solr" this project's architecture
 deliberately avoids: representation genericity (a per-document field map)

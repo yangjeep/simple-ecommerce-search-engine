@@ -21,18 +21,19 @@ claim: >
   compile_lexicon discovers real attribute vocabulary, into the SAME
   physical primitive CatalogIndex's own generic enum_bitmaps path already
   uses for arbitrary attributes -- a (String, String)-keyed HashMap.
-  FIRST RESULT: B overhead vs A = +74.94% to +77.13% across 5 independent
-  runs (p50 latency, 200x-batched sub-microsecond timing) -- DOES NOT
-  PASS the <=5% target. Per-query allocation counts precisely localize
-  the cause: A allocates 2/query, B allocates 4/query for the identical
-  query -- exactly the 2 extra Strings B's tuple-key lookup must clone to
-  build an owned (String, String) for every HashMap::get call.
+  FIRST RESULT: B overhead vs A = +63.03% to +64.50% across 5 independent
+  runs (p50 latency, 200x-batched, black_box-corrected sub-microsecond
+  timing) -- DOES NOT PASS the <=5% target. Per-query allocation counts
+  precisely localize the cause: A allocates 2/query, B allocates 4/query
+  for the identical query -- exactly the 2 extra Strings B's tuple-key
+  lookup must clone to build an owned (String, String) for every
+  HashMap::get call.
 
   B2 (redesigned compiled schema, added after localizing B's overhead):
   issue38_eval::CompiledOrdinalIndex -- one dedicated HashMap<String,
   RoaringBitmap> per compiled field (no field name in the key, so no
   tuple allocation), mirroring CatalogIndex's own Issue #21 Phase 6D
-  dictionary precedent. RESULT: B2 overhead vs A = -10.16% to -13.31%
+  dictionary precedent. RESULT: B2 overhead vs A = -4.96% to -6.37%
   across 5 independent runs (B2 is not slower than A at all, within this
   measurement's noise) -- PASSES the <=5% target comfortably. Per-query
   allocations: B2 allocates exactly 2/query, identical to A. This
@@ -43,27 +44,36 @@ claim: >
 
   C (deliberate runtime-generic strawman, issue38_eval::GenericStore, a
   full per-document field map + linear scan, no precomputed index at
-  all): ~8,000-8,200x slower than A (p50), confirming the "accidental
+  all): ~7,450-7,600x slower than A (p50), confirming the "accidental
   Rust-Solr" cost this project's architecture deliberately avoids.
 
   D (fresh, same-run Apache Solr 9.10.1 wands_bench core, fq=product_class):
-  ~9,300-9,500x slower than A (p50) -- context only, a cross-process/
+  ~7,100-7,850x slower than A (p50) -- context only, a cross-process/
   network-bound comparison, not a fair in-process apples-to-apples
   measurement the way A/B/B2/C are against each other.
 
-  A real methodology bug was caught and fixed mid-experiment: the first
-  measurement design (unbatched per-call Instant::now() timing, 10 reps)
-  produced a SIGN FLIP on B's overhead between two otherwise-identical
-  runs (+19% one run, -15% the next) once B2 joined the round-robin --
-  at ~1 microsecond per query, timer-call overhead and OS jitter are
-  comparable in magnitude to the operation itself. Fixed by batching 200
-  consecutive same-query calls per timed sample for the three O(1)
-  in-process paths (A/B/B2) and raising reps to 30 (this project's own
-  ">=30 reps for decision-grade" bar) -- batching path C's O(catalog
-  size) linear scan the same way instead made one run take >5 minutes
-  (caught directly, not shipped), so C stays unbatched (single-call
-  timing), matching Solr's already-far-above-timer-resolution absolute
-  latency (~0.6-0.75ms, no batching needed for precision there).
+  Two real methodology bugs were caught and fixed mid-experiment, not
+  one. (1) The first measurement design (unbatched per-call
+  Instant::now() timing, 10 reps) produced a SIGN FLIP on B's overhead
+  between two otherwise-identical runs (+19% one run, -15% the next)
+  once B2 joined the round-robin -- at ~1 microsecond per query,
+  timer-call overhead and OS jitter are comparable in magnitude to the
+  operation itself. Fixed by batching 200 consecutive same-query calls
+  per timed sample for the three O(1) in-process paths (A/B/B2) and
+  raising reps to 30 (this project's own ">=30 reps for decision-grade"
+  bar) -- batching path C's O(catalog size) linear scan the same way
+  instead made one run take >5 minutes (caught directly, not shipped),
+  so C stays unbatched (single-call timing), matching Solr's
+  already-far-above-timer-resolution absolute latency (~0.6-0.75ms, no
+  batching needed for precision there). (2) An adversarial review
+  question (does the release profile's lto=true/codegen-units=1 let the
+  optimizer treat 200 identical repeated calls as partly redundant
+  without std::hint::black_box on each iteration's result?) found a
+  real, if smaller, effect: adding black_box changed B's overhead from a
+  ~75% band to the ~63-65% band reported above, and B2's from ~-10-13%
+  to ~-5-6% -- same qualitative verdicts, corrected magnitudes, both
+  fully disclosed in docs/experiments/ISSUE38_LOG.md rather than
+  silently replaced.
 
 git_sha: 3b0b7fc4008d1e5e24fb0a682e70412f4298c9cb
 binary: crates/issue38-eval/src/bin/e1_hardcoded_vs_compiled_vs_generic_vs_solr.rs

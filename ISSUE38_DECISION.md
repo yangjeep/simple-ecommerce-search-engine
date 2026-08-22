@@ -33,7 +33,7 @@ next increment, not silently deferred.
   40-query, selectivity-stratified `product_type` workload:
   - **A** (hard-coded `CatalogIndex::product_type_bitmaps`) vs
     **B** (naive compiled schema, `(field,value)`-tuple-keyed generic
-    bitmap): B's p50 overhead vs A is **+74.94% to +77.13%** across 5
+    bitmap): B's p50 overhead vs A is **+63.03% to +64.50%** across 5
     independent runs -- **DOES NOT PASS** the `<=5%` initial target.
   - Per-query allocation counts (a real, deterministic metric) precisely
     localize the cause: A allocates 2/query, B allocates 4/query --
@@ -46,15 +46,24 @@ next increment, not silently deferred.
     as that falsifiable reason, a redesigned compiled-schema path
     (**B2**, one dedicated `HashMap<String, RoaringBitmap>` per compiled
     field, no tuple key) was built and re-tested: B2's p50 overhead vs A
-    is **-10.16% to -13.31%** across 5 independent runs -- **PASSES**
+    is **-4.96% to -6.37%** across 5 independent runs -- **PASSES**
     comfortably, with per-query allocations (2/query) identical to A.
   - **C** (a deliberate runtime-generic strawman, no precomputed index at
-    all) is ~8,145x-8,232x slower than A; **D** (Solr, cross-process
-    context) is ~9,353x-9,477x slower than A.
-  - A real measurement-methodology bug (sub-microsecond individual-call
-    timing producing a sign flip on B's overhead between two runs) was
-    caught and fixed mid-experiment via call-batching, disclosed in
-    `ISSUE38_LOG.md` rather than silently corrected.
+    all) is ~7,452x-7,595x slower than A; **D** (Solr, cross-process
+    context) is ~7,133x-7,851x slower than A.
+  - **Two** real measurement-methodology bugs were caught and fixed
+    mid-experiment, not one: (1) sub-microsecond individual-call timing
+    producing a sign flip on B's overhead between two runs, fixed via
+    call-batching; (2) after batching, an adversarial check found the
+    batch loops were missing `std::hint::black_box` around each
+    iteration's result, leaving room for the optimizer (this workspace
+    builds release with `lto=true, codegen-units=1`) to treat 200
+    identical repeated calls as partly redundant -- adding `black_box`
+    changed B's overhead from a ~75% band to the ~63-65% band reported
+    above, and B2's from ~-10-13% to ~-5-6% (same qualitative verdicts,
+    corrected magnitudes). Both are disclosed in full in
+    `ISSUE38_LOG.md`, including the pre-correction numbers, rather than
+    silently replaced.
 
 ## The E1 verdict, stated precisely
 

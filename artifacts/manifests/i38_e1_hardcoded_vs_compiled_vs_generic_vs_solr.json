@@ -22,13 +22,13 @@
   "analysis_version": "docs/experiments/ISSUE38_LOG.md#i38-e1",
   "decision": "ISSUE38_DECISION.md",
   "headline_result": {
-    "B_vs_A_p50_overhead": "+74.94% to +77.13% across 5 runs -- DOES NOT PASS <=5% target",
-    "B2_vs_A_p50_overhead": "-10.16% to -13.31% across 5 runs -- PASSES <=5% target",
+    "B_vs_A_p50_overhead": "+63.03% to +64.50% across 5 runs -- DOES NOT PASS <=5% target",
+    "B2_vs_A_p50_overhead": "-4.96% to -6.37% across 5 runs -- PASSES <=5% target",
     "B_per_query_allocs": "4 (vs A's 2) -- localizes B's overhead to a 2-String tuple-key clone per lookup",
     "B2_per_query_allocs": "2 (identical to A) -- confirms the redesign eliminates the allocation, not just hides it",
-    "C_vs_A_p50_ratio": "~8145x-8232x (deliberate runtime-generic strawman)",
-    "D_vs_A_p50_ratio": "~9353x-9477x (Solr, cross-process context only, not apples-to-apples)",
-    "methodology_correction": "unbatched sub-microsecond timing produced a sign flip on B's overhead between two runs (+19% vs -15%); fixed via 200x call-batching for A/B/B2 and raising reps to 30, caught and disclosed rather than the favorable number kept",
+    "C_vs_A_p50_ratio": "~7452x-7595x (deliberate runtime-generic strawman)",
+    "D_vs_A_p50_ratio": "~7133x-7851x (Solr, cross-process context only, not apples-to-apples)",
+    "methodology_corrections": "two, disclosed in full in ISSUE38_LOG.md: (1) unbatched sub-microsecond timing produced a sign flip on B's overhead between two runs (+19% vs -15%), fixed via 200x call-batching for A/B/B2 and raising reps to 30; (2) an adversarial check found the batch loops lacked std::hint::black_box, letting the lto=true/codegen-units=1 release profile potentially treat repeated identical calls as partly redundant -- adding black_box corrected the magnitudes (B: ~75%->~63-65%; B2: ~-10-13%->~-5-6%) without changing either verdict",
     "gate_verdict": "E1 PASSES via the redesigned B2 compiled-schema representation; the naive B design's failure was implementation-specific (an avoidable per-query allocation), not fundamental, exactly the redesign-and-retest Issue #38 asks for"
   }
 }

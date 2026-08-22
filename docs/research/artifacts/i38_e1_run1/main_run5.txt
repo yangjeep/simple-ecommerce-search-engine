@@ -23,17 +23,17 @@ warmup pass (all 5 paths, discarded)...
 
 hit-count cross-check across all 40 workload queries: 0 mismatches (must be 0 for this comparison to be trustworthy)
 
-  A (hard-coded): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0002 | min=0.0001 max=0.0010ms
-  B (compiled schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0002 p95=0.0002 p99=0.0003 | min=0.0001 max=0.0012ms
-  B2 (compiled ordinal schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0002 | min=0.0001 max=0.0002ms
-  C (runtime-generic): n=1200 mean=0.6455ms sd=0.0343ms | p10=0.6076 p25=0.6227 p50=0.6408 p75=0.6636 p90=0.6874 p95=0.7022 p99=0.7413 | min=0.4746 max=0.8765ms
-  D (Solr): n=1200 mean=0.6721ms sd=0.1754ms | p10=0.5287 p25=0.5871 p50=0.6539 p75=0.7299 p90=0.8081 p95=0.8628 p99=1.0218 | min=0.3762 max=3.7712ms
+  A (hard-coded): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0003 | min=0.0001 max=0.0007ms
+  B (compiled schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0002 p90=0.0002 p95=0.0002 p99=0.0003 | min=0.0001 max=0.0006ms
+  B2 (compiled ordinal schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0003 | min=0.0001 max=0.0006ms
+  C (runtime-generic): n=1200 mean=0.6302ms sd=0.0540ms | p10=0.5692 p25=0.5936 p50=0.6242 p75=0.6582 p90=0.6969 p95=0.7248 p99=0.7973 | min=0.4666 max=1.1156ms
+  D (Solr): n=1200 mean=0.6339ms sd=0.1328ms | p10=0.4873 p25=0.5463 p50=0.6196 p75=0.7016 p90=0.7940 p95=0.8699 p99=1.0419 | min=0.3431 max=1.8065ms
 
-A (hard-coded): single-threaded QPS (within the timed loop) = 11716004.6
-B (compiled schema): single-threaded QPS (within the timed loop) = 6720346.2
-B2 (compiled ordinal schema): single-threaded QPS (within the timed loop) = 12873054.4
-C (runtime-generic): single-threaded QPS (within the timed loop) = 1549.2
-D (Solr): single-threaded QPS (within the timed loop) = 1487.9
+A (hard-coded): single-threaded QPS (within the timed loop) = 10795717.7
+B (compiled schema): single-threaded QPS (within the timed loop) = 6719142.8
+B2 (compiled ordinal schema): single-threaded QPS (within the timed loop) = 11255564.3
+C (runtime-generic): single-threaded QPS (within the timed loop) = 1586.9
+D (Solr): single-threaded QPS (within the timed loop) = 1577.7
 
 === allocations (per index build, not per query -- see below for per-query) ===
 A: 5490631 allocs, 161718354 bytes
@@ -48,10 +48,10 @@ B2: 2 allocs, 42 bytes
 C: 3 allocs, 202 bytes
 
 === E1 falsification gate: compiled-schema vs A serving overhead ===
-A p50=0.0001ms  B p50=0.0001ms  B overhead=+76.74%  (target: <=5%)
-A p50=0.0001ms  B2 p50=0.0001ms  B2 overhead=-10.16%  (target: <=5%)
+A p50=0.0001ms  B p50=0.0001ms  B overhead=+64.50%  (target: <=5%)
+A p50=0.0001ms  B2 p50=0.0001ms  B2 overhead=-5.31%  (target: <=5%)
 === E1 GATE (B, naive tuple-keyed compiled schema): DOES NOT PASS -- localizing overhead below ===
 === E1 GATE (B2, ordinal/dictionary-redesigned compiled schema): PASSES -- the naive B design's overhead was implementation-specific, not fundamental ===
 
 === context: C (runtime-generic) and D (Solr) vs A ===
-C/A ratio: 8236.85x   D/A ratio: 8405.99x
+C/A ratio: 7462.80x   D/A ratio: 7408.33x
