@@ -3,7 +3,7 @@
   "phase": "9",
   "issue": 34,
   "benchmark_manifest": "benchmarks/manifests/p9_e02_wands_physical_advantage.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "bf0f19a",
   "dataset": {
     "name": "real WANDS catalog + queries + judgments",
     "products": 42994,

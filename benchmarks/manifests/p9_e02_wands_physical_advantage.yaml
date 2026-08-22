@@ -24,7 +24,7 @@ claim: >
   data, not just ESCI's single-entity catalog -- a real, disclosed negative
   result, not smoothed into the favorable-looking overall aggregate.
 
-git_sha: PENDING
+git_sha: bf0f19a
 binary: crates/phase9-eval/src/bin/p9_e02_wands_physical_advantage.rs
 build_command: cargo build --release -p phase9-eval --bin p9_e02_wands_physical_advantage
 run_command: ./target/release/p9_e02_wands_physical_advantage [solr_base_url]
