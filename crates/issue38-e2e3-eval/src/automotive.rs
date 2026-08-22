@@ -393,29 +393,48 @@ pub fn generate_workload(
         };
 
     // Template 1: fitment-exact structural query, the core new fitment
-    // pattern this experiment exists to test.
+    // pattern this experiment exists to test. Derived from real generated
+    // Brake Pads products' own actual `compatible_fitment` values (up to
+    // 8 distinct ones encountered), not a fixed `VEHICLES`/`YEARS`
+    // candidate iteration -- an adversarial review found the original
+    // fixed-candidate version could silently emit a query whose claimed
+    // `Exact` case was never actually generated (caught by a dedicated
+    // regression test, `tests::automotive_ground_truth_is_self_consistent`,
+    // at this crate's own smaller test catalog size; this experiment's
+    // real E2 run happened to use a large enough catalog for the bug to
+    // stay hidden by chance).
     let mut qi = 0;
-    for &(make, model) in &VEHICLES[..4] {
-        for &year in &[2015, 2018] {
-            let target_type = PRODUCT_TYPES
-                .iter()
-                .find(|s| s.name == "Brake Pads")
-                .unwrap();
-            let tag = fitment_tag(make, model, year);
-            let text = format!("brake pads for {year} {make} {model}");
-            let id = format!("auto-q-fitment-{qi:03}");
-            push_query(id, text, "fitment_exact", &|p| {
-                if p.product_type != target_type.name {
-                    return RelevanceLabel::Irrelevant;
-                }
-                match attr_multi(p, "compatible_fitment") {
-                    Some(fits) if fits.contains(&tag) => RelevanceLabel::Exact,
-                    Some(_) => RelevanceLabel::Partial,
-                    None => RelevanceLabel::Partial,
-                }
-            });
-            qi += 1;
+    let mut fitment_tags_seen: Vec<String> = Vec::new();
+    for p in products {
+        if p.product_type != "Brake Pads" {
+            continue;
         }
+        if let Some(fits) = attr_multi(p, "compatible_fitment") {
+            for tag in fits {
+                if !fitment_tags_seen.contains(&tag) {
+                    fitment_tags_seen.push(tag);
+                }
+            }
+        }
+        if fitment_tags_seen.len() >= 8 {
+            break;
+        }
+    }
+    for tag in fitment_tags_seen {
+        let text = format!("brake pads for {tag}");
+        let id = format!("auto-q-fitment-{qi:03}");
+        let tag_for_judge = tag.clone();
+        push_query(id, text, "fitment_exact", &move |p| {
+            if p.product_type != "Brake Pads" {
+                return RelevanceLabel::Irrelevant;
+            }
+            match attr_multi(p, "compatible_fitment") {
+                Some(fits) if fits.contains(&tag_for_judge) => RelevanceLabel::Exact,
+                Some(_) => RelevanceLabel::Partial,
+                None => RelevanceLabel::Partial,
+            }
+        });
+        qi += 1;
     }
 
     // Template 2: material_grade + position, two independent attributes,

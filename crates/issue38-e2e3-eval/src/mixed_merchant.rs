@@ -97,6 +97,32 @@ fn attr_numeric(p: &SynthProduct, name: &str) -> Option<f64> {
         })
 }
 
+/// The two size-schema-conflict anchor values (an apparel Jeans product's
+/// real Enum `size`, an automotive Wiper Blades product's real Numeric
+/// `size`, formatted as a whole-number string) -- derived from whichever
+/// products actually exist in `products`, not a fixed literal. **The
+/// single source of truth for these anchors**: an earlier version of the
+/// E3 measurement binary independently hard-coded `"34"` in its own
+/// schema-management diagnostic (`lexicon.resolve("34")`), decoupled from
+/// this function's own derivation -- it happened to agree with the
+/// actual anchor at one specific `(SEED, N_PER_FAMILY)` combination purely
+/// by chance, and that coincidence was asserted as a "measured fact" in
+/// `docs/experiments/ISSUE38_LOG.md`/`ISSUE38_DECISION.md` before an
+/// adversarial review caught it. Exported so `e3_mixed_category_eval.rs`
+/// can query the *actual* anchor instead of guessing it.
+pub fn size_conflict_anchors(products: &[SynthProduct]) -> (Option<String>, Option<String>) {
+    let jeans_anchor = products
+        .iter()
+        .find(|p| p.product_type == "Jeans")
+        .and_then(|p| attr_str(p, "size"));
+    let wiper_anchor = products
+        .iter()
+        .find(|p| p.product_type == "Wiper Blades")
+        .and_then(|p| attr_numeric(p, "size"))
+        .map(|n| format!("{n:.0}"));
+    (jeans_anchor, wiper_anchor)
+}
+
 /// The cross-category-ambiguous workload: queries that, by construction,
 /// have real ground-truth relevant products in *more than one* family, so
 /// the ground truth itself is the honest test of whether the engine
@@ -182,15 +208,7 @@ pub fn generate_cross_category_workload(
     // to demonstrate compile()'s hard-coded numeric "size" branch can
     // never discover the Enum-typed half of a match even when one exists
     // (see this module's own doc comment).
-    let jeans_anchor = products
-        .iter()
-        .find(|p| p.product_type == "Jeans")
-        .and_then(|p| attr_str(p, "size"));
-    let wiper_anchor = products
-        .iter()
-        .find(|p| p.product_type == "Wiper Blades")
-        .and_then(|p| attr_numeric(p, "size"))
-        .map(|n| format!("{n:.0}"));
+    let (jeans_anchor, wiper_anchor) = size_conflict_anchors(products);
     for anchor in [jeans_anchor, wiper_anchor].into_iter().flatten() {
         let text = format!("size {anchor}");
         let id = format!("mix-q-sizeconflict-{qi:03}");

@@ -6,10 +6,10 @@ brand names discovered: 15
 boolean attributes discovered: 0
 distinct enum values registered in the lexicon: 178
 'size' Numeric values profiled (automotive Wiper Blades only): 13 distinct (profiled separately from the Enum lexicon entirely -- CatalogProfile's numeric_values map is never consulted by compile_lexicon)
-lexicon.resolve("34") candidate count: 1 (expected 1 if only apparel jeans registers Enum size="34" -- confirms automotive's Numeric size values never reach the lexicon at all, so there is no 'ambiguous candidate list' for the profiler to resolve; the gap is entirely in compile()'s keyword branch, not here)
+lexicon.resolve("34") candidate count: 1 (this run's actual apparel-jeans size anchor, derived the same way the size_schema_conflict workload derives it -- expected 1 if only apparel jeans registers this Enum value; confirms automotive's Numeric size values never reach the lexicon at all, so there is no 'ambiguous candidate list' for the profiler to resolve; the gap is entirely in compile()'s keyword branch, not here)
 
-  [manifest] experiment=I38-E3 method=native_compiled_pipeline commit=39dd1240dd44 dirty=true host=vm cpus=4 os=linux seed=954450142 warmup=1 reps=1
-  [manifest] dataset=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=13339b_mtime=1787424357)  query_set=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=13339b_mtime=1787424357)
+  [manifest] experiment=I38-E3 method=native_compiled_pipeline commit=806b807af34d dirty=true host=vm cpus=4 os=linux seed=954450142 warmup=1 reps=1
+  [manifest] dataset=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787425233)  query_set=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787425233)
   [manifest] config={"delegate_oversample":20,"k":10,"min_enum_frequency":1,"n_per_family":1000,"selectivity_threshold":0.05}
 catalog: 3000 products (1000 furniture + 1000 apparel + 1000 automotive)
 workload: 11 queries
@@ -47,7 +47,7 @@ fallback rate (Punt share of all queries): 45.5%
   candidates: n=11 mean=928.1818 docs sd=1333.9177 docs | p10=10.0000 p25=100.0000 p50=250.0000 p75=1625.0000 p90=3000.0000 p95=3000.0000 p99=3000.0000 | min=0.0000 max=3000.0000 docs
 
 --- latency (execute_planned, end-to-end, single-call per query) ---
-  execute_planned: n=11 mean=0.0554ms sd=0.0672ms | p10=0.0015 p25=0.0113 p50=0.0304 p75=0.0784 p90=0.1164 p95=0.1673 p99=0.2079 | min=0.0002 max=0.2181ms
+  execute_planned: n=11 mean=0.0511ms sd=0.0655ms | p10=0.0014 p25=0.0114 p50=0.0303 p75=0.0520 p90=0.1164 p95=0.1689 p99=0.2109 | min=0.0003 max=0.2214ms
 
 summary written to docs/research/artifacts/i38_e3_run1/summary_run4.json
 

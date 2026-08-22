@@ -81,18 +81,23 @@ untested and is still open (see "What this does NOT establish").
   attribute schema from WANDS, plus a genuinely new many-to-many
   structural relationship, `compatible_fitment`, via the pre-existing
   `MultiEnum`/`MultiEnumContains` mechanism) run through the real,
-  unmodified production pipeline. **Fitment NDCG@10 mean 0.9913** (n=8) --
-  the new relationship generalizes cleanly, no production code changes.
-  A real methodology bug (a pipe-joined fitment key that could never
-  match `compile()`'s space-joined phrase lookup) was caught by direct
-  code read *before* the experiment ever ran and fixed, with a dedicated
-  test proving the fix against the real `compile()`. One disclosed,
-  distinct finding: `exact_lookup` (part-number search) scores near-zero
-  NDCG because the reused `BitmapTantivyDelegate` only indexes
-  product-level `Text` attributes, not the variant-level field
-  `part_number` actually lives on -- a lexical-delegate scope gap, not a
-  generalization failure, and not patched (shared Phase 9 infra, out of
-  scope).
+  unmodified production pipeline. **Fitment NDCG@10 mean 0.9472** (n=8,
+  min 0.7211) -- the new relationship generalizes cleanly, no production
+  code changes. A real methodology bug (a pipe-joined fitment key that
+  could never match `compile()`'s space-joined phrase lookup) was caught
+  by direct code read *before* the experiment ever ran and fixed, with a
+  dedicated test proving the fix against the real `compile()`. A
+  **second** methodology bug -- the fitment query set itself iterating a
+  fixed candidate list with no guarantee any combination was ever
+  generated -- was caught by an adversarial review *after* the first E2
+  run (original figure: mean 0.9913, min 0.9306; both support the same
+  generalization finding, see `docs/experiments/ISSUE38_LOG.md`'s
+  correction note). One disclosed, distinct finding: `exact_lookup`
+  (part-number search) scores near-zero NDCG because the reused
+  `BitmapTantivyDelegate` only indexes product-level `Text` attributes,
+  not the variant-level field `part_number` actually lives on -- a
+  lexical-delegate scope gap, not a generalization failure, and not
+  patched (shared Phase 9 infra, out of scope).
 - **I38-E3 (mixed-category merchant, schema management)**: full detail
   in `docs/experiments/ISSUE38_LOG.md`. Furniture + apparel + automotive
   (1,000 products each) ingested as one undifferentiated 3,000-product

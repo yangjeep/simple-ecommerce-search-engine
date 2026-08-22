@@ -363,23 +363,72 @@ templates, real production pipeline (`ir::query::compile` ->
 0.05, delegate_oversample: 20}`), `phase9_eval::bitmap_delegate::BitmapTantivyDelegate`
 reused unmodified as the lexical delegate. 5 independent runs.
 
-### Results (byte-identical across all 5 runs for every correctness/routing number; only latency varies)
+### Results (byte-identical across all 5 runs for every correctness/routing number; only latency varies) -- CORRECTED, see below
 
 | metric | value |
 |---|---|
-| fitment_exact NDCG@10 (n=8) | mean **0.9913**, min 0.9306 |
-| aggregate NDCG@10, excluding exact_lookup (n=26) | mean **0.9271** |
-| aggregate NDCG@10, all templates (n=57) | mean ~0.422-0.425 (see finding below) |
+| fitment_exact NDCG@10 (n=8) | mean **0.9472**, min 0.7211 |
+| aggregate NDCG@10, excluding exact_lookup (n=26) | mean **0.9134-0.9183** across 5 runs |
+| aggregate NDCG@10, all templates (n=57) | mean ~0.416-0.419 (see finding below) |
 | routing | 35.1% FastPath, 0% Hybrid, 64.9% Punt |
 | failure taxonomy | 35.1% entity_resolved_structural, 56.1% no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt |
-| candidate-set size | p50 3,000 (full catalog), p10 15.2 |
-| latency (execute_planned, p50) | ~0.099ms in 4/5 runs (run4 outlier 0.132ms) |
+| candidate-set size | p50 3,000 (full catalog), p10 17.2 |
+| latency (execute_planned, p50) | ~0.078-0.108ms across 5 runs |
 
 The `vocabulary_gap_no_entity` template (`"ceramic front pads"`, n=2,
 mean NDCG 0.58) is a deliberate regression check reproducing P9-E05's
 resolution-priority scenario against fully unrelated automotive
 vocabulary -- confirms the entity-corroboration demotion rule still
 fires correctly on unseen vocabulary, not just on WANDS's own.
+
+### Post-hoc adversarial-review correction (disclosed, not silently replaced)
+
+An adversarial review (per this project's own established discipline,
+matching E1's precedent of an adversarial pass catching real
+methodology bugs before finalizing) found that `automotive.rs`'s
+`fitment_exact` template -- Template 1 -- iterated a **fixed**
+`VEHICLES[..4] x [2015, 2018]` candidate list to build its 8 queries,
+with nothing guaranteeing any specific (make, model, year) combination
+was ever actually assigned to a generated Brake Pads product's
+`compatible_fitment` set. The original 3,000-product E2 run happened
+not to trigger this (all 8 combinations had a real match by chance), so
+it read as a clean result; a new regression test added specifically to
+close this gap
+(`ground_truth::assert_every_query_of_template_has_an_exact_match`,
+wired into `tests::automotive_ground_truth_is_self_consistent`) caught
+it concretely at this crate's own smaller test catalog size (120
+products), where one fitment query's claimed `Exact` case had in fact
+never been generated. **Fixed** by deriving the 8 fitment queries from
+real generated Brake Pads products' own actual `compatible_fitment`
+values instead (the same "ground truth by construction" discipline
+`automotive.rs`'s own part-number template, and now `mixed_merchant.rs`'s
+`size_schema_conflict` template, already followed) -- eliminating the
+possibility by construction rather than hoping a large enough `N`
+avoids it. The pre-correction figures were fitment_exact NDCG@10 mean
+**0.9913** (min 0.9306), aggregate excluding exact_lookup mean **0.9271**,
+aggregate all-templates mean **~0.422-0.425**; both the corrected and
+uncorrected figures support the same positive generalization finding --
+the correction changes which 8 concrete fitment queries are asked, not
+the underlying conclusion.
+
+The same review also found, and this pass fixed, two related lower-severity
+instances of the identical defect class: `apparel.rs`'s
+`size_numeric_keyword` template hard-coded `["32", "34"]` directly (now
+derived from real generated Jeans products' own actual `size` values),
+and both `apparel.rs`'s and `furniture_synth.rs`'s color+type query loops
+iterated a type's first two *candidate* colors rather than colors actually
+present on generated products of that type (a `Partial` fallback kept
+`ground_truth::assert_self_consistent`'s "non-empty judgments" check from
+ever catching this, since a same-type-different-color product is always
+`Partial` -- only a *specifically-Exact* check, added as part of this
+correction, could). These two templates are not currently exercised by
+any experiment binary (see `apparel.rs`'s own corrected doc comment); the
+fix keeps their generator code correct and matches this crate's
+established discipline, since they are still exercised by this crate's
+own self-consistency unit tests.
+
+A separate `e3_mixed_category_eval.rs` diagnostic bug (unrelated defect
+class, same review) is described in I38-E3's own correction note below.
 
 ### Named finding: `exact_lookup` near-zero NDCG is a delegate-scope gap, not a generalization failure
 
@@ -408,7 +457,7 @@ the fitment/schema-generalization question E2 exists to answer.
 ### I38-E2 verdict
 
 The architecture generalizes cleanly to this unseen vertical, including
-its genuinely new structural relationship (fitment NDCG 0.9913, no
+its genuinely new structural relationship (fitment NDCG 0.9472, no
 production code changes) -- a positive generalization result. The
 disclosed `exact_lookup` finding is a real, useful, but *distinct*
 finding about lexical-delegate scope, not a mark against generalization.
@@ -458,8 +507,13 @@ asked to test.
 
 ### Finding 1 (the size schema conflict), measured directly
 
-`lexicon.resolve("34")` returns **exactly 1 candidate** (apparel's `Enum`
-source only). Root cause, verified by direct read of
+`lexicon.resolve(<jeans_anchor>)` returns **exactly 1 candidate**
+(apparel's `Enum` source only), where `<jeans_anchor>` is this run's
+actual apparel-jeans size value (`"34"` at this `SEED`/`N_PER_FAMILY`),
+derived from a real generated Jeans product via
+`mixed_merchant::size_conflict_anchors` -- **not** a hard-coded literal
+(see the correction note after Finding 1 below). Root cause, verified by
+direct read of
 `crates/commerce-core/src/cold_start/profile.rs`: `Numeric` values are
 profiled into a completely separate `numeric_values` map that
 `compile_lexicon` never reads at all -- automotive's Numeric `size`
@@ -488,6 +542,23 @@ entity-corroboration demotion rule before becoming hard filters?) for a
 future dedicated design cycle, per the P9-E05 precedent of not rushing an
 undermotivated heuristic patch into `compile()`'s resolution algorithm.
 Filed as GitHub Issue #40.
+
+**Post-hoc adversarial-review correction (disclosed, not silently
+replaced)**: `e3_mixed_category_eval.rs`'s own schema-management
+diagnostic originally queried `lexicon.resolve("34")` with a **hard-coded**
+literal, completely decoupled from whatever value the
+`size_schema_conflict` workload's own RNG-derived anchor (in
+`mixed_merchant.rs`) actually was. The two happened to agree at this
+crate's current `(SEED, N_PER_FAMILY)` -- nothing enforced that
+agreement, and the coincidence was asserted above as a "measured fact"
+before an adversarial review caught it (the exact same defect class as
+the fitment-query bug described in I38-E2's own correction note, just
+in a diagnostic print rather than a query template). **Fixed** by adding
+`mixed_merchant::size_conflict_anchors`, a single public function both
+the workload builder and the measurement binary now call, so the
+diagnostic can never diverge from the workload again. The underlying
+finding (exactly 1 lexicon candidate) is unchanged; only its provenance
+is now trustworthy.
 
 ### Finding 2 (residual-lexical veto), found by measurement, not anticipated
 
@@ -549,14 +620,37 @@ pass, consistent with this project's established discipline (P9-E05) of
 not rushing heuristic changes into `compile()`/`plan()`'s resolution
 logic without one.
 
+## Adversarial review summary
+
+An independent adversarial review (background agent, per this project's
+Ultracode/E1 precedent of catching real methodology bugs before
+finalizing) examined every ground-truth judge closure, every query
+template's derivation, the two experiment binaries' claims against the
+production code they measure, and the latency methodology. It found and
+this pass fixed three real issues (the E2 fitment-query and E3
+diagnostic-decoupling bugs detailed in their own correction notes above,
+plus `apparel.rs`/`furniture_synth.rs`'s lower-severity instance of the
+same defect class), and flagged one minor, latent, already-documented
+ordering choice in `failure_taxonomy::classify` (ambiguity-disclosure
+priority over routing-success classification, clarified with a comment,
+no behavior change -- it never manifested in either real run). Every
+ground-truth judge's semantics, the crate's determinism (confirmed:
+`AttributeMap` is a `BTreeMap`, not a `HashMap`, so there is no hidden
+iteration-order non-determinism), and the latency methodology (single-call,
+post-warmup, millisecond-scale -- correctly not needing E1's
+batching/`black_box` treatment) were verified clean.
+
 ## E2/E3 quality gate
 
 `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
 --all-features -- -D warnings`, `cargo test --workspace --all-features`
-(0 failures, including 6 new `issue38-e2e3-eval` tests: determinism
-across every family generator, ground-truth self-consistency for all
-four workloads, and the fitment-phrase-discoverability proof), `cargo
-build --workspace --release` -- all clean.
+(0 failures, including 6 `issue38-e2e3-eval` tests: determinism across
+every family generator, ground-truth self-consistency for all four
+workloads -- strengthened post-adversarial-review with
+`assert_every_query_of_template_has_an_exact_match` checks that would
+have caught the fitment-query and color/size-literal bugs directly --
+and the fitment-phrase-discoverability proof), `cargo build --workspace
+--release` -- all clean.
 
 ## External-validity check (non-blocking, per the governing instruction)
 

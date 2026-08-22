@@ -7,8 +7,8 @@
     "vocabulary_gap_demoted_to_punt": 5
   },
   "fallback_rate": 0.45454545454545453,
-  "latency_ms_p50": 0.030383999999999998,
-  "latency_ms_p95": 0.167266,
+  "latency_ms_p50": 0.030252,
+  "latency_ms_p95": 0.168887,
   "mrr_mean": 0.7272727272727273,
   "n_per_family": 1000,
   "n_queries": 11,
@@ -23,10 +23,11 @@
   "size_conflict_hits_by_family": {
     "automotive": 10
   },
+  "size_conflict_jeans_anchor": "34",
   "size_conflict_relevant_by_family": {
     "apparel": 64,
     "automotive": 10
   },
-  "size_lexicon_candidate_count_for_34": 1,
+  "size_lexicon_candidate_count_for_jeans_anchor": 1,
   "size_numeric_values_profiled": 13
 }

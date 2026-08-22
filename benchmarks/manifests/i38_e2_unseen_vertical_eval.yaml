@@ -21,18 +21,32 @@ claim: >
   delegate) over a 3,000-product synthetic catalog and 57-query workload,
   5 independent runs:
 
-  Fitment (the new structural relationship): NDCG@10 mean 0.9913 (n=8,
-  min 0.9306) across all 5 runs (byte-identical, as expected --
+  Fitment (the new structural relationship): NDCG@10 mean 0.9472 (n=8,
+  min 0.7211) across all 5 runs (byte-identical, as expected --
   correctness is deterministic; see bench-harness's own documented
   methodology) -- the fitment MultiEnum mechanism generalizes cleanly to
   a genuinely new many-to-many relationship pattern with no production
-  code changes.
+  code changes. CORRECTED after an adversarial review found the
+  original fitment query set (a fixed VEHICLES/YEARS candidate
+  iteration) had no guarantee any specific combination was ever actually
+  generated -- caught concretely by a new regression test at this
+  crate's own smaller test catalog size (`fitment_exact` failed there,
+  even though the original 3,000-product E2 run happened not to trigger
+  it). Fixed by deriving the fitment query set from real generated Brake
+  Pads products' own actual `compatible_fitment` values instead (the
+  same "ground truth by construction" discipline every other template
+  in this crate already followed). Original (uncorrected) figure:
+  0.9913 (n=8, min 0.9306) -- both figures are strong positive
+  generalization results; the correction changes only which 8 concrete
+  fitment queries are asked, not the underlying finding.
 
   Aggregate correctness (excluding exact_lookup, see finding below):
-  NDCG@10 mean 0.9271 (n=26). Aggregate over ALL templates including
-  exact_lookup: NDCG@10 mean ~0.422-0.425 (deterministic across runs) --
-  dominated by exact_lookup's near-zero score, disclosed as a delegate-
-  scope finding, not a generalization failure (see below).
+  NDCG@10 mean 0.9134-0.9183 across 5 runs, n=26 (CORRECTED from 0.9271,
+  same root cause as above). Aggregate over ALL templates including
+  exact_lookup: NDCG@10 mean ~0.416-0.419 (CORRECTED from ~0.422-0.425;
+  deterministic across runs) -- dominated by exact_lookup's near-zero
+  score, disclosed as a delegate-scope finding, not a generalization
+  failure (see below).
 
   Routing: 35.1% FastPath, 0% Hybrid, 64.9% Punt (fallback rate). Failure
   taxonomy: 35.1% entity_resolved_structural, 56.1%
@@ -42,7 +56,9 @@ claim: >
   fires correctly on unseen vocabulary).
 
   Candidate-set size: p50 3,000 (full catalog -- most queries here are
-  either FastPath entity-only or the large exact_lookup share), p10 15.2.
+  either FastPath entity-only or the large exact_lookup share), p10 17.2
+  (CORRECTED from 15.2 -- a different set of fitment queries now
+  produces a slightly different candidate-set distribution).
 
   Latency (execute_planned, single-call/query, post-warmup): p50 ~0.099ms
   across 4/5 runs (run4 an outlier at 0.132ms, still sub-millisecond) --
@@ -91,7 +107,11 @@ workload:
     numeric_entity, oem/aftermarket, exact_lookup, vocabulary_gap_no_entity)
   ground_truth: computed programmatically from the same generator
     parameters that produced the catalog (WandsLabel 3-way scale,
-    reused via phase9_eval::wands_relevance)
+    reused via phase9_eval::wands_relevance). fitment_exact's 8 queries
+    are derived from real generated Brake Pads products' own actual
+    compatible_fitment values (up to 8 distinct ones encountered),
+    corrected post-adversarial-review from an earlier fixed
+    VEHICLES/YEARS candidate iteration that had no such guarantee.
   policy: PlannerPolicy { selectivity_threshold: 0.05, delegate_oversample: 20 }
   min_enum_frequency: 1 (no canonicalization filtering needed -- a small,
     clean, controlled-vocabulary synthetic catalog, not noisy real data)

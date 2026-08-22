@@ -29,11 +29,22 @@ claim: >
   that function.
 
   Size-schema-conflict finding, MEASURED directly (not merely read from
-  source): lexicon.resolve("34") returns exactly 1 candidate (apparel's
-  Enum source only) -- automotive's Numeric size values are profiled into
-  a completely separate numeric_values map that compile_lexicon never
-  reads, so there is no ambiguous-candidate list for the profiler to
-  arbitrate; the actual conflict lives entirely inside ir::query::compile's
+  source): lexicon.resolve(<jeans_anchor>) returns exactly 1 candidate
+  (apparel's Enum source only) -- <jeans_anchor> is this run's actual
+  apparel-jeans size value, derived by
+  mixed_merchant::size_conflict_anchors() (a real generated product's own
+  attribute, currently "34" at this SEED/N_PER_FAMILY, but not hard-coded
+  as such). An adversarial review found the measurement binary originally
+  queried a hard-coded "34" literal here, decoupled from the actual
+  RNG-derived anchor the size_schema_conflict workload itself used --
+  the two happened to agree by coincidence, and that coincidence was
+  asserted as a measured fact before the review caught it. Corrected to
+  query the same derivation the workload uses; the underlying finding
+  (exactly 1 lexicon candidate) is unchanged. Automotive's Numeric size
+  values are profiled into a completely separate numeric_values map that
+  compile_lexicon never reads, so there is no ambiguous-candidate list for
+  the profiler to arbitrate; the actual conflict lives entirely inside
+  ir::query::compile's
   hard-coded "size N" keyword branch, which never consults the lexicon for
   this token pattern at all. Measured consequence: on size_schema_conflict
   queries, ground truth spans both families (apparel: 64 relevant variants,

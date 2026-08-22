@@ -145,29 +145,68 @@ mod tests {
     #[test]
     fn automotive_ground_truth_is_self_consistent() {
         let products = automotive::generate_catalog(120);
-        let (_, judgments) = automotive::generate_workload(&products);
+        let (queries, judgments) = automotive::generate_workload(&products);
         ground_truth::assert_self_consistent(&products, &judgments);
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "exact_lookup",
+        );
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "fitment_exact",
+        );
     }
 
     #[test]
     fn apparel_ground_truth_is_self_consistent() {
         let products = apparel::generate_catalog(80);
-        let (_, judgments) = apparel::generate_workload(&products);
+        let (queries, judgments) = apparel::generate_workload(&products);
         ground_truth::assert_self_consistent(&products, &judgments);
+        // Regression coverage for the adversarial-review finding: these
+        // two templates now derive their query value from a real
+        // generated product specifically so an Exact match is guaranteed,
+        // not merely a same-type Partial fallback.
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "attribute_plus_entity",
+        );
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "size_numeric_keyword",
+        );
     }
 
     #[test]
     fn furniture_ground_truth_is_self_consistent() {
         let products = furniture_synth::generate_catalog(60);
-        let (_, judgments) = furniture_synth::generate_workload(&products);
+        let (queries, judgments) = furniture_synth::generate_workload(&products);
         ground_truth::assert_self_consistent(&products, &judgments);
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "attribute_plus_entity",
+        );
     }
 
     #[test]
     fn mixed_merchant_cross_category_ground_truth_is_self_consistent() {
         let products = mixed_merchant::generate_mixed_catalog(60, 60, 60);
-        let (_, judgments) = mixed_merchant::generate_cross_category_workload(&products);
+        let (queries, judgments) = mixed_merchant::generate_cross_category_workload(&products);
         ground_truth::assert_self_consistent(&products, &judgments);
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "size_schema_conflict",
+        );
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "same_catalog_control",
+        );
     }
 
     /// Directly exercises the fitment-phrase fix: `ir::query::compile`'s

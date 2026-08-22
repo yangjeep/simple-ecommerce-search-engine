@@ -45,6 +45,15 @@ pub fn classify(compiled: &CommerceQuery, outcome: ExecutionOutcome) -> FailureC
         ExecutionOutcome::FastPath | ExecutionOutcome::Hybrid
     );
 
+    // Deliberate priority: a query can resolve a real entity constraint
+    // *and* separately carry an unrelated unresolved ambiguous span (a
+    // different phrase entirely). Ambiguity disclosure takes priority
+    // over reporting routing success in that case -- an adversarial
+    // review flagged this ordering as worth documenting explicitly, since
+    // it is easy to misread as an oversight; it is intentional, and
+    // neither E2 nor E3's real runs ever produced this combination
+    // (`ambiguous_span_present` was 0% in both), so it remains untested
+    // against real data.
     if !compiled.ambiguous.is_empty() {
         return FailureClass::AmbiguousSpanPresent;
     }

@@ -156,15 +156,42 @@ pub fn generate_workload(
             queries.push(SynthQuery { id, text, template });
         };
 
+    // Derived from real generated products' own actual color values per
+    // type (up to 2 distinct ones encountered), not the type's fixed
+    // candidate color list -- guarantees an Exact-labeled match exists
+    // for each emitted query. An earlier version iterated
+    // `t.colors.iter().take(2)` directly: every query still had *some*
+    // non-empty ground truth (a same-type, different-color product is
+    // always `Partial`), so `ground_truth::assert_self_consistent` never
+    // caught it, but there was no guarantee the query's own claimed
+    // `Exact` case was ever actually generated -- the same "fixed
+    // literal, no generation guarantee" defect class an adversarial
+    // review found in `apparel.rs`'s color loop and
+    // `mixed_merchant.rs`'s `size_schema_conflict` template.
     for t in FURNITURE_TYPES {
-        for color in t.colors.iter().take(2) {
+        let mut colors_seen: Vec<String> = Vec::new();
+        for p in products {
+            if p.product_type != t.name {
+                continue;
+            }
+            if let Some(color) = attr_str(p, "color") {
+                if !colors_seen.contains(&color) {
+                    colors_seen.push(color);
+                }
+            }
+            if colors_seen.len() >= 2 {
+                break;
+            }
+        }
+        for color in colors_seen {
             let text = format!("{} {}", color.to_lowercase(), t.name.to_lowercase());
             let id = format!("furn-q-color-{qi:03}");
-            push_query(id, text, "attribute_plus_entity", &|p| {
+            let color_for_judge = color.clone();
+            push_query(id, text, "attribute_plus_entity", &move |p| {
                 if p.product_type != t.name {
                     return RelevanceLabel::Irrelevant;
                 }
-                if attr_str(p, "color").as_deref() == Some(color) {
+                if attr_str(p, "color").as_deref() == Some(color_for_judge.as_str()) {
                     RelevanceLabel::Exact
                 } else {
                     RelevanceLabel::Partial

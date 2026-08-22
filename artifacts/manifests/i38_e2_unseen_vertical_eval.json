@@ -20,9 +20,9 @@
   "analysis_version": "docs/experiments/ISSUE38_LOG.md#i38-e2",
   "decision": "ISSUE38_DECISION.md",
   "headline_result": {
-    "fitment_ndcg_at_10_mean": "0.9913 (n=8, min=0.9306) -- the new many-to-many fitment structural relationship generalizes cleanly via the pre-existing MultiEnum/MultiEnumContains mechanism, no production code changes",
-    "aggregate_ndcg_excluding_exact_lookup": "0.9271 (n=26)",
-    "aggregate_ndcg_all_templates": "~0.422-0.425 (deterministic; dominated by the disclosed exact_lookup finding below, 31/57=54% of the workload)",
+    "fitment_ndcg_at_10_mean": "0.9472 (n=8, min=0.7211) -- the new many-to-many fitment structural relationship generalizes cleanly via the pre-existing MultiEnum/MultiEnumContains mechanism, no production code changes. CORRECTED post-adversarial-review from an original 0.9913 (n=8, min=0.9306): the fitment query set was originally a fixed VEHICLES/YEARS candidate iteration with no guarantee any specific combination was ever generated (caught by a new regression test at a smaller test catalog size, even though the original 3000-product run happened not to trigger it); fixed to derive the 8 fitment queries from real generated Brake Pads products' own actual compatible_fitment values. Both figures support the same positive generalization finding.",
+    "aggregate_ndcg_excluding_exact_lookup": "0.9134-0.9183 across 5 runs (n=26) -- CORRECTED from 0.9271, same root cause as above",
+    "aggregate_ndcg_all_templates": "~0.416-0.419 (deterministic; CORRECTED from ~0.422-0.425; dominated by the disclosed exact_lookup finding below, 31/57=54% of the workload)",
     "routing": "35.1% FastPath, 0% Hybrid, 64.9% Punt (fallback rate)",
     "failure_taxonomy": "35.1% entity_resolved_structural, 56.1% no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt (P9-E05 regression check reproduced against unseen vocabulary, still fires correctly)",
     "candidate_size_p50": "3000 docs (full catalog)",

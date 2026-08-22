@@ -7,18 +7,18 @@
     "vocabulary_gap_demoted_to_punt": 5
   },
   "fallback_rate": 0.6491228070175439,
-  "fitment_exact_ndcg_mean": 0.9913190954840831,
-  "latency_ms_p50": 0.099245,
-  "latency_ms_p95": 0.13576859999999996,
+  "fitment_exact_ndcg_mean": 0.9471895084755735,
+  "latency_ms_p50": 0.100801,
+  "latency_ms_p95": 0.137316,
   "mrr_mean": 0.45614035087719296,
   "n_products": 3000,
   "n_queries": 57,
-  "ndcg_mean": 0.4228836396429829,
-  "ndcg_mean_excluding_exact_lookup": 0.9270910561403857,
+  "ndcg_mean": 0.4166216984985342,
+  "ndcg_mean_excluding_exact_lookup": 0.9133629544006326,
   "outcome_counts": {
     "fast_path": 20,
     "punt": 37
   },
   "queries_with_any_hit_fraction": 0.45614035087719296,
-  "recall_mean": 0.015087719298245612
+  "recall_mean": 0.014619883040935672
 }

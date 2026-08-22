@@ -110,13 +110,34 @@ fn main() {
          map is never consulted by compile_lexicon)",
         size_numeric_values.len()
     );
-    let size_lexicon_sources = lexicon.resolve("34").map(|c| c.len()).unwrap_or(0);
-    println!(
-        "lexicon.resolve(\"34\") candidate count: {size_lexicon_sources} (expected 1 if only \
-         apparel jeans registers Enum size=\"34\" -- confirms automotive's Numeric size values \
-         never reach the lexicon at all, so there is no 'ambiguous candidate list' for the \
-         profiler to resolve; the gap is entirely in compile()'s keyword branch, not here)"
-    );
+    // The queried value comes from `mixed_merchant::size_conflict_anchors`,
+    // the SAME derivation the `size_schema_conflict` workload itself uses
+    // -- not a hard-coded literal. An earlier version of this diagnostic
+    // hard-coded `lexicon.resolve("34")` directly, decoupled from
+    // whatever value the workload's own RNG-derived anchor actually was;
+    // it happened to agree at this crate's current (SEED, N_PER_FAMILY),
+    // but nothing enforced that agreement, and the coincidence was
+    // asserted as a measured fact in committed docs before an adversarial
+    // review caught it (see `mixed_merchant.rs`'s own doc comment on
+    // `size_conflict_anchors`).
+    let (jeans_anchor, _wiper_anchor) = mixed_merchant::size_conflict_anchors(&products);
+    let size_lexicon_sources: Option<usize> = jeans_anchor.as_deref().map(|anchor| {
+        let count = lexicon.resolve(anchor).map(|c| c.len()).unwrap_or(0);
+        println!(
+            "lexicon.resolve({anchor:?}) candidate count: {count} (this run's actual \
+             apparel-jeans size anchor, derived the same way the size_schema_conflict workload \
+             derives it -- expected 1 if only apparel jeans registers this Enum value; confirms \
+             automotive's Numeric size values never reach the lexicon at all, so there is no \
+             'ambiguous candidate list' for the profiler to resolve; the gap is entirely in \
+             compile()'s keyword branch, not here)"
+        );
+        count
+    });
+    if size_lexicon_sources.is_none() {
+        println!(
+            "no apparel Jeans product generated in this run -- size-conflict lexicon diagnostic skipped"
+        );
+    }
 
     let built = build_index(catalog).expect("in-memory tantivy index build");
     let delegate = BitmapTantivyDelegate::new(
@@ -345,7 +366,8 @@ fn main() {
         "latency_ms_p95": Distribution::compute(&latencies_ms).p95,
         "size_conflict_relevant_by_family": size_conflict_relevant_by_family,
         "size_conflict_hits_by_family": size_conflict_hits_by_family,
-        "size_lexicon_candidate_count_for_34": size_lexicon_sources,
+        "size_conflict_jeans_anchor": jeans_anchor,
+        "size_lexicon_candidate_count_for_jeans_anchor": size_lexicon_sources,
         "size_numeric_values_profiled": size_numeric_values.len(),
     });
     if let Some(parent) = std::path::Path::new(&output_path).parent() {
