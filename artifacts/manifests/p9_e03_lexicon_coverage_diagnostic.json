@@ -3,7 +3,7 @@
   "phase": "9",
   "issue": 34,
   "benchmark_manifest": "benchmarks/manifests/p9_e03_lexicon_coverage_diagnostic.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "e6bd550",
   "dataset": {
     "name": "real WANDS raw catalog + queries",
     "products": 42994,

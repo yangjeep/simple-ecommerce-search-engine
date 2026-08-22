@@ -18,7 +18,7 @@ claim: >
   not recoverable under any tested mechanism -- genuinely no related
   entity, or a gap this diagnostic's specific mechanisms do not cover.
 
-git_sha: PENDING
+git_sha: e6bd550
 binary: crates/phase9-eval/src/bin/p9_e03_lexicon_coverage_diagnostic.rs
 build_command: cargo build --release -p phase9-eval --bin p9_e03_lexicon_coverage_diagnostic
 run_command: ./target/release/p9_e03_lexicon_coverage_diagnostic

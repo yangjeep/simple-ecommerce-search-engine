@@ -41,7 +41,7 @@ claim: >
   one, a compile_lexicon resolution-priority gap, not a ranking or
   retrieval-correctness bug.
 
-git_sha: PENDING
+git_sha: e6bd550
 binary: crates/phase9-eval/src/bin/p9_e04_isolated_ranking_and_execution.rs
 build_command: cargo build --release -p phase9-eval --bin p9_e04_isolated_ranking_and_execution
 run_command: ./target/release/p9_e04_isolated_ranking_and_execution [solr_base_url]
