@@ -1,0 +1,110 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I38-E2
+phase: issue-38
+issue: 38
+decision_document: ISSUE38_DECISION.md
+claim: >
+  Issue #38 E2: does the architecture validated against WANDS (real home
+  furnishings, E1) generalize to a deterministic synthetic catalog from a
+  genuinely unseen commerce vertical (automotive parts) -- materially
+  different attribute schema (thread_size, voltage, micron_rating,
+  heat_range, bulb_type, lumens, filter_type, none of which exist in
+  WANDS) and, for the first time, a genuinely new structural relationship
+  pattern: compatible_fitment, a many-to-many vehicle-compatibility set
+  represented via the pre-existing AttributeValue::MultiEnum +
+  Constraint::MultiEnumContains mechanism (deliberately not a new
+  StructuralConstraint variant)?
+
+  Run against the real, unmodified production pipeline
+  (ir::query::compile -> plan::plan -> plan::execute_planned, with
+  phase9_eval::bitmap_delegate::BitmapTantivyDelegate as the lexical
+  delegate) over a 3,000-product synthetic catalog and 57-query workload,
+  5 independent runs:
+
+  Fitment (the new structural relationship): NDCG@10 mean 0.9913 (n=8,
+  min 0.9306) across all 5 runs (byte-identical, as expected --
+  correctness is deterministic; see bench-harness's own documented
+  methodology) -- the fitment MultiEnum mechanism generalizes cleanly to
+  a genuinely new many-to-many relationship pattern with no production
+  code changes.
+
+  Aggregate correctness (excluding exact_lookup, see finding below):
+  NDCG@10 mean 0.9271 (n=26). Aggregate over ALL templates including
+  exact_lookup: NDCG@10 mean ~0.422-0.425 (deterministic across runs) --
+  dominated by exact_lookup's near-zero score, disclosed as a delegate-
+  scope finding, not a generalization failure (see below).
+
+  Routing: 35.1% FastPath, 0% Hybrid, 64.9% Punt (fallback rate). Failure
+  taxonomy: 35.1% entity_resolved_structural, 56.1%
+  no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt (the
+  deliberate P9-E05 regression-check template, reproduced against fully
+  unrelated automotive vocabulary -- confirms the demotion rule still
+  fires correctly on unseen vocabulary).
+
+  Candidate-set size: p50 3,000 (full catalog -- most queries here are
+  either FastPath entity-only or the large exact_lookup share), p10 15.2.
+
+  Latency (execute_planned, single-call/query, post-warmup): p50 ~0.099ms
+  across 4/5 runs (run4 an outlier at 0.132ms, still sub-millisecond) --
+  this synthetic in-memory catalog is far smaller than WANDS's 42,994
+  products, so absolute latency here is not comparable to Phase 9's own
+  numbers; only the qualitative routing/correctness behavior is the
+  point of E2.
+
+  Named finding (delegate scope, not a compile()/plan() defect): the
+  "exact_lookup" template (part-number search, n=31/57 = 54% of the
+  workload) scores NDCG~0 because part_number is a *variant*-level
+  AttributeValue::Text attribute, but the reused
+  phase9_eval::bitmap_delegate::build_index only indexes *product*-level
+  Text attributes into its Tantivy fields (an existing, documented scope
+  decision in that shared Phase 9 module, confirmed by direct source
+  read, not a new defect). commerce_core::index::CatalogIndex's own
+  internal lexical_postings *does* include variant-level text (via
+  effective_attributes), but plan::execute_planned's Hybrid/Punt outcomes
+  never consult it -- they rank purely via the external LexicalDelegate.
+  This is disclosed as a real schema-management-relevant finding (a
+  production LexicalDelegate implementation must explicitly decide
+  whether to index variant-level identifiers), not patched here (shared,
+  already-used-by-Phase-9 infra; changing it is out of E2's scope).
+
+git_sha: 39dd1240dd4469f565f61c554907df3e523aace7
+binary: crates/issue38-e2e3-eval/src/bin/e2_unseen_vertical_eval.rs
+build_command: cargo build --release -p issue38-e2e3-eval
+run_command: |
+  ./target/release/e2_unseen_vertical_eval [output_summary_json_path]
+
+dataset:
+  name: deterministic synthetic automotive-parts catalog (this project's own
+    generator, not a downloaded/external dataset)
+  source: crates/issue38-e2e3-eval/src/automotive.rs (SEED = 0x38E2_A0A0)
+  size: 3,000 products, 10 distinct product types, 8 fictional brands, 7
+    real vehicle make/model pairs x 9 model years for fitment
+
+engine:
+  native: commerce_core::ir::query::compile -> plan::plan ->
+    plan::execute_planned (unmodified production pipeline)
+  lexical_delegate: phase9_eval::bitmap_delegate::BitmapTantivyDelegate
+    (reused from Phase 9, not reimplemented)
+
+workload:
+  queries: 57, 7 templates (fitment_exact, attribute_plus_entity,
+    numeric_entity, oem/aftermarket, exact_lookup, vocabulary_gap_no_entity)
+  ground_truth: computed programmatically from the same generator
+    parameters that produced the catalog (WandsLabel 3-way scale,
+    reused via phase9_eval::wands_relevance)
+  policy: PlannerPolicy { selectivity_threshold: 0.05, delegate_oversample: 20 }
+  min_enum_frequency: 1 (no canonicalization filtering needed -- a small,
+    clean, controlled-vocabulary synthetic catalog, not noisy real data)
+  warmup: 1 full untimed pass over the whole workload before the measured pass
+
+seed: "0x38E2_A0A0 (automotive::SEED, ChaCha8Rng) -- fully deterministic
+  catalog/workload generation, no sampling"
+
+raw_results: docs/research/artifacts/i38_e2_run1/
+  - main_run{1,2,3,4,5}.txt (5 independent full runs)
+  - summary.json / summary_run{2,3,4,5}.json (machine-readable per-run summaries)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE38_LOG.md I38-E2 for the full hypothesis,
+  fitment-mechanism verification, and the exact_lookup delegate-scope
+  finding.

@@ -13,6 +13,7 @@ members = [
     "crates/phase7-eval",
     "crates/phase9-eval",
     "crates/issue38-eval",
+    "crates/issue38-e2e3-eval",
 ]
 
 [workspace.package]

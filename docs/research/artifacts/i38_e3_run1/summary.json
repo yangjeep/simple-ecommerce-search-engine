@@ -1,0 +1,32 @@
+{
+  "candidate_size_p50": 250.0,
+  "experiment": "I38-E3",
+  "failure_taxonomy": {
+    "entity_resolved_but_punted": 2,
+    "entity_resolved_structural": 4,
+    "vocabulary_gap_demoted_to_punt": 5
+  },
+  "fallback_rate": 0.45454545454545453,
+  "latency_ms_p50": 0.030567,
+  "latency_ms_p95": 0.1663265,
+  "mrr_mean": 0.7272727272727273,
+  "n_per_family": 1000,
+  "n_queries": 11,
+  "ndcg_mean": 0.7272727272727273,
+  "outcome_counts": {
+    "fast_path": 5,
+    "hybrid": 1,
+    "punt": 5
+  },
+  "queries_with_any_hit_fraction": 0.7272727272727273,
+  "recall_mean": 0.11605480959007282,
+  "size_conflict_hits_by_family": {
+    "automotive": 10
+  },
+  "size_conflict_relevant_by_family": {
+    "apparel": 64,
+    "automotive": 10
+  },
+  "size_lexicon_candidate_count_for_34": 1,
+  "size_numeric_values_profiled": 13
+}

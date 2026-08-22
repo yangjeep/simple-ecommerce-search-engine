@@ -298,3 +298,299 @@ GO criterion ("compiled-schema execution preserves most of the
 hard-coded native physical advantage"), this clears the bar. See
 `ISSUE38_DECISION.md` for the full decision-gate reasoning and what is
 explicitly scoped out of this pass (E2-E5).
+
+## I38-E2: full-pipeline generalization to a genuinely unseen vertical
+
+**Methodology pivot from `ISSUE38_DECISION.md`'s original E2 plan**:
+that document scoped E2 as "LLM-assisted feature discovery on a
+previously unseen catalog." The user directing this pass instead asked
+for deterministic synthetic datasets first (generator, fixed seeds,
+schema, ground truth, provenance, validation all committed), with
+external-dataset search as a non-blocking parallel check -- explicitly
+overriding the original plan. LLM-assisted feature discovery remains
+untested and is still open (see "What this does NOT establish" in the
+decision doc).
+
+**Hypothesis**: the architecture validated against WANDS (E1, real home
+furnishings) generalizes to a catalog from a vertical with a materially
+different attribute schema and, for the first time, a genuinely new
+*structural relationship pattern* -- not just new vocabulary in an
+already-tested shape (single-valued entity/attribute lookup, all E1
+tested).
+
+**Dataset** (`crates/issue38-e2e3-eval/src/automotive.rs`, `SEED =
+0x38E2_A0A0`): a fully synthetic automotive-parts catalog. Attribute
+schema shares nothing with WANDS: `thread_size`, `voltage`,
+`cold_cranking_amps`, `heat_range`, `micron_rating`, `bulb_type`,
+`lumens`, `filter_type`, `material_grade`, `oem_or_aftermarket` -- none
+exist in WANDS. The genuinely new relationship: `compatible_fitment`, a
+many-to-many vehicle-compatibility set (7 real make/model pairs x 9
+model years), represented via the *already-existing*
+`AttributeValue::MultiEnum` + `Constraint::MultiEnumContains` mechanism
+-- deliberately not a new `StructuralConstraint` variant, per this
+project's "do not recreate Solr/Elasticsearch abstractions" rule and this
+crate's own `lib.rs` doc comment. Brand names are fictional; vehicle
+make/model names are real (a factual, non-trademark-sensitive descriptive
+attribute in real aftermarket-parts commerce, like a shoe size). Ground
+truth is computed programmatically from the same generation parameters
+that produced the catalog (3-way `Exact`/`Partial`/`Irrelevant`, reusing
+`phase9_eval::wands_relevance::WandsLabel`), not hand-labeled.
+
+**A real methodology bug caught before ever running the experiment**
+(by direct code read of `crates/commerce-core/src/ir/query.rs`'s
+`compile()`, not discovered after a failed run): the fitment value was
+originally formatted as a pipe-joined key, `"{make}|{model}|{year}"` (e.g.
+`"honda|civic|2015"`). `compile()`'s real phrase-lexicon lookup matches
+only an *exact, space-joined* token window (`tokens[i..i+window].join("
+")`) against `SemanticLexicon`'s keys -- a pipe-joined key can never
+equal any such window, no matter how a shopper phrases the query. This
+would have made every fitment query in this experiment compile with
+*zero* fitment constraint resolved, silently testing nothing about the
+new relationship at all while still reporting a plausible-looking number.
+Fixed by reformatting to a natural, space-joined phrase,
+`"{year} {make} {model}"` (e.g. `"2015 honda civic"`), matching this
+module's own query templates' word order exactly. A dedicated unit test
+(`fitment_phrase_is_discoverable_by_the_real_compile_lexicon`,
+`crates/issue38-e2e3-eval/src/lib.rs`) now proves, against the real
+`compile()`/`compile_lexicon`, that a fitment query resolves both a
+`Structural(ProductType(_))` entity constraint and a
+`Constraint::MultiEnumContains` fitment constraint from real query text
+-- not merely asserted from reading source.
+
+**Setup**: 3,000 products, 10 product types, 57 queries across 7
+templates, real production pipeline (`ir::query::compile` ->
+`plan::plan` -> `plan::execute_planned`, `PlannerPolicy{selectivity_threshold:
+0.05, delegate_oversample: 20}`), `phase9_eval::bitmap_delegate::BitmapTantivyDelegate`
+reused unmodified as the lexical delegate. 5 independent runs.
+
+### Results (byte-identical across all 5 runs for every correctness/routing number; only latency varies)
+
+| metric | value |
+|---|---|
+| fitment_exact NDCG@10 (n=8) | mean **0.9913**, min 0.9306 |
+| aggregate NDCG@10, excluding exact_lookup (n=26) | mean **0.9271** |
+| aggregate NDCG@10, all templates (n=57) | mean ~0.422-0.425 (see finding below) |
+| routing | 35.1% FastPath, 0% Hybrid, 64.9% Punt |
+| failure taxonomy | 35.1% entity_resolved_structural, 56.1% no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt |
+| candidate-set size | p50 3,000 (full catalog), p10 15.2 |
+| latency (execute_planned, p50) | ~0.099ms in 4/5 runs (run4 outlier 0.132ms) |
+
+The `vocabulary_gap_no_entity` template (`"ceramic front pads"`, n=2,
+mean NDCG 0.58) is a deliberate regression check reproducing P9-E05's
+resolution-priority scenario against fully unrelated automotive
+vocabulary -- confirms the entity-corroboration demotion rule still
+fires correctly on unseen vocabulary, not just on WANDS's own.
+
+### Named finding: `exact_lookup` near-zero NDCG is a delegate-scope gap, not a generalization failure
+
+`exact_lookup` (part-number search, `"part number IA-1234-BP"`, 31/57 =
+54% of the workload) scores NDCG ~0. Root-caused directly (not
+speculated): `part_number` is a *variant*-level `AttributeValue::Text`
+attribute, but `phase9_eval::bitmap_delegate::build_index`'s own doc
+comment states it indexes only *product*-level `Text` attributes into
+its Tantivy fields -- an existing, documented Phase 9 scope decision, not
+a new defect found here. `commerce_core::index::CatalogIndex`'s own
+internal `lexical_postings` *does* include variant-level text (merged in
+via `effective_attributes`), but `plan::execute_planned`'s `Hybrid`/
+`Punt` outcomes never consult it at all -- they rank purely via whatever
+external `LexicalDelegate` is wired in (confirmed by direct read of
+`plan/mod.rs`). This is disclosed as a real schema-management-relevant
+finding: a production `LexicalDelegate` implementation must explicitly
+decide whether to index variant-level identifiers (SKU/part number
+commonly vary per variant in real catalogs), which the reused reference
+delegate today does not. Not patched here -- `bitmap_delegate.rs` is
+shared, already-validated Phase 9 infra, out of E2's scope to modify.
+Filed as GitHub Issue #41.
+Reported separately (both an "excluding exact_lookup" aggregate and the
+per-template breakdown) so it cannot silently read as evidence against
+the fitment/schema-generalization question E2 exists to answer.
+
+### I38-E2 verdict
+
+The architecture generalizes cleanly to this unseen vertical, including
+its genuinely new structural relationship (fitment NDCG 0.9913, no
+production code changes) -- a positive generalization result. The
+disclosed `exact_lookup` finding is a real, useful, but *distinct*
+finding about lexical-delegate scope, not a mark against generalization.
+
+## I38-E3: mixed-category merchant catalog, schema-management diagnostic
+
+**Methodology pivot** (same as E2 above): the original decision doc
+scoped E3 as combining WANDS with a different vertical. The user's
+governing instruction for this pass asked instead for a realistic
+mixed-category *merchant* catalog built from scratch: several product
+families with incompatible schemas, shared ambiguous fields, sparse
+attributes, noisy titles, and cross-category queries -- explicitly
+including "cases that test whether ingestion can decide which features
+deserve bitmap indexing without requiring search-time category
+intelligence."
+
+**Dataset** (`crates/issue38-e2e3-eval/src/mixed_merchant.rs`, `SEED =
+0x38E3_C0DE`): furniture (self-contained synthetic, deliberately noisy
+titles -- promotional junk, typos, inconsistent casing) + apparel +
+automotive, 1,000 products each, ingested as **one undifferentiated
+catalog** (3,000 products, 18 product types). Shared ambiguous field
+*names* across families with different vocabularies: `color`
+(furniture/apparel only -- automotive has none, a real sparse-field
+case), `material` (furniture/apparel/automotive all define it, "Leather"
+genuinely overlaps furniture and apparel), and the deliberate schema
+conflict: `size` is always `AttributeValue::Enum` in apparel (`"34"` for
+jeans waist) and always `AttributeValue::Numeric` in automotive Wiper
+Blades -- arising naturally from realistic per-family modeling choices
+(a wiper blade's size is a measured length in inches; a jeans size is a
+catalog label), not an injected fixture. `material` is sparse (~15-20%
+missing per family).
+
+### Schema-management diagnostic: catalog-agnostic ingestion, confirmed by direct measurement
+
+`crates/issue38-e2e3-eval/src/ingest.rs`'s `build_catalog` never reads
+`SynthProduct::family` (confirmed by grep, not merely by convention) --
+the family tag exists purely for this crate's own reporting. Measured
+against the real pipeline: 18 product types and 15 brands discovered
+purely from the ingested `Catalog` + registries; `CatalogIndex::build`
+(`crates/commerce-core/src/index/mod.rs`) bitmap-indexes every
+`Enum`/`MultiEnum`/`Boolean` attribute value and sorts every `Numeric`
+value purely by that value's own `AttributeValue` variant tag -- there is
+no per-family or per-category conditional anywhere in that function.
+Ingestion's schema decisions are, verifiably, type-tag-driven and
+catalog-agnostic, directly answering the question this experiment was
+asked to test.
+
+### Finding 1 (the size schema conflict), measured directly
+
+`lexicon.resolve("34")` returns **exactly 1 candidate** (apparel's `Enum`
+source only). Root cause, verified by direct read of
+`crates/commerce-core/src/cold_start/profile.rs`: `Numeric` values are
+profiled into a completely separate `numeric_values` map that
+`compile_lexicon` never reads at all -- automotive's Numeric `size`
+values never reach the lexicon, so there is no "ambiguous candidate list"
+for the profiler to arbitrate. The actual conflict lives entirely inside
+`ir::query::compile`'s hard-coded `"size N"` keyword branch
+(`crates/commerce-core/src/ir/query.rs`), which (a) never consults the
+lexicon for this token pattern at all, and (b) writes directly into
+`result.constraints` rather than the `lexicon_attribute_matches` list
+P9-E05's entity-corroboration demotion rule inspects -- so a bare
+`"size N"` query is *not* demoted to a preference the way an equivalent
+bare lexicon-derived attribute match would be. `Constraint::matches`'s
+own `_ => false` catch-all (`crates/commerce-core/src/domain/constraint.rs`)
+still makes this safe -- a `Numeric` constraint checked against an
+`Enum`-valued attribute always safely returns `false`, never a
+false-positive cross-type match.
+
+Measured consequence on `size_schema_conflict` queries: ground truth
+spans both families (apparel: 64 relevant variants, automotive: 10), but
+returned hits are **100% automotive, 0% apparel** (0/64 = 0.0% apparel-side
+recall, 10/10 = 100% automotive-side recall) -- reproduced identically
+across 5 runs. A real, disclosed **recall gap**, not a correctness
+violation. Filed as a scoped design question (should `compile()`'s
+numeric keyword branches consult the lexicon and participate in the
+entity-corroboration demotion rule before becoming hard filters?) for a
+future dedicated design cycle, per the P9-E05 precedent of not rushing an
+undermotivated heuristic patch into `compile()`'s resolution algorithm.
+Filed as GitHub Issue #40.
+
+### Finding 2 (residual-lexical veto), found by measurement, not anticipated
+
+While building this experiment's own "clean per-family control query"
+template, direct measurement (not code reading) surfaced a second,
+distinct finding: `plan::execute_planned`'s `Hybrid`/`Punt` outcomes let
+the lexical delegate's *residual* free-text term veto an otherwise
+well-formed, correctly-narrowed structural query. The original template
+prepended a family label to the product-type phrase (e.g. `"furniture
+sofas"`); `"furniture"` and `"automotive"` appear in **zero** generated
+titles, so the delegate returns zero raw hits and the *entire query*
+returns nothing -- even though the `ProductType` structural constraint
+alone identifies hundreds of correct candidates already sitting in the
+index (`execute_planned` never falls back to the structural candidate
+set when the delegate itself returns nothing). `"apparel sneakers"`
+appeared to work, but only by coincidence: one of this crate's own
+apparel brand names, `"Cascade Apparel"`, literally contains the word
+"apparel" -- kept deliberately (not renamed away), since a brand name
+containing its own category word is a realistic real-catalog pattern,
+and its presence is exactly what isolates the effect as a real recall
+veto rather than "every residual term always fails."
+
+This reads as stronger than `plan/mod.rs`'s own doc comment implies ("the
+delegate ranks free text only within that narrowed set" suggests a
+ranking signal, not an additional hard filter). Measured:
+`residual_veto_probe` mean NDCG@10 = **0.3333** (n=3: 0, 0, 1.0). The
+template was split in two once this was found: `same_catalog_control`
+(bare product-type phrase, confound removed) now scores a clean mean
+NDCG@10 = **1.0000** (n=3, all `FastPath`) -- both reproduced identically
+across 5 runs. Filed as a second scoped design question, not patched
+here (this is production `plan`/`execute_planned` behavior; changing it
+needs its own dedicated design cycle per this project's established
+discipline, not a same-pass heuristic fix). Filed as GitHub Issue #40
+(alongside Finding 1 above -- both are resolution-safety-net gaps in the
+same two functions).
+
+### Full results (byte-identical across all 5 runs for every correctness/routing/diagnostic number)
+
+| metric | value |
+|---|---|
+| aggregate NDCG@10 (n=11) | mean 0.7273 |
+| cross_category_bare_attribute (bare color, "leather black") | mean NDCG@10 = 1.0000 (n=3, all Punt) -- correctly spans every matching family, no hidden single-family bias |
+| same_catalog_control (clean) | mean NDCG@10 = 1.0000 (n=3, all FastPath) |
+| residual_veto_probe | mean NDCG@10 = 0.3333 (n=3, hybrid:1/punt:2) -- see Finding 2 |
+| size_schema_conflict | mean NDCG@10 = 0.5000 (n=2, both FastPath) -- see Finding 1 |
+| routing | 45.5% FastPath, 9.1% Hybrid, 45.5% Punt |
+| candidate-set size | p50 250 |
+| latency (execute_planned, p50) | ~0.030-0.049ms across 5 runs |
+
+### I38-E3 verdict
+
+Ingestion's schema-management decisions are confirmed, by direct
+measurement, to be catalog-agnostic and type-tag-driven -- the positive
+result the experiment was asked to establish. Both named findings (the
+size recall gap, the residual-lexical veto) are real, safe (never a
+false-positive hard filter or wrong result), disclosed, and scoped as
+design questions for a future dedicated cycle rather than patched in this
+pass, consistent with this project's established discipline (P9-E05) of
+not rushing heuristic changes into `compile()`/`plan()`'s resolution
+logic without one.
+
+## E2/E3 quality gate
+
+`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+--all-features -- -D warnings`, `cargo test --workspace --all-features`
+(0 failures, including 6 new `issue38-e2e3-eval` tests: determinism
+across every family generator, ground-truth self-consistency for all
+four workloads, and the fitment-phrase-discoverability proof), `cargo
+build --workspace --release` -- all clean.
+
+## External-validity check (non-blocking, per the governing instruction)
+
+A background research pass searched for a license-compatible, reachable
+public commerce dataset from a vertical materially different from
+furniture, to use only as an external-validity check -- explicitly not
+allowed to block the synthetic E2/E3 work above, and explicitly not to be
+overstated as "real-world validation" if used. Findings, disclosed in
+full rather than silently resolved:
+
+- This sandbox can only reach `github.com` and its raw-content/API
+  subdomains; Kaggle, HuggingFace, Zenodo, and static Open Food Facts
+  hosts all return 403.
+- The one dataset with real, non-synthetic content confirmed
+  byte-fetchable right now (`raw.githubusercontent.com/SayamAlt/E-Commerce-Text-Classification/main/ecommerceDataset.csv`,
+  50,425 rows, Electronics/Clothing & Accessories/Books/Household labels)
+  has an **unconfirmed license** -- its origin (a Zenodo record) could
+  not be reached from this sandbox to check. Per the governing
+  instruction's explicit preference for license-compatible sources, this
+  is flagged rather than used.
+- Open Food Facts (grocery/CPG) has the clearest permissive license
+  (ODbL + CC-BY-SA) and the best vertical distance from furniture, but
+  both its primary host and its HuggingFace mirror are unreachable from
+  this sandbox.
+- Home Depot's product-search-relevance dataset (the closest structural
+  match to WANDS -- real human relevance judgments) is Kaggle-only,
+  competition-rules-licensed, and unreachable; no GitHub mirror with real
+  committed data was found (10 candidate "solution" repos checked, all
+  require the user's own Kaggle download).
+
+**No external-validity check was performed.** This is disclosed
+explicitly rather than silently substituted with synthetic evidence:
+every E2/E3 result above is synthetic, and remains synthetic evidence
+only, not real-world validation. Resolving this (either by re-attempting
+the unconfirmed-license candidate from an environment that can verify
+its license, or by fetching Open Food Facts from an unblocked network)
+is named as follow-up work, not done here.

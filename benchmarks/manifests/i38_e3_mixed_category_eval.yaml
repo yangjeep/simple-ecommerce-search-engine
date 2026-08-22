@@ -1,0 +1,114 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I38-E3
+phase: issue-38
+issue: 38
+decision_document: ISSUE38_DECISION.md
+claim: >
+  Issue #38 E3: a realistic mixed-category merchant catalog -- furniture +
+  apparel + automotive (1,000 products each, 3,000 total) ingested as ONE
+  undifferentiated catalog, with shared ambiguous field names across
+  incompatible per-family schemas (color, material, and a deliberate
+  size conflict: apparel's size is always AttributeValue::Enum, automotive
+  Wiper Blades' size is always AttributeValue::Numeric -- a naturally-
+  arising conflict, not an injected fixture), sparse attributes (~15-20%
+  missing material per family), and noisy furniture titles (promotional
+  junk, typos). Tests whether catalog-agnostic ingestion
+  (CatalogIndex::build, cold_start::CatalogProfile::build/compile_lexicon)
+  correctly decides which features deserve bitmap/lexicon treatment
+  WITHOUT any search-time category intelligence, and what happens at
+  query time when two families' same-named-but-differently-typed
+  attributes collide.
+
+  Schema-management diagnostic (confirms catalog-agnostic ingestion by
+  direct measurement): 18 product types and 15 brands discovered purely
+  from the ingested Catalog + registries -- SynthProduct::family is never
+  read by ingest::build_catalog or by anything in commerce_core (confirmed
+  by grep). CatalogIndex::build bitmap-indexes every Enum/MultiEnum/
+  Boolean value and sorts every Numeric value purely by the value's own
+  AttributeValue variant tag; no per-family conditional exists anywhere in
+  that function.
+
+  Size-schema-conflict finding, MEASURED directly (not merely read from
+  source): lexicon.resolve("34") returns exactly 1 candidate (apparel's
+  Enum source only) -- automotive's Numeric size values are profiled into
+  a completely separate numeric_values map that compile_lexicon never
+  reads, so there is no ambiguous-candidate list for the profiler to
+  arbitrate; the actual conflict lives entirely inside ir::query::compile's
+  hard-coded "size N" keyword branch, which never consults the lexicon for
+  this token pattern at all. Measured consequence: on size_schema_conflict
+  queries, ground truth spans both families (apparel: 64 relevant variants,
+  automotive: 10), but returned hits are 100% automotive, 0% apparel
+  (0/64 = 0.0% apparel-side recall) -- reproduced identically across 5
+  runs. Constraint::matches's `_ => false` catch-all still makes this
+  safe (no false-positive cross-type match) -- a disclosed RECALL GAP, not
+  a correctness violation, consistent with the same finding in E2/E1's
+  lineage of "safe but incomplete" gaps this project files as scoped
+  design questions rather than rushed patches (P9-E05 precedent).
+
+  Second finding, found by direct measurement while building this
+  experiment's own control-query template (not anticipated in advance):
+  plan::execute_planned's Hybrid/Punt outcomes let the lexical delegate's
+  *residual* free-text match veto an otherwise well-formed, correctly-
+  narrowed structural query. residual_veto_probe ("furniture sofas" /
+  "apparel sneakers" / "automotive brake pads") measures this directly:
+  mean NDCG@10 0.3333 (n=3) -- "furniture sofas" and "automotive brake
+  pads" both score 0 (their residual word "furniture"/"automotive"
+  matches zero indexed titles, so the delegate returns nothing and the
+  whole query returns nothing, even though the ProductType constraint
+  alone identifies hundreds of correct candidates already in the index);
+  "apparel sneakers" scores 1.0 only because one of this crate's own
+  brand names, "Cascade Apparel", happens to literally contain the word
+  "apparel" (a realistic real-catalog coincidence, kept deliberately, not
+  renamed away). The cleaned-up same_catalog_control template (bare
+  product-type phrase, no residual word) scores a clean 1.0/1.0/1.0
+  (mean NDCG@10 1.0000, all FastPath) once the confound is removed --
+  reproduced identically across 5 runs. Filed as a scoped design question
+  (does execute_planned's Hybrid/Punt correctly treat residual_lexical as
+  a pure ranking signal, or does it function as a second hard filter?),
+  not patched here.
+
+  Cross-category ambiguous queries (bare color, "leather black") both
+  score NDCG@10 = 1.0 (mean, n=3, all Punt-routed) -- the engine correctly
+  treats a bare shared-attribute query as spanning every matching family,
+  no hidden single-family bias found.
+
+git_sha: 39dd1240dd4469f565f61c554907df3e523aace7
+binary: crates/issue38-e2e3-eval/src/bin/e3_mixed_category_eval.rs
+build_command: cargo build --release -p issue38-e2e3-eval
+run_command: |
+  ./target/release/e3_mixed_category_eval [output_summary_json_path]
+
+dataset:
+  name: deterministic synthetic mixed-category merchant catalog (furniture +
+    apparel + automotive, this project's own generator, not downloaded)
+  source: crates/issue38-e2e3-eval/src/mixed_merchant.rs (SEED = 0x38E3_C0DE),
+    assembling furniture_synth.rs (SEED 0x38E3_F0F0), apparel.rs
+    (SEED 0x38E3_A9A0), automotive.rs (SEED 0x38E2_A0A0)
+  size: 3,000 products (1,000 per family), 18 distinct product types total
+
+engine:
+  native: commerce_core::ir::query::compile -> plan::plan ->
+    plan::execute_planned (unmodified production pipeline)
+  lexical_delegate: phase9_eval::bitmap_delegate::BitmapTantivyDelegate
+    (reused from Phase 9, not reimplemented)
+
+workload:
+  queries: 11, 4 templates (cross_category_bare_attribute,
+    residual_veto_probe, same_catalog_control, size_schema_conflict)
+  ground_truth: computed programmatically from the same generator
+    parameters that produced the catalog
+  policy: PlannerPolicy { selectivity_threshold: 0.05, delegate_oversample: 20 }
+  min_enum_frequency: 1
+  warmup: 1 full untimed pass over the whole workload before the measured pass
+
+seed: "0x38E3_C0DE (mixed_merchant::SEED, ChaCha8Rng) -- fully deterministic
+  catalog/workload assembly, no sampling"
+
+raw_results: docs/research/artifacts/i38_e3_run1/
+  - main_run{1,2,3,4,5}.txt (5 independent full runs)
+  - summary.json / summary_run{2,3,4,5}.json (machine-readable per-run summaries)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE38_LOG.md I38-E3 for the full schema-management
+  diagnostic, the size-schema-conflict measurement, and the
+  residual-lexical-veto finding.

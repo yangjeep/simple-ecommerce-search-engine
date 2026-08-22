@@ -1,0 +1,31 @@
+{
+  "experiment_id": "I38-E3",
+  "phase": "issue-38",
+  "issue": 38,
+  "benchmark_manifest": "benchmarks/manifests/i38_e3_mixed_category_eval.yaml",
+  "git_sha": "39dd1240dd4469f565f61c554907df3e523aace7",
+  "dataset": {
+    "name": "deterministic synthetic mixed-category merchant catalog (furniture + apparel + automotive)",
+    "products": 3000,
+    "products_per_family": 1000,
+    "distinct_product_types": 18,
+    "queries": 11
+  },
+  "engine_config": {
+    "native": "commerce_core::ir::query::compile -> plan::plan -> plan::execute_planned (unmodified)",
+    "lexical_delegate": "phase9_eval::bitmap_delegate::BitmapTantivyDelegate (reused from Phase 9)"
+  },
+  "repetitions": "5 independent full runs; correctness/routing/schema-diagnostic numbers are deterministic byte-for-byte -- only latency varies run-to-run",
+  "seed": "0x38E3_C0DE (mixed_merchant::SEED)",
+  "raw_results_path": "docs/research/artifacts/i38_e3_run1/",
+  "analysis_version": "docs/experiments/ISSUE38_LOG.md#i38-e3",
+  "decision": "ISSUE38_DECISION.md",
+  "headline_result": {
+    "schema_management_diagnostic": "18 product types + 15 brands discovered purely from the ingested Catalog (SynthProduct::family never read by ingest::build_catalog or commerce_core, confirmed by grep); CatalogIndex::build bitmap-indexes every Enum/MultiEnum/Boolean value and sorts Numeric values purely by AttributeValue's own variant tag, no per-family conditional anywhere",
+    "size_schema_conflict_recall_gap": "lexicon.resolve(\"34\") returns exactly 1 candidate (apparel-only) -- automotive's Numeric size never reaches the lexicon at all; measured consequence: size_schema_conflict queries return 0/64 (0.0%) apparel-side recall vs 10/10 (100%) automotive-side recall, reproduced identically across 5 runs -- safe (Constraint::matches's `_ => false` prevents any false positive) but a real, disclosed recall gap, filed as a scoped design question per the P9-E05 precedent",
+    "residual_lexical_veto_finding": "residual_veto_probe mean NDCG@10 = 0.3333 (n=3): 'furniture sofas'/'automotive brake pads' both score 0 because their residual word matches zero indexed titles, so execute_planned's Hybrid/Punt outcomes return nothing even though the ProductType structural constraint alone identifies hundreds of correct candidates; 'apparel sneakers' scores 1.0 only via an unrelated brand-name coincidence ('Cascade Apparel'). same_catalog_control (bare product-type phrase, confound removed) scores a clean mean NDCG@10 = 1.0000 (n=3, all FastPath). Reproduced identically across 5 runs. Filed as a scoped design question, not patched here.",
+    "cross_category_bare_attribute": "mean NDCG@10 = 1.0000 (n=3, all Punt) -- bare shared-attribute queries (color, 'leather black') correctly span every matching family with no hidden single-family bias",
+    "candidate_size_p50": "250 docs",
+    "latency_p50_ms": "~0.030-0.049ms across 5 runs, sub-millisecond throughout"
+  }
+}

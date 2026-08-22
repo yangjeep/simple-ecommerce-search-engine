@@ -1,0 +1,54 @@
+=== Issue #38 E3: mixed-category merchant full-pipeline eval ===
+
+--- schema-management diagnostic (catalog-agnostic ingestion) ---
+product types discovered: 18 (no per-family hardcoding -- CatalogProfile::build takes only the already-ingested Catalog + registries, never SynthProduct::family)
+brand names discovered: 15
+boolean attributes discovered: 0
+distinct enum values registered in the lexicon: 178
+'size' Numeric values profiled (automotive Wiper Blades only): 13 distinct (profiled separately from the Enum lexicon entirely -- CatalogProfile's numeric_values map is never consulted by compile_lexicon)
+lexicon.resolve("34") candidate count: 1 (expected 1 if only apparel jeans registers Enum size="34" -- confirms automotive's Numeric size values never reach the lexicon at all, so there is no 'ambiguous candidate list' for the profiler to resolve; the gap is entirely in compile()'s keyword branch, not here)
+
+  [manifest] experiment=I38-E3 method=native_compiled_pipeline commit=39dd1240dd44 dirty=true host=vm cpus=4 os=linux seed=954450142 warmup=1 reps=1
+  [manifest] dataset=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=13339b_mtime=1787424357)  query_set=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=13339b_mtime=1787424357)
+  [manifest] config={"delegate_oversample":20,"k":10,"min_enum_frequency":1,"n_per_family":1000,"selectivity_threshold":0.05}
+catalog: 3000 products (1000 furniture + 1000 apparel + 1000 automotive)
+workload: 11 queries
+
+--- coverage / routing ---
+queries evaluated: 11
+queries with >=1 hit returned: 8 (72.7%)
+  outcome fast_path: 5 (45.5%)
+  outcome hybrid: 1 (9.1%)
+  outcome punt: 5 (45.5%)
+fallback rate (Punt share of all queries): 45.5%
+
+--- failure taxonomy ---
+  entity_resolved_but_punted: 2 (18.2%)
+  entity_resolved_structural: 4 (36.4%)
+  vocabulary_gap_demoted_to_punt: 5 (45.5%)
+
+--- correctness ---
+  NDCG@10: n=11 mean=0.7273 sd=0.4671 | p10=-0.0000 p25=0.5000 p50=1.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=-0.0000 max=1.0000
+  Recall@10: n=11 mean=0.1161 sd=0.2946 | p10=0.0000 p25=0.0064 p50=0.0270 p75=0.0400 p90=0.1000 p95=0.5500 p99=0.9100 | min=0.0000 max=1.0000
+  MRR: n=11 mean=0.7273 sd=0.4671 | p10=0.0000 p25=0.5000 p50=1.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=0.0000 max=1.0000
+
+--- per-template NDCG@10 (mean) + routing ---
+  cross_category_bare_attribute: n=3 mean=1.0000 p50=1.0000 routing={"punt": 3}
+  residual_veto_probe: n=3 mean=0.3333 p50=-0.0000 routing={"hybrid": 1, "punt": 2}
+  same_catalog_control: n=3 mean=1.0000 p50=1.0000 routing={"fast_path": 3}
+  size_schema_conflict: n=2 mean=0.5000 p50=0.5000 routing={"fast_path": 2}
+
+--- size-schema-conflict recall gap (measured, not just read from source) ---
+  ground-truth-relevant variants by family: {"apparel": 64, "automotive": 10}
+  returned hits by family:                  {"automotive": 10}
+  apparel-side recall on size_schema_conflict queries: 0/64 (0.0%) -- a low or zero value here, alongside nonzero automotive-side recall, is the direct measured confirmation of the disclosed recall gap.
+
+--- candidate-set size (index.indexed_candidates) ---
+  candidates: n=11 mean=928.1818 docs sd=1333.9177 docs | p10=10.0000 p25=100.0000 p50=250.0000 p75=1625.0000 p90=3000.0000 p95=3000.0000 p99=3000.0000 | min=0.0000 max=3000.0000 docs
+
+--- latency (execute_planned, end-to-end, single-call per query) ---
+  execute_planned: n=11 mean=0.1123ms sd=0.1444ms | p10=0.0043 p25=0.0237 p50=0.0491 p75=0.1326 p90=0.2496 p95=0.3672 p99=0.4612 | min=0.0005 max=0.4848ms
+
+summary written to docs/research/artifacts/i38_e3_run1/summary_run2.json
+
+=== I38-E3 complete ===

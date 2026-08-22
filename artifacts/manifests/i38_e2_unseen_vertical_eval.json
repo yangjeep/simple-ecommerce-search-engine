@@ -1,0 +1,32 @@
+{
+  "experiment_id": "I38-E2",
+  "phase": "issue-38",
+  "issue": 38,
+  "benchmark_manifest": "benchmarks/manifests/i38_e2_unseen_vertical_eval.yaml",
+  "git_sha": "39dd1240dd4469f565f61c554907df3e523aace7",
+  "dataset": {
+    "name": "deterministic synthetic automotive-parts catalog",
+    "products": 3000,
+    "distinct_product_types": 10,
+    "queries": 57
+  },
+  "engine_config": {
+    "native": "commerce_core::ir::query::compile -> plan::plan -> plan::execute_planned (unmodified)",
+    "lexical_delegate": "phase9_eval::bitmap_delegate::BitmapTantivyDelegate (reused from Phase 9)"
+  },
+  "repetitions": "5 independent full runs; correctness/routing numbers are deterministic byte-for-byte (bench-harness's own documented methodology -- only latency has genuine run-to-run variance)",
+  "seed": "0x38E2_A0A0 (automotive::SEED)",
+  "raw_results_path": "docs/research/artifacts/i38_e2_run1/",
+  "analysis_version": "docs/experiments/ISSUE38_LOG.md#i38-e2",
+  "decision": "ISSUE38_DECISION.md",
+  "headline_result": {
+    "fitment_ndcg_at_10_mean": "0.9913 (n=8, min=0.9306) -- the new many-to-many fitment structural relationship generalizes cleanly via the pre-existing MultiEnum/MultiEnumContains mechanism, no production code changes",
+    "aggregate_ndcg_excluding_exact_lookup": "0.9271 (n=26)",
+    "aggregate_ndcg_all_templates": "~0.422-0.425 (deterministic; dominated by the disclosed exact_lookup finding below, 31/57=54% of the workload)",
+    "routing": "35.1% FastPath, 0% Hybrid, 64.9% Punt (fallback rate)",
+    "failure_taxonomy": "35.1% entity_resolved_structural, 56.1% no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt (P9-E05 regression check reproduced against unseen vocabulary, still fires correctly)",
+    "candidate_size_p50": "3000 docs (full catalog)",
+    "latency_p50_ms": "~0.099ms in 4/5 runs (run4 outlier 0.132ms), sub-millisecond throughout -- not comparable to Phase 9's WANDS-scale latency (far smaller synthetic catalog)",
+    "named_finding_exact_lookup": "part_number is a variant-level AttributeValue::Text attribute; the reused phase9_eval::bitmap_delegate::build_index only indexes product-level Text into its Tantivy fields (an existing, documented Phase 9 scope decision, confirmed by direct source read, not a new defect) -- so exact_lookup (part-number search) queries never match via the Hybrid/Punt lexical delegate path, even though commerce_core::index::CatalogIndex's own internal lexical_postings does cover variant text (unused by plan::execute_planned). Disclosed as a schema-management-relevant finding for any future production LexicalDelegate, not patched here (out of E2's scope, shared Phase-9 infra)."
+  }
+}

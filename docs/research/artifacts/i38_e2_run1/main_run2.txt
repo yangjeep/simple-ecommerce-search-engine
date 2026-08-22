@@ -1,0 +1,45 @@
+=== Issue #38 E2: unseen-vertical (synthetic automotive parts) full-pipeline eval ===
+  [manifest] experiment=I38-E2 method=native_compiled_pipeline commit=39dd1240dd44 dirty=true host=vm cpus=4 os=linux seed=954376352 warmup=1 reps=1
+  [manifest] dataset=crates/issue38-e2e3-eval/src/automotive.rs (size=21348b_mtime=1787423483)  query_set=crates/issue38-e2e3-eval/src/automotive.rs (size=21348b_mtime=1787423483)
+  [manifest] config={"delegate_oversample":20,"k":10,"min_enum_frequency":1,"n_products":3000,"selectivity_threshold":0.05}
+catalog: 3000 products, 10 distinct product types
+workload: 57 queries
+
+--- coverage / routing ---
+queries evaluated: 57
+queries with >=1 hit returned: 26 (45.6%)
+  outcome fast_path: 20 (35.1%)
+  outcome punt: 37 (64.9%)
+fallback rate (Punt share of all queries): 64.9%
+
+--- failure taxonomy ---
+  entity_resolved_structural: 20 (35.1%)
+  no_structural_signal_punt: 32 (56.1%)
+  vocabulary_gap_demoted_to_punt: 5 (8.8%)
+
+--- correctness ---
+  NDCG@10 (all templates): n=57 mean=0.4248 sd=0.4774 | p10=0.0000 p25=-0.0000 p50=-0.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=-0.0000 max=1.0000
+  Recall@10: n=57 mean=0.0151 sd=0.0166 | p10=0.0000 p25=0.0000 p50=0.0000 p75=0.0333 p90=0.0333 p95=0.0333 p99=0.0333 | min=0.0000 max=0.0333
+  MRR: n=57 mean=0.4561 sd=0.5025 | p10=0.0000 p25=0.0000 p50=0.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=0.0000 max=1.0000
+  NDCG@10 (excluding exact_lookup, see note below): n=26 mean=0.9312 sd=0.1413 | p10=0.6780 p25=1.0000 p50=1.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=0.5550 max=1.0000
+  NOTE: exact_lookup (variant-level part-number search) scores near-zero NDCG because the reused BitmapTantivyDelegate only indexes product-level Text attributes -- a disclosed evaluation-delegate scope finding, not a compile()/plan() defect. See this binary's own source comment above `ndcgs_excluding_exact_lookup`.
+
+--- per-template NDCG@10 (mean) ---
+  attribute_plus_entity: n=15 mean=0.9333 p50=1.0000
+  exact_lookup: n=31 mean=-0.0000 p50=-0.0000
+  fitment_exact: n=8 mean=0.9913 p50=1.0000
+  numeric_entity: n=1 mean=1.0000 p50=1.0000
+  vocabulary_gap_no_entity: n=2 mean=0.6409 p50=0.6409
+
+--- fitment (genuinely new structural relationship) ---
+  fitment_exact NDCG@10: n=8 mean=0.9913 sd=0.0246 | p10=0.9792 p25=1.0000 p50=1.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=0.9306 max=1.0000
+
+--- candidate-set size (index.indexed_candidates) ---
+  candidates: n=57 mean=1970.1404 docs sd=1413.7848 docs | p10=15.2000 p25=75.0000 p50=3000.0000 p75=3000.0000 p90=3000.0000 p95=3000.0000 p99=3000.0000 | min=8.0000 max=3000.0000 docs
+
+--- latency (execute_planned, end-to-end, single-call per query) ---
+  execute_planned: n=57 mean=0.0826ms sd=0.0571ms | p10=0.0040 p25=0.0120 p50=0.0998 p75=0.1144 p90=0.1462 p95=0.1631 p99=0.1892 | min=0.0021 max=0.1936ms
+
+summary written to docs/research/artifacts/i38_e2_run1/summary_run2.json
+
+=== I38-E2 complete ===
