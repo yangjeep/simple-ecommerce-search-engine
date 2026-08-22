@@ -1,0 +1,46 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P9-E03
+phase: 9
+issue: 34
+decision_document: PHASE9_DECISION.md
+claim: >
+  Isolates Hypothesis 2 (semantic/lexicon-compilation gap) behind P9-E02's
+  REVISE: is the 68.75% Punt-routed WANDS traffic share because those
+  queries genuinely have no related structural entity, or because
+  compile_lexicon's exact-lowercased-phrase matching misses a real entity
+  due to a literal vocabulary mismatch? Pure measurement, no production
+  code changed. Result: H2a (pipe-split product_class) and H2b (category
+  leaf segment) FALSIFIED as material contributors (0.0% and 1.0% of
+  zero-constraint queries recoverable, both well under the 10% bar).
+  H2c (plural/singular normalization) CONFIRMED material: 25.8%
+  (81/314) of zero-constraint queries would gain a real structural
+  constraint under simple trailing-"s" normalization. 72.0% (226/314) are
+  not recoverable under any tested mechanism -- genuinely no related
+  entity, or a gap this diagnostic's specific mechanisms do not cover.
+
+git_sha: PENDING
+binary: crates/phase9-eval/src/bin/p9_e03_lexicon_coverage_diagnostic.rs
+build_command: cargo build --release -p phase9-eval --bin p9_e03_lexicon_coverage_diagnostic
+run_command: ./target/release/p9_e03_lexicon_coverage_diagnostic
+
+dataset:
+  name: real WANDS catalog + queries (raw records, not the ingested commerce_core types)
+  source: https://github.com/wayfair/WANDS
+  size: 42,994 products, 480 queries, 314 currently zero-constraint
+
+engine: n/a -- pure vocabulary/string-matching diagnostic, no commerce_core
+  execution or Solr baseline involved
+
+workload:
+  queries: all 480 real WANDS queries, current production compile_lexicon
+    (min_enum_frequency=1) determines the 314 zero-constraint baseline
+  mechanisms_tested: H2a pipe-split product_class, H2b category leaf
+    segment, H2c plural/singular (trailing-s), H2d substring near-miss
+    (catch-all, not a proposed fix)
+
+seed: "n/a (deterministic string matching over real data, no sampling)"
+
+raw_results: docs/research/artifacts/p9_e03_lexicon_coverage_run1/run1.txt
+
+analysis: printed directly by the binary; see docs/experiments/PHASE9_LOG.md
+  P9-E03 for full hypothesis, decision criteria, and result.

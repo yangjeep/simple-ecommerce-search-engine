@@ -1,0 +1,80 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P9-E04
+phase: 9
+issue: 34
+decision_document: PHASE9_DECISION.md
+claim: >
+  Isolates Hypotheses 1 (ranking quality) and 3 (execution-speed
+  advantage, relevance-controlled) behind P9-E02's REVISE, using one
+  shared harness: for structural_routed (FastPath+Hybrid) queries, both
+  engines rank/execute over the IDENTICAL structural candidate set
+  (native's own CatalogIndex::indexed_candidates, Solr restricted via a
+  {!terms f=id} filter to exactly that set). Result: H1 FALSIFIED --
+  native NDCG@10=0.1521 vs Solr-restricted 0.1537 (-1.05% relative,
+  noise-level) on the identical candidate set; ranking is not the
+  problem. H3 FALSIFIED after adding a warmup pass (the binary's own
+  first, unwarmed run showed the ratio swing from 2.25x to 0.98x between
+  successive runs -- caught before trusting it): native/Solr latency
+  ratio is stably 0.71x-1.14x across 6 warmed runs, well under the >=2x
+  bar -- native's end-to-end speed advantage (P9-E02) was substantially
+  confounded with Solr doing broader, more expensive unrestricted work,
+  not purely an intrinsic execution-model advantage.
+
+  A follow-on diagnostic, prompted directly by H1's falsification: native's
+  structural candidate set contains only 8.41% of a query's real judged-
+  relevant documents on average (0/136 queries reach 100% recall), split
+  similarly low for Exact (11.52%) and Partial (8.03%) grades -- ruling
+  out "WANDS's graded relevance spans categories a hard constraint can't
+  capture" as the primary explanation (Exact should recall far better
+  than Partial if that were true; it does not). An aggregate breakdown
+  localizes the cause precisely: queries whose compiled constraints
+  include a real ProductType/Category entity (n=11) average 47.6% Exact
+  recall; queries resolving to only an attribute-level constraint with no
+  entity (n=92, the large majority) average just 7.2%. Qualitative
+  inspection confirms the mechanism: e.g. "smart coffee table" resolves
+  to Attribute(Enum{color=coffee}) -- a coincidental color-word match --
+  instead of recognizing the product-type phrase, because "Coffee &
+  Cocktail Tables" never appears verbatim in real query text (P9-E03's
+  own finding). commerce_core's own correctness contract (re-verifying
+  every hard constraint) is not violated -- the constraint IS satisfied by
+  every returned hit -- but the constraint itself is frequently the wrong
+  one, a compile_lexicon resolution-priority gap, not a ranking or
+  retrieval-correctness bug.
+
+git_sha: PENDING
+binary: crates/phase9-eval/src/bin/p9_e04_isolated_ranking_and_execution.rs
+build_command: cargo build --release -p phase9-eval --bin p9_e04_isolated_ranking_and_execution
+run_command: ./target/release/p9_e04_isolated_ranking_and_execution [solr_base_url]
+
+dataset:
+  name: real WANDS catalog + queries + judgments (structural_routed subset only)
+  source: https://github.com/wayfair/WANDS
+  size: 150 structural_routed queries (2 skipped, candidate set > 5000),
+    136 evaluated
+
+engine:
+  native: commerce_core::index::CatalogIndex::{indexed_candidates, execute_ranked}
+    (the same structural candidate set FastPath/Hybrid derive from,
+    ranked via the real P9-E00 signal)
+  baseline: fresh, same-run Apache Solr 9.10.1 (wands_bench core),
+    restricted via {!terms f=id} to the identical candidate set, POSTed
+    (not GET) to avoid URL-length limits on large candidate sets
+
+workload:
+  k: 10
+  max_candidates: 5000 (larger candidate sets skipped, counted not
+    silently dropped)
+  warmup: one full pass against both engines via the identical restricted-
+    query path, discarded, before the measured pass
+  repetitions: 6 independent full runs for H3's record (latency is
+    server-warmth-sensitive; NDCG/recall figures are fully deterministic
+    and identical across all runs)
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p9_e04_isolated_ranking_run1/
+  - run1.txt, run2.txt, run3.txt
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE9_LOG.md P9-E04 for full hypothesis, decision
+  criteria, and result.

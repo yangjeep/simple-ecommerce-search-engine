@@ -365,3 +365,197 @@ as statistically rigorous as this project's own bootstrap-CI convention
 elsewhere; (d) Solr's own latency figure is sensitive to how warm its
 persistent server process already is, not fully isolated via a
 steady-state warmup protocol.
+
+**Addendum (post P9-E03/P9-E04), correcting this entry's own speculation,
+not erasing it**: this entry's "why WANDS's richer schema didn't produce
+more pure-structural traffic" section speculated that compound/
+hierarchical `category_leaf` vocabulary was the primary driver of
+`Punt`-routing. P9-E03 directly tested this (H2b, category-leaf-segment
+matching) and found it recovers only 1.0% of zero-constraint queries —
+**that specific speculation is FALSIFIED**, named here rather than
+quietly revised. The real, confirmed drivers are P9-E03's H2c (plural/
+singular mismatch, 25.8%) and, per P9-E04, a distinct and larger problem
+among queries that *do* structurally route: a `compile_lexicon`
+resolution-priority gap where a coincidental attribute-level match
+(e.g. `color=coffee`) wins over failing to find the real entity. See
+P9-E03/P9-E04 below for the full, falsifiable investigation.
+
+## P9-E03: lexicon-coverage diagnostic (Hypothesis 2) — H2c (plural/singular) CONFIRMED material, H2a/H2b FALSIFIED
+
+**Governing context**: per the user's explicit follow-up directive,
+P9-E02's REVISE is treated as evidence to investigate further, not a
+result to route around. Three hypotheses behind the reproduced
+structural-routed relevance gap are separated and independently tested:
+(1) ranking quality, (2) semantic/lexicon-compilation gap, (3) native's
+physical-execution advantage once relevance/candidate-set is controlled.
+This entry covers (2); P9-E04 covers (1) and (3) together (they share one
+harness).
+
+**Hypotheses, each independently falsifiable** (see the binary's own doc
+comment for full detail): H2a (a pipe-split `product_class` fragment —
+WANDS's raw field is occasionally pipe-delimited, e.g.
+"Bookcases|Wall Mounted Shelves", confirmed 2,247/42,994 products (5.23%)
+ingested today as one opaque, never-matching `ProductType` name — would
+recover a real match); H2b (the last segment of `category_leaf`'s full
+slash-joined path alone would recover a match); H2c (simple trailing-"s"
+singular/plural normalization would recover a match); H2d (a looser
+substring near-miss, reported as a signal, not itself a proposed fix).
+
+**Decision criteria, stated before running**: each mechanism scored as
+the fraction of the 314 currently-zero-constraint queries (out of 480) it
+alone would recover a match for (non-exclusive). `>=10%` = material,
+disclosed evidence; under that = falsified as a material contributor,
+reported as such rather than discarded.
+
+**Implementation** (`crates/phase9-eval/src/bin/p9_e03_lexicon_coverage_diagnostic.rs`):
+a pure measurement pass — no production code changed. Reuses the real
+`compile_lexicon`/`compile()` path to establish the 314-query
+zero-constraint baseline as ground truth, then tests each relaxation
+mechanism against vocabularies built directly from raw WANDS records.
+
+**Result, CONFIRMED/FALSIFIED per hypothesis**:
+
+| mechanism | recoverable | verdict |
+|---|---|---|
+| H2a: pipe-split product_class | 0/314 (0.0%) | FALSIFIED |
+| H2b: category leaf segment | 3/314 (1.0%) | FALSIFIED |
+| H2c: plural/singular | 81/314 (25.8%) | **CONFIRMED material** |
+| H2d: substring near-miss (signal only) | 14/314 (4.5%) | n/a |
+| not recoverable under any mechanism | 226/314 (72.0%) | — |
+
+H2a and H2b — my own two leading theories going into this experiment,
+including the specific "compound category path" speculation P9-E02's own
+writeup made — are both falsified. Real vocabulary values like "Beds",
+"Slow Cookers", "Coffee & Cocktail Tables" (short, close to natural
+phrasing) dominate `product_class`; the pipe-delimited and full-path
+compound forms are real but rare failure sources on this dataset. H2c
+(simple pluralization) is a real, material, disclosed contributor:
+roughly a quarter of zero-constraint queries ("chair and a half
+recliner", "sofa with ottoman", "bar stool with backrest") would gain a
+real structural constraint from trailing-"s" normalization alone. The
+majority (72.0%) remain unrecoverable under any of these specific,
+literal-matching relaxations — either genuinely unrelated to any cataloged
+entity, or a gap this diagnostic's mechanisms do not cover (e.g. genuine
+synonymy: "sofa" vs. a `product_class` of "Sectionals").
+
+**Quality gate**: `cargo fmt --all -- --check` clean, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean, `cargo
+test --workspace --all-features` 0 failures, `cargo build --workspace
+--release` clean. Deterministic (no sampling) — single run is the
+complete, reproducible record.
+
+**What this does not decide**: whether to actually implement H2c-style
+plural/singular tolerance in `compile_lexicon`/`SemanticLexicon` — a real
+implementation would need its own falsifiable design (e.g. scoped to
+entity-family names only, to avoid new false-positive matches CLAUDE.md's
+"cross-variant false matches are bugs" rule would flag) and its own
+before/after re-measurement, not attempted in this pass.
+
+## P9-E04: isolated ranking-quality (H1) + execution-speed (H3) comparison — both FALSIFIED; root cause localized to a compile_lexicon resolution-priority defect
+
+**Hypotheses, independently falsifiable, sharing one harness**: for
+`structural_routed` (FastPath+Hybrid) queries, both engines rank/execute
+over the *identical* structural candidate set
+(`CatalogIndex::indexed_candidates`, the same pool `plan::plan`'s
+`FastPath`/`Hybrid` outcomes both derive from) — so any NDCG difference is
+a pure ranking-quality signal (H1), and any latency difference is a pure
+execution-speed signal within identical scope (H3), neither conflated
+with P9-E02's end-to-end comparison, where the two engines could
+legitimately return different candidate sets entirely.
+
+- **H1 (ranking quality)**: Solr's BM25, restricted via a `{!terms f=id}`
+  filter to exactly native's candidate set, achieves materially higher
+  (>=10% relative) NDCG@10 than P9-E00's native default ranking signal.
+- **H3 (execution speed, relevance-controlled)**: native's structural
+  retrieval + ranking is still materially faster (>=2x) than Solr's
+  identical-scope, identically-restricted query.
+
+**Implementation** (`crates/phase9-eval/src/bin/p9_e04_isolated_ranking_and_execution.rs`):
+POSTs (not GET, to avoid URL-length limits on large candidate sets) a
+Solr `{!terms f=id}`-restricted, edismax-scored query for the same
+candidate set native's own `execute_ranked` ranks. 150 structural_routed
+queries found; 2 skipped (candidate set > 5,000, disclosed not silently
+dropped); 136 evaluated.
+
+**A real methodology gap caught before trusting the result, matching this
+project's own P2-E16/P9-E02 precedent**: the first unwarmed run showed
+H3's latency ratio at 2.25x (clearing the bar); a second run on the same
+binary showed 0.98x (not clearing it) — a large, suspicious swing. Added
+the same warmup-pass discipline P9-E02 already established (one full pass
+against both engines, discarded, before measuring) rather than trusting
+either number. Post-warmup, 6 independent runs gave a stable 0.71x-1.14x
+range — the pre-warmup 2.25x was a measurement artifact, not a real
+effect, caught rather than reported.
+
+**Result**:
+
+- **H1: FALSIFIED.** Native NDCG@10=0.1521 vs. Solr-restricted 0.1537 on
+  the *identical* candidate set — a -1.05% relative gap, noise-level.
+  Native's ranking signal (P9-E00) is not materially worse than Solr's
+  BM25 when both rank the same pool. P9-E02's `variant_scoped_structural`
+  examples (native ranking two unjudged items above the true Exact match)
+  reflected the candidate SET differing, not the ranking of a shared set.
+- **H1 follow-on diagnostic** (prompted directly by H1's own falsification
+  — if ranking the same pool isn't the problem, the problem must be which
+  documents are even in the pool): native's structural candidate set
+  contains, on average, only **8.41%** of a query's real judged-relevant
+  documents (0/136 queries reach 100% recall). Split by grade: Exact
+  11.52%, Partial 8.03% — both similarly low, which itself falsifies a
+  plausible alternative explanation (that WANDS's graded "Partial" labels
+  span categories no single hard constraint could ever capture — if that
+  were the whole story, Exact recall should be far higher than Partial;
+  it is not).
+- **Root cause, localized by an aggregate test, not an anecdote**: queries
+  whose compiled constraints include a real `ProductType`/`Category`
+  entity (n=11) average **47.6%** Exact recall; queries resolving to only
+  an attribute-level constraint with no entity at all (n=92, the large
+  majority of the 103 Exact-judged structural_routed queries) average
+  just **7.2%**. Six qualitative examples confirm the mechanism directly:
+  "smart coffee table" resolves to `Attribute(Enum{color=coffee})` —
+  "coffee" coincidentally matches a real color value — instead of
+  recognizing the product-type phrase, because "Coffee & Cocktail Tables"
+  (the real `product_class`) never appears verbatim in the query.
+  "acrylic clear chair" → `color=clear`; "chrome bathroom 4 light vanity
+  light" → `color=chrome`; "coffee table fire pit" → `color=coffee`
+  again — the same pattern, not a one-off. This directly connects to
+  P9-E03's own finding: the entity vocabulary rarely matches literal
+  shopper phrasing, so `compile()`'s longest-window-first scan falls
+  through to a shorter window that happens to coincide with an unrelated
+  attribute value, producing a confident but badly wrong hard constraint
+  — worse for relevance than `Punt` would have been, since a wrong hard
+  filter excludes nearly every genuinely relevant product, whereas `Punt`
+  at least leaves the full free-text query visible to a lexical delegate.
+  `commerce_core`'s own correctness contract is not violated (the
+  constraint IS satisfied by every returned hit — verified, not assumed,
+  by every existing correctness test) — the constraint itself is simply,
+  frequently, the wrong one to have resolved.
+- **H3: FALSIFIED.** Latency ratio 0.71x-1.14x across 6 warmed runs, well
+  under the >=2x bar. Once candidate set and semantic scope are held
+  identical, native's speed advantage evaporates (and mildly reverses in
+  some runs) — P9-E02's end-to-end 2.25x-2.90x figure was substantially
+  confounded with Solr doing broader, more expensive, unrestricted work
+  (full-corpus edismax search, case-insensitive regex `fq`), not purely an
+  intrinsic native-execution-model advantage. This does not contradict
+  P9-E01's own bitmap-vs-TermSetQuery finding (a fair, already-isolated
+  comparison of two *restriction mechanisms* on an identical corpus,
+  independently confirmed real) — it shows that P9-E02's broader,
+  end-to-end latency comparison was answering a different, less isolated
+  question than P9-E01's was.
+
+**Quality gate**: `cargo fmt --all -- --check` clean, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean, `cargo
+test --workspace --all-features` 0 failures, `cargo build --workspace
+--release` clean.
+
+**What this does and does not establish**: establishes precisely, with
+converging aggregate and qualitative evidence, that the P9-E02 relevance
+gap is a *retrieval/coverage* problem caused by a specific, localized
+`compile_lexicon`/`compile()` resolution-priority defect — not a ranking
+defect (H1 falsified) and not explained by an intrinsic native execution-
+speed trade-off (H3 falsified once fairly isolated). Does **not** yet
+implement or validate a fix — a principled fix (e.g. preferring to leave
+a query unresolved/residual rather than accept an attribute-only match
+when no entity constraint is found, or extending `compile_lexicon` with
+H2c-style plural tolerance) needs its own falsifiable design-first cycle,
+named as the concrete next step in `PHASE9_DECISION.md`, not implemented
+speculatively in this pass.

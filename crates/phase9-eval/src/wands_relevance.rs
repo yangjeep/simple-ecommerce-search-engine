@@ -40,7 +40,7 @@ impl WandsLabel {
         }
     }
 
-    fn is_relevant(self) -> bool {
+    pub fn is_relevant(self) -> bool {
         !matches!(self, Self::Irrelevant)
     }
 }
