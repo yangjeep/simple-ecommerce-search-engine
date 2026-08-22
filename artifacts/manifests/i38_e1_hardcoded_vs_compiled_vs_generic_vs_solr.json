@@ -1,0 +1,34 @@
+{
+  "experiment_id": "I38-E1",
+  "phase": "issue-38",
+  "issue": 38,
+  "benchmark_manifest": "benchmarks/manifests/i38_e1_hardcoded_vs_compiled_vs_generic_vs_solr.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "real WANDS catalog (identical to Phase 9)",
+    "products": 42994,
+    "distinct_product_types": 860
+  },
+  "engine_config": {
+    "A": "commerce_core::index::CatalogIndex (hard-coded product_type_bitmaps)",
+    "B": "issue38_eval::CompiledEnumIndex ((field,value)-tuple-keyed generic bitmap)",
+    "B2": "issue38_eval::CompiledOrdinalIndex (per-field-keyed generic bitmap)",
+    "C": "issue38_eval::GenericStore (runtime-generic document store, linear scan)",
+    "D": "fresh, same-run Apache Solr 9.10.1 (wands_bench core)"
+  },
+  "repetitions": "5 independent full runs, 30 reps/query round-robin-interleaved within each, 200x-batched for A/B/B2",
+  "seed": "1234567 (round_robin_schedule); dataset selection deterministic",
+  "raw_results_path": "docs/research/artifacts/i38_e1_run1/",
+  "analysis_version": "docs/experiments/ISSUE38_LOG.md#i38-e1",
+  "decision": "ISSUE38_DECISION.md",
+  "headline_result": {
+    "B_vs_A_p50_overhead": "+74.94% to +77.13% across 5 runs -- DOES NOT PASS <=5% target",
+    "B2_vs_A_p50_overhead": "-10.16% to -13.31% across 5 runs -- PASSES <=5% target",
+    "B_per_query_allocs": "4 (vs A's 2) -- localizes B's overhead to a 2-String tuple-key clone per lookup",
+    "B2_per_query_allocs": "2 (identical to A) -- confirms the redesign eliminates the allocation, not just hides it",
+    "C_vs_A_p50_ratio": "~8145x-8232x (deliberate runtime-generic strawman)",
+    "D_vs_A_p50_ratio": "~9353x-9477x (Solr, cross-process context only, not apples-to-apples)",
+    "methodology_correction": "unbatched sub-microsecond timing produced a sign flip on B's overhead between two runs (+19% vs -15%); fixed via 200x call-batching for A/B/B2 and raising reps to 30, caught and disclosed rather than the favorable number kept",
+    "gate_verdict": "E1 PASSES via the redesigned B2 compiled-schema representation; the naive B design's failure was implementation-specific (an avoidable per-query allocation), not fundamental, exactly the redesign-and-retest Issue #38 asks for"
+  }
+}

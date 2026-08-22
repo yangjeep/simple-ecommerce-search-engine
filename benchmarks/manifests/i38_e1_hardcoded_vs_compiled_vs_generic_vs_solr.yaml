@@ -1,0 +1,108 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I38-E1
+phase: issue-38
+issue: 38
+decision_document: ISSUE38_DECISION.md
+claim: >
+  Issue #38 E1's architectural falsification gate: does compiling a
+  dynamically-discovered feature schema into the same native physical
+  operators (RoaringBitmap intersection) preserve most of a hard-coded
+  specialized executor's physical advantage? Four paths, identical real
+  WANDS catalog (42,994 products, 860 real product_type values), identical
+  stratified 40-query product_type workload spanning the catalog's real
+  selectivity range (max count=1316, min count=1):
+
+  A (hard-coded): commerce_core::index::CatalogIndex's existing
+  product_type_bitmaps (HashMap<ProductTypeId, RoaringBitmap>, a fixed Rust
+  struct field resolved via a typed integer key).
+
+  B (naive compiled schema): issue38_eval::CompiledEnumIndex, the identical
+  product_type data compiled the same catalog-agnostic way
+  compile_lexicon discovers real attribute vocabulary, into the SAME
+  physical primitive CatalogIndex's own generic enum_bitmaps path already
+  uses for arbitrary attributes -- a (String, String)-keyed HashMap.
+  FIRST RESULT: B overhead vs A = +74.94% to +77.13% across 5 independent
+  runs (p50 latency, 200x-batched sub-microsecond timing) -- DOES NOT
+  PASS the <=5% target. Per-query allocation counts precisely localize
+  the cause: A allocates 2/query, B allocates 4/query for the identical
+  query -- exactly the 2 extra Strings B's tuple-key lookup must clone to
+  build an owned (String, String) for every HashMap::get call.
+
+  B2 (redesigned compiled schema, added after localizing B's overhead):
+  issue38_eval::CompiledOrdinalIndex -- one dedicated HashMap<String,
+  RoaringBitmap> per compiled field (no field name in the key, so no
+  tuple allocation), mirroring CatalogIndex's own Issue #21 Phase 6D
+  dictionary precedent. RESULT: B2 overhead vs A = -10.16% to -13.31%
+  across 5 independent runs (B2 is not slower than A at all, within this
+  measurement's noise) -- PASSES the <=5% target comfortably. Per-query
+  allocations: B2 allocates exactly 2/query, identical to A. This
+  confirms B's overhead was implementation-specific (a naive lookup key
+  design), not a fundamental cost of "compiled but schema-flexible" --
+  exactly the redesign-and-retest Issue #38 asks for before concluding
+  the architecture fails E1.
+
+  C (deliberate runtime-generic strawman, issue38_eval::GenericStore, a
+  full per-document field map + linear scan, no precomputed index at
+  all): ~8,000-8,200x slower than A (p50), confirming the "accidental
+  Rust-Solr" cost this project's architecture deliberately avoids.
+
+  D (fresh, same-run Apache Solr 9.10.1 wands_bench core, fq=product_class):
+  ~9,300-9,500x slower than A (p50) -- context only, a cross-process/
+  network-bound comparison, not a fair in-process apples-to-apples
+  measurement the way A/B/B2/C are against each other.
+
+  A real methodology bug was caught and fixed mid-experiment: the first
+  measurement design (unbatched per-call Instant::now() timing, 10 reps)
+  produced a SIGN FLIP on B's overhead between two otherwise-identical
+  runs (+19% one run, -15% the next) once B2 joined the round-robin --
+  at ~1 microsecond per query, timer-call overhead and OS jitter are
+  comparable in magnitude to the operation itself. Fixed by batching 200
+  consecutive same-query calls per timed sample for the three O(1)
+  in-process paths (A/B/B2) and raising reps to 30 (this project's own
+  ">=30 reps for decision-grade" bar) -- batching path C's O(catalog
+  size) linear scan the same way instead made one run take >5 minutes
+  (caught directly, not shipped), so C stays unbatched (single-call
+  timing), matching Solr's already-far-above-timer-resolution absolute
+  latency (~0.6-0.75ms, no batching needed for precision there).
+
+git_sha: PENDING
+binary: crates/issue38-eval/src/bin/e1_hardcoded_vs_compiled_vs_generic_vs_solr.rs
+build_command: cargo build --release -p issue38-eval
+run_command: |
+  ./target/release/e1_hardcoded_vs_compiled_vs_generic_vs_solr [solr_base_url]
+  ./target/release/e1_hardcoded_vs_compiled_vs_generic_vs_solr --rss-only=<a|b|b2|c>
+
+dataset:
+  name: real WANDS catalog (identical to Phase 9)
+  source: https://github.com/wayfair/WANDS
+  size: 42,994 products, 860 distinct real product_type values
+
+engine:
+  A: commerce_core::index::CatalogIndex (hard-coded product_type_bitmaps)
+  B: issue38_eval::CompiledEnumIndex ((field, value)-tuple-keyed generic bitmap)
+  B2: issue38_eval::CompiledOrdinalIndex (per-field-keyed generic bitmap)
+  C: issue38_eval::GenericStore (runtime-generic document store, linear scan)
+  D: fresh, same-run Apache Solr 9.10.1 (wands_bench core)
+
+workload:
+  queries: 40 real product_type values, stratified across the catalog's
+    real selectivity range (max count=1316, min count=1)
+  reps_per_query: 30 (round-robin-interleaved across all 5 methods,
+    bench_harness::round_robin_schedule, seed 1234567)
+  in_process_batch: 200 consecutive same-query calls per timed sample for
+    A/B/B2 (sub-microsecond, timer-overhead-dominated otherwise); 1
+    (unbatched) for C and D (already far above timer resolution)
+  warmup: 2 untimed calls per method per query, plus one full untimed
+    pass over the whole workload before the timed section (P2-E16/P9-E02/
+    P9-E04 discipline)
+
+seed: "1234567 (round_robin_schedule); dataset selection deterministic, no sampling"
+
+raw_results: docs/research/artifacts/i38_e1_run1/
+  - main_run{1,2,3,4,5}.txt (5 independent full runs)
+  - rss_{a,b,b2,c}.txt (isolated per-path RSS, separate process each)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE38_LOG.md I38-E1 for the full hypothesis,
+  decision criteria, before/after (naive-B vs redesigned-B2) comparison,
+  and gate verdict.
