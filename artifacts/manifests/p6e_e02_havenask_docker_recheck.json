@@ -3,7 +3,7 @@
   "phase": "6E",
   "issue": 21,
   "benchmark_manifest": "benchmarks/manifests/p6e_e02_havenask_docker_recheck.yaml",
-  "git_sha": "PENDING",
+  "git_sha": "20885d270cff471366e8833113a36a2d50536ca2",
   "dataset": {
     "name": "N/A -- live environment/network re-verification, not a dataset benchmark"
   },

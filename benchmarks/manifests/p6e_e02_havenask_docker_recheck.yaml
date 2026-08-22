@@ -22,7 +22,7 @@ claim: >
   the reason is now more precisely characterized than "Docker daemon
   absent." See docs/experiments/PHASE6E_LOG.md for the full account.
 
-git_sha: PENDING
+git_sha: 20885d270cff471366e8833113a36a2d50536ca2
 binary: N/A -- this is a live environment probe (docker/dockerd, curl),
   not a code change or a new benchmark binary
 build_command: N/A
