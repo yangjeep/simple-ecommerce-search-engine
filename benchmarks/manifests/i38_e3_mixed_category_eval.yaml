@@ -83,7 +83,7 @@ claim: >
   treats a bare shared-attribute query as spanning every matching family,
   no hidden single-family bias found.
 
-git_sha: 39dd1240dd4469f565f61c554907df3e523aace7
+git_sha: a7c522af03d646ec2cbee0585f2b4c16c8ae0f85
 binary: crates/issue38-e2e3-eval/src/bin/e3_mixed_category_eval.rs
 build_command: cargo build --release -p issue38-e2e3-eval
 run_command: |

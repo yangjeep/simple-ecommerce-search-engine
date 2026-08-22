@@ -83,7 +83,7 @@ claim: >
   whether to index variant-level identifiers), not patched here (shared,
   already-used-by-Phase-9 infra; changing it is out of E2's scope).
 
-git_sha: 39dd1240dd4469f565f61c554907df3e523aace7
+git_sha: a7c522af03d646ec2cbee0585f2b4c16c8ae0f85
 binary: crates/issue38-e2e3-eval/src/bin/e2_unseen_vertical_eval.rs
 build_command: cargo build --release -p issue38-e2e3-eval
 run_command: |

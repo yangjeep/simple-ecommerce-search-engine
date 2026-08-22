@@ -3,7 +3,7 @@
   "phase": "issue-38",
   "issue": 38,
   "benchmark_manifest": "benchmarks/manifests/i38_e2_unseen_vertical_eval.yaml",
-  "git_sha": "39dd1240dd4469f565f61c554907df3e523aace7",
+  "git_sha": "a7c522af03d646ec2cbee0585f2b4c16c8ae0f85",
   "dataset": {
     "name": "deterministic synthetic automotive-parts catalog",
     "products": 3000,

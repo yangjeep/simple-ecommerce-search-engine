@@ -3,7 +3,7 @@
   "phase": "issue-38",
   "issue": 38,
   "benchmark_manifest": "benchmarks/manifests/i38_e3_mixed_category_eval.yaml",
-  "git_sha": "39dd1240dd4469f565f61c554907df3e523aace7",
+  "git_sha": "a7c522af03d646ec2cbee0585f2b4c16c8ae0f85",
   "dataset": {
     "name": "deterministic synthetic mixed-category merchant catalog (furniture + apparel + automotive)",
     "products": 3000,
