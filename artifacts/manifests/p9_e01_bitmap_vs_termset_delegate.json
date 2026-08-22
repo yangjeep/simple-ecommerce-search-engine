@@ -1,0 +1,29 @@
+{
+  "experiment_id": "P9-E01",
+  "phase": "9",
+  "issue": 34,
+  "benchmark_manifest": "benchmarks/manifests/p9_e01_bitmap_vs_termset_delegate.yaml",
+  "git_sha": "PENDING",
+  "dataset": {
+    "name": "synthetic (deliberately scoped, not a real-catalog claim)",
+    "documents": 500000,
+    "restrict_to_size": 60000
+  },
+  "engine_config": {
+    "native": "phase9_eval::bitmap_delegate::BitmapTantivyDelegate",
+    "baseline": "tantivy::query::TermSetQuery + BooleanQuery (Phase 2's reference TantivyDelegate restriction pattern)"
+  },
+  "repetitions": "30 measured reps per arm per run, 6 total runs",
+  "warmup": 3,
+  "seed": "n/a (deterministic synthetic data, no sampling)",
+  "raw_results_path": "docs/research/artifacts/p9_e01_bitmap_vs_termset_run1/",
+  "analysis_version": "docs/experiments/PHASE9_LOG.md#p9-e01",
+  "decision": "docs/experiments/PHASE9_LOG.md",
+  "headline_result": {
+    "verdict": "CONFIRMED",
+    "decision_criterion": ">=2x mean-latency speedup, same top-10 document set",
+    "mean_speedup_range_across_6_runs": "11.56x - 11.96x",
+    "same_document_set_every_run": true,
+    "secondary_finding": "TermSetQuery/BooleanQuery arm's score is inflated by a constant +1.0 per hit (boolean Must-clause score summing), unrelated to text relevance; bitmap-restrict does not reproduce this (score is exactly the inner query's own score, per a dedicated unit test)"
+  }
+}

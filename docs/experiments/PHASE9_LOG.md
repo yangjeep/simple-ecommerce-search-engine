@@ -109,7 +109,7 @@ this fix targets).
 *safe* (doesn't regress anything tested) and *real* (the new unit tests
 directly exercise it discriminating between candidates). It does **not**
 yet establish that this default signal materially improves FastPath's
-measured relevance gap against Solr on any real catalog — that is P9-E01
+measured relevance gap against Solr on any real catalog — that is P9-E02
 below, the actual re-run of Phase 2's physical-advantage-by-query-class
 measurement, on WANDS.
 
@@ -119,12 +119,115 @@ identical... just without the wasted allocation") — behavior is no longer
 identical when `residual_lexical` is non-empty, by design. The *cost*
 guarantee (no `effective_attributes` merge) is preserved exactly. A
 real-catalog latency re-measurement of `execute_ranked` alone (not just
-correctness) is deferred to P9-E01/E02's benchmark run rather than done
-in isolation here, since P9-E01 needs a real WANDS query mix run anyway.
+correctness) is deferred to P9-E02's benchmark run rather than done in
+isolation here, since P9-E02 needs a real WANDS query mix run anyway.
 
-## P9-E01: (next) fix disclosed defect #2 — Hybrid's TermSetQuery delegate restriction
+## P9-E01: fix disclosed defect #2 — Hybrid's TermSetQuery delegate restriction
 
-Not yet started. See task tracker.
+**Hypothesis**: a bitmap-based restriction mechanism (a `FAST` u64
+`product_ordinal` field on each Tantivy document, checked via
+`RoaringBitmap::contains` per candidate the inner text query visits) costs
+materially less per query than the reference `TantivyDelegate`'s
+`TermSetQuery`-based restriction (a fresh Lucene/Tantivy `TermSetQuery`
+built from up to ~60K `Term`s on every call, per P2-E17's own finding),
+without changing which documents are returned.
+
+**Decision criteria, stated before implementation**: (a) both mechanisms
+return the identical top-10 document set on the same index/query/
+restrict_to input, proving the comparison is fair; (b) bitmap-restrict's
+mean per-query latency is at least 2x faster than TermSetQuery's — this
+project's standing bar for a "material, not incremental" latency claim.
+Anything short of 2x is FALSIFIED, not reframed as a qualified win.
+
+**Implementation**: new `phase9-eval` crate.
+`crates/phase9-eval/src/bitmap_delegate.rs` implements
+`BitmapTantivyDelegate: commerce_core::plan::LexicalDelegate` — the
+production-shaped replacement for Phase 2's reference `TantivyDelegate`.
+Correctness rests on a fact confirmed by direct source read of
+`commerce_core::plan::mod.rs` (not assumed): `execute_planned`'s
+`verify_and_truncate` already re-checks `restrict_to` membership itself,
+independent of whatever a `LexicalDelegate` does internally — so a
+delegate is free to implement the restriction however is cheapest,
+correctness never depends on it. The mechanism: a custom Tantivy `Query`/
+`Weight`/`Scorer` (`BitmapRestrictQuery`) wraps the inner text query's
+scorer and skips any candidate doc whose `product_ordinal` fast-field
+value is not in the allowed `RoaringBitmap` — no term/FST construction at
+all, O(1) membership check per doc the inner query would visit anyway.
+`product_ordinal` is set to the real `ProductId.0` at index-build time
+(once), not a per-query translation table.
+
+`crates/phase9-eval/src/bin/p9_e01_bitmap_vs_termset_delegate.rs`
+benchmarks this head-to-head against a faithful reproduction of Phase 2's
+own reference pattern (`BooleanQuery::new([Must(text_query), Must(TermSetQuery::new(terms))])`,
+copied from `crates/phase2-eval/src/bin/p1d_physical_advantage_eval.rs`),
+on a shared synthetic 500,000-document index (20-word cyclic vocabulary
+titles) with a 60,000-id `restrict_to` set — matching P2-E17's own
+reported worst case — via `bench-harness::measured_repeat` (30 reps, 3
+warmup).
+
+**A real, unforced-error bug found and fixed during this cycle**: the
+first version of this benchmark built the two arms against *separately*
+constructed indices and destructured `build_index`'s original 4-tuple
+return value with the wrong field order in one call site, silently
+passing the ordinal field where the title field belonged. This produced
+a working build with plausible-looking numbers (an 8-9x speedup) but a
+`same_hits: false` result — caught by the pre-registered "same document
+set" criterion itself, not discovered after the fact. Fixed by (a)
+replacing `build_index`'s tuple return with a named `BuiltIndex` struct
+(the class of bug is now a compile error, not a silent mismatch), and (b)
+redesigning the benchmark to build ONE shared index for both arms
+(generalizing `BitmapTantivyDelegate::new` to take a `Vec<Field>` of
+default search fields rather than two hard-coded title/description
+fields), removing the two-separately-built-indices confound entirely.
+Recorded here per this project's "record failed experiments" discipline,
+not silently patched over.
+
+**A second real, disclosed finding, not smoothed over**: even after that
+fix, arm (a)'s reported score was a constant `+1.0` higher than arm (b)'s
+for every identical hit. Root cause: Tantivy's default `BooleanQuery`
+combiner sums the scores of all `Occur::Must` clauses, and
+`TermSetQuery`'s own `AutomatonWeight`-based scorer returns a flat `1.0`
+for any match — so the reference `TantivyDelegate` pattern's reported
+score is inflated by a constant, relevance-unrelated `+1.0` per hit
+whenever it restricts via a `TermSetQuery` `Must` clause. This is a
+second, previously unnoticed defect in the reference implementation
+(beyond the construction-cost issue P2-E17 already flagged), which this
+experiment's bitmap-restrict replacement does not reproduce — proven by
+`bitmap_delegate::tests::score_is_exactly_the_inner_text_querys_score_not_rewritten`.
+Because the offset is constant across every hit, it does not change
+which 10 documents make the top-10 or their relative order, so it does
+not undermine this experiment's own "same document set" correctness
+criterion — but it is recorded as real, disclosed evidence, not silently
+observed and dropped.
+
+**Result: CONFIRMED, reproduced across 6 independent runs** (3 during
+development, 3 for the record — `docs/research/artifacts/p9_e01_bitmap_vs_termset_run1/run{1,2,3}.txt`):
+
+| run | TermSetQuery mean (ms) | bitmap mean (ms) | ratio | same doc set |
+|---|---|---|---|---|
+| 1 | 53.41 | 4.55 | 11.73x | yes |
+| 2 | 52.63 | 4.52 | 11.64x | yes |
+| 3 | 54.27 | 4.54 | 11.96x | yes |
+| record 1 | 54.32 | 4.70 | 11.56x | yes |
+| record 2 | 53.87 | 4.58 | 11.76x | yes |
+| record 3 | 53.66 | 4.51 | 11.90x | yes |
+
+Bitmap-restrict is consistently ~11.6-12.1x faster than TermSetQuery at a
+60,000-candidate restriction set, decisively clearing the pre-registered
+2x bar, with the identical top-10 document set returned in every run.
+
+**Quality gate**: `cargo fmt --all -- --check` clean, `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean, `cargo
+test --workspace --all-features` 0 failures (5 new `bitmap_delegate`
+unit tests, including a direct proof that the bitmap filter never
+rewrites a surviving hit's score), `cargo build --workspace --release`
+clean.
+
+**Scope, stated honestly**: this is a synthetic microbenchmark isolating
+the restriction *mechanism's* cost, deliberately not a real-catalog
+relevance or economics claim — that is exactly what P9-E02 tests next.
+`BitmapTantivyDelegate` is not yet wired into any real WANDS pipeline or
+`commerce_core::plan::execute_planned` call.
 
 ## P9-E02: (next) WANDS lexicon compiler + relevance module + physical-advantage re-run
 
@@ -139,4 +242,6 @@ currently maps WANDS labels to NDCG grades at all), and a fresh Solr
 baseline query path (the existing `wands_bench` Solr core already indexes
 `title`/`description` as real `text_general` fields per
 `scripts/datasets/solr_index_wands.py`, so free-text relevance queries are
-already supported by the existing schema — reusable, not rebuilt).
+already supported by the existing schema — reusable, not rebuilt), plus
+wiring `BitmapTantivyDelegate` (P9-E01) into a real `Hybrid` execution
+path against that catalog.
