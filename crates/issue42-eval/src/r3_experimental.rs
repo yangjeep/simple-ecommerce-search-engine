@@ -101,6 +101,7 @@ pub struct VariantTextIndex {
     query_parser: QueryParser,
     product_ordinal_field: Field,
     variant_ordinal_field: Field,
+    text_field: Field,
 }
 
 fn variant_index_schema() -> (Schema, Field, Field, Field) {
@@ -146,7 +147,31 @@ impl VariantTextIndex {
             query_parser,
             product_ordinal_field,
             variant_ordinal_field,
+            text_field,
         })
+    }
+
+    /// Adds a single new variant's document and commits -- a real
+    /// incremental update (Tantivy's own segment-merge machinery), not a
+    /// full rebuild from scratch. Reopens the reader afterward so
+    /// `search` sees the new document (`IndexReader`'s own default
+    /// `ReloadPolicy` does not guarantee synchronous visibility
+    /// immediately after `commit`).
+    pub fn add_one(
+        &mut self,
+        product: ProductId,
+        variant: VariantId,
+        text: &str,
+    ) -> tantivy::Result<()> {
+        let mut writer = self.index.writer_with_num_threads(1, 64_000_000)?;
+        let mut doc = TantivyDocument::default();
+        doc.add_u64(self.product_ordinal_field, product.0);
+        doc.add_u64(self.variant_ordinal_field, variant.0);
+        doc.add_text(self.text_field, text);
+        writer.add_document(doc)?;
+        writer.commit()?;
+        self.reader.reload()?;
+        Ok(())
     }
 
     pub fn search(&self, query_text: &str, limit: usize) -> Vec<IdentifierHit> {
@@ -213,7 +238,14 @@ fn shannon_entropy_bits(s: &str) -> f64 {
     if s.is_empty() {
         return 0.0;
     }
-    let mut counts: HashMap<char, usize> = HashMap::new();
+    // `BTreeMap`, not `HashMap`: summing floating-point terms in a
+    // deterministic (sorted-by-char) order, rather than `HashMap`'s
+    // randomized-per-process iteration order, is required for this
+    // project's own "byte-identical across runs" standard -- caught by
+    // diffing 5 independent runs' summary JSON, which showed a
+    // last-ULP-level difference in `material_grade`'s own
+    // `mean_entropy_bits` between runs, traced to this function.
+    let mut counts: BTreeMap<char, usize> = BTreeMap::new();
     for c in s.chars() {
         *counts.entry(c).or_insert(0) += 1;
     }
@@ -349,6 +381,16 @@ impl IdentifierDictionary {
 
     pub fn entry_count(&self) -> usize {
         self.index.len()
+    }
+
+    /// A real incremental update -- a single `HashMap` insert, not a
+    /// full rebuild -- for the same new-variant scenario `VariantTextIndex::add_one`
+    /// measures.
+    pub fn insert_one(&mut self, product: ProductId, variant: VariantId, value: &str) {
+        self.index
+            .entry(normalize_identifier(value))
+            .or_default()
+            .push((product, variant));
     }
 
     /// Exact, normalized lookup -- collisions return every matching

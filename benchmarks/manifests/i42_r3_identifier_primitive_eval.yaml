@@ -1,0 +1,195 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I42-R3
+phase: issue-42
+issue: 42
+decision_document: docs/experiments/ISSUE42_LOG.md#i42-r3
+claim: >
+  Issue #42 R3: does a dedicated identifier dictionary primitive
+  (selected only for fields whose measured statistics -- uniqueness
+  ratio, entropy, never a field's name -- look identifier-like) achieve
+  higher Recall@1 and lower false-match rate than indexing variant text
+  in a general-purpose lexical delegate, with a lower incremental
+  update cost, while correctly abstaining on non-identifier fields?
+
+  Three treatments, each its own self-contained index-and-lookup path
+  (issue42-eval::r3_experimental) -- not routed through
+  commerce_core::plan::execute_planned/LexicalDelegate at all, per a
+  dated correction below:
+
+  A (real, unmodified BitmapTantivyDelegate/build_index, product-level
+  Text/title only): finds 0 of 2972 held-out identifiers -- part_number
+  is variant-level only and never indexed at all. Confirms H3-A.
+
+  B (VariantTextIndex, an experimental per-variant Tantivy index with
+  real product_ordinal/variant_ordinal fields stored per document):
+  achieves 100% Recall@1 / 0% false-match on the genuinely-unique
+  held-out sample and correctly surfaces both variants of a deliberate
+  collision, but matches a bare prefix query it should reject --
+  confirming H3-B's own predicted weakness directly (a general-purpose
+  text index has no notion of "this token is a complete identifier").
+
+  C (IdentifierClassifier + IdentifierDictionary: a calibrated
+  uniqueness-ratio cutoff, chosen only from the calibration set's own
+  measured statistics, gating a dedicated normalized-key dictionary):
+  matches B's Recall@1/false-match numbers exactly on the one field
+  (part_number) it accepts, correctly REJECTS the prefix and
+  adversarial near-miss queries B incorrectly matches/would match, and
+  builds/updates substantially faster than B in every one of 5
+  independent runs. Every other field present in the held-out catalog
+  (17 of 18) correctly ABSTAINS -- including a deliberately-added
+  "legitimate cross-reference" field with only 2 occurrences sharing
+  one value, statistically indistinguishable from a low-cardinality
+  field at that sample size, falling back to Treatment B exactly as
+  the protocol's own abstention behavior requires. Confirms H3-C.
+  **PASSES every preregistered R3 GO-gate criterion.**
+
+  **Two preregistration corrections, found before any treatment code
+  was written, both dated in ISSUE42_PROTOCOL.md**: (1)
+  automotive::generate_catalog takes no seed parameter at all -- the
+  protocol's literal "generate_catalog(1500) with SEED.wrapping_add(1000)"
+  is unachievable, and naively calling it twice at different n would
+  make the smaller calibration call a byte-identical PREFIX of the
+  larger held-out call (same reseeded RNG, same index-driven
+  generation), silently violating calibration/held-out disjointness --
+  fixed by generating one automotive::generate_catalog(4500) call and
+  splitting it by index range into disjoint [0,1500)/[1500,4500)
+  slices; (2) commerce_core::plan::LexicalHit has no VariantId field at
+  all, and verify_and_truncate's per-variant resolution is vacuously
+  true whenever query.constraints is empty -- exactly the case for an
+  identifier-only query, since compile() has no dedicated "part number"
+  keyword branch -- so today's real production pipeline always returns
+  a product's FIRST variant for such a query regardless of which
+  variant's text a delegate matched. This is why every R3 treatment is
+  its own self-contained index-and-lookup path returning a real,
+  variant-aware IdentifierHit, never a commerce_core::plan::LexicalHit.
+
+  **A self-caught methodology bug, found and fixed before any
+  adversarial review**: the initial Recall@1/false-match sample counted
+  every naturally-occurring identifier collision (automotive's own real
+  rng.gen_range(1000..9999) draw occasionally repeating by chance --
+  the same phenomenon the calibration set's own 0.998 uniqueness ratio
+  already showed) as a false match whenever the sample happened to
+  iterate to one collision-partner and the top hit resolved to the
+  other -- conflating a genuine, correctly-surfaced collision
+  (separately tested and passing via the dedicated collision_pair case)
+  with an actual wrong resolution. This produced an initial false
+  positive read of "Treatment C FAILS the GO gate" (0.37% false-match)
+  purely from this test-methodology artifact, not a real defect in the
+  dictionary. Fixed by excluding catalog-wide-non-unique identifiers
+  (22 of 2994 candidates, disclosed, not silently dropped) from the
+  Recall@1/false-match sample -- after which both B and C measure
+  exactly 100%/0%. A second, unrelated determinism bug was also
+  self-caught the same way (diffing 5 runs' summary JSON before
+  trusting a "byte-identical" claim): shannon_entropy_bits summed
+  floating-point terms in HashMap's randomized-per-process iteration
+  order, producing a last-ULP difference in one calibration field's
+  mean_entropy_bits between runs -- fixed by switching to BTreeMap's
+  deterministic order.
+
+  **Terminal verdict: GO for Treatment C.** Mirroring R2's own outcome
+  (unlike R1's REVISE), Treatment C's calibrated-classifier-plus-
+  dictionary mechanism clears every preregistered GO-gate criterion.
+  Per Issue #42's own rule, this is a real candidate for a
+  RED-before-GREEN production change -- deliberately NOT made in this
+  same pass. A fresh, no-implementation-task adversarial reviewer must
+  first attempt to falsify this protocol/fixture/code/arithmetic/claim
+  (mirroring R1/R2's own second-correction-round process) and every
+  confirmed finding must be independently reproduced and fixed first;
+  the production-change step itself is tracked separately (task #63,
+  reviewing R1/R2/R3's serving-contract decisions together). Full
+  detail: `docs/experiments/ISSUE42_LOG.md`'s "I42-R3" section.
+
+git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+binary: crates/issue42-eval/src/bin/r3_identifier_primitive_eval.rs
+build_command: cargo build --release -p issue42-eval
+run_command: |
+  ./target/release/r3_identifier_primitive_eval [output_summary_json_path]
+
+dataset:
+  name: automotive::generate_catalog(4500), split by index range into a
+    1500-product calibration slice [0,1500) and a 3000-product held-out
+    slice [1500,4500) (see ISSUE42_PROTOCOL.md's dated correction for
+    why -- the frozen generator has no seed parameter, so two separate
+    calls would make calibration a byte-identical prefix of held-out).
+    Calibration is additionally augmented with two deliberately
+    non-identifier-like fields (a low-cardinality Enum re-labeled
+    "sku_code", and a free-text "product_fingerprint" field with real
+    per-string entropy but zero per-variant uniqueness). The held-out
+    slice is additionally augmented with: a guaranteed collision
+    (product 0's part_number overwritten to match product 1's real
+    value), an absent identifier (product 2's part_number removed
+    entirely), a legitimate cross-reference (products 3/4 share one
+    cross_reference_code value, a field distinct from part_number), an
+    adversarial near-miss (a single-character edit of product 5's real
+    part_number), and a hand-built 7-variant stress product (fresh id
+    range, each variant with its own distinct part_number).
+    mixed_merchant's 3,000-product mixed catalog (matching E3's own
+    established 1000/1000/1000 split) is retained separately for a
+    future general-lexical-regression comparison, not used for any
+    core identifier-classification metric.
+  source: crates/issue42-eval/src/r3_workload.rs::build_calibration_and_held_out,
+    build_held_out_mixed
+  size: 1500 calibration products + 3001 held-out products (3000 real +
+    1 hand-built 7-variant stress product), 1 variant each except the
+    stress product
+
+engine:
+  treatment_a: phase9_eval::bitmap_delegate::BitmapTantivyDelegate /
+    build_index (unmodified, reused verbatim)
+  treatment_b: issue42_eval::r3_experimental::VariantTextIndex (new,
+    additive, per-variant Tantivy index -- experimental only)
+  treatment_c: issue42_eval::r3_experimental::{IdentifierClassifier,
+    IdentifierDictionary} (new, additive -- experimental only)
+  note: none of these route through commerce_core::plan::execute_planned/
+    LexicalDelegate -- see the dated correction above for why.
+
+workload:
+  calibration_fields_measured: 19 (part_number accepted; sku_code and
+    product_fingerprint, the two deliberately misleading fields,
+    correctly rejected)
+  held_out_fields_measured: 18 (part_number accepted; all 17 others,
+    including cross_reference_code, correctly abstained)
+  recall_sample: 2972 genuinely-unique held-out identifiers (22 of 2994
+    candidates excluded as members of a natural collision group,
+    disclosed above)
+  corner_cases: collision (both variants surfaced), absent identifier
+    (never a false-match target), legitimate cross-reference
+    (classifier abstains, falls back to B, both products found),
+    adversarial near-miss (rejected by C), bare prefix (rejected by C,
+    matches under B -- confirms H3-B), many-variant stress (all 7
+    variants individually resolvable via C)
+  min_uniqueness_ratio: 0.95 (issue42_eval::r3_experimental::MIN_UNIQUENESS_RATIO,
+    chosen from the calibration set's own measured statistics alone,
+    never re-tuned against held-out numbers)
+
+seed: "fully hand-specified extension pieces layered on
+  automotive::generate_catalog(4500)'s own deterministic RNG output --
+  reproducible by construction, no wall-clock, no re-seeding per run"
+
+latency_methodology: >
+  P50/P95/P99 via bench_harness::Distribution over the median of 7
+  independent 200-call std::hint::black_box-guarded batched trials per
+  query (same discipline as Issue #38's E1 and Issue #42's R1/R2), over
+  a 200-query sample. 5 independent full runs confirm every
+  correctness/classification/recall/false-match/violation number is
+  byte-identical; only latency/build-time/incremental-update-time/RSS
+  numbers vary run-to-run and are reported as ranges, not a single
+  favorable run. Treatment B's incremental-update cost showed a real,
+  disclosed BIMODAL split across the 5 runs (2 of 5 ~4.4-7.4ms, 3 of 5
+  ~104.5-107.4ms) rather than a smooth range -- plausibly Tantivy's own
+  segment-merge policy occasionally triggering synchronously on a
+  single-document commit, not independently confirmed against Tantivy's
+  internals (a disclosed open question, not asserted as settled).
+  Treatment C's incremental update (a single HashMap insert) was
+  consistently and substantially lower than B's in every run regardless
+  of B's own variance, satisfying the GO gate's own build/update-cost
+  criterion unambiguously.
+
+raw_results: docs/research/artifacts/i42_r3_run1/
+  - main_run{1,2,3,4,5}.txt (5 independent full runs)
+  - summary.json / summary_run{2,3,4,5}.json (machine-readable per-run summaries)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE42_LOG.md's "I42-R3" section for the full
+  hypothesis-by-hypothesis breakdown and the GO verdict for Treatment C.
