@@ -11,7 +11,7 @@ use issue42_eval::e2b_ingest::{build_catalog, naive_constraints_for_query};
 use issue42_eval::e2b_oracle::{automotive_oracle, wands_oracle};
 use issue42_eval::e2b_schema::{Descriptor, LlmPassOutput, PhysicalPrimitive, SemanticRole};
 use issue42_eval::e2b_statistics_baseline;
-use issue42_eval::e2b_validator::{validate, wands_query_texts};
+use issue42_eval::e2b_validator::{cross_run_type_conflict, validate, wands_query_texts};
 use issue42_eval::e2b_workload::{
     automotive_unified_stats, load_wands_feed, load_wands_labels, load_wands_queries,
     UnifiedFieldStats,
@@ -28,6 +28,19 @@ const CONFIGS: &[&str] = &[
     "wands_noisy",
     "automotive",
 ];
+/// The two unperturbed configurations -- real key names visible, the
+/// LLM's best fair shot at correct classification. Baselines 2/3's own
+/// headline per-key maps (`no_validator_by_key`/`validated_by_key`) are
+/// built ONLY from these two: a confirmed defect (found by a fresh
+/// adversarial review) had them built from whichever of the 4 configs
+/// happened to sort alphabetically first per real key -- for every one
+/// of WANDS's 36 keys that was `wands_anonymized`, silently substituting
+/// the hardest perturbation for the intended "real information visible"
+/// baseline. The anonymized/noisy configs still fully participate in
+/// `per_config_f1` (the degradation-under-perturbation analysis) and in
+/// `stability_agreements` (repeated-run agreement across all 4
+/// configurations) -- only the two headline per-key maps are restricted.
+const CANONICAL_CONFIGS: &[&str] = &["wands_baseline", "automotive"];
 
 fn export_path(config: &str, run: u32) -> String {
     format!("{EXPORT_DIR}/e2b_llm_proposals_{config}_run{run}.json")
@@ -279,6 +292,147 @@ fn end_to_end_ndcg_recall(
     }
 }
 
+struct Baselines2And3 {
+    no_validator_by_key: BTreeMap<String, Descriptor>,
+    validated_by_key: BTreeMap<String, Descriptor>,
+    stability_agreements: usize,
+    stability_total: usize,
+    per_config_f1: BTreeMap<String, f64>,
+}
+
+/// Builds Baseline 2 (LLM proposal, no validator) and Baseline 3 (LLM +
+/// deterministic validator)'s headline per-real-key maps, plus the
+/// cross-configuration diagnostics (repeated-run agreement,
+/// per-configuration macro F1). Extracted into its own function (a
+/// confirmed defect, found by a fresh adversarial review, lived in this
+/// exact logic when it was inlined in `main()`) so the two headline maps'
+/// canonical-config restriction and the cross-run type-consistency check
+/// are both independently regression-testable.
+fn build_baselines_2_and_3(
+    per_config_runs: &BTreeMap<String, Vec<LlmPassOutput>>,
+    anon_mapping: &BTreeMap<String, String>,
+    noisy_mapping: &BTreeMap<String, String>,
+    all_unified: &BTreeMap<String, UnifiedFieldStats>,
+    wands_queries_text: &[String],
+    oracle_by_key: &BTreeMap<String, SemanticRole>,
+) -> Baselines2And3 {
+    let mut no_validator_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
+    let mut validated_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
+    let mut stability_agreements = 0usize;
+    let mut stability_total = 0usize;
+    let mut per_config_f1: BTreeMap<String, f64> = BTreeMap::new();
+    // Preregistered "type consistency" check (ISSUE42_PROTOCOL.md's E2b
+    // validator spec): a real key whose two runs within a canonical
+    // config disagree between a categorical (Enum/Boolean) and a
+    // Numeric role, with neither abstaining -- e.g. automotive's own
+    // real thread_size run1=enum/run2=numeric disagreement. Forced to
+    // abstain in `validated_by_key` below; a confirmed defect (found by
+    // a fresh adversarial review) had no such check anywhere, so this
+    // exact case sailed through fully accepted.
+    let mut type_conflicted_keys: BTreeSet<String> = BTreeSet::new();
+
+    for (config, runs) in per_config_runs {
+        let is_canonical = CANONICAL_CONFIGS.contains(&config.as_str());
+
+        // Repeated-run agreement (role + primitive), run1 vs run2,
+        // across all 4 configurations.
+        if runs.len() == 2 {
+            let run1: BTreeMap<&str, &Descriptor> = runs[0]
+                .descriptors
+                .iter()
+                .map(|d| (d.key.as_str(), d))
+                .collect();
+            let run2: BTreeMap<&str, &Descriptor> = runs[1]
+                .descriptors
+                .iter()
+                .map(|d| (d.key.as_str(), d))
+                .collect();
+            for (k, d1) in &run1 {
+                if let Some(d2) = run2.get(k) {
+                    stability_total += 1;
+                    if d1.semantic_role == d2.semantic_role
+                        && d1.candidate_physical_primitive == d2.candidate_physical_primitive
+                    {
+                        stability_agreements += 1;
+                    }
+                    // Only the two canonical configs feed the headline
+                    // baselines, so only their own internal
+                    // run1-vs-run2 conflicts need to force an abstain
+                    // there.
+                    if is_canonical && cross_run_type_conflict(d1, d2) {
+                        let real_key = resolve_real_key(config, k, anon_mapping, noisy_mapping);
+                        type_conflicted_keys.insert(real_key.to_string());
+                    }
+                }
+            }
+        }
+
+        let mut config_predicted_roles: BTreeMap<String, SemanticRole> = BTreeMap::new();
+        for run in runs {
+            for d in &run.descriptors {
+                let real_key = resolve_real_key(config, &d.key, anon_mapping, noisy_mapping);
+                let mut resolved = d.clone();
+                resolved.real_key = Some(real_key.to_string());
+
+                config_predicted_roles
+                    .entry(real_key.to_string())
+                    .or_insert(resolved.semantic_role);
+
+                // Headline Baselines 2/3 draw only from the canonical
+                // (unperturbed) configs -- real key names visible, the
+                // LLM's best fair shot -- keeping the first (canonical)
+                // run's proposal as "the" no-validator proposal per
+                // real key. The anonymized/noisy configs still fully
+                // drive `per_config_f1` above/below, just not this map.
+                if !is_canonical {
+                    continue;
+                }
+
+                no_validator_by_key
+                    .entry(real_key.to_string())
+                    .or_insert_with(|| resolved.clone());
+
+                if let Some(stats) = all_unified.get(real_key) {
+                    let validation = validate(&resolved, stats, wands_queries_text);
+                    validated_by_key
+                        .entry(real_key.to_string())
+                        .or_insert_with(|| {
+                            if validation.accepted {
+                                resolved.clone()
+                            } else {
+                                let mut abstained = resolved.clone();
+                                abstained.abstain = true;
+                                abstained.semantic_role = SemanticRole::Ignore;
+                                abstained.candidate_physical_primitive = PhysicalPrimitive::None;
+                                abstained
+                            }
+                        });
+                }
+            }
+        }
+        let config_f1 = macro_f1(&config_predicted_roles, oracle_by_key);
+        per_config_f1.insert(config.clone(), config_f1);
+    }
+
+    for real_key in &type_conflicted_keys {
+        if let Some(d) = validated_by_key.get_mut(real_key) {
+            if !d.abstain {
+                d.abstain = true;
+                d.semantic_role = SemanticRole::Ignore;
+                d.candidate_physical_primitive = PhysicalPrimitive::None;
+            }
+        }
+    }
+
+    Baselines2And3 {
+        no_validator_by_key,
+        validated_by_key,
+        stability_agreements,
+        stability_total,
+        per_config_f1,
+    }
+}
+
 fn main() {
     println!("=== Issue #42 E2b: actual offline LLM-assisted feature discovery ===");
     println!("baseline_sha: {BASELINE_SHA}");
@@ -355,82 +509,20 @@ fn main() {
              E2b amendment 1). Reporting statistics-only/oracle results only."
         );
     } else {
-        let mut no_validator_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
-        let mut validated_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
-        let mut stability_agreements = 0usize;
-        let mut stability_total = 0usize;
-        let mut per_config_f1: BTreeMap<String, f64> = BTreeMap::new();
-
-        for (config, runs) in &per_config_runs {
-            // Repeated-run agreement (role + primitive), run1 vs run2.
-            if runs.len() == 2 {
-                let run1: BTreeMap<&str, &Descriptor> = runs[0]
-                    .descriptors
-                    .iter()
-                    .map(|d| (d.key.as_str(), d))
-                    .collect();
-                let run2: BTreeMap<&str, &Descriptor> = runs[1]
-                    .descriptors
-                    .iter()
-                    .map(|d| (d.key.as_str(), d))
-                    .collect();
-                for (k, d1) in &run1 {
-                    if let Some(d2) = run2.get(k) {
-                        stability_total += 1;
-                        if d1.semantic_role == d2.semantic_role
-                            && d1.candidate_physical_primitive == d2.candidate_physical_primitive
-                        {
-                            stability_agreements += 1;
-                        }
-                    }
-                }
-            }
-
-            let mut config_predicted_roles: BTreeMap<String, SemanticRole> = BTreeMap::new();
-            for run in runs {
-                for d in &run.descriptors {
-                    let real_key = resolve_real_key(config, &d.key, &anon_mapping, &noisy_mapping);
-                    let mut resolved = d.clone();
-                    resolved.real_key = Some(real_key.to_string());
-
-                    // Keep the first run's proposal as "the" no-validator
-                    // proposal per real key (a fresh, disclosed
-                    // methodology choice: both runs are used for
-                    // stability, but only run 1 feeds the headline
-                    // no-validator/validated baselines to avoid
-                    // double-counting one field twice under two configs
-                    // -- e.g. automotive vs WANDS keys never collide, but
-                    // WANDS's 3 perturbation configs of the SAME real key
-                    // would otherwise be counted 3x).
-                    no_validator_by_key
-                        .entry(real_key.to_string())
-                        .or_insert_with(|| resolved.clone());
-                    config_predicted_roles
-                        .entry(real_key.to_string())
-                        .or_insert(resolved.semantic_role);
-
-                    if let Some(stats) = all_unified.get(real_key) {
-                        let validation = validate(&resolved, stats, &wands_queries_text);
-                        validated_by_key
-                            .entry(real_key.to_string())
-                            .or_insert_with(|| {
-                                if validation.accepted {
-                                    resolved.clone()
-                                } else {
-                                    let mut abstained = resolved.clone();
-                                    abstained.abstain = true;
-                                    abstained.semantic_role = SemanticRole::Ignore;
-                                    abstained.candidate_physical_primitive =
-                                        PhysicalPrimitive::None;
-                                    abstained
-                                }
-                            });
-                    }
-                }
-            }
-            let config_f1 = macro_f1(&config_predicted_roles, &oracle_by_key);
-            per_config_f1.insert(config.clone(), config_f1);
-        }
+        let Baselines2And3 {
+            no_validator_by_key,
+            validated_by_key,
+            stability_agreements,
+            stability_total,
+            per_config_f1,
+        } = build_baselines_2_and_3(
+            &per_config_runs,
+            &anon_mapping,
+            &noisy_mapping,
+            &all_unified,
+            &wands_queries_text,
+            &oracle_by_key,
+        );
 
         let no_validator_result = BaselineResult {
             label: "Baseline 2: LLM proposal, no validator".to_string(),
@@ -528,11 +620,17 @@ fn main() {
         // with no literal enum-value substring) and applies no ranking
         // to `Catalog::search`'s raw hits (just a `take(K)` in catalog
         // iteration order) -- so absolute NDCG is expected to sit near
-        // the floor for every baseline, oracle included. A relative gap
-        // computed against a near-zero oracle NDCG is numerically
-        // unstable and not a reliable signal either way; flag that
-        // explicitly rather than let a single pass/fail number imply
-        // more precision than this check can support.
+        // the floor for every baseline, oracle included. That underlying
+        // limitation is disclosed in `e2b_ingest.rs`'s own doc comment
+        // from the start; the specific n_scored/ndcg thresholds below
+        // are a diagnostic ANNOTATION added here, after computing the
+        // actual results, to characterize how much weight the
+        // preregistered 5%-relative-gap computation deserves -- it does
+        // not alter that computation or its own pass/fail boolean
+        // (`relevance_within_5pct` below is untouched), only reports
+        // alongside it whether the underlying numbers are large enough
+        // to trust. Disclosed as a post-hoc diagnostic, not backdated as
+        // if it were part of the original preregistered design.
         let e2e_check_reliable = oracle_e2e.n_scored >= 20 && oracle_e2e.ndcg >= 0.05;
 
         // --- GO gate (Issue #42's own E2b section, verbatim thresholds) ---
@@ -547,9 +645,20 @@ fn main() {
                 })
                 .map(|d| &d.key)
                 .collect();
+            // A confirmed defect (found by a fresh adversarial review):
+            // this used to check `validated_by_key.contains_key(k)`
+            // alone -- true for nearly every real key regardless of
+            // validator quality, since `validated_by_key` inserts an
+            // entry even for a rejected/abstained proposal. "Recovered"
+            // must mean actually accepted as structural, matching
+            // `print_and_score`'s own identical filter 30 lines above.
             let recovered = sig_oracle
                 .iter()
-                .filter(|k| validated_by_key.contains_key(k.as_str()))
+                .filter(|k| {
+                    validated_by_key
+                        .get(k.as_str())
+                        .is_some_and(|d| !d.abstain && is_structural(d.semantic_role))
+                })
                 .count();
             if sig_oracle.is_empty() {
                 0.0
@@ -696,5 +805,156 @@ mod tests {
         let mut oracle = BTreeMap::new();
         oracle.insert("color".to_string(), SemanticRole::Enum);
         assert_eq!(unsafe_accepted_count(&validated, &oracle), 0);
+    }
+
+    fn pass(config: &str, run_index: u32, descriptors: Vec<Descriptor>) -> LlmPassOutput {
+        LlmPassOutput {
+            configuration: config.to_string(),
+            run_index,
+            descriptors,
+        }
+    }
+
+    fn unified(key: &str) -> UnifiedFieldStats {
+        UnifiedFieldStats {
+            key: key.to_string(),
+            occurrences: 1000,
+            distinct_values: 50,
+            uniqueness_ratio: 0.05,
+            numeric_parseable_fraction: 0.0,
+            mean_value_length: 8.0,
+            variant_scoped: Some(true),
+            sample_values: vec!["blue".to_string(), "red".to_string()],
+        }
+    }
+
+    /// Regression test for a real bug (found by a fresh adversarial
+    /// review): `per_config_runs` is a `BTreeMap`, iterated in
+    /// alphabetical config-name order, not the intended
+    /// "canonical/unperturbed configs only" order. Since
+    /// `no_validator_by_key`/`validated_by_key` used `.entry().or_insert()`
+    /// across EVERY config (not just the canonical ones), and
+    /// "wands_anonymized" sorts before "wands_baseline" alphabetically,
+    /// every WANDS real key's headline classification silently came from
+    /// the ANONYMIZED config -- the hardest perturbation -- rather than
+    /// the intended "real key names visible" baseline. This test
+    /// reproduces exactly that scenario: an anonymized-config proposal
+    /// with a wrong role for "color" must NOT win over a
+    /// canonical-config ("wands_baseline") proposal with the correct
+    /// role, regardless of which one a `BTreeMap` would visit first.
+    #[test]
+    fn headline_baselines_prefer_the_canonical_config_over_alphabetical_order() {
+        let wrong_from_anonymized = Descriptor {
+            key: "color".to_string(),
+            semantic_role: SemanticRole::Numeric,
+            ..descriptor(SemanticRole::Numeric, false)
+        };
+        let correct_from_baseline = Descriptor {
+            key: "color".to_string(),
+            semantic_role: SemanticRole::Enum,
+            ..descriptor(SemanticRole::Enum, false)
+        };
+
+        let mut per_config_runs = BTreeMap::new();
+        // "wands_anonymized" sorts alphabetically before "wands_baseline"
+        // -- exactly the ordering that triggered the original defect.
+        per_config_runs.insert(
+            "wands_anonymized".to_string(),
+            vec![pass(
+                "wands_anonymized",
+                1,
+                vec![wrong_from_anonymized.clone()],
+            )],
+        );
+        per_config_runs.insert(
+            "wands_baseline".to_string(),
+            vec![pass("wands_baseline", 1, vec![correct_from_baseline])],
+        );
+
+        let anon_mapping = BTreeMap::new();
+        let noisy_mapping = BTreeMap::new();
+        let mut all_unified = BTreeMap::new();
+        all_unified.insert("color".to_string(), unified("color"));
+        let mut oracle_by_key = BTreeMap::new();
+        oracle_by_key.insert("color".to_string(), SemanticRole::Enum);
+
+        let result = build_baselines_2_and_3(
+            &per_config_runs,
+            &anon_mapping,
+            &noisy_mapping,
+            &all_unified,
+            &[],
+            &oracle_by_key,
+        );
+
+        assert_eq!(
+            result.no_validator_by_key["color"].semantic_role,
+            SemanticRole::Enum,
+            "Baseline 2 must reflect wands_baseline's real proposal, not wands_anonymized's, \
+             regardless of BTreeMap iteration order"
+        );
+        assert_eq!(
+            result.validated_by_key["color"].semantic_role,
+            SemanticRole::Enum
+        );
+        assert!(!result.no_validator_by_key["color"].abstain);
+    }
+
+    /// Regression test for the missing preregistered "type consistency"
+    /// check (found by a fresh adversarial review): two runs of the
+    /// SAME canonical config disagreeing between a categorical and a
+    /// Numeric role for the same key (automotive's own real
+    /// `thread_size` enum/numeric disagreement is the concrete case)
+    /// must force that key to abstain in Baseline 3 (the validator's
+    /// job), while Baseline 2 (explicitly "no validator") still reflects
+    /// whichever run happened to resolve first -- the whole point of
+    /// the no-validator/validator comparison.
+    #[test]
+    fn same_config_run1_vs_run2_type_conflict_forces_baseline_3_to_abstain() {
+        let run1_enum = Descriptor {
+            key: "thread_size".to_string(),
+            semantic_role: SemanticRole::Enum,
+            ..descriptor(SemanticRole::Enum, false)
+        };
+        let run2_numeric = Descriptor {
+            key: "thread_size".to_string(),
+            semantic_role: SemanticRole::Numeric,
+            ..descriptor(SemanticRole::Numeric, false)
+        };
+
+        let mut per_config_runs = BTreeMap::new();
+        per_config_runs.insert(
+            "automotive".to_string(),
+            vec![
+                pass("automotive", 1, vec![run1_enum]),
+                pass("automotive", 2, vec![run2_numeric]),
+            ],
+        );
+
+        let anon_mapping = BTreeMap::new();
+        let noisy_mapping = BTreeMap::new();
+        let mut all_unified = BTreeMap::new();
+        all_unified.insert("thread_size".to_string(), unified("thread_size"));
+        let mut oracle_by_key = BTreeMap::new();
+        oracle_by_key.insert("thread_size".to_string(), SemanticRole::Enum);
+
+        let result = build_baselines_2_and_3(
+            &per_config_runs,
+            &anon_mapping,
+            &noisy_mapping,
+            &all_unified,
+            &[],
+            &oracle_by_key,
+        );
+
+        assert!(
+            result.validated_by_key["thread_size"].abstain,
+            "an unresolved Enum-vs-Numeric conflict between two runs of the same config must \
+             force Baseline 3 to abstain, not silently accept whichever run resolved first"
+        );
+        assert!(
+            !result.no_validator_by_key["thread_size"].abstain,
+            "Baseline 2 has no validator by definition -- it must NOT apply this check"
+        );
     }
 }

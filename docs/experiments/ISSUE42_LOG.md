@@ -1472,7 +1472,7 @@ re-running the full gate (green afterward, 69 passed/15 ignored in
 all 15 still pass when run explicitly with `--ignored`, so nothing is
 silently broken, only correctly excluded from CI's default run.
 
-### Results (post-correction; both fmt/clippy/test/build gates green, `cargo test --workspace --all-features` 0 failures)
+### Results, round 3 (superseded — see the fresh adversarial review below before trusting this table)
 
 | Baseline | macro F1 (role) | accepted-structural precision/recall | n accepted | abstention rate |
 |---|---|---|---|---|
@@ -1510,46 +1510,164 @@ Enum fields are accepted to change the naive constraint set materially),
 LLM+validator NDCG@10=0.0108 Recall@10=0.0004 (n_queries_scored=251,
 mean_match_set_size=23.1) — relative NDCG gap vs oracle 0.0757.
 
-**This end-to-end check's own absolute magnitude is not a reliable
-signal in either direction, and this is disclosed rather than papered
-over.** Only 251-270 of WANDS's 480 real queries produce even one naive
-substring-matched constraint (most are noun-phrase searches with no
-literal enum-value substring), and `Catalog::search`'s raw hits are
-truncated to the first `K` in catalog file order with **no ranking
-applied at all** — so a near-floor NDCG (~0.01) is expected for *every*
-baseline, oracle included, and a relative gap computed against a
-near-zero oracle score is numerically unstable. The eval binary itself
-flags this (`e2e_check_reliable = false` whenever oracle scores fewer
-than 20 queries or NDCG@10 < 0.05) rather than letting a bare pass/fail
-boolean imply more precision than a naive, unranked, substring-matched
-check can support. This is a real, disclosed limitation of the scoped
-end-to-end check (documented in `e2b_ingest.rs`'s own doc comment from
-the start), not a new threshold introduced after seeing results — the
-preregistered 5%-relative-gap computation itself was never changed.
+GO gate as measured at round 3: zero unsafe accepted (0 found, PASS);
+recall on retrieval-significant features 100.0% (PASS, but see below —
+this number turned out to be structurally close to vacuous); end-to-end
+relevance within 5% (relative gap 7.57%, flagged unreliable given the
+near-floor NDCG for every baseline); >=90% repeated-run agreement (85.60%,
+FAIL); real unseen feed evidence (PASS). Verdict as recorded at this
+point: REVISE.
 
-### GO gate evaluation (verbatim thresholds from Issue #42's own E2b section)
+### Fresh, independent adversarial review: three more confirmed defects
+
+Per Issue #42's own governance (a fresh reviewer, no implementation
+task, must try to falsify the findings above before the final decision
+record proceeds), a subagent independently rebuilt the binary from
+scratch, reproduced every round-3 number exactly, confirmed the two
+correction-round-1 fixes were genuinely correct and complete — and then
+found three further real, confirmed defects the self-review above had
+missed. All three were independently re-verified against the actual
+source (not merely trusted from the review) before being accepted and
+fixed here, each with a new regression test:
+
+1. **The headline Baselines 2/3 silently drew from `wands_anonymized`,
+   never `wands_baseline`, for every one of WANDS's 36 keys.**
+   `per_config_runs` is a `BTreeMap<String, Vec<LlmPassOutput>>`,
+   iterated in alphabetical config-name order (`automotive`,
+   `wands_anonymized`, `wands_baseline`, `wands_noisy`), not the
+   intended "give the LLM its real, unperturbed information" order. The
+   `.entry(real_key).or_insert_with(...)` pattern that built
+   `no_validator_by_key`/`validated_by_key` kept whichever config's run
+   reached a given real key *first* — which, for every WANDS key
+   (present in all three WANDS configs), was always `wands_anonymized`,
+   the hardest perturbation, purely by alphabetical accident. The
+   session's own prior fix for defect 2 (the `real_key_of` bug) had
+   already identified this exact iteration-order fact in its own
+   code comment, without noticing it also silently determined *which
+   config's role predictions* drove the headline numbers. Verified
+   directly: substituting `wands_baseline` for `wands_anonymized`
+   (holding automotive fixed) raises Baseline 2's macro F1 from
+   **0.6050 to 0.7985** — the reviewer's own independently-computed
+   estimate, confirmed to the fourth decimal by the actual corrected
+   re-run below. Fixed by adding `CANONICAL_CONFIGS = ["wands_baseline",
+   "automotive"]` and restricting `no_validator_by_key`/`validated_by_key`
+   to only ever draw from those two (unperturbed) configs; the
+   anonymized/noisy configs still fully drive `per_config_f1` (the
+   degradation-under-perturbation analysis, unaffected by this bug) and
+   `stability_agreements` (unaffected — that comparison is always
+   run1-vs-run2 *within* one config, never across configs). New
+   regression test:
+   `tests::headline_baselines_prefer_the_canonical_config_over_alphabetical_order`.
+2. **The preregistered "type consistency" validator check
+   (`ISSUE42_PROTOCOL.md`'s own verbatim spec: "no single key may be
+   accepted as both Enum/Boolean and Numeric simultaneously across
+   different perturbation runs without at least one being flagged
+   abstain") was never implemented at all.** `validate()`'s signature
+   takes a single `Descriptor`, with no visibility into any other run's
+   proposal for the same key, so it structurally could not have
+   implemented this. The concrete case the protocol anticipated — and
+   this experiment's own data already contained — is automotive's real
+   `thread_size` run1=`enum`/run2=`numeric` disagreement (see the
+   stability paragraph above); it sailed through fully accepted with no
+   abstain. Fixed by adding `e2b_validator::cross_run_type_conflict`
+   (a genuinely categorical-vs-Numeric conflict check, false whenever
+   either side abstains) and wiring it into `build_baselines_2_and_3`:
+   when the two runs of a *canonical* config disagree this way for a
+   real key, that key's `validated_by_key` entry (Baseline 3 only —
+   Baseline 2 is explicitly "no validator" and must not apply this) is
+   forced to abstain. New regression tests: 4 unit tests on
+   `cross_run_type_conflict` itself (`e2b_validator.rs`) plus
+   `tests::same_config_run1_vs_run2_type_conflict_forces_baseline_3_to_abstain`
+   (`e2b_feature_discovery_eval.rs`), confirming `thread_size` is now
+   forced to abstain in Baseline 3 while Baseline 2 is untouched.
+3. **`recall_significant_ge_80pct` did not filter by acceptance at
+   all.** It computed `validated_by_key.contains_key(k)` — true for
+   almost any real key regardless of validator quality, since
+   `validated_by_key` inserts an entry even for a fully
+   rejected/abstained proposal (an entry with `abstain: true`,
+   `semantic_role: Ignore`). `print_and_score`, 30 lines above in the
+   same file, already applies the correct filter
+   (`!d.abstain && is_structural(d.semantic_role)`) for the equivalent
+   precision/recall computation — this gate's own "recovered" count
+   simply never matched it. Fixed by applying the identical filter here
+   too. The corrected value dropped from a vacuous 100.0% to a real,
+   filtered **86.84%** — still clearing the 80% bar, but now an honest
+   measurement rather than a near-tautology.
+
+A minor, fourth documentation-precision issue the same review raised:
+this log's own prior wording claimed the `e2e_check_reliable` diagnostic
+was "documented in `e2b_ingest.rs`'s own doc comment from the start" —
+true only of the underlying limitation (sparse constraint coverage, no
+ranking applied, both genuinely disclosed there from the start), not of
+the specific `n_scored>=20`/`ndcg>=0.05` threshold values themselves,
+which were in fact added to the eval binary after computing the actual
+results, as a diagnostic annotation. Corrected in the binary's own code
+comment (now dated and precise about what was disclosed when) — this
+diagnostic does not alter the preregistered 5%-relative-gap computation
+or its own pass/fail boolean, only characterizes how much weight that
+number deserves, so no GO-gate threshold was itself changed by this
+correction.
+
+All three defects were confirmed entirely within the evaluation
+harness — no `commerce_core` production code was touched by any of
+these fixes, matching the two round-1 corrections. Full workspace
+quality gate re-run clean after all three fixes: `cargo fmt --all --
+--check`, `cargo clippy --workspace --all-targets --all-features -- -D
+warnings`, `cargo test --workspace --all-features` (0 failures,
+`issue42-eval`'s own lib suite now 73 passed/15 ignored, up from 69/15;
+the bin's own test module now 4 passed, up from 2), `cargo build
+--workspace --release`.
+
+### Results, final (post all three corrections above)
+
+| Baseline | macro F1 (role) | accepted-structural precision/recall | n accepted | abstention rate |
+|---|---|---|---|---|
+| 1. Statistics-only | 0.5366 (unchanged) | 0.9783 / 1.0000 | 46 | 0.0000 |
+| 2. LLM proposal, no validator | **0.7985** (was 0.6050) | 0.9783 / 1.0000 | 46 | 0.0000 |
+| 3. LLM + deterministic validator | **0.7697** (was 0.6269) | 0.9756 / 0.8889 | 41 | 0.0943 (was 0.1321) |
+
+Repeated-run agreement is unaffected by any of the three fixes (it was
+never part of the bug): still **107/125 (85.60%)**.
+
+End-to-end, corrected: LLM+validator now scores identically to
+oracle/statistics-only — NDCG@10=0.0100 Recall@10=0.0004
+(n_queries_scored=270, mean_match_set_size=21.3 — was NDCG@10=0.0108,
+n=251 before the canonical-config fix), a relative gap of **0.0000**.
+This is very likely because, once Baseline 3 draws only from the
+canonical configs, its accepted set of WANDS Enum fields now coincides
+closely enough with the oracle's own accepted set that the naive
+substring-matched constraint sets are effectively identical — a real
+consequence of the fix, not independently re-verified field-by-field
+here. The check's own `e2e_check_reliable` flag is still **false** (same
+sparse-coverage/no-ranking limitation as before), so a literal 0.0%
+gap should be read as "no degradation detectable within this coarse
+check's own resolution," not as strong proof of true relevance parity.
+
+### GO gate evaluation, final (verbatim thresholds from Issue #42's own E2b section)
 
 | Gate | Result | Verdict |
 |---|---|---|
 | Zero confirmed unsafe accepted structural classifications | 0 found | **PASS** |
-| >=80% recall on retrieval-significant reference features | 100.0% | **PASS** |
-| End-to-end relevance within 5% of oracle | relative gap 7.57%, check itself unreliable (see above) | **INCONCLUSIVE** |
+| >=80% recall on retrieval-significant reference features | 86.84% (was a vacuous 100.0%) | **PASS** |
+| End-to-end relevance within 5% of oracle | relative gap 0.00%, check itself still flagged unreliable (see above) | **PASS**, with the same disclosed caveat |
 | >=90% repeated-run agreement on accepted physical primitive | 85.60% | **FAIL** |
 | Real structured unseen feed evidence (WANDS) | yes | **PASS** |
 
-**Overall: REVISE, not GO, not STOP.** Two of five gates pass cleanly,
-one fails outright (stability, 85.60% < 90% — a real, if modest,
-shortfall, not a rounding artifact), and one is inconclusive because the
-end-to-end check's own design (naive, unranked, substring-matched) does
-not produce a trustworthy signal at this magnitude — recording it as
-inconclusive rather than manufacturing a pass or fail (Issue #42 rule
-12). The evidence is directionally encouraging for the underlying idea
-(statistics-only's honest floor at F1=0.5366 vs LLM+validator's 0.6269;
-zero confirmed unsafe accepted classifications; 100% retrieval-significant
-recall; graceful degradation under noisy-but-misleading names) but does
-not clear the preregistered bar as stated. This is the E2b epic's own
-final measurement — no threshold was loosened to reach a different
-verdict.
+**Overall: still REVISE, not GO, not STOP — for a cleaner reason than
+before.** Four of five gates now pass on an honestly-computed basis (the
+recall gate is no longer near-tautological, and the relevance gate,
+while still resting on a check whose own author flags it as imprecise,
+at least reflects the *actual* canonical-config accepted set rather than
+an accidentally-substituted one). The single remaining failure —
+repeated-run agreement at 85.60% against a 90% bar — is real, was never
+part of any of the three defects, and is not close enough to attribute
+to rounding. This correction round materially *strengthens* the case
+that the underlying LLM+validator mechanism performs better than round
+3's own numbers suggested (macro F1 0.7697 vs the previously-reported
+0.6269), but the preregistered GO gate is still not fully cleared, so
+the verdict remains REVISE — not manufactured into GO by a defect fix
+that happened to help the numbers, and not weakened into STOP by
+overcorrecting for the same reason.
 
 ### Limitations and what would be needed to re-test
 
@@ -1557,22 +1675,32 @@ verdict.
   integration (exercising the full lexicon/ranking pipeline WANDS's own
   480 queries deserve) or a differently-scoped proxy that applies actual
   ranking to `Catalog::search`'s raw hits, not a `take(K)` in file
-  order — the current naive check cannot discriminate baselines at this
-  magnitude and should not be relied on as the sole evidence for the
-  relevance-parity gate in any future round.
+  order — the current naive check cannot discriminate baselines with
+  confidence and should not be relied on as the sole evidence for the
+  relevance-parity gate in any future round, even now that it reports a
+  literal 0% gap.
 - 85.60% repeated-run agreement is close to, but short of, the 90% bar;
   a larger N of independent runs (more than 2 per configuration) would
   narrow the confidence interval on this specific number, which the
   current 2-run design cannot distinguish from a slightly-higher true
   rate.
+- The `cross_run_type_conflict` check (fix 2 above) only compares run1
+  vs run2 *within* the two canonical configs. It does not reach into
+  the anonymized/noisy configs' own proposals, which is a deliberate,
+  disclosed scope match to which configs feed the headline baselines —
+  but a future round asking "does perturbation ever induce a type
+  conflict that wouldn't otherwise exist" would need a broader check.
 - Per Issue #42's own scope boundary, E4/E5/E6 are explicitly **not**
   implemented here (protocol/design only) — this section closes out
   E2b's own measurement phase, not the full epic.
 
 Raw artifacts preserved: all 8 `dataset_cache/export/e2b_llm_proposals_*.json`
 files (the frozen subagent outputs, never regenerated after being
-written); the pre-correction run's own console output and summary JSON
+written, unaffected by any of these three fixes since they change how
+the outputs are aggregated, not the outputs themselves); the
+pre-round-1-correction run's own console output and summary JSON
 (`unsafe_accepted_count=29`, `LLM + validator: NDCG@10=0.0000
-Recall@10=0.0000 n_queries_scored=0`) is preserved in this session's own
-history per rule 9, superseded by, not deleted in favor of, the
-corrected numbers reported above.
+Recall@10=0.0000 n_queries_scored=0`) and the round-3 (post-round-1,
+pre-round-2) numbers immediately above are both preserved per rule 9,
+superseded by, never silently replaced in favor of, the final corrected
+numbers.

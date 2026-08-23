@@ -10,29 +10,29 @@
       "n_accepted_structural": 46
     },
     {
-      "abstention_rate": 0.0,
-      "accepted_structural_precision": 0.9782608695652174,
-      "accepted_structural_recall": 1.0,
+      "abstention_rate": 0.018867924528301886,
+      "accepted_structural_precision": 0.9777777777777777,
+      "accepted_structural_recall": 0.9777777777777777,
       "label": "Baseline 2: LLM proposal, no validator",
-      "macro_f1": 0.7985185185185185,
-      "n_accepted_structural": 46
+      "macro_f1": 0.6050102580714826,
+      "n_accepted_structural": 45
     },
     {
-      "abstention_rate": 0.09433962264150944,
+      "abstention_rate": 0.1320754716981132,
       "accepted_structural_precision": 0.975609756097561,
       "accepted_structural_recall": 0.8888888888888888,
       "label": "Baseline 3: LLM + deterministic validator",
-      "macro_f1": 0.7697215532175603,
+      "macro_f1": 0.6268644103604174,
       "n_accepted_structural": 41
     }
   ],
   "end_to_end": {
     "check_reliable": false,
     "llm_plus_validator": {
-      "mean_match_set_size": 21.3,
-      "n_queries_scored": 270,
-      "ndcg": 0.009995636366187282,
-      "recall": 0.00039009560645701245
+      "mean_match_set_size": 23.07171314741036,
+      "n_queries_scored": 251,
+      "ndcg": 0.01075227816283094,
+      "recall": 0.00041962475594977436
     },
     "oracle": {
       "mean_match_set_size": 21.3,
@@ -40,7 +40,7 @@
       "ndcg": 0.009995636366187282,
       "recall": 0.00039009560645701245
     },
-    "relative_ndcg_gap_llm_plus_validator_vs_oracle": 0.0,
+    "relative_ndcg_gap_llm_plus_validator_vs_oracle": 0.07569721115537839,
     "statistics_only": {
       "mean_match_set_size": 21.3,
       "n_queries_scored": 270,
@@ -52,9 +52,9 @@
   "go_gate": {
     "go": false,
     "real_feed_evidence": true,
-    "recall_significant_ge_80pct": 0.868421052631579,
+    "recall_significant_ge_80pct": 1.0,
     "relevance_check_reliable": false,
-    "relevance_within_5pct": true,
+    "relevance_within_5pct": false,
     "stability_ge_90pct": false,
     "zero_unsafe_accepted": true
   },

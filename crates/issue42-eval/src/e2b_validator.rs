@@ -180,6 +180,31 @@ pub fn validate(
     }
 }
 
+/// The preregistered "type consistency" check
+/// (`ISSUE42_PROTOCOL.md`'s E2b validator spec, verbatim: "no single key
+/// may be accepted as both Enum/Boolean and Numeric simultaneously
+/// across different perturbation runs without at least one being
+/// flagged abstain") -- absent from `validate()` itself, since a single
+/// proposal has no visibility into any other run's own proposal for the
+/// same key; this is a genuinely separate, cross-descriptor check the
+/// caller must run once it has more than one run's proposal in hand
+/// (e.g. automotive's own real run1=`enum`/run2=`numeric` disagreement
+/// on `thread_size`). Returns true for a genuine, UNRESOLVED conflict:
+/// one non-abstain proposal categorical (Enum/Boolean), the other
+/// non-abstain and Numeric. An abstained proposal on either side already
+/// satisfies the protocol's own "without at least one being flagged
+/// abstain" clause, so it is never itself a conflict.
+pub fn cross_run_type_conflict(a: &Descriptor, b: &Descriptor) -> bool {
+    if a.abstain || b.abstain {
+        return false;
+    }
+    fn is_categorical(role: SemanticRole) -> bool {
+        matches!(role, SemanticRole::Enum | SemanticRole::Boolean)
+    }
+    (is_categorical(a.semantic_role) && b.semantic_role == SemanticRole::Numeric)
+        || (a.semantic_role == SemanticRole::Numeric && is_categorical(b.semantic_role))
+}
+
 /// Reused by tests/the eval binary so every call site normalizes query
 /// text the same way.
 pub fn wands_query_texts() -> Vec<String> {
@@ -245,6 +270,61 @@ mod tests {
             evidence: "test".to_string(),
             abstain: false,
         }
+    }
+
+    /// Regression test for a confirmed defect: the preregistered "type
+    /// consistency" check (ISSUE42_PROTOCOL.md's E2b validator spec) was
+    /// never implemented at all -- `validate()`'s single-descriptor
+    /// signature has no visibility into any other run's proposal for
+    /// the same key, so the real automotive `thread_size`
+    /// run1=`enum`/run2=`numeric` disagreement sailed through fully
+    /// accepted with no abstain. A fresh adversarial review caught this;
+    /// `cross_run_type_conflict` is the missing check.
+    #[test]
+    fn cross_run_type_conflict_flags_a_real_enum_vs_numeric_disagreement() {
+        let mut enum_run = base_descriptor("thread_size");
+        enum_run.semantic_role = SemanticRole::Enum;
+        let mut numeric_run = base_descriptor("thread_size");
+        numeric_run.semantic_role = SemanticRole::Numeric;
+        assert!(cross_run_type_conflict(&enum_run, &numeric_run));
+        assert!(cross_run_type_conflict(&numeric_run, &enum_run));
+    }
+
+    #[test]
+    fn cross_run_type_conflict_flags_boolean_vs_numeric_too() {
+        let mut boolean_run = base_descriptor("flag");
+        boolean_run.semantic_role = SemanticRole::Boolean;
+        let mut numeric_run = base_descriptor("flag");
+        numeric_run.semantic_role = SemanticRole::Numeric;
+        assert!(cross_run_type_conflict(&boolean_run, &numeric_run));
+    }
+
+    #[test]
+    fn cross_run_type_conflict_is_false_when_either_run_abstains() {
+        let mut enum_run = base_descriptor("thread_size");
+        enum_run.semantic_role = SemanticRole::Enum;
+        let mut numeric_run = base_descriptor("thread_size");
+        numeric_run.semantic_role = SemanticRole::Numeric;
+        numeric_run.abstain = true;
+        assert!(
+            !cross_run_type_conflict(&enum_run, &numeric_run),
+            "an abstained run already satisfies the protocol's own \
+             'without at least one being flagged abstain' clause"
+        );
+    }
+
+    #[test]
+    fn cross_run_type_conflict_is_false_when_roles_agree_or_are_both_categorical() {
+        let mut a = base_descriptor("style");
+        a.semantic_role = SemanticRole::Enum;
+        let mut b = base_descriptor("style");
+        b.semantic_role = SemanticRole::Enum;
+        assert!(!cross_run_type_conflict(&a, &b));
+        b.semantic_role = SemanticRole::Boolean;
+        assert!(
+            !cross_run_type_conflict(&a, &b),
+            "Enum vs Boolean is not the Numeric-vs-categorical conflict this check targets"
+        );
     }
 
     #[test]
