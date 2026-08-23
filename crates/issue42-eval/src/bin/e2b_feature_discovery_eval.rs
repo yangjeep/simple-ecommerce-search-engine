@@ -263,6 +263,7 @@ fn main() {
             stability_agreements,
             stability_total,
             per_config_f1,
+            per_config_stability,
         } = build_baselines_2_and_3(
             &per_config_runs,
             &anon_mapping,
@@ -299,10 +300,20 @@ fn main() {
             stability_agreements as f64 / stability_total as f64
         };
         println!(
-            "\nrepeated-run agreement (role + primitive, run1 vs run2, across all 4 \
-             configurations): {stability_agreements}/{stability_total} ({:.2}%)",
+            "\nrepeated-run agreement (role + primitive, every pairwise comparison of runs \
+             within a configuration, across all 4 configurations): {stability_agreements}/{stability_total} \
+             ({:.2}%)",
             100.0 * stability_rate
         );
+        println!("repeated-run agreement by configuration:");
+        for (config, (agreements, total)) in &per_config_stability {
+            let rate = if *total == 0 {
+                0.0
+            } else {
+                *agreements as f64 / *total as f64
+            };
+            println!("  {config}: {agreements}/{total} ({:.2}%)", 100.0 * rate);
+        }
         println!(
             "unsafe-accepted count (accepted structural facet whose oracle role is actually \
              Identifier/Relationship): {unsafe_accepted_count}"
@@ -451,6 +462,11 @@ fn main() {
             "baseline_sha": BASELINE_SHA,
             "baselines": summary_baselines,
             "repeated_run_agreement": stability_rate,
+            "repeated_run_agreement_numerator": stability_agreements,
+            "repeated_run_agreement_denominator": stability_total,
+            "repeated_run_agreement_by_configuration": per_config_stability.iter().map(|(k, (a, t))| {
+                (k.clone(), serde_json::json!({"agreements": a, "total": t, "rate": if *t == 0 { 0.0 } else { *a as f64 / *t as f64 }}))
+            }).collect::<BTreeMap<_, _>>(),
             "unsafe_accepted_count": unsafe_accepted_count,
             "macro_f1_by_configuration": per_config_f1,
             "end_to_end": {

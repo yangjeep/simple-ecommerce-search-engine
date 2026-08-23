@@ -68,16 +68,29 @@ pub fn load_llm_pass(config: &str, run: u32) -> Option<LlmPassOutput> {
     }
 }
 
-/// Loads every available run (1 and 2) for every entry in `configs`,
-/// skipping any config with zero artifacts on disk. Used by both the
-/// accuracy/GO-gate binary (all 4 [`CONFIGS`]) and the stability re-run
-/// tooling (which may pass a superset including newly-added run indices
-/// beyond 2 -- see `load_llm_pass_range`).
+/// Loads every available run (1 through [`MAX_RUN_INDEX`]) for every
+/// entry in `configs`, skipping any config with zero artifacts on disk
+/// and any run index with no file present. Originally hardcoded to
+/// `1..=2` (the original 8-artifact design); widened for Issue #42's own
+/// E2b serving-contract-closure pass, item 3 (a materially larger
+/// repeated-run stability sample -- 3 new runs added per configuration,
+/// `dataset_cache/export/e2b_llm_proposals_<config>_run{3,4,5}.json`).
+/// Both consumers of this function (the accuracy/GO-gate binary and the
+/// stability re-run) are unaffected in any way this widening could
+/// silently change: `build_baselines_2_and_3`'s headline
+/// `no_validator_by_key`/`validated_by_key` maps use first-run-wins
+/// (`.entry().or_insert_with()`) over each run in this `Vec`'s own push
+/// order (run 1 first, always), so the accuracy binary's own headline F1
+/// numbers are unaffected by any additional run being present --
+/// reverified end to end after this change (see
+/// `docs/experiments/ISSUE42_LOG.md`'s E2b-serving-contract-closure
+/// section for the byte-identical confirmation).
 pub fn load_all_runs(configs: &[&str]) -> BTreeMap<String, Vec<LlmPassOutput>> {
+    const MAX_RUN_INDEX: u32 = 10;
     let mut per_config_runs: BTreeMap<String, Vec<LlmPassOutput>> = BTreeMap::new();
     for &config in configs {
         let mut runs = Vec::new();
-        for run in 1..=2 {
+        for run in 1..=MAX_RUN_INDEX {
             if let Some(pass) = load_llm_pass(config, run) {
                 runs.push(pass);
             }
@@ -164,6 +177,13 @@ pub struct Baselines2And3 {
     pub stability_agreements: usize,
     pub stability_total: usize,
     pub per_config_f1: BTreeMap<String, f64>,
+    /// `config -> (agreements, total)` -- the same pairwise agreement
+    /// [`Self::stability_agreements`]/[`Self::stability_total`] sum
+    /// across configurations, broken out per configuration. Added for
+    /// Issue #42's own E2b serving-contract-closure pass, item 3:
+    /// "report per-configuration as well as aggregate stability... show
+    /// the numerator/denominator, not only the percentage."
+    pub per_config_stability: BTreeMap<String, (usize, usize)>,
 }
 
 /// Builds Baseline 2 (LLM proposal, no validator) and Baseline 3 (LLM +
@@ -185,10 +205,13 @@ pub fn build_baselines_2_and_3(
     let mut stability_agreements = 0usize;
     let mut stability_total = 0usize;
     let mut per_config_f1: BTreeMap<String, f64> = BTreeMap::new();
+    let mut per_config_stability: BTreeMap<String, (usize, usize)> = BTreeMap::new();
     let mut type_conflicted_keys: BTreeSet<String> = BTreeSet::new();
 
     for (config, runs) in per_config_runs {
         let is_canonical = CANONICAL_CONFIGS.contains(&config.as_str());
+        let mut config_agreements = 0usize;
+        let mut config_total = 0usize;
 
         // Repeated-run agreement (role + primitive): every distinct pair
         // of runs within this config, not just run1-vs-run2 -- the
@@ -213,10 +236,12 @@ pub fn build_baselines_2_and_3(
                 for (k, d1) in &run_i {
                     if let Some(d2) = run_j.get(k) {
                         stability_total += 1;
+                        config_total += 1;
                         if d1.semantic_role == d2.semantic_role
                             && d1.candidate_physical_primitive == d2.candidate_physical_primitive
                         {
                             stability_agreements += 1;
+                            config_agreements += 1;
                         }
                         if is_canonical && cross_run_type_conflict(d1, d2) {
                             let real_key = resolve_real_key(config, k, anon_mapping, noisy_mapping);
@@ -267,6 +292,7 @@ pub fn build_baselines_2_and_3(
         }
         let config_f1 = macro_f1(&config_predicted_roles, oracle_by_key);
         per_config_f1.insert(config.clone(), config_f1);
+        per_config_stability.insert(config.clone(), (config_agreements, config_total));
     }
 
     for real_key in &type_conflicted_keys {
@@ -285,6 +311,7 @@ pub fn build_baselines_2_and_3(
         stability_agreements,
         stability_total,
         per_config_f1,
+        per_config_stability,
     }
 }
 

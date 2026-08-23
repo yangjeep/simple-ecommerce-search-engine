@@ -198,3 +198,23 @@ raw_results: docs/research/artifacts/i42_e2b_run1/
 analysis: printed directly by the binary per run; see
   docs/experiments/ISSUE42_LOG.md's "I42-E2b" section for the full
   defect-by-defect correction history and the GO-gate breakdown.
+
+correction_note: >
+  This manifest's own claim field (above), preserved verbatim per rule 9,
+  says "Four of five gates now pass... the sole remaining failure
+  (repeated-run agreement)." This was incomplete, not fabricated: Issue
+  #42's own E2b GO gate has SIX preregistered criteria, not five --
+  criterion 5 (<=5% serving overhead vs the hand-authored oracle) was
+  silently absent from this manifest's own enumeration, though it was
+  separately, correctly disclosed elsewhere as unmeasured
+  (ISSUE42_DECISION.md's own "What this does NOT establish" section).
+  A later pass (docs/experiments/ISSUE42_LOG.md's "I42-E2b
+  serving-contract closure" section) corrected the accounting, measured
+  the missing criterion (PASS), re-tested repeated-run agreement on a
+  materially larger sample (still FAIL, 87.60%), and audited a sixth
+  criterion (real structured unseen feed) this manifest never
+  considered at all (found NOT ESTABLISHED). See
+  benchmarks/manifests/i42_e2b_serving_overhead_eval.yaml and
+  benchmarks/manifests/i42_e2b_stability_rerun.yaml for the two new
+  measurements, and ISSUE42_DECISION.md for the corrected overall E2b
+  verdict (still REVISE, for two established gaps rather than one).

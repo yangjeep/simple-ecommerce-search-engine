@@ -1705,6 +1705,380 @@ pre-round-2) numbers immediately above are both preserved per rule 9,
 superseded by, never silently replaced in favor of, the final corrected
 numbers.
 
+## I42-E2b serving-contract closure: gate-accounting correction, serving-overhead measurement, stability re-run, WANDS-qualification audit
+
+**Trigger**: a narrow, explicitly-scoped follow-up pass against PR #44's
+own E2b findings, instructed to treat the E2b REVISE conclusion above as
+untrusted and to try to falsify it, not defend it — no authorization to
+start E4/E5/E6 or otherwise expand scope. Four things, in order: (1) fix
+a real gate-accounting error in this section and `ISSUE42_DECISION.md`;
+(2) measure the one preregistered E2b GO-gate criterion never measured
+at all; (3) re-test repeated-run stability with a materially larger,
+predetermined sample; (4) audit whether WANDS, as actually used here,
+satisfies the "real structured unseen feed" gate's own dataset
+requirement. A fresh adversarial review with no implementation mandate
+follows all four.
+
+### 1. Gate-accounting error, found and fixed
+
+Issue #42's own E2b section preregisters **six** GO-gate criteria:
+
+1. zero confirmed unsafe accepted structural classifications
+2. >=80% recall on retrieval-significant reference features
+3. end-to-end relevance within 5% of the oracle mapping
+4. >=90% repeated-run agreement on accepted physical primitive selection
+5. <=5% serving overhead vs the hand-authored compiled oracle
+6. successful evidence on at least one real structured unseen feed
+
+This section's own "GO gate evaluation, final" table above, and
+`ISSUE42_DECISION.md`'s own "GO gate, final" summary, both enumerated
+only **five** rows — criterion 5 (serving overhead) was silently absent
+from both tables entirely, and the summary text went on to call
+criterion 4 (repeated-run agreement) "the sole remaining gap" / "the
+single remaining failure." This claim was false on the documents' own
+terms: a gate never measured is not the same as a gate that passed, so
+a document cannot self-consistently list 5 gates as the totality of the
+GO gate AND separately, correctly, disclose (as this section's own
+"Limitations and what would be needed to re-test" subsection above
+already did: "E2b's own missing serving-overhead measurement... the one
+preregistered metric this pass never collected") that a 6th, unmeasured
+gate exists. Two sections of the same document disagreed with each
+other about how many gates remained open; the "sole remaining gap"
+summary is the one that was wrong.
+
+The identical defect exists in code, not only prose:
+`e2b_feature_discovery_eval.rs`'s own `go` boolean (`main()`, before this
+pass) computed
+`zero_unsafe && recall_significant_ge_80pct >= 0.80 && relevance_within_5pct && stability_ge_90pct && real_feed_evidence`
+— five terms. No `serving_overhead` term ever existed in the code either.
+
+Neither the original prose nor the original code fabricated a passing
+number for criterion 5 — they simply omitted it from the total being
+counted. This is corrected below with an explicit six-row table, and by
+implementing and running the missing measurement (section 3).
+
+**Superseded text, this document (as originally written, preserved per
+rule 9, not deleted):**
+
+> "Overall: still REVISE, not GO, not STOP — for a cleaner reason than
+> before. Four of five gates now pass on an honestly-computed basis...
+> The single remaining failure — repeated-run agreement at 85.60%
+> against a 90% bar — is real, was never part of any of the three
+> defects, and is not close enough to attribute to rounding."
+
+**Superseded text, `ISSUE42_DECISION.md` (as originally written,
+preserved there too, quoted here for cross-reference):**
+
+> "The underlying idea... is well-supported by the final, twice-corrected
+> numbers (F1 0.7697 vs 0.5366) and clears four of five preregistered
+> gates cleanly. It does not clear the fifth (repeated-run agreement,
+> 85.60% vs 90%), and this document does not manufacture a GO by treating
+> that shortfall as close enough."
+
+Both statements were arithmetically correct about the 5 rows each one
+computed; both enumerations were incomplete. This correction restores
+the missing 2 rows (criterion 5, never measured; criterion 6, never
+audited — section 4 below), not the arithmetic on the other 5 (which
+still holds).
+
+### 2. A related, separately-confirmed reproducibility gap: the key-name mapping
+
+While preparing to re-run the LLM passes (section 3), a second, real gap
+was found and fixed: the `wands_anonymized`/`wands_noisy` shown-key ->
+real-key mapping the original 8 passes relied on was written only to a
+session-local `/tmp/e2b_key_mappings.json`, never committed — a literal
+violation of Issue #42's own rule 8 ("raw per-query outputs, manifests,
+seeds, configs... must be preserved"). Both mappings are now
+reconstructed and committed
+(`crates/issue42-eval/src/e2b_key_mapping.rs`):
+
+- `wands_anonymized`'s `feature_NNN -> real_key` mapping is deterministic
+  by construction (`feature_i` = the `i`-th of the 36 real sample keys
+  sorted lexicographically, matching this document's own manifest text
+  from the original pass, "`wands_anonymized` `feature_NNN` by
+  sorted-key order").
+- `wands_noisy`'s hand-picked alias mapping is recovered by position:
+  `dataset_cache/export/e2b_llm_proposals_wands_noisy_run{1,2}.json`'s
+  own descriptor arrays list all 36 noisy names in an order identical
+  between run 1 and run 2, matching `WANDS_SAMPLE_KEYS`'s own declared
+  array order position-for-position.
+
+Both reconstructions are independently cross-checked against real
+per-key statistics embedded in the frozen artifacts' own `evidence` text
+(e.g. `feature_20`'s evidence cites "57110 occurrences" — an exact match
+to `overallproductweight`'s real, independently-measured occurrence
+count; `product_code`'s evidence cites "uniqueness_ratio=0.9785 at
+count=2,048" — an exact match to `samplepartnumber`'s real statistics),
+not merely trusted from the stated rule. Re-running
+`e2b_feature_discovery_eval` with the committed mapping (replacing the
+`/tmp` read) reproduces every previously-reported number byte-for-byte
+(macro F1 by baseline and by configuration, the original 107/125
+repeated-run agreement, unsafe-accepted count, end-to-end NDCG/Recall) —
+confirming the reconstruction is exactly correct, not merely plausible.
+
+A related refactor, done for the same "do not trust a second,
+independently-written computation" reason: `build_baselines_2_and_3`
+(Baseline 2/3's own accepted-descriptor logic) is extracted from
+`e2b_feature_discovery_eval.rs`'s `main()` into a new shared library
+module, `crates/issue42-eval/src/e2b_pipeline.rs`, so the new
+serving-overhead binary (section 3 below) computes "what would the
+LLM+validator baseline actually accept" through the *exact same code
+path* the accuracy binary's own headline numbers already use, rather
+than a second, independently-written computation that could silently
+diverge from it. Re-running the accuracy binary end to end after this
+refactor reproduces every number byte-for-byte.
+
+### 3. Serving-overhead measurement (GO-gate criterion 5)
+
+**Method**: both the oracle baseline (`e2b_oracle.rs`'s hand-authored
+descriptors) and the LLM+validator baseline (Baseline 3, computed
+through `e2b_pipeline::validated_wands_accepted`, the exact same code
+path the accuracy binary uses) propose a set of accepted structural
+(Enum/Numeric/Boolean) descriptors for WANDS's real 42,994-product
+catalog — oracle: 29 WANDS structural fields; LLM+validator: 26; 16
+fields common to both (coverage gap disclosed: oracle-only
+`estimatedtimetosetup`/`overallheight-toptobottom`/`overallproductweight`/
+`overallwidth-sidetoside`; validator-only `productwarranty`).
+`e2b_ingest::build_catalog` (already used, unmodified, by the accuracy
+binary) materializes each baseline's own accepted fields into a real
+`commerce_core::domain::Catalog`; a new binary,
+`crates/issue42-eval/src/bin/e2b_serving_overhead_eval.rs`, runs each
+through the real, unmodified, production
+`commerce_core::index::CatalogIndex::build` — the same "compile into the
+fast path" step E1/R1-R3 all already measure — producing two real
+`CatalogIndex` bundles from the identical underlying WANDS rows,
+differing only in which fields each baseline chose to accept. No
+production `commerce_core` code was modified; no LLM call anywhere in
+the measured serving path.
+
+Two real, unmodified serving-path operations are timed on a fixed
+workload built ONLY from real values on fields BOTH bundles accepted (68
+queries: 48 single-field Enum-equality, 20 two-field Enum-AND) — a
+candidate-set-size cross-check confirmed all 68/68 queries return
+byte-identical candidate-set sizes on both bundles before any timing
+number was trusted:
+[`CatalogIndex::indexed_candidates`](../../crates/commerce-core/src/index/mod.rs)
+(the raw structural-narrowing step) and `CatalogIndex::execute_ranked`
+top-10 (the fuller, ranked "how a real query gets served" operation).
+Measurement discipline matches `issue38-eval`'s own E1 binary exactly:
+`bench_harness::round_robin_schedule` (anti-drift interleaving of the
+two methods' repetitions), `REPS_PER_QUERY=30` (Issue #6's own
+decision-grade bar), `IN_PROCESS_BATCH=200`-batched `black_box`'d calls
+(a single sub-microsecond in-process call needs batching to escape
+`Instant::now()`'s own jitter — the same reason E1's own doc comment
+already established).
+
+**Result**: `indexed_candidates`' P50 (oracle=0.0001289ms,
+validated=0.0001285ms, -0.34%) and `execute_ranked`'s P50
+(oracle=0.0002605ms, validated=0.0002593ms, -0.48%) are both **below**
+this binary's own pre-declared 1-microsecond timer floor (fixed in code
+before any run) — correctly reported **INCONCLUSIVE**, not rounded up to
+PASS, per this pass's own explicit instruction not to manufacture a
+passing number from a measurement too fast to trust. `execute_ranked`'s
+P95 (oracle=0.0573ms, validated=0.0562ms, **-1.95%**) and P99
+(oracle=0.6564ms, validated=0.6294ms, **-4.11%**) ARE above the timer
+floor (driven by the workload's own large-candidate-set queries, up to
+8,834 candidates for one query) and both clear the <=5% bar — the
+LLM+validator bundle is measurably not slower than the oracle bundle at
+the percentiles trustworthy enough to measure at all, if anything
+marginally faster (plausibly because it indexes 3 fewer WANDS fields).
+Build cost (informational only, per this pass's own instruction to
+isolate serving overhead from ingestion cost): oracle build=1802ms
+index=7,955,852 bytes; LLM+validator build=1493ms index=6,362,192 bytes.
+
+**Combined verdict: PASS**, with the P50-level INCONCLUSIVE result
+disclosed alongside it, never dropped: `indexed_candidates` P50,
+`execute_ranked` P50/P95/P99 are the four measurements taken; none FAILs
+the <=5% bar, and the two (P95/P99) that clear the timer floor both
+PASS. Full detail: `benchmarks/manifests/i42_e2b_serving_overhead_eval.yaml`,
+`docs/research/artifacts/i42_e2b_serving_overhead_run1/` (three stages
+preserved per rule 9 — indexed-candidates-only, execute_ranked-added-
+no-tail-gate, and the final run with the P95/P99 gate evaluation added).
+
+### 4. WANDS "real structured unseen feed" qualification audit (GO-gate criterion 6)
+
+**Question**: does WANDS, AS ACTUALLY USED in E2b, expose genuine
+Product/Variant or relationship complexity, per Issue #42's own dataset
+requirement ("a license-compatible real structured catalog/feed with
+category-specific attributes and Product/Variant or relationship
+complexity")?
+
+**Finding: no. Downgraded from PASS (asserted, never audited) to NOT
+ESTABLISHED.** Three concrete, code-and-data-level facts, none
+previously connected to this specific gate requirement:
+
+1. **No real Variant concept at all.** `e2b_ingest::build_catalog`'s own
+   doc comment already states the mapping plainly: "Every WANDS record
+   becomes exactly one `Product` with exactly one `Variant`... since it
+   has no real variant-grouping concept" — and `e2b_workload.rs`'s own
+   doc comment independently confirms this from the data side:
+   "`variant_scoped` is `None` for WANDS (which has no formal Variant
+   concept at all — every row is one listing)." Both facts were already
+   disclosed in code comments; neither the original decision record nor
+   its own GO-gate table ever connected them to the dataset requirement
+   they were being used to satisfy.
+2. **The two oracle-labeled "Relationship" fields are never actually
+   materialized or exercised anywhere in the E2b pipeline.**
+   `e2b_ingest::accepted_typed_keys` filters to `Enum | Boolean | Numeric`
+   only — `Identifier` and `Relationship` roles are structurally
+   excluded from ever being ingested into any `Catalog` any baseline is
+   scored against, and from the serving-overhead bundles measured in
+   section 3. The oracle correctly *labels*
+   `compatibledrainassemblypartnumber`/`compatiblediningchairpartnumber`
+   as `Relationship`-scoped, but that label is never compiled, never
+   queried, never round-tripped through any real serving path in this
+   experiment — a classification exercise only, not a tested capability.
+3. **The two relationship fields' real values do not reference other
+   in-catalog products at all.** Direct inspection of the real
+   `dataset_cache/wands/product.csv` values for both fields
+   (`compatibledrainassemblypartnumber`: `"d102rg"`, `"1795"`, ...;
+   `compatiblediningchairpartnumber`: `"dp519s or dp520s"`, `"does not
+   apply"`, ...) shows free-text external manufacturer part-number
+   strings — some containing disjunctions ("or"), some literally "does
+   not apply" — never a WANDS `product_id` or any other in-catalog
+   identifier. These are cross-references to a DIFFERENT company's parts
+   catalog, not a real Product/Variant relationship within this commerce
+   catalog.
+
+WANDS genuinely satisfies the OTHER dataset requirements beyond dispute
+— real, license-compatible, unseen, category-specific attributes (42,994
+real Wayfair listings, real messy pipe-delimited feature blobs, never
+shown to the oracle author before classification). It does not satisfy
+"Product/Variant or relationship complexity" AS ACTUALLY EXERCISED in
+this pass. Per this pass's own instruction ("if no, mark this gate NOT
+ESTABLISHED... do not stretch the definition merely to retain a PASS"),
+and per Issue #42's own instruction not to acquire a second dataset in
+this pass unless resolving a methodological invalidity requires it (it
+does not — the finding is that the existing evidence does not establish
+this criterion, not that the experiment is broken), **this gate is
+corrected to NOT ESTABLISHED.**
+
+This has real consequences for the overall verdict (section 6): even a
+fully favorable stability re-test cannot produce an overall GO, since
+criterion 6 is now NOT ESTABLISHED, and Issue #42's own rule requires GO
+only if EVERY criterion is established and passes.
+
+### 5. Repeated-run stability re-run (GO-gate criterion 4)
+
+**Run count, decided and committed before any new result was seen** (in
+`scripts/e2b_stability_rerun_workflow.js`'s own comment, ahead of
+launching any pass): 3 additional independent runs per configuration,
+bringing each configuration from 2 to 5 total runs (4 configurations x 3
+new runs = 12 new independent subagent calls). This raises the number of
+pairwise agreement comparisons per configuration from C(2,2)=1 to
+C(5,2)=10 — a 10x increase in the stability metric's own sample size (125
+-> 1250 total pairs).
+
+**Method**: each of the 12 new passes is a genuinely fresh Workflow-tool
+subagent call (zero access to this session's conversation history, any
+other pass's output, or the oracle mapping — process-level blinding, the
+same "cannot look" property the original 8 passes relied on), given the
+exact bounded-input data (real per-field statistics, and for the
+perturbed WANDS configurations the same shown key/alias names) the
+original passes used —
+`crates/issue42-eval/src/bin/e2b_dump_bounded_inputs.rs` deterministically
+reconstructs this from the same committed statistics
+`e2b_workload`/`e2b_key_mapping` already provide. **A genuine, disclosed
+limitation**: the original 8 passes' own literal PROMPT WORDING was
+never committed to this repository (only their frozen JSON output was)
+— the prompt used for these 12 new passes is a faithful reconstruction
+from `docs/experiments/ISSUE42_PROTOCOL.md`'s own descriptor schema and
+instructions text, not a byte-identical replay of whatever exact wording
+the original session used. Model/provider/version for the 12 new passes
+is whatever this session's configured model serves; the original 8
+passes' own model/provider/version was likewise never recorded in a
+pinnable form, so exact model-identity reproduction could not be
+verified as matched either way — recorded as a real limitation on both
+sides, not glossed over.
+
+Repeated-run agreement is computed by the exact preregistered pairwise
+definition, generalized to N>2 runs (`e2b_pipeline::build_baselines_2_and_3`
+now compares every distinct pair of runs within a configuration, not
+only "run 1 vs run 2" — for N=2 this generalization is byte-identical to
+the original definition, reverified directly by rerunning the accuracy
+binary and confirming byte-identical headline numbers before and after
+the code change).
+
+**Result, final** (1095/1250, up from 107/125):
+
+| Configuration | Agreements/Total | Rate |
+|---|---|---|
+| automotive | 156/170 | 91.76% (clears the bar) |
+| wands_baseline | 316/360 | 87.78% |
+| wands_anonymized | 311/360 | 86.39% |
+| wands_noisy | 312/360 | 86.67% |
+| **Aggregate** | **1095/1250** | **87.60%** |
+
+All three real-WANDS-derived configurations independently and
+consistently sit in an 86-88% band, below 90%, while the smaller
+synthetic automotive control clears it. This is a materially more
+precise measurement (10x the pairwise sample) pointing at a real, stable
+population rate for real messy feed data around 86-88%, not a sampling
+artifact of the original small-N measurement — the larger sample moved
+the number (85.60% -> 87.60%) but did not close the gap to 90%, and the
+per-configuration consistency across three independently-perturbed real
+configurations argues against attributing the shortfall to noise.
+
+**Proposal instability vs deterministic-validator instability**: this
+metric compares RAW LLM proposals (role + physical primitive) run to
+run, before any validator step. `e2b_validator::validate` is a pure,
+deterministic function of `(proposal, real measured stats)` — given an
+identical proposal it always produces an identical accept/reject
+decision. All of the measured instability is therefore proposal (LLM)
+instability by construction; there is no validator-side stochastic
+contribution to separately measure, because none exists.
+
+The 12 new frozen passes are committed alongside the original 8 under
+`dataset_cache/export/e2b_llm_proposals_<config>_run{3,4,5}.json`, never
+regenerated after being written, matching the original 8's own
+preservation discipline. Full detail:
+`benchmarks/manifests/i42_e2b_stability_rerun.yaml`,
+`docs/research/artifacts/i42_e2b_stability_rerun_run1/`.
+
+**GO-gate criterion 4, final: FAIL** (87.60% vs >=90% required, on a
+materially larger and internally consistent sample — not close enough
+to attribute to rounding or to the original small-N measurement being
+unlucky).
+
+### 6. Corrected six-criterion GO-gate table, final
+
+| # | Criterion | Result | Verdict |
+|---|---|---|---|
+| 1 | Zero confirmed unsafe accepted structural classifications | 0 found | **PASS** |
+| 2 | >=80% recall on retrieval-significant reference features | 86.84% | **PASS** |
+| 3 | End-to-end relevance within 5% of oracle | relative gap 0.00% | **PASS**, with a standing reliability caveat (only 270/480 real queries scored, no ranking applied to raw hits — `e2e_check_reliable=false`, disclosed in the original pass, restated here for completeness) |
+| 4 | >=90% repeated-run agreement | 1095/1250 (87.60%), materially larger sample | **FAIL** |
+| 5 | <=5% serving overhead vs hand-authored oracle | P50 INCONCLUSIVE (timer floor); P95 -1.95%, P99 -4.11% (both above floor) | **PASS**, with the P50 INCONCLUSIVE result disclosed alongside it |
+| 6 | Real structured unseen feed evidence | WANDS has no real Variant concept and never exercises its 2 labeled Relationship fields anywhere in this pipeline | **NOT ESTABLISHED** |
+
+**Overall: still REVISE — for a different, more complete reason than
+either the original round-3 or the twice-corrected final numbers
+above.** Two of six criteria do not clear the bar: criterion 4 genuinely
+fails on a materially larger, internally-consistent sample (not
+attributable to small-N noise); criterion 6, previously asserted as PASS
+without ever being audited against its own dataset-requirement wording,
+does not withstand a direct audit of what WANDS structurally contains
+and what this pipeline actually exercises. Per Issue #42's own rule ("GO
+only if every preregistered E2b GO criterion is actually established and
+passes"), E2b cannot be GO in this pass regardless of how favorably
+criterion 4 might have resolved, since criterion 6 was never a
+stability question in the first place. The newly-measured criterion 5
+(serving overhead) is a genuine, real PASS, not previously counted at
+all — a real strengthening of the evidence, not a wash against the two
+criteria that moved the other way. Criteria 1-3 are unchanged from the
+prior correction round.
+
+This is not a stricter or more pessimistic reading manufactured to
+produce a particular verdict: criterion 5 moving from unmeasured to PASS
+and criterion 4 moving from 85.60% to a more precisely-measured 87.60%
+(still short) both cut in the SAME direction this pass's own governance
+requires — report what the evidence establishes, not what would look
+better. Criterion 6 alone is what changes the overall REVISE's own
+stated reasons materially: previously "one gate failed, everything else
+passed cleanly"; now "one gate fails on stronger evidence, a second was
+never actually established, a third (serving overhead) is newly and
+genuinely measured as passing."
+
 ## Epic close-out
 
 Per Issue #42's own "Immediate execution order," step 9 ("stop and
@@ -1714,6 +2088,18 @@ concise cross-experiment decision record this step and the issue's own
 root, mirroring `ISSUE38_DECISION.md`'s established structure) — it
 covers R1 (REVISE, no production change), R2 (GO, merged), R3 (GO,
 merged), the production-merge review, and E2b (REVISE, both correction
-rounds) together, states each verdict precisely, and lists what remains
-unestablished and what should explicitly not be built yet. E4/E5/E6
-remain unauthorized (step 10) pending that direction.
+rounds, then the serving-contract-closure pass above) together, states
+each verdict precisely, and lists what remains unestablished and what
+should explicitly not be built yet. E4/E5/E6 remain unauthorized (step
+10) pending that direction.
+
+**Update, E2b serving-contract closure**: the "I42-E2b serving-contract
+closure" section immediately above supersedes this section's own E2b
+"GO gate evaluation, final" table (which omitted the serving-overhead
+criterion entirely and mischaracterized repeated-run agreement as "the
+sole remaining gap") with a corrected six-criterion table. E2b's overall
+verdict remains REVISE, now for two established gaps (repeated-run
+agreement, materially re-confirmed on a larger sample; real-feed
+Product/Variant/relationship complexity, newly audited and found not
+established) rather than one, alongside a newly-measured, genuine PASS
+on serving overhead. `ISSUE42_DECISION.md` is updated to match.
