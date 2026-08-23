@@ -1,0 +1,29 @@
+{
+  "experiment_id": "I42-R1",
+  "phase": "issue-42",
+  "issue": 42,
+  "benchmark_manifest": "benchmarks/manifests/i42_r1_typed_ambiguity_eval.yaml",
+  "git_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "dataset": {
+    "name": "small hand-specified fixture (not a modification of the frozen apparel/automotive generators)",
+    "products": 5,
+    "source": "crates/issue42-eval/src/r1_workload.rs::build_typed_ambiguity_catalog"
+  },
+  "engine_config": {
+    "native": "commerce_core::ir::query::compile -> commerce_core::plan::execute_planned (unmodified), via issue42_eval::r1_experimental",
+    "lexical_delegate": "phase9_eval::bitmap_delegate::BitmapTantivyDelegate (reused from Phase 9)"
+  },
+  "repetitions": "5 independent full runs; correctness/wrong-family/row1/negative numbers are deterministic byte-for-byte across all 5 (confirmed by direct diff); latency is the median of 7 black_box-guarded batched trials per run, itself varying run-to-run within a consistent range per treatment",
+  "raw_results_path": "docs/research/artifacts/i42_r1_run1/",
+  "analysis_version": "docs/experiments/ISSUE42_LOG.md#i42-r1",
+  "decision": "docs/experiments/ISSUE42_LOG.md#i42-r1",
+  "headline_result": {
+    "treatment_a": "FAILS the GO gate: silently keeps only the Numeric interpretation as the sole hard constraint for the uncorroborated ambiguous query (no OR/preference fallback for the Enum reading at all), and 0 hits for the corroborated apparel case (\"size 22 jeans\") since the unconditional Numeric constraint ANDs against ProductType(Jeans) and the Jeans product's own size is Enum-typed -- corroborated mean NDCG@10 = 0.6667. Confirms H1-A.",
+    "treatment_b": "corroborated mean NDCG@10 = 1.0000 (recovers every missed match), but introduces exactly 1 wrong-family false positive on the dedicated adversarial case (a \"Bolt Kits\" product whose unrelated thread_count attribute coincidentally shares the ambiguous value's literal text) across all 5 runs -- confirms H1-B. FAILS the GO gate (requires 0).",
+    "treatment_c": "0 wrong-family false positives, correctly falls back for the uncorroborated case, but corroborated mean NDCG@10 = 0.3333, far below the 0.95 bar -- confirms H1-C (never uses corroborating context to select an interpretation). FAILS the GO gate.",
+    "treatment_d": "Passes every correctness criterion: corroborated mean NDCG@10 = 1.0000, 0 wrong-family false positives, correct row-1 fallback-to-demotion, 0 hard constraints surviving either negative case. FAILS only the <=5% latency-overhead bar: 11.6%-21.1% overhead vs Treatment A across 5 runs (median-of-7-trials each, after correcting a single-batch measurement that occasionally reported a physically-impossible negative overhead for Treatment B -- see latency_methodology in the YAML manifest), attributable to this experimental implementation's O(catalog-size) per-query attribute-kind-registration scan rather than a precomputed ingestion-time index.",
+    "verdict": "REVISE. No treatment clears every preregistered GO-gate threshold. Treatment D is the closest (passes every correctness/wrong-family/fallback criterion, fails only a measured, explicable, plausibly-fixable implementation-cost dimension). Current production behavior (Treatment A / unmodified compile()) is retained; D is not adopted in this pass.",
+    "reproducibility": "all 5 runs byte-identical on every correctness/wrong-family/row1/negative number (verified by direct diff excluding the latency_ms_per_call JSON block and the output-file-path line)"
+  }
+}

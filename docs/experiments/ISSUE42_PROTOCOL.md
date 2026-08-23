@@ -251,9 +251,9 @@ layer against the real materialized catalog, not asserted in prose:
 
 | # | query | class | intent |
 |---|---|---|---|
-| 1 | `size 34` | ambiguous, corroboration absent | matches apparel Enum size="34" AND automotive Numeric size=34.0 in this catalog (both real) |
-| 2 | `size 34 jeans` | corroborated -> apparel | "jeans" entity corroborates Enum interpretation |
-| 3 | `34 inch wiper blade` | corroborated -> automotive | "wiper blade" entity + explicit unit corroborates Numeric interpretation |
+| 1 | `size {v}` | ambiguous, corroboration absent | matches apparel Enum size="{v}" AND automotive Numeric size={v}.0 in this catalog (both real) |
+| 2 | `size {v} jeans` | corroborated -> apparel | "jeans" entity corroborates Enum interpretation |
+| 3 | `size {v} wiper blades` | corroborated -> automotive | "wiper blades" entity corroborates Numeric interpretation |
 | 4 | `under $34` | distinct existing keyword path | PriceUnderCents, must not be affected by any R1 treatment (regression guard) |
 | 5 | `over $34` | distinct existing keyword path | PriceOverCents, same guard |
 | 6 | `2015 honda civic brake pads` | number-as-year, corroborated | fitment MultiEnum match (reuses E2's fixed fitment-phrase mechanism) |
@@ -265,6 +265,48 @@ layer against the real materialized catalog, not asserted in prose:
 Single-category runs use `issue38_e2e3_eval::apparel`/`automotive`
 alone; mixed-category runs use `mixed_merchant`. Both are run for every
 query above where applicable.
+
+**Correction (found while implementing the workload, before any
+treatment ran)**: rows 1-3 as originally drafted here assumed a query
+text/value that either could never be produced by the real generators
+or did not actually exercise `compile()`'s numeric keyword branch at
+all, caught by direct source reading (`crates/commerce-core/src/ir/query.rs`)
+rather than by running anything first:
+
+- **Row 3's original text, `"34 inch wiper blade"`, does not contain
+  the literal `"size"` keyword `compile()`'s numeric branch requires**
+  (confirmed directly against `query.rs`'s `tokens[i] == "size"` check)
+  -- it would never have exercised the mechanism R1 exists to test at
+  all. Corrected to `"size {v} wiper blades"`, matching row 2's shape,
+  and using the registered `ProductType` phrase's exact plural text
+  (`compile()`'s phrase lookup is an exact, case-insensitive,
+  space-joined string match -- no stemming -- confirmed directly
+  against `query.rs`'s window-scan loop).
+- **Row 1's original claim -- a single value "34" real in both an
+  apparel Jeans Enum `size` and an automotive Wiper Blades Numeric
+  `size` -- is unachievable with the existing generators**: apparel's
+  Jeans sizes are drawn from `["30","32","34","36","38"]`
+  (`apparel.rs`), automotive's Wiper Blades `size` is
+  `rng.gen_range(16..=28)` (`automotive.rs`) -- two disjoint numeric
+  ranges that can never produce a shared value, confirmed by reading
+  both generators directly rather than assumed. `mixed_merchant`'s own
+  `size_conflict_anchors` (used by E3) independently confirms this: it
+  returns the *first* Jeans and Wiper-Blades product's own size value
+  as two separate, independently-drawn anchors, never asserting they
+  are equal, and E3's own workload queries them as two separate `"size
+  {anchor}"` queries for exactly this reason. Rows 1-3 are corrected to
+  use a small, purpose-built `issue42-eval::r1_workload` fixture (not a
+  modification of the frozen `apparel`/`automotive` generators, which
+  back the already-merged E1-E3 baseline and must not change) with a
+  deliberately-constructed overlapping value (`v = 22`, in automotive's
+  16-28 range and given directly to a hand-built Jeans-type product's
+  Enum `size`), so rows 1-3 test a case that is genuinely, verifiably
+  real rather than one that happened to look plausible in prose.
+
+This correction was made before any R1 treatment was run or measured,
+so there are no pre-correction R1 figures to retain alongside it (rule
+9 applies to a measured result changing after correction; here nothing
+had been measured yet).
 
 ### Metrics (per query class, all four treatments)
 
