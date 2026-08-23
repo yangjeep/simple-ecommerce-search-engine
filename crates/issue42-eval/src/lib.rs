@@ -15,5 +15,6 @@ pub mod r1_experimental;
 pub mod r1_workload;
 pub mod r2_experimental;
 pub mod r2_workload;
+pub mod r3_experimental;
 pub mod r3_workload;
 pub mod regression;
