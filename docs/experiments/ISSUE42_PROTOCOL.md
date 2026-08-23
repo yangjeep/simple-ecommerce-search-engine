@@ -51,10 +51,14 @@ independently checked. Concretely, in this protocol:
 
 ## Phase 0 — frozen baseline
 
-The immutable baseline is the merge commit of PR #39 into
-`claude/issue-34-phase9-defect-fixes-wands` (Issue #38's own base branch).
-Its SHA is recorded in `ISSUE38_DECISION.md`'s baseline note and in every
-manifest produced from this point forward as `baseline_sha`. R1/R2/R3
+**`baseline_sha = fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6`** — the merge
+commit of PR #39 into `claude/issue-34-phase9-defect-fixes-wands` (Issue
+#38's own base branch), merged after PR #39's CI ran fully green on its
+final commit (`449c22f`, this session's second independent-review
+correction round) and no unresolved correctness/methodology issue
+remained. Recorded here and in `ISSUE38_DECISION.md`'s baseline note; every
+manifest produced from this point forward must cite this same
+`baseline_sha`, and it must not be silently changed. R1/R2/R3
 implement every treatment as new, additive code reachable only through
 explicit experimental entry points (`issue42-eval`'s own binaries) —
 `commerce_core::ir::query::compile` and `commerce_core::plan::execute_planned`
