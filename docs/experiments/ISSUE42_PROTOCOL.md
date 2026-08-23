@@ -485,7 +485,37 @@ All three in `issue42-eval::r3_experimental`:
   same merge `CatalogIndex` already performs internally for
   `lexical_postings`) into the same Tantivy fields, tagged with the
   owning `VariantId` so a match resolves to the correct variant, not
-  merely the parent product.
+  merely the parent product. **Correction (found while designing R3's
+  treatments, before any code was written)**: `commerce_core::plan::LexicalHit`
+  (`{ product: ProductId, score: f64 }`) has no `VariantId` field at
+  all, and `commerce_core::plan::verify_and_truncate` resolves a hit's
+  variant via `product.variants.iter().find(|v| query.matches_variant(product, v))`
+  — `matches_variant` is `self.constraints.iter().all(...)`, vacuously
+  `true` when `query.constraints` is empty (exactly the case for an
+  identifier-only query like a bare `part_number` value, since
+  `commerce_core::ir::query::compile` has no dedicated keyword branch
+  for "part number" at all — confirmed directly against `query.rs`;
+  such a query's entire text becomes `residual_lexical`, routing to
+  `Punt` with zero structural constraints). So today, for exactly this
+  query shape, `verify_and_truncate` always returns a product's *first*
+  variant, regardless of which variant's text a delegate actually
+  matched — the existing `LexicalHit`/`verify_and_truncate` pipeline
+  structurally cannot carry "this specific variant is what matched"
+  information at all, not merely omits doing so for product-level-only
+  indexing (H3-A's own framing). Treatment B as originally drafted here
+  ("tagged with the owning VariantId so a match resolves to the correct
+  variant") is therefore not reachable by reusing `execute_planned`/
+  `LexicalHit` the way R1/R2's treatments reuse them: `issue42_eval::r3_experimental`
+  implements Treatment B as its own self-contained index-and-lookup path
+  (a richer, variant-aware hit type returned directly by the
+  experimental index, not routed through `LexicalDelegate`/
+  `execute_planned` at all) rather than a `LexicalDelegate` implementation
+  passed into the real `execute_planned`. This is consistent with
+  R1/R2's own experimental-boundary discipline (new, additive code,
+  `commerce_core::plan` untouched) — it is a difference in *how* B is
+  wired, not a departure from "reuse real production primitives where
+  they exist": no real production primitive for variant-resolved
+  lexical hits exists yet to reuse.
 - **C**: a dedicated `HashMap<String, SmallVec<(ProductId, VariantId)>>`
   (or equivalent exact/normalized-key structure) built directly from
   fields a deterministic classifier accepts as identifier-shaped. The
@@ -516,6 +546,52 @@ protocol's normal seed (`automotive::SEED`, the same catalog R1/E2 already
 use) plus `mixed_merchant`'s 3,000-product mixed catalog — both
 disjoint generator invocations from the calibration set above. All R3
 metrics reported below are computed only on this held-out set.
+
+**Correction (found while designing R3's fixture, before any code was
+written)**: the calibration/held-out text above assumes
+`automotive::generate_catalog` accepts a seed parameter it can be
+called with (`generate_catalog(1500)` "with `SEED.wrapping_add(1000)`").
+Confirmed by direct source reading
+(`crates/issue38-e2e3-eval/src/automotive.rs`): the real signature is
+`generate_catalog(n_products: usize) -> Vec<SynthProduct>` — no seed
+parameter at all. Internally it reseeds a fresh `ChaCha8Rng` from the
+crate's own `automotive::SEED` constant on every call. This is more
+than an inconvenient signature mismatch: since `generate_catalog(1500)`
+and `generate_catalog(3000)` both reseed from the *identical* `SEED`,
+and every product's fields are a pure function of its loop index
+(`PRODUCT_TYPES[i % PRODUCT_TYPES.len()]`, then sequential RNG draws),
+`generate_catalog(1500)`'s entire output is a byte-identical *prefix*
+of `generate_catalog(3000)`'s own first 1500 products. Calling both
+literally as originally specified here would make the "calibration"
+set a strict subset of the "held-out" set — silently violating this
+section's own disjointness requirement ("its calibration set and the
+held-out evaluation set are named explicitly and disjoint... before
+any treatment runs"), not a cosmetic issue.
+
+**Corrected split**: call `automotive::generate_catalog(4500)`
+(1500 + 3000) exactly once, and partition its own output by index
+range — products `[0, 1500)` are the calibration set, products
+`[1500, 4500)` are the held-out set (3000 products). These are
+genuinely disjoint (non-overlapping products from one deterministic
+generation), preserving the spirit of "a calibration draw distinct
+from held-out evidence" without requiring a seed parameter the frozen
+generator does not have. `mixed_merchant`'s 3,000-product mixed
+catalog (`generate_mixed_catalog(1000, 1000, 1000)`, matching E3's own
+established split, `crates/issue38-e2e3-eval/src/bin/e3_mixed_category_eval.rs`)
+is reused as-is for the held-out set's general-lexical-retrieval
+regression check only (does adding B's/C's mechanism regress ordinary
+furniture/apparel/automotive free-text queries) — never for the core
+identifier-classification metrics (Recall@1, false-match rate,
+collision/normalization/absent-identifier behavior, build time, index
+size, RSS, lookup-latency percentiles), which are computed only on the
+split-index held-out automotive set above. This scoping matters
+because `mixed_merchant`'s own automotive sub-portion
+(`automotive::generate_catalog(1000)`, indices `[0, 1000)`) overlaps
+this correction's *calibration* range (`[0, 1500)`), not its held-out
+range — reusing it only for the non-calibration-sensitive regression
+check, never for a classifier-calibration-affected metric, keeps that
+overlap from being a real disjointness violation rather than merely an
+undisclosed one.
 
 ### Workload
 
