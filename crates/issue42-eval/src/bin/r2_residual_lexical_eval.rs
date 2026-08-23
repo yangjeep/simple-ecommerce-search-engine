@@ -302,6 +302,28 @@ fn main() {
             class: RowClass::RegressionGuard,
             relevant: BTreeSet::new(),
         },
+        // Second correction round (fresh adversarial review, before any
+        // production change was made on the strength of this experiment's
+        // GO verdict): rows 1-8 above only ever compile a single
+        // ProductType structural constraint, so none of them could expose
+        // a real defect the reviewer found -- ResidualPolicy::classify
+        // only ever sees the bare ProductTypeId, never the query's actual
+        // (possibly narrower) structural candidate set. "velvet blue
+        // sofas" compiles a COMPOUND constraint (ProductType(Sofas) AND
+        // Enum(color=Blue)); its real candidate set is {P1} only (P1 is
+        // Blue, P2 -- the only product "velvet" actually describes -- is
+        // Purple). Before the fix (see
+        // ResidualPolicy::classify/r2_experimental.rs), "velvet" being
+        // observed anywhere under Sofas classified it Preferred, so
+        // Treatment D incorrectly recovered P1 (a Blue Leather Sofa,
+        // not velvet at all) for this query. This row is Adversarial,
+        // exactly like 2/6, and must recover nothing.
+        Row {
+            id: 9,
+            text: "velvet blue sofas",
+            class: RowClass::Adversarial,
+            relevant: BTreeSet::new(),
+        },
     ];
 
     println!(

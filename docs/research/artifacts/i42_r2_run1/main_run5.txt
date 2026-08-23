@@ -10,6 +10,7 @@ row  5 (    bestseller sofas): constraints=[Structural(ProductType(ProductTypeId
 row  6 (        velvet boots): constraints=[Structural(ProductType(ProductTypeId(2)))] residual_lexical=["velvet"] outcome=Hybrid selectivity=Some(0.03571428571428571)
 row  7 (     clearance boots): constraints=[Structural(ProductType(ProductTypeId(2)))] residual_lexical=["clearance"] outcome=Hybrid selectivity=Some(0.03571428571428571)
 row  8 (              banana): constraints=[] residual_lexical=["banana"] outcome=Punt selectivity=None
+row  9 (   velvet blue sofas): constraints=[Attribute(Enum { attribute: "color", value: "Blue" }), Structural(ProductType(ProductTypeId(1)))] residual_lexical=["velvet"] outcome=Hybrid selectivity=Some(0.017857142857142856)
 
 --- Treatment A ---
 row  1 (     furniture sofas): outcome=Hybrid hits=0 products=[]
@@ -20,6 +21,7 @@ row  5 (    bestseller sofas): outcome=Hybrid hits=0 products=[]
 row  6 (        velvet boots): outcome=Hybrid hits=0 products=[]
 row  7 (     clearance boots): outcome=Hybrid hits=0 products=[]
 row  8 (              banana): outcome=Punt hits=0 products=[]
+row  9 (   velvet blue sofas): outcome=Hybrid hits=0 products=[]
 
 --- Treatment B ---
 row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
@@ -32,6 +34,8 @@ row  6 (        velvet boots): outcome=Hybrid hits=2 products=[ProductId(3), Pro
   FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
 row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
 row  8 (              banana): outcome=Punt hits=0 products=[]
+row  9 (   velvet blue sofas): outcome=Hybrid hits=1 products=[ProductId(1)]
+  FALSE RECOVERY: 1 hit(s) for an adversarial row that should stay at zero results
 
 --- Treatment C ---
 row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
@@ -44,6 +48,8 @@ row  6 (        velvet boots): outcome=Hybrid hits=2 products=[ProductId(3), Pro
   FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
 row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
 row  8 (              banana): outcome=Punt hits=0 products=[]
+row  9 (   velvet blue sofas): outcome=Hybrid hits=1 products=[ProductId(1)]
+  FALSE RECOVERY: 1 hit(s) for an adversarial row that should stay at zero results
 
 --- Treatment D ---
 row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
@@ -54,6 +60,7 @@ row  5 (    bestseller sofas): outcome=Hybrid hits=2 products=[ProductId(1), Pro
 row  6 (        velvet boots): outcome=Hybrid hits=0 products=[]
 row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
 row  8 (              banana): outcome=Punt hits=0 products=[]
+row  9 (   velvet blue sofas): outcome=Hybrid hits=0 products=[]
 
 --- candidate-set growth (hits per row, per treatment) ---
 row  1 (     furniture sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
@@ -64,29 +71,30 @@ row  5 (    bestseller sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
 row  6 (        velvet boots): [("A", 0), ("B", 2), ("C", 2), ("D", 0)]
 row  7 (     clearance boots): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
 row  8 (              banana): [("A", 0), ("B", 0), ("C", 0), ("D", 0)]
+row  9 (   velvet blue sofas): [("A", 0), ("B", 1), ("C", 1), ("D", 0)]
 
 --- latency (median of 7 independent batched trials) ---
-Treatment A: trials=["0.09033", "0.09110", "0.09130", "0.09018", "0.08924", "0.08955", "0.08974"] median=0.09018ms
-Treatment B: trials=["0.10151", "0.09447", "0.09334", "0.09382", "0.09567", "0.09907", "0.09484"] median=0.09484ms
-Treatment C: trials=["0.09637", "0.09379", "0.09586", "0.09280", "0.09454", "0.09508", "0.09453"] median=0.09454ms
-Treatment D: trials=["0.12645", "0.12644", "0.12888", "0.12746", "0.13251", "0.12742", "0.12713"] median=0.12742ms
+Treatment A: trials=["0.10575", "0.10910", "0.10308", "0.10175", "0.10283", "0.10247", "0.10124"] median=0.10283ms
+Treatment B: trials=["0.11108", "0.10900", "0.10915", "0.10802", "0.10938", "0.10834", "0.10806"] median=0.10900ms
+Treatment C: trials=["0.10666", "0.12915", "0.11109", "0.10856", "0.11302", "0.10739", "0.11342"] median=0.11109ms
+Treatment D: trials=["0.17256", "0.15623", "0.15173", "0.15802", "0.15231", "0.15051", "0.16151"] median=0.15623ms
 
 --- GO gate evaluation ---
 Note: with only 4 preregistered benign rows and 2 preregistered adversarial rows, the protocol's '>=90% recovery'/'<=1% false recovery' thresholds are numerically equivalent to 'all 4' and 'zero of 2' respectively -- no fractional pass point exists at this denominator. Disclosed here, not hidden behind the percentage framing.
-Treatment A: benign recovery=0/4 (0%, require >=90%), adversarial false recovery=0/2 (0%, require <=1%), mean benign NDCG@10=-0.0000, latency overhead vs A=0.0%, zero_model_calls=true => GO gate FAIL
-Treatment B: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=2/2 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=5.2%, zero_model_calls=true => GO gate FAIL
-Treatment C: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=2/2 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=4.8%, zero_model_calls=true => GO gate FAIL
-Treatment D: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=0/2 (0%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=41.3%, zero_model_calls=true => GO gate PASS
+Treatment A: benign recovery=0/4 (0%, require >=90%), adversarial false recovery=0/3 (0%, require <=1%), mean benign NDCG@10=-0.0000, latency overhead vs A=0.0%, zero_model_calls=true => GO gate FAIL
+Treatment B: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=3/3 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=6.0%, zero_model_calls=true => GO gate FAIL
+Treatment C: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=3/3 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=8.0%, zero_model_calls=true => GO gate FAIL
+Treatment D: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=0/3 (0%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=51.9%, zero_model_calls=true => GO gate PASS
 
 --- row 4 (measured, out of scope for the GO gate): misspelling of a real registered lexicon value ('leather' -> 'leathr') ---
 See the per-treatment output above for row 4's outcome/hits under each treatment -- documented, not scored, per the protocol's own text ('misspelling correction is explicitly out of scope for R2').
 
 {
   "adversarial_false_recovery": {
-    "B": 2,
-    "C": 2
+    "B": 3,
+    "C": 3
   },
-  "adversarial_total": 2,
+  "adversarial_total": 3,
   "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
   "benign_ndcg_mean": {
     "A": -0.0,
@@ -110,7 +118,8 @@ See the per-treatment output above for row 4's outcome/hits under each treatment
       "5": 0,
       "6": 0,
       "7": 0,
-      "8": 0
+      "8": 0,
+      "9": 0
     },
     "B": {
       "1": 2,
@@ -120,7 +129,8 @@ See the per-treatment output above for row 4's outcome/hits under each treatment
       "5": 2,
       "6": 2,
       "7": 2,
-      "8": 0
+      "8": 0,
+      "9": 1
     },
     "C": {
       "1": 2,
@@ -130,7 +140,8 @@ See the per-treatment output above for row 4's outcome/hits under each treatment
       "5": 2,
       "6": 2,
       "7": 2,
-      "8": 0
+      "8": 0,
+      "9": 1
     },
     "D": {
       "1": 2,
@@ -140,14 +151,15 @@ See the per-treatment output above for row 4's outcome/hits under each treatment
       "5": 2,
       "6": 0,
       "7": 2,
-      "8": 0
+      "8": 0,
+      "9": 0
     }
   },
   "latency_ms_per_call": {
-    "A": 0.090180845,
-    "B": 0.094842345,
-    "C": 0.09453552000000001,
-    "D": 0.12742116500000003
+    "A": 0.10283104500000001,
+    "B": 0.108996365,
+    "C": 0.11108600499999999,
+    "D": 0.156234705
   }
 }
 summary written to docs/research/artifacts/i42_r2_run1/summary_run5.json

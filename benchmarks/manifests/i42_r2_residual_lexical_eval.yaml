@@ -26,39 +26,45 @@ claim: >
 
   B (unconditional structural fallback when the delegate's raw hits are
   empty): recovers all 4 benign rows (mean NDCG@10 = 1.0000) but also
-  recovers BOTH preregistered adversarial rows (2/2 false recovery) --
-  "banana" (observed nowhere in the catalog) and "velvet" (observed
-  only under a different product type) are recovered exactly as
-  readily as the genuinely uninformative benign words. Confirms H2-B.
-  FAILS the GO gate.
+  recovers ALL THREE preregistered adversarial rows (3/3 false
+  recovery, after the second-correction-round addition of row 9 below)
+  -- "banana" (observed nowhere in the catalog), "velvet" (observed
+  only under a different product type), and "velvet blue sofas" (a
+  compound-constraint case) are all recovered exactly as readily as the
+  genuinely uninformative benign words. Confirms H2-B. FAILS the GO
+  gate.
 
   C (residual lexical always advisory/ranking-only, falls back to B's
   behavior when the delegate finds nothing): behaves IDENTICALLY to B
   on every row of this workload, since the delegate's raw hits are
-  empty for every structurally-anchored row here -- a disclosed
-  limitation of this fixture (no row has the delegate return a
-  nonempty-but-wrong-context result, which is the only case where C's
-  ranking-only behavior would visibly differ from B's filtering
-  behavior), not evidence the two treatments are identical in general.
-  Confirms H2-C (same over-recovery failure mode as B). FAILS the GO
-  gate.
+  empty for every structurally-anchored row here. Confirms H2-C (same
+  over-recovery failure mode as B). FAILS the GO gate.
 
   D (compiled ResidualPolicy: `required` for a token never observed
-  anywhere, or observed under exactly one *other* product type;
-  `preferred` for a token observed under the query's own product type,
-  or under >=2 other product types -- a broadly-used, generically
-  descriptive term): recovers all 4 benign rows (mean NDCG@10 = 1.0000)
-  AND correctly rejects both adversarial rows (0/2 false recovery),
+  anywhere, or observed under fewer than CROSS_TYPE_BREADTH_THRESHOLD=2
+  distinct product types; `preferred` for a token observed under >=2
+  distinct product types -- a broadly-used, generically descriptive
+  term): recovers all 4 benign rows (mean NDCG@10 = 1.0000) AND
+  correctly rejects all three adversarial rows (0/3 false recovery),
   with zero query-time model calls (a structural fact -- no
   `control_plane::provider::ModelProvider` import anywhere in
   r2_experimental.rs). Confirms H2-D. **PASSES every preregistered R2
-  GO-gate criterion.**
+  GO-gate criterion.** This PASS holds only after a second-correction-
+  round fix (see below): an earlier version of `classify` also treated
+  "observed anywhere under the query's own bare product type" as a
+  Preferred signal, independent of cross-type breadth -- a fresh
+  adversarial review found and a reproduced test confirmed this caused
+  a real false positive on a compound-constraint query no original row
+  could expose (row 9). The fix removed that condition entirely,
+  leaving only cross-type breadth -- which every originally-published
+  benign row already satisfied on its own, so the fix changes none of
+  those numbers.
 
   R2's own preregistered GO gate (unlike R1's) has NO latency
   threshold -- only benign-recovery rate, adversarial-false-recovery
   rate, and zero-model-calls gate; latency is reported, not gated.
-  Treatment D's latency overhead (36.6%-41.3% across 5 runs, vs. B's
-  2.8%-5.2% and C's 1.7%-4.8%) is real and disclosed, with an
+  Treatment D's latency overhead (46.8%-51.9% across 5 runs, vs. B's
+  3.3%-6.1% and C's 4.4%-8.0%) is real and disclosed, with an
   identified, disclosed root cause specific to this experimental
   implementation (see docs/experiments/ISSUE42_LOG.md#i42-r2's "Root
   cause of D's measured overhead" section: `execute_d` calls the real
@@ -68,6 +74,9 @@ claim: >
   directly; a production implementation with internal access to
   verify_and_truncate would not pay this cost twice) -- but does not
   affect the GO-gate verdict itself, which has no latency criterion.
+  The range increased from the originally-published 36.6%-41.3% simply
+  because row 9 adds one more Required-classified row to this same
+  double-call pattern.
 
   **Fixture design note**: two problems were found and fixed by direct
   source reading, before any row was run, not discovered via a
@@ -89,20 +98,33 @@ claim: >
   forcing the intended Hybrid routing -- confirmed directly in this
   run's own compiled-query diagnostics.
 
+  **Second correction round (adversarial review, before any production
+  change was made)**: a fresh reviewer with no implementation task
+  independently recomputed every number and claim above from the raw
+  artifacts and source, confirming all of them, and found two real
+  issues: (1) the `ResidualPolicy::classify` defect described above,
+  reproduced via a direct test before any fix (Treatment D returned
+  `[ProductId(1)]` for "velvet blue sofas" pre-fix), fixed, and closed
+  with a permanent regression test plus the new row 9; (2) `execute_c`'s
+  only code path that actually distinguishes it from `execute_b` (the
+  non-empty-raw reorder branch) had zero test coverage anywhere in this
+  crate, not just this workload -- closed with a dedicated unit test
+  using a fixed-output stub delegate. Both independently reproduced
+  before being fixed; neither reverses the GO verdict, since Treatment
+  D still clears every gate criterion against the harder, 9-row/
+  3-adversarial-row workload the first finding's own fix required.
+
   **Terminal verdict: GO for Treatment D.** Unlike R1 (REVISE), R2
   reaches a clean pass: Treatment D's compiled-residual-policy
-  mechanism clears every preregistered GO-gate criterion. Per Issue
-  #42's own rule ("ship a production behavior change ONLY when its
-  treatment wins the declared gate"), this is a real candidate for a
-  RED-before-GREEN production change -- deliberately NOT made in this
-  same pass. A fresh, no-implementation-task adversarial reviewer must
-  first attempt to falsify this protocol/fixture/code/arithmetic/claim
-  (mirroring R1's own second-correction-round process) and every
-  confirmed finding must be independently reproduced and fixed first;
-  the production-change step itself is tracked separately (task #63,
-  after R3 is also complete), so R1/R2/R3's serving-contract decisions
-  are reviewed together rather than merged piecemeal mid-epic. Full
-  detail: `docs/experiments/ISSUE42_LOG.md`'s "I42-R2" section.
+  mechanism clears every preregistered GO-gate criterion, including
+  after the second-correction-round fix above. Per Issue #42's own rule
+  ("ship a production behavior change ONLY when its treatment wins the
+  declared gate"), this is a real candidate for a RED-before-GREEN
+  production change -- deliberately NOT made in this same pass; the
+  production-change step itself is tracked separately (task #63, after
+  R3 is also complete), so R1/R2/R3's serving-contract decisions are
+  reviewed together rather than merged piecemeal mid-epic. Full detail:
+  `docs/experiments/ISSUE42_LOG.md`'s "I42-R2" section.
 
 git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
 baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
@@ -134,9 +156,10 @@ engine:
     (reused from Phase 9, not reimplemented)
 
 workload:
-  queries: 8 rows (docs/experiments/ISSUE42_PROTOCOL.md's R2 workload
-    table) -- rows 1/3/5/7 (benign, GO-gate recovery denominator),
-    rows 2/6 (adversarial, GO-gate false-recovery denominator), row 4
+  queries: 9 rows (docs/experiments/ISSUE42_PROTOCOL.md's R2 workload
+    table, plus row 9 added during the second-correction-round fix
+    above) -- rows 1/3/5/7 (benign, GO-gate recovery denominator),
+    rows 2/6/9 (adversarial, GO-gate false-recovery denominator), row 4
     (misspelling, measured only, explicitly out of scope for the GO
     gate per the protocol's own text), row 8 (regression guard, no
     structural anchor at all)

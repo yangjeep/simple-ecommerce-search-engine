@@ -137,17 +137,38 @@ impl ResidualPolicy {
     /// `None` when `token` was never observed anywhere in the catalog --
     /// the safest possible default (zero positive evidence) is to treat it
     /// as `Required`, not to guess it is harmless.
-    pub fn classify(&self, token: &str, product_type: ProductTypeId) -> ResidualClass {
+    ///
+    /// `product_type` is accepted but deliberately **not** used as a
+    /// Preferred signal on its own -- an earlier version of this function
+    /// classified a token Preferred whenever it was "observed anywhere
+    /// under the query's own product type," which a fresh adversarial
+    /// review (Issue #42's "do not trust the experiment author" governance)
+    /// found to be a real defect: R2's own 8-row workload only ever
+    /// compiles a single `ProductType` constraint, so it never exercised a
+    /// *compound* structural constraint (e.g. `ProductType(Sofas) AND
+    /// Enum(color=Blue)`) whose real candidate set can be a strict subset
+    /// of "every product of this type." `classify` only ever sees the
+    /// bare `ProductTypeId`, not that narrower candidate set -- so "seen
+    /// somewhere under this broad type" is not evidence a token is safe to
+    /// ignore for one specific narrowed slice of it. Concretely: "velvet"
+    /// is observed only under Sofas (via the Purple Velvet Sofa, a
+    /// *different* product from the Blue Leather Sofa a compound
+    /// `ProductType(Sofas) AND color=Blue` query narrows to) -- the old
+    /// logic classified it Preferred for any Sofas query and Treatment D
+    /// incorrectly recovered the Blue Leather Sofa for "velvet blue
+    /// sofas," a genuine false positive no adversarial row could catch
+    /// (`treatment_d_does_not_recover_a_compound_constraint_query_whose_wrong_variant_the_residual_word_would_have_excluded`
+    /// reproduces this directly). Cross-type breadth remains a safe signal
+    /// regardless of the candidate set's narrowness: a token seen under at
+    /// least `CROSS_TYPE_BREADTH_THRESHOLD` *other* product types entirely
+    /// is a broadly-used, generic word by construction, not a specific
+    /// attribute value that could disqualify one sub-slice of a single
+    /// type.
+    pub fn classify(&self, token: &str, _product_type: ProductTypeId) -> ResidualClass {
         match self.type_occurrences.get(&token.to_lowercase()) {
             None => ResidualClass::Required,
             Some(types) => {
-                // A token classifies as Preferred either because it was
-                // observed for this query's own product type (an
-                // ordinary, on-type descriptive word), or because it was
-                // observed broadly across other types (a generic
-                // marketing word) -- both read as "not a specific,
-                // probably-incompatible attribute value" the same way.
-                if types.contains(&product_type) || types.len() >= CROSS_TYPE_BREADTH_THRESHOLD {
+                if types.len() >= CROSS_TYPE_BREADTH_THRESHOLD {
                     ResidualClass::Preferred
                 } else {
                     ResidualClass::Required
@@ -353,6 +374,33 @@ pub fn execute_d(
     }
 }
 
+/// Test-only stub delegate that always returns a fixed set of hits,
+/// ignoring the query text and `restrict_to` entirely. Added during R2's
+/// second correction round: a fresh adversarial review found
+/// `execute_c`'s only behavior that actually distinguishes it from
+/// `execute_b` (the reorder-not-filter branch, taken when the delegate's
+/// raw hits are non-empty) had zero test coverage anywhere in this
+/// crate -- every existing test either goes through a real Tantivy index
+/// (where controlling exactly which candidate the delegate "finds" would
+/// require constructing title content precisely, an indirect and fragile
+/// way to pin down this one code path) or never exercises the non-empty
+/// branch at all. A fixed-output stub makes the raw-hit content directly
+/// controllable, isolating the reordering logic itself.
+#[cfg(test)]
+struct FixedDelegate(Vec<LexicalHit>);
+
+#[cfg(test)]
+impl LexicalDelegate for FixedDelegate {
+    fn search(
+        &self,
+        _terms: &[String],
+        _restrict_to: Option<&BTreeSet<ProductId>>,
+        _limit: usize,
+    ) -> Vec<LexicalHit> {
+        self.0.clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -397,8 +445,18 @@ mod tests {
         }
     }
 
+    /// Second correction round: this test previously asserted the OPPOSITE
+    /// of what's below -- `Required` for Boots but `Preferred` for Sofas,
+    /// exercising the exact "observed under the query's own product type"
+    /// logic a fresh adversarial review found to be a real defect (see
+    /// `classify`'s own doc comment and
+    /// `treatment_d_does_not_recover_a_compound_constraint_query_whose_wrong_variant_the_residual_word_would_have_excluded`).
+    /// "velvet" is observed under exactly one product type (Sofas) in
+    /// this fixture -- below `CROSS_TYPE_BREADTH_THRESHOLD` -- so it must
+    /// now classify `Required` regardless of which product type a query
+    /// names, not just for Boots.
     #[test]
-    fn residual_policy_classifies_velvet_as_required_for_boots_but_preferred_for_sofas() {
+    fn residual_policy_classifies_velvet_as_required_for_both_boots_and_sofas() {
         let (fixture, _lexicon, _index) = setup();
         let policy = ResidualPolicy::compile(&fixture.catalog);
         assert_eq!(
@@ -407,7 +465,10 @@ mod tests {
         );
         assert_eq!(
             policy.classify("velvet", ProductTypeId(1)),
-            ResidualClass::Preferred
+            ResidualClass::Required,
+            "velvet is observed under exactly one product type in this fixture (Sofas) -- below \
+             the cross-type-breadth threshold -- so it must classify Required even for a Sofas \
+             query, not merely for Boots"
         );
     }
 
@@ -422,6 +483,68 @@ mod tests {
         assert_eq!(
             policy.classify("banana", ProductTypeId(2)),
             ResidualClass::Required
+        );
+    }
+
+    /// Second correction round (fresh adversarial review, before any
+    /// production change was made on the strength of R2's GO verdict): a
+    /// reviewer found `ResidualPolicy::classify`'s "observed under the
+    /// query's own product type" condition is unaware of the query's
+    /// actual *compound* structural candidate set -- R2's own 8-row
+    /// workload only ever compiles a single `ProductType` constraint, so
+    /// this was never exercised. This test reproduces the concrete
+    /// failure mode directly: `compile("velvet blue sofas", ...)`
+    /// produces a compound constraint (`ProductType(Sofas)` AND
+    /// `Enum(color=Blue)`), whose real candidate set is `{P1}` only (P1
+    /// is Blue, P2 is Purple) -- "velvet" never appears in P1's title, so
+    /// a delegate search restricted to `{P1}` finds nothing, exactly the
+    /// `Required` case this classifier exists to protect. Before the fix
+    /// below, `classify("velvet", Sofas)` returned `Preferred` (since
+    /// "velvet" *was* observed somewhere under Sofas, via P2), which
+    /// triggered Treatment D's structural fallback and incorrectly
+    /// recovered P1 -- a genuine false positive (a shopper asking for a
+    /// velvet blue sofa does not want a *leather* blue sofa) that neither
+    /// of R2's own two preregistered adversarial rows (2, 6 -- both
+    /// single-constraint) could expose.
+    #[test]
+    fn treatment_d_does_not_recover_a_compound_constraint_query_whose_wrong_variant_the_residual_word_would_have_excluded(
+    ) {
+        let (fixture, lexicon, index) = setup();
+        let built = build_index(&fixture.catalog).unwrap();
+        let delegate = BitmapTantivyDelegate::new(
+            &built.index,
+            vec![built.title_field, built.description_field],
+        )
+        .unwrap();
+        let policy = PlannerPolicy {
+            selectivity_threshold: 0.05,
+            delegate_oversample: 20,
+        };
+        let residual_policy = ResidualPolicy::compile(&fixture.catalog);
+        let query = compile("velvet blue sofas", &lexicon);
+        assert_eq!(
+            query.constraints.len(),
+            2,
+            "this test's whole premise is a *compound* structural constraint (ProductType AND \
+             color); got {:?}",
+            query.constraints
+        );
+        let (_planned, hits) = execute_d(
+            &query,
+            &fixture.catalog,
+            &index,
+            Some(&delegate),
+            10,
+            &policy,
+            &residual_policy,
+        );
+        assert!(
+            hits.is_empty(),
+            "Treatment D must NOT recover any product for a compound-constraint query whose \
+             residual word ('velvet') is genuinely disqualifying within that narrowed candidate \
+             set, even though the same word is broadly 'Preferred' at the bare product-type \
+             level -- got {:?}",
+            hits.iter().map(|h| h.product).collect::<Vec<_>>()
         );
     }
 
@@ -457,5 +580,62 @@ mod tests {
         );
         assert_eq!(direct.0, via_a.0);
         assert_eq!(direct.1, via_a.1);
+    }
+
+    /// Second correction round: closes the coverage gap a fresh
+    /// adversarial review found -- `execute_c`'s only code path that
+    /// actually differs from `execute_b` (reorder, not filter, when the
+    /// delegate's raw hits are non-empty) had never been exercised by any
+    /// test in this crate. Uses [`FixedDelegate`] to force a non-empty
+    /// raw hit deterministically, without depending on real Tantivy
+    /// content. Sofas has exactly 2 real products (P1, P2); a stub
+    /// delegate that "finds" only P1 lets this test prove `execute_c`
+    /// returns *both* P1 and P2 (P1 first, since the delegate ranked it),
+    /// while `execute_b`/the real `execute_planned` return *only* P1 --
+    /// a genuine, observable behavioral difference, not merely a
+    /// different code path that happens to produce the same output.
+    #[test]
+    fn execute_c_reorders_the_full_structural_set_instead_of_filtering_to_only_the_delegates_hits()
+    {
+        let (fixture, lexicon, index) = setup();
+        let policy = PlannerPolicy {
+            selectivity_threshold: 0.05,
+            delegate_oversample: 20,
+        };
+        let query = compile("somequery sofas", &lexicon);
+        assert_eq!(
+            query.constraints,
+            vec![ResolvedConstraint::Structural(
+                StructuralConstraint::ProductType(ProductTypeId(1))
+            )],
+            "this test's premise is a single ProductType(Sofas) constraint with a non-lexicon \
+             residual term; got {:?}",
+            query.constraints
+        );
+        let stub = FixedDelegate(vec![LexicalHit {
+            product: ProductId(1),
+            score: 1.0,
+        }]);
+
+        let (_planned_b, hits_b) =
+            execute_b(&query, &fixture.catalog, &index, Some(&stub), 10, &policy);
+        assert_eq!(
+            hits_b.iter().map(|h| h.product).collect::<Vec<_>>(),
+            vec![ProductId(1)],
+            "execute_b (and the real execute_planned it defers to when raw is non-empty) must \
+             return only what the delegate actually found, verified against the structural \
+             constraint -- not every structurally-matching product"
+        );
+
+        let (_planned_c, hits_c) =
+            execute_c(&query, &fixture.catalog, &index, Some(&stub), 10, &policy);
+        assert_eq!(
+            hits_c.iter().map(|h| h.product).collect::<Vec<_>>(),
+            vec![ProductId(1), ProductId(2)],
+            "execute_c must return the FULL structural candidate set (both Sofas products), \
+             merely reordered so the delegate's own hit (P1) ranks first -- proving its \
+             reorder-not-filter behavior is real and distinct from execute_b's, not just an \
+             unexercised code path that happens to coincide with it"
+        );
     }
 }

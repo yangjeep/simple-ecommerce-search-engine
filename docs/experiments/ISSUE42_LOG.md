@@ -511,6 +511,7 @@ discipline (first established during R1's own corrections):
 | 6 | `velvet boots` | adversarial | must NOT recover ("velvet" observed only under Sofas) |
 | 7 | `clearance boots` | benign | recover the Boots structural set |
 | 8 | `banana` (no entity at all) | regression guard | every treatment byte-identical to A; `query.constraints.is_empty()` path untouched |
+| 9 | `velvet blue sofas` (compound constraint) | adversarial | must NOT recover — added during the second correction round below; see that section |
 
 Deviation from the protocol's illustrative row 5 text ("a real
 collection/marketing term absent from every title"): `bestseller` *is*
@@ -538,18 +539,22 @@ fundamentally about free-text residual words, not modeled
 
 ### Results (5 independent runs; correctness numbers byte-identical across all 5, confirmed by direct diff)
 
-| Treatment | benign recovery (of 4) | adversarial false recovery (of 2) | mean benign NDCG@10 | latency overhead vs A (range across 5 runs) |
+**These are the final, post-second-correction-round numbers** (9 rows,
+3 adversarial), after the fix described in "Second correction round"
+below. The originally-published 8-row/2-adversarial-row numbers are
+retained, not deleted, in that section per Issue #42 rule 9.
+
+| Treatment | benign recovery (of 4) | adversarial false recovery (of 3) | mean benign NDCG@10 | latency overhead vs A (range across 5 runs) |
 |---|---|---|---|---|
-| A | 0/4 | 0/2 | 0.0000 | — (baseline) |
-| B | 4/4 | **2/2** | 1.0000 | 2.8%–5.2% |
-| C | 4/4 | **2/2** | 1.0000 | 1.7%–4.8% |
-| D | 4/4 | **0/2** | 1.0000 | 36.6%–41.3% |
+| A | 0/4 | 0/3 | 0.0000 | — (baseline) |
+| B | 4/4 | **3/3** | 1.0000 | 3.3%–6.1% |
+| C | 4/4 | **3/3** | 1.0000 | 4.4%–8.0% |
+| D | 4/4 | **0/3** | 1.0000 | 46.8%–51.9% |
 
 Every correctness/recovery/false-recovery number above is byte-for-byte
 identical across all 5 independent runs (confirmed by direct diff
-excluding the `latency_ms_per_call`/`trials=`/`median=` lines) — this
-fixture, like R1's, has zero RNG, so this is expected, not a claimed
-new finding.
+excluding the `latency_ms_per_call` JSON block) — this fixture, like
+R1's, has zero RNG, so this is expected, not a claimed new finding.
 
 ### Per-hypothesis verdicts
 
@@ -561,32 +566,36 @@ new finding.
   nothing to verify and the query returns zero hits even though the
   entity alone (Sofas or Boots) has real, matching products.
 - **H2-B: CONFIRMED.** Treatment B recovers all 4 benign rows (mean
-  NDCG@10 = 1.0000) but also recovers *both* adversarial rows (2/2
-  false recovery) — row 2 ("banana sofas", a word observed nowhere)
-  and row 6 ("velvet boots", a word observed only under a different
-  product type) are both indiscriminately recovered via the same
-  unconditional structural fallback that fixes the benign rows.
+  NDCG@10 = 1.0000) but also recovers *all three* adversarial rows (3/3
+  false recovery) — row 2 ("banana sofas", a word observed nowhere),
+  row 6 ("velvet boots", a word observed only under a different product
+  type), and row 9 ("velvet blue sofas", a compound-constraint case
+  added during the second correction round below) are all
+  indiscriminately recovered via the same unconditional structural
+  fallback that fixes the benign rows.
 - **H2-C: CONFIRMED.** On this workload, Treatment C's behavior is
   *identical* to Treatment B's on every row: since the delegate's raw
   hits are empty for every structurally-anchored row here (both benign
-  and adversarial), C's `if raw.is_empty()` branch fires every time and
-  its distinguishing mechanism (re-ordering rather than filtering when
-  the delegate *does* find something) is never exercised by this
-  workload — a disclosed limitation of this fixture (it has no row
-  where the delegate returns a non-empty but wrong-context result for
-  C's ranking-only behavior to visibly differ from B's filtering
-  behavior on), not evidence the two treatments are conceptually
-  identical in general.
-- **H2-D: CONFIRMED.** Treatment D recovers all 4 benign rows (mean
-  NDCG@10 = 1.0000) and correctly rejects both adversarial rows (0/2
-  false recovery): "banana" was never observed anywhere in the catalog
-  (`Required`, the safest default) and "velvet" was observed only under
-  Sofas, a single *other* product type — below
-  `CROSS_TYPE_BREADTH_THRESHOLD = 2` — so it also classifies `Required`
-  for the Boots query in row 6. Zero query-time model/LLM calls: a
-  structural fact (no import of any `control_plane::provider::ModelProvider`
-  surface anywhere in `r2_experimental.rs`), not merely a measured
-  absence.
+  and adversarial), C's `if raw.is_empty()` branch fires every time.
+  Its distinguishing mechanism (re-ordering rather than filtering when
+  the delegate *does* find something) is real and does produce a
+  different result — proven directly by a dedicated unit test added
+  during the second correction round
+  (`execute_c_reorders_the_full_structural_set_instead_of_filtering_to_only_the_delegates_hits`)
+  — but is still never exercised by *this 9-row workload itself*, only
+  by that standalone test.
+- **H2-D: CONFIRMED, after a real defect found and fixed (see "Second
+  correction round" below).** Treatment D recovers all 4 benign rows
+  (mean NDCG@10 = 1.0000) and correctly rejects all three adversarial
+  rows (0/3 false recovery): "banana" was never observed anywhere in
+  the catalog (`Required`, the safest default); "velvet" was observed
+  under exactly one product type (Sofas) in this fixture — below
+  `CROSS_TYPE_BREADTH_THRESHOLD = 2` — so it classifies `Required`
+  regardless of which product type a query names (row 6's Boots query
+  *and* row 9's compound Sofas-plus-color query alike, after the fix).
+  Zero query-time model/LLM calls: a structural fact (no import of any
+  `control_plane::provider::ModelProvider` surface anywhere in
+  `r2_experimental.rs`), not merely a measured absence.
 
 ### Root cause of D's measured overhead (disclosed, not hand-waved)
 
@@ -598,47 +607,57 @@ don't gate). This is a real, checked difference from R1's explicit
 "<=5%" bar, not an inconsistency this log is glossing over.
 
 D's overhead is nonetheless real and substantially larger than B/C's
-(36.6%–41.3% vs. B's 2.8%–5.2% and C's 1.7%–4.8%), and has an
+(46.8%–51.9% vs. B's 3.3%–6.1% and C's 4.4%–8.0%), and has an
 identifiable, disclosed cause in this specific experimental
 implementation: `execute_d` calls `raw_delegate_hits` once itself (to
 inspect whether the delegate found anything), and then — whenever a
-residual token classifies `Required` (rows 2, 4, 6: 3 of this
-workload's 8 rows) — calls the real `execute_planned` a *second* time
-as its "stay at zero, like A" fallback, rather than directly returning
-the already-known-empty result. `execute_planned` internally re-runs
-`plan()` and re-executes the identical `Hybrid`-restricted delegate
-search a second time, so these 3 rows pay roughly double the delegate
-cost. (Rows 1/3/5/7 do not hit this path — they classify `Preferred`
-and call the cheap `structural_only_hits`/`execute_ranked` instead,
-the same single extra call B/C also make; row 8 is deferred to
-`execute_a` directly, no duplication.) This is a real, disclosed,
-plausibly-fixable *implementation-cost* finding specific to this
-experimental harness's "reuse the real `execute_planned` as a lazy
-correctness-preserving fallback" choice (made because
-`verify_and_truncate` is `pub(crate)` and not reachable from this
-crate) — not an inherent property of "a compiled residual policy" as
-an architectural mechanism. A real production implementation, with
-access to `verify_and_truncate` internally, would know the delegate
-result is already empty and return directly, paying the delegate cost
-once, matching A's/B's/C's own single-call cost.
+residual token classifies `Required` (rows 2, 4, 6, 9: 4 of this
+workload's 9 rows, one more than the originally-published 3 of 8 now
+that row 9 also classifies `Required`) — calls the real
+`execute_planned` a *second* time as its "stay at zero, like A"
+fallback, rather than directly returning the already-known-empty
+result. `execute_planned` internally re-runs `plan()` and re-executes
+the identical `Hybrid`-restricted delegate search a second time, so
+these 4 rows pay roughly double the delegate cost. (Rows 1/3/5/7 do not
+hit this path — they classify `Preferred` and call the cheap
+`structural_only_hits`/`execute_ranked` instead, the same single extra
+call B/C also make; row 8 is deferred to `execute_a` directly, no
+duplication.) This is a real, disclosed, plausibly-fixable
+*implementation-cost* finding specific to this experimental harness's
+"reuse the real `execute_planned` as a lazy correctness-preserving
+fallback" choice (made because `verify_and_truncate` is `pub(crate)`
+and not reachable from this crate) — not an inherent property of "a
+compiled residual policy" as an architectural mechanism. A real
+production implementation, with access to `verify_and_truncate`
+internally, would know the delegate result is already empty and return
+directly, paying the delegate cost once, matching A's/B's/C's own
+single-call cost. The overhead range increased from the originally-
+published 36.6%–41.3% specifically because row 9 adds one more
+`Required`-classified row to this same double-call pattern — a
+coherent, verifiable consequence of the fix, not an unexplained
+regression.
 
 ### GO gate verdict: GO for Treatment D
 
 Per `ISSUE42_PROTOCOL.md`'s R2 GO gate: **GO** requires >=90% benign
 recovery (of the 4 preregistered rows — with this small a denominator,
 90% is numerically equivalent to "all 4", disclosed rather than hidden
-behind the percentage framing), <=1% adversarial false recovery (of 2
-— equivalent to "zero of 2"), and zero query-time model calls.
+behind the percentage framing), <=1% adversarial false recovery (of the
+3 preregistered adversarial rows, after the second-correction-round
+addition of row 9 below — equivalent to "zero of 3"), and zero
+query-time model calls.
 
 - Treatment A: FAILS (0/4 benign recovery).
-- Treatment B: FAILS (2/2 adversarial false recovery).
-- Treatment C: FAILS (2/2 adversarial false recovery, identical to B on
+- Treatment B: FAILS (3/3 adversarial false recovery).
+- Treatment C: FAILS (3/3 adversarial false recovery, identical to B on
   this workload).
 - **Treatment D: PASSES every preregistered R2 GO-gate criterion** —
-  4/4 benign recovery, 0/2 adversarial false recovery, zero query-time
+  4/4 benign recovery, 0/3 adversarial false recovery, zero query-time
   model calls (structural). Its latency overhead, while real and
   substantially higher than B/C's, is not a gating criterion for R2 (see
-  above) and is disclosed, not hidden.
+  above) and is disclosed, not hidden. This PASS holds only *after* the
+  second-correction-round fix below; before it, D would have failed row
+  9 (see that section for the confirmed defect and its fix).
 
 Unlike R1 (REVISE — no treatment cleared every gate), **R2 reaches a
 clean GO**: Treatment D's `ResidualPolicy` mechanism is the winning
@@ -671,18 +690,112 @@ decisions are reviewed together rather than merged piecemeal mid-epic.
   analogue of R1's oracle-based regression checks, adapted to check
   lexical catalog content rather than typed attributes, since that is
   what R2's own claims are about.
-- `r2_experimental`'s own 4 unit tests, including
+- `r2_experimental`'s own 6 unit tests (after the second correction
+  round below added 2), including
   `treatment_a_is_exactly_the_real_execute_planned_output` (proving
   `execute_a` is not a reimplementation that could silently diverge
-  from production behavior) and two `ResidualPolicy::classify`
-  tests directly exercising the `Preferred`-via-own-type,
-  `Preferred`-via-cross-type-breadth, and `Required`-via-never-observed
-  branches.
+  from production behavior), `ResidualPolicy::classify` tests directly
+  exercising the `Preferred`-via-cross-type-breadth and
+  `Required`-via-never-observed/via-single-type branches,
+  `treatment_d_does_not_recover_a_compound_constraint_query_whose_wrong_variant_the_residual_word_would_have_excluded`
+  (the confirmed-defect regression test), and
+  `execute_c_reorders_the_full_structural_set_instead_of_filtering_to_only_the_delegates_hits`
+  (closing a real, previously-total test-coverage gap on Treatment C's
+  only distinguishing code path).
 - A hard runtime assertion (not merely a printed metric) that row 8 (no
   structural anchor at all) is byte-identical across all four
   treatments — a violation would indicate a treatment's implementation
   touches a code path the protocol requires it not to, which this run
   treats as a bug in the experiment's own code, not a graded result.
+
+### Second correction round: fresh adversarial review
+
+Before any production change was made on the strength of R2's GO
+verdict — per Issue #42's own governance, exactly mirroring R1's
+second correction round — a fresh reviewer with no implementation task
+read the protocol, the write-up, every source file, and the raw
+artifacts, and tried to independently recompute or falsify every
+claim. It confirmed the fixture ground truth, all recovery/false-
+recovery/NDCG arithmetic, the determinism claim, the Punt-vs-Hybrid
+selectivity math, `raw_delegate_hits`'s fidelity to `execute_planned`,
+`BitmapRestrictQuery`'s scorer-level filtering, the GO-gate-asymmetry
+claim (R2 genuinely has no latency threshold, unlike R1), and D's
+overhead root-cause explanation — all by direct recomputation or
+re-running the binary from source, not by re-reading the write-up. It
+found two real issues:
+
+1. **A confirmed defect in `ResidualPolicy::classify`, with a working
+   false-positive reproduction.** `classify` accepted only the bare
+   `ProductTypeId` a query's `ProductType` constraint names, never the
+   query's actual (possibly narrower) structural candidate set. R2's
+   own 8-row workload only ever compiled a single `ProductType`
+   constraint, so it never exercised a *compound* constraint (e.g.
+   `ProductType(Sofas) AND Enum(color=Blue)`) whose real candidate set
+   can be a strict subset of every product of that type. The reviewer
+   pointed out this leaves a plausible false-recovery mode completely
+   untested by Issue #42 rule 4's own "every treatment needs a case
+   capable of disproving it" requirement. Independently reproduced by
+   writing a direct test (`compile("velvet blue sofas", &lexicon)`
+   compiles exactly the compound constraint described, with a real
+   candidate set of `{P1}` only — P2, the only product "velvet"
+   actually describes, is Purple, not Blue) and running Treatment D
+   against it: it returned `[ProductId(1)]` (the Blue Leather Sofa) —
+   a genuine false positive, confirmed RED before any fix. Root cause:
+   `classify`'s old logic treated "observed anywhere under this query's
+   own product type" as sufficient evidence a token is safe to ignore,
+   which is true for a broadly-used generic word but not for a token
+   that is real and specific to a *different* product within the same
+   type. **Fix**: removed that condition entirely, leaving only the
+   cross-type-breadth signal (a token observed under
+   `>= CROSS_TYPE_BREADTH_THRESHOLD` *other*, distinct product types is
+   a safe generic-word signal regardless of how narrow the current
+   query's own candidate set is). This did not require the "own-type"
+   condition in the first place: re-checking every one of R2's original
+   4 benign rows shows all of them already passed via cross-type
+   breadth alone (each benign word is observed under 2 non-Sofas/
+   non-Boots product types), so the fix changes nothing about the
+   originally-published benign-recovery numbers. Added a permanent
+   regression test
+   (`treatment_d_does_not_recover_a_compound_constraint_query_whose_wrong_variant_the_residual_word_would_have_excluded`,
+   RED before the fix, GREEN after) and a new preregistered-style
+   adversarial workload row (row 9, `velvet blue sofas`) run through the
+   full GO-gate computation above, not merely covered by a unit test
+   buried in `r2_experimental.rs`. Also had to rewrite an existing test
+   that encoded the old, buggy asymmetric behavior as if it were
+   correct (`residual_policy_classifies_velvet_as_required_for_boots_but_preferred_for_sofas`,
+   replaced by
+   `residual_policy_classifies_velvet_as_required_for_both_boots_and_sofas`)
+   — a test that asserts a confirmed defect's behavior is itself a
+   defect, not left in place for the sake of "not breaking a passing
+   test."
+2. **A real, previously-total test-coverage gap on Treatment C.** The
+   original write-up disclosed that C behaves identically to B "on this
+   workload," which is true, but the reviewer found this actually
+   understated the gap: `execute_c`'s only code path that distinguishes
+   it from `execute_b` at all (reordering rather than filtering when
+   the delegate's raw hits are non-empty) had never been exercised by
+   *any* test anywhere in this crate, not just this workload — a
+   difference of degree the original disclosure didn't fully convey.
+   Fixed by adding a dedicated unit test
+   (`execute_c_reorders_the_full_structural_set_instead_of_filtering_to_only_the_delegates_hits`)
+   using a small fixed-output stub `LexicalDelegate` (`FixedDelegate`)
+   to force a non-empty raw hit deterministically without depending on
+   real Tantivy content, proving `execute_c` genuinely returns a
+   different (and larger) result than `execute_b`/`execute_a` in that
+   case — the full structural candidate set, reordered, rather than
+   only the delegate-verified subset.
+
+Both findings were independently reproduced (by direct test execution,
+not by trusting the reviewer's description) before being accepted and
+fixed. Neither reverses the GO verdict: after the fix, Treatment D
+still clears every preregistered R2 GO-gate criterion, now against the
+harder 9-row/3-adversarial-row workload the first finding's own fix
+demanded. The originally-published 8-row/2-adversarial-row numbers (B
+2/2, C 2/2, D 0/2 adversarial false recovery; B 2.8%–5.2%, C
+1.7%–4.8%, D 36.6%–41.3% latency overhead) are superseded by, not
+silently replaced by, the 9-row/3-adversarial-row numbers in the
+Results table above, per Issue #42 rule 9's "no silent replacement of
+invalidated numbers."
 
 Reproduction: `cargo build --release -p issue42-eval &&
 ./target/release/r2_residual_lexical_eval [output_summary_json_path]`.
