@@ -918,21 +918,29 @@ predicted weakness directly, not a bug in this experiment; all 7
 variants of the many-variant stress product are individually
 resolvable via C.
 
-Build/update cost (median-representative single run; see below for the
-disclosed incremental-B variance): Treatment B build ≈12.1–13.2ms,
-incremental (one new variant) bimodal — 2 of 5 runs ≈4.4–7.4ms, 3 of 5
-runs ≈104.5–107.4ms (not a smooth range: a real, disclosed bimodal
-split, plausibly Tantivy's segment-merge policy occasionally triggering
+Build/update cost (ranges over 5 independent runs, post-second-
+correction-round fix below): Treatment B build ≈12.6–18.4ms, incremental
+(one new variant) bimodal — 2 of 5 runs ≈6.5–6.7ms, 3 of 5 runs
+≈104.8–107.4ms (not a smooth range: a real, disclosed bimodal split,
+plausibly Tantivy's segment-merge policy occasionally triggering
 synchronously on `commit()` for a single-document delta — not
 independently confirmed against Tantivy's own internals, a genuine
-unresolved question, not asserted as settled). Treatment C build
-≈2.2–3.7ms, incremental ≈0.0008–0.0027ms (a single `HashMap` insert) —
-consistently and substantially lower than B's in every one of the 5
-runs, satisfying the GO gate's own "lower build/update cost than B"
-criterion regardless of B's own variance. Index size (Treatment B):
-129,713 bytes, deterministic across all 5 runs. RSS deltas (B
-≈5.8–6.1MB, C ≈0–8KB) are reported, per the protocol's own text, not
-gated on.
+unresolved question, not asserted as settled; see the "variants-per-
+product scaling curve" finding below, which shows this same bimodal
+split recurring at every tested variants-per-product level, not just
+this one held-out-catalog scale). Treatment C build ≈2.3–2.6ms,
+incremental ≈0.0008–0.0023ms (a single `HashMap` insert) — consistently
+and substantially lower than B's in every one of the 5 runs, satisfying
+the GO gate's own "lower build/update cost than B" criterion regardless
+of B's own variance. Index size (Treatment B): 129,315 bytes,
+deterministic across all 5 runs — **superseding** the originally-
+published 129,713 bytes, not silently replacing it: the second
+correction round below found the original console print and JSON
+summary read `index_size_bytes()` at two different points in the run
+(before vs. after the incremental-update section), silently reporting
+two different byte counts under the same label; both now read one
+consistent post-build snapshot. RSS deltas (B ≈5.8–6.2MB, C ≈0–4KB) are
+reported, per the protocol's own text, not gated on.
 
 Lookup latency (P50/P95/P99, median of 7 batched trials, one
 representative run): Treatment A ≈11.2–11.8us, Treatment B ≈7.1–7.6us,
@@ -969,14 +977,25 @@ false-match rate == 0 on accepted fields (0.9963 → after the
 methodology fix, 1.0000; 0.0000), build/incremental-update cost lower
 than B's for the same field (confirmed in every one of 5 runs,
 regardless of B's own timing variance), no measurable general-lexical
-regression (satisfied structurally — B/C are entirely separate
-index/lookup paths that never touch `commerce_core::index`/`commerce_core::plan`
-at all in this experimental design, so there is no code path by which
-building or querying them could change what `CatalogIndex::execute_ranked`
-returns; a contrived before/after NDCG diff would not measure anything
-real here), and abstention (not silent misclassification) on every
-field the classifier does not accept (17 of 18 non-`part_number`
-fields present in the held-out catalog, all correctly abstained).
+regression, and abstention (not silent misclassification) on every
+field the classifier does not accept (17 of 18 non-`part_number` fields
+present in the held-out catalog, all correctly abstained).
+
+The general-lexical-regression criterion is now backed by a real
+executed check, not merely a structural argument (see the second
+correction round below for why the original prose-only version was a
+fair target for review): `commerce_core::index::CatalogIndex::execute_ranked`
+is run twice, in this same process, against 3 real free-text queries
+("Sofas"/"Jeans"/"Brake Pads") over `mixed_merchant`'s 3,000-product
+mixed catalog, and the two runs are asserted byte-identical (10/10/10
+hits, confirmed identical across all 5 runs). The reason no interaction
+with Treatments B/C was ever structurally possible still holds and is
+worth keeping precise: `held_out_mixed`'s `Catalog` is a completely
+separate object from `held_out.catalog` (the one B/C's own indices are
+built over), so this check's real value is confirming the production
+ranking pipeline behaves normally and deterministically in this same
+run — a genuine, executed confirmation — not proving an interaction was
+avoided that had no code path to occur through in the first place.
 
 **Treatment C passes every preregistered R3 GO-gate criterion.**
 Mirroring R2's own outcome (and unlike R1's REVISE), this is a real
@@ -1007,6 +1026,168 @@ difference in one field's `mean_entropy_bits` between two runs of an
 otherwise-identical binary — caught by diffing 5 runs' summary JSON
 before trusting the "byte-identical" claim, fixed by switching to
 `BTreeMap`'s deterministic iteration order.
+
+### Second correction round: fresh adversarial review
+
+Before any production change was made on the strength of R3's GO
+verdict — per Issue #42's own governance, exactly mirroring R1 and R2's
+own second correction rounds — a fresh reviewer with no implementation
+task read the protocol, the write-up, every source file, and the raw
+artifacts, and tried to independently recompute or falsify every claim.
+It found four substantive issues and one minor one:
+
+1. **`IdentifierClassifier::accepts` silently narrowed the protocol's
+   own preregistered multi-signal classifier design (uniqueness ratio,
+   entropy, format-consistency, collision rate, Product-vs-Variant
+   scope, exact-query rate) down to uniqueness ratio alone, with no
+   dated deviation note recording the narrowing.** This was a real,
+   confirmed defect independent of any numeric consequence — the
+   protocol described a multi-signal classifier and the shipped code
+   was single-signal, undisclosed.
+2. **A concrete numeric consequence of finding 1**: on the calibration
+   set, `lumens` (a genuine, non-identifier Numeric attribute —
+   Headlight Bulbs' brightness) measured `uniqueness_ratio=0.94`, only
+   0.01 below `MIN_UNIQUENESS_RATIO`. The reviewer traced this to sample
+   size, not semantic identifier-ness: `lumens`'s ratio drops further,
+   to 0.89, on the 2×-larger held-out set. A single-signal classifier
+   has no second check to catch a similarly-sampled non-identifier
+   field that happens to clear 0.95 by chance — a real, if
+   not-yet-triggered, margin risk.
+3. **The build-time/incremental-update-cost measurement was only taken
+   at a single variants-per-product level** (the one 7-variant stress
+   product embedded in the held-out catalog), not "at every tested
+   variants-per-product level" as the protocol's own text requires.
+4. **The general-lexical-retrieval regression check was argued, not
+   measured.** The previous version of this section built
+   `held_out_mixed`'s catalog and then discarded it
+   (`let _held_out_mixed = ...`) without ever running a real query
+   against it — a fair criticism that an argued-not-measured claim reads
+   as more rigorous than it is.
+5. **(Minor) An index-size measurement-point inconsistency**: the
+   console print (evaluated before the incremental-update section ran)
+   and the JSON summary (evaluated after) both called
+   `index_b.index_size_bytes()`, silently reporting two different byte
+   counts under the identical `"index_size_bytes_b"` label.
+
+Every finding was independently reproduced (by direct grep/inspection of
+the actual code and run artifacts, not by trusting the reviewer's
+description) before being accepted and fixed:
+
+- **Findings 1+2 (classifier narrowing + the `lumens` near-miss).** The
+  first candidate fix tried — adding `FieldStats::format_consistency`
+  (fraction of a field's values sharing the single most common
+  character-class "shape": alphabetic→`A`, digit→`9`, else unchanged)
+  as a second, required gate signal — was tested with real numbers
+  *before* being committed to, not assumed to work from the protocol's
+  description, and was found to **empirically fail**: it scores
+  `part_number` (the true positive) at only ~0.51, *lower* than several
+  genuine non-identifiers (`product_fingerprint`/`sku_code` both score
+  a trivial 1.0), because automotive's own brand and product-type names
+  vary in word count (`"TrueDrive"` → a one-letter code;
+  `"Ironclad Auto"` → a two-letter code), so `part_number`'s own
+  brand/type-code segments genuinely vary in length across the catalog,
+  spreading its occurrences across multiple signatures with no single
+  majority. An equivalent fixed-length-ratio variant was also tried and
+  also failed (`part_number`≈0.56). Gating on either would have
+  **incorrectly rejected the real identifier field — a regression, not
+  a fix.** Per `CLAUDE.md`'s "record failed experiments," this negative
+  result is kept, not erased: both statistics remain computed and
+  reported (`FieldStats::format_consistency`) for transparency, but
+  neither gates. The fix that *does* work, found next: `variant_scoped`
+  (already computed by `compute_field_stats`, but — per the same review
+  — never actually read anywhere before this fix) discriminates
+  correctly for a structural reason, not a numeric coincidence:
+  automotive's generator sets `part_number`/`warranty_months`/
+  `compatible_fitment` directly on each `Variant`, and every other
+  attribute (including `lumens`) only on the parent `Product`.
+  `IdentifierClassifier::accepts` now requires
+  `uniqueness_ratio >= MIN_UNIQUENESS_RATIO && variant_scoped`.
+  Verified (via a temporary diagnostic, deleted after use) that this
+  produces **identical classification results** to the original design
+  on both the calibration and held-out sets — `part_number` still
+  `ACCEPT`s, every other field still correctly `REJECT`s/`ABSTAIN`s,
+  including `lumens` (now rejected structurally rather than by a
+  numeric margin) — because `warranty_months` (also variant-scoped) is
+  already independently rejected on uniqueness ratio alone
+  (0.0027/0.0013), so this addition introduces no new false accept. New
+  regression test:
+  `identifier_classifier_rejects_lumens_a_genuine_near_miss_on_uniqueness_ratio_alone`.
+- **Finding 3 (variants-per-product scaling curve)**: added
+  `r3_workload::build_scaling_catalog(n_products, variants_per_product)`
+  — a small, self-contained synthetic catalog builder, deliberately
+  disjoint (a third id range, `SCALING_PRODUCT_ID_BASE`/
+  `SCALING_VARIANT_ID_BASE`) from every other id range this fixture
+  hands out — and a new scaling-curve section in the eval binary that
+  builds a fresh, dedicated 200-product catalog at each of 4 levels
+  (`variants_per_product ∈ {1, 3, 7, 15}`; `7` deliberately included so
+  this curve's own middle point is directly comparable to the single
+  stress-product measurement already taken on the main held-out
+  catalog), measuring Treatment B/C build-time and incremental-update
+  cost at each level independently (never sharing a catalog/index
+  across levels, so no level's timing is confounded by another level's
+  data still being present). Result: Treatment C's build time scales
+  roughly linearly with total variant count as expected of a per-entry
+  `HashMap` insert (≈0.09–0.22ms at 200 variants up to ≈0.8–2.0ms at
+  3,000 variants, across 5 runs); Treatment C's incremental-update cost
+  stays consistently tiny (≈0.0007–0.004ms) at every level, with no
+  bimodal behavior. Treatment B's build time is noisy at these small
+  sizes (dominated by Tantivy's own per-commit overhead, not a clean
+  function of variant count) and — genuinely informative — **the same
+  bimodal incremental-update split already disclosed at the main
+  held-out-catalog scale recurs at every one of the 4 tested
+  variants-per-product levels**, not correlated with the level itself:
+  across the 20 (level × run) cells measured, roughly half land
+  ≈3–8ms and half ≈104–108ms, with no level showing only one mode.
+  This strengthens (without proving) the existing "Tantivy's own
+  segment-merge policy occasionally triggering synchronously on a
+  single-document commit" hypothesis, since it rules out
+  variants-per-product itself as the trigger. New regression tests:
+  `scaling_catalog_has_the_requested_shape_and_distinct_identifiers`,
+  `scaling_catalog_ids_never_collide_with_the_other_two_extension_ranges`.
+  The GO gate itself continues to gate on the original single
+  held-out-catalog build/incremental numbers, matching the
+  preregistered gate text — this curve is measured and reported for
+  protocol completeness, not a second, parallel gate.
+- **Finding 4 (general-lexical-regression argued-not-measured)**:
+  extended `HeldOutMixed` to expose the real `product_types`/`brands`/
+  `categories` `ingest::build_catalog` already returns (previously only
+  `catalog` was kept), then replaced the discarded-catalog prose with a
+  real, executed check: `commerce_core::cold_start::CatalogProfile::build`
+  + `compile_lexicon`, then `commerce_core::ir::compile` +
+  `CatalogIndex::execute_ranked` run twice against 3 real free-text
+  queries, asserting byte-identical hit counts (10/10/10, confirmed
+  across all 5 runs) — see the GO gate verdict section above for the
+  precise, re-written disclosure of why this check's real value is
+  confirming normal production behavior in-process, not proving an
+  interaction was avoided that had no code path to occur through in the
+  first place.
+- **Finding 5 (index-size measurement-point inconsistency)**: fixed by
+  capturing `index_size_bytes_b_post_build` once, immediately after
+  Treatment B's build and before the incremental-update section runs,
+  and reading that one snapshot in both the console print and the JSON
+  summary. The corrected, consistent value (129,315 bytes) supersedes
+  the originally-published 129,713 bytes (see "Results" above) — not a
+  silent replacement, since both are recorded and the reason for the
+  discrepancy (two different measurement points, not measurement
+  noise) is disclosed.
+
+All fixes were re-verified via `cargo test -p issue42-eval --release r3`
+(13 tests, all passing — 10 pre-existing plus 3 added this round: the
+new `lumens`-rejection test and the 2 new scaling-catalog tests) and by
+re-running the full binary. **The GO verdict
+for Treatment C survives**: Findings 1+2's fix only makes the classifier
+*more* conservative (adds a second required condition) in a way already
+verified to preserve every existing classification decision, so it
+cannot itself flip any accept/abstain outcome; Finding 3 adds evidence
+without changing any existing number; Finding 4 replaces an
+argued-but-unmeasured claim with a measured-and-passing one; Finding 5
+is a reporting-consistency fix, not a change in underlying behavior. All
+5 regenerated runs remain byte-identical on every correctness/
+classification/recall/false-match/violation field and on every
+non-timing field of the new scaling curve (`dictionary_entry_count_c`,
+`variants_per_product`/`products`/`total_variants` per level), confirmed
+by direct diff; only timing/RSS/index-size-adjacent fields vary
+run-to-run, as before.
 
 Reproduction: `cargo build --release -p issue42-eval &&
 ./target/release/r3_identifier_primitive_eval [output_summary_json_path]`.

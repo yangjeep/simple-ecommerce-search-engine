@@ -42,15 +42,22 @@ thread_size: uniqueness_ratio=0.0100 mean_entropy_bits=1.5000 occurrences=300 di
 voltage: uniqueness_ratio=0.0033 mean_entropy_bits=1.0000 occurrences=300 distinct=1 => ABSTAINS
 warranty_months: uniqueness_ratio=0.0013 mean_entropy_bits=1.0000 occurrences=3000 distinct=4 => ABSTAINS
 
-Note: cross_reference_code has only 2 occurrences in this fixture, both deliberately sharing one value (the 'legitimate cross-reference' scenario) -- statistically indistinguishable from a low-cardinality field at this sample size, so the classifier ABSTAINS on it (Some(FieldStats { field: "cross_reference_code", total_occurrences: 2, distinct_normalized_values: 1, uniqueness_ratio: 0.5, mean_entropy_bits: 3.0957952550009344, variant_scoped: true })). This is the GO gate's own required behavior working as intended: a field the classifier abstains on falls back to Treatment B, not silently mis-classified as identifier-shaped.
+Note: cross_reference_code has only 2 occurrences in this fixture, both deliberately sharing one value (the 'legitimate cross-reference' scenario) -- statistically indistinguishable from a low-cardinality field at this sample size, so the classifier ABSTAINS on it (Some(FieldStats { field: "cross_reference_code", total_occurrences: 2, distinct_normalized_values: 1, uniqueness_ratio: 0.5, mean_entropy_bits: 3.0957952550009344, format_consistency: 1.0, variant_scoped: true })). This is the GO gate's own required behavior working as intended: a field the classifier abstains on falls back to Treatment B, not silently mis-classified as identifier-shaped.
 
 --- build cost ---
-Treatment B (VariantTextIndex): build_time=12.440ms index_size_bytes=129315 rss_delta_kb=5808
-Treatment C (IdentifierDictionary on part_number): build_time=2.412ms entry_count=2994 rss_delta_kb=8
+Treatment B (VariantTextIndex): build_time=12.846ms index_size_bytes=129315 rss_delta_kb=5840
+Treatment C (IdentifierDictionary on part_number): build_time=2.333ms entry_count=2994 rss_delta_kb=0
 
 --- incremental update cost (one new variant, not a full rebuild) ---
-Treatment B: 4.3600ms (build was 12.440ms)
-Treatment C: 0.0008ms (build was 2.412ms)
+Treatment B: 6.4591ms (build was 12.846ms)
+Treatment C: 0.0008ms (build was 2.333ms)
+
+--- variants-per-product scaling curve (build cost, incremental-update cost; 200 products per level) ---
+variants_per_product=1 (total_variants=200): build B=3.515ms C=0.092ms; incremental B=4.8021ms C=0.0007ms
+variants_per_product=3 (total_variants=600): build B=10.804ms C=0.313ms; incremental B=103.4661ms C=0.0017ms
+variants_per_product=7 (total_variants=1400): build B=5.767ms C=0.574ms; incremental B=103.5939ms C=0.0021ms
+variants_per_product=15 (total_variants=3000): build B=7.895ms C=0.947ms; incremental B=3.6161ms C=0.0011ms
+note: this curve is measured and reported for protocol completeness; the GO gate below still gates on the single held-out-catalog build/incremental numbers above, matching the preregistered gate text -- it does not re-gate on every scaling level
 excluded 22 of 2994 candidates as members of a natural, real collision group (measured separately by the dedicated collision case below)
 
 --- Recall@1 / false-match rate over 2972 un-mutated, genuinely-unique held-out positive queries (natural collisions excluded, measured separately below) ---
@@ -68,24 +75,27 @@ prefix (Treatment B, measured not gated): query="AM-7611-" hits=[IdentifierHit {
 many-variant stress (7 variants): all individually resolvable => PASS
 
 --- lookup latency (P50/P95/P99, median of 7 batched trials) ---
-  Treatment A: n=7 mean=10.2874us sd=0.0324us | p10=10.2573 p25=10.2657 p50=10.2784 p75=10.3079 p90=10.3316 p95=10.3329 p99=10.3339 | min=10.2526 max=10.3341us
-  Treatment B: n=7 mean=6.9304us sd=0.0793us | p10=6.8885 p25=6.8937 p50=6.8946 p75=6.9211 p90=7.0013 p95=7.0539 p99=7.0961 | min=6.8817 max=7.1066us
-  Treatment C: n=7 mean=0.0749us sd=0.0008us | p10=0.0745 p25=0.0746 p50=0.0746 p75=0.0746 p90=0.0755 p95=0.0762 p99=0.0767 | min=0.0745 max=0.0768us
+  Treatment A: n=7 mean=11.4516us sd=0.0752us | p10=11.3898 p25=11.3999 p50=11.4063 p75=11.5052 p90=11.5466 p95=11.5574 p99=11.5661 | min=11.3761 max=11.5683us
+  Treatment B: n=7 mean=7.6417us sd=0.0574us | p10=7.5860 p25=7.6002 p50=7.6339 p75=7.6703 p90=7.7049 p95=7.7232 p99=7.7379 | min=7.5756 max=7.7415us
+  Treatment C: n=7 mean=0.0756us sd=0.0010us | p10=0.0751 p25=0.0751 p50=0.0752 p75=0.0755 p90=0.0765 p95=0.0772 p99=0.0777 | min=0.0750 max=0.0779us
 
 --- general (non-identifier) lexical retrieval regression check ---
-Treatments B/C are entirely separate index/lookup paths added by this experiment; neither touches commerce_core::index::CatalogIndex or commerce_core::plan at all. There is no code path by which building or querying them could change what CatalogIndex::execute_ranked returns for an ordinary free-text query -- this is a structural fact about this experiment's own additive design (confirmed by the absence of any commerce_core::index/commerce_core::plan import anywhere in r3_experimental.rs), not something a before/after NDCG comparison could meaningfully contradict or confirm. mixed_merchant's held-out catalog (built by r3_workload::build_held_out_mixed) is retained for a future E2b/production-change review to run a real regression comparison against once/if these treatments are ever wired into the actual serving path -- there is no real comparison to make while they remain fully separate.
+  "Sofas": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+  "Jeans": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+  "Brake Pads": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+confirmed: 3 identical, real production hit counts across two calls; held_out_mixed's Catalog object is never touched by Treatments B/C's own indices (built over a completely different Catalog, held_out.catalog) -- there is no shared state for building/querying B/C to have affected in the first place
 
 --- GO gate evaluation ---
 Treatment C: recall@1=1.0000 (require >=0.99), false_match=0.0000 (require ==0), corner-case violations=[] (require empty)
-Treatment C build/update cost vs B: build 2.412ms vs 12.440ms (LOWER), incremental 0.0008ms vs 4.3600ms (LOWER)
+Treatment C build/update cost vs B: build 2.333ms vs 12.846ms (LOWER), incremental 0.0008ms vs 6.4591ms (LOWER)
 abstained fields (measured, not a gate failure): ["amperage_output", "bulb_type", "cold_cranking_amps", "cross_reference_code", "filter_type", "group_size", "heat_range", "lumens", "material", "material_grade", "micron_rating", "oem_or_aftermarket", "position", "size", "thread_size", "voltage", "warranty_months"]
 => Treatment C GO gate: PASS
 
 {
   "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
   "build_time_ms": {
-    "B": 12.439669,
-    "C": 2.4119509999999997
+    "B": 12.845792,
+    "C": 2.33315
   },
   "calibration_stats": {
     "amperage_output": {
@@ -175,19 +185,73 @@ abstained fields (measured, not a gate failure): ["amperage_output", "bulb_type"
   "go_gate_pass": true,
   "held_out_sample_size": 2972,
   "incremental_update_ms": {
-    "B": 4.359996,
-    "C": 0.000777
+    "B": 6.459061,
+    "C": 0.000791
   },
-  "index_size_bytes_b": 129713,
+  "index_size_bytes_b": 129315,
   "recall_at_1": {
     "A": 0,
     "B": 2972,
     "C": 2972
   },
   "rss_delta_kb": {
-    "B": 5808,
-    "C": 8
+    "B": 5840,
+    "C": 0
   },
+  "variants_per_product_scaling_curve": [
+    {
+      "build_time_ms": {
+        "B": 3.5148610000000002,
+        "C": 0.091908
+      },
+      "incremental_update_ms": {
+        "B": 4.802106,
+        "C": 0.000679
+      },
+      "products": 200,
+      "total_variants": 200,
+      "variants_per_product": 1
+    },
+    {
+      "build_time_ms": {
+        "B": 10.80354,
+        "C": 0.312984
+      },
+      "incremental_update_ms": {
+        "B": 103.466144,
+        "C": 0.00173
+      },
+      "products": 200,
+      "total_variants": 600,
+      "variants_per_product": 3
+    },
+    {
+      "build_time_ms": {
+        "B": 5.766712999999999,
+        "C": 0.5741029999999999
+      },
+      "incremental_update_ms": {
+        "B": 103.59385999999999,
+        "C": 0.002074
+      },
+      "products": 200,
+      "total_variants": 1400,
+      "variants_per_product": 7
+    },
+    {
+      "build_time_ms": {
+        "B": 7.895031,
+        "C": 0.947479
+      },
+      "incremental_update_ms": {
+        "B": 3.616055,
+        "C": 0.0010860000000000002
+      },
+      "products": 200,
+      "total_variants": 3000,
+      "variants_per_product": 15
+    }
+  ],
   "violations": []
 }
 summary written to docs/research/artifacts/i42_r3_run1/summary_run2.json

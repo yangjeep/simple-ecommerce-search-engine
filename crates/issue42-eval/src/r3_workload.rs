@@ -15,7 +15,8 @@
 //! one-variant-per-product).
 
 use commerce_core::domain::{
-    AttributeValue, Catalog, Inventory, Price, Product, ProductId, Variant, VariantId,
+    AttributeValue, BrandId, Catalog, CategoryId, Inventory, Price, Product, ProductId,
+    ProductTypeId, Variant, VariantId,
 };
 use issue38_e2e3_eval::{automotive, ingest, mixed_merchant};
 
@@ -26,6 +27,13 @@ use issue38_e2e3_eval::{automotive, ingest, mixed_merchant};
 /// can never collide with a generator-ingested one.
 const EXT_PRODUCT_ID_BASE: u64 = 10_000_000;
 const EXT_VARIANT_ID_BASE: u64 = 10_000_000_000;
+/// A third, distinct id range for [`build_scaling_catalog`]'s own
+/// standalone catalogs -- never shares an object with `EXT_*`'s
+/// extension products or `ingest::build_catalog`'s own ids, but a
+/// distinct range keeps every id this experiment ever prints
+/// unambiguous.
+const SCALING_PRODUCT_ID_BASE: u64 = 30_000_000;
+const SCALING_VARIANT_ID_BASE: u64 = 30_000_000_000;
 
 pub const CALIBRATION_N: usize = 1500;
 pub const HELD_OUT_AUTOMOTIVE_N: usize = 3000;
@@ -89,6 +97,9 @@ pub struct HeldOutAutomotive {
 
 pub struct HeldOutMixed {
     pub catalog: Catalog,
+    pub product_types: Vec<commerce_core::domain::ProductType>,
+    pub brands: Vec<commerce_core::domain::Brand>,
+    pub categories: Vec<commerce_core::domain::Category>,
 }
 
 fn attribute_string(value: &AttributeValue) -> Option<String> {
@@ -287,7 +298,61 @@ pub fn build_held_out_mixed() -> HeldOutMixed {
     let ingested = ingest::build_catalog(&products);
     HeldOutMixed {
         catalog: ingested.catalog,
+        product_types: ingested.product_types,
+        brands: ingested.brands,
+        categories: ingested.categories,
     }
+}
+
+/// Builds a small, self-contained synthetic catalog with `n_products`
+/// products, each with exactly `variants_per_product` variants, every
+/// variant carrying its own distinct, real-shaped `part_number`.
+///
+/// Added during R3's second correction round: a fresh adversarial
+/// review found the protocol's own text ("build-time/incremental-update
+/// cost measured at every tested variants-per-product level") was only
+/// satisfied at a single level in practice -- the one 7-variant stress
+/// product embedded in `build_calibration_and_held_out`'s held-out
+/// catalog. This function lets the eval binary measure several fixed
+/// levels directly, each on its own dedicated catalog (not one catalog
+/// with several stress products mixed in), so no level's timing is
+/// confounded by another level's data still being present in the same
+/// index.
+pub fn build_scaling_catalog(n_products: usize, variants_per_product: usize) -> Catalog {
+    let dummy_product_type = ProductTypeId(0);
+    let dummy_brand = BrandId(0);
+    let dummy_category = CategoryId(0);
+    let products: Vec<Product> = (0..n_products)
+        .map(|p_idx| {
+            let variants: Vec<Variant> = (0..variants_per_product)
+                .map(|v_idx| {
+                    let mut attrs = commerce_core::domain::attributes([]);
+                    attrs.insert(
+                        REAL_IDENTIFIER_FIELD.to_string(),
+                        AttributeValue::Text(format!("SC-{p_idx:05}-{v_idx:04}")),
+                    );
+                    Variant {
+                        id: VariantId(
+                            SCALING_VARIANT_ID_BASE + (p_idx * variants_per_product + v_idx) as u64,
+                        ),
+                        attributes: attrs,
+                        price: Price::usd(1999),
+                        inventory: Inventory::in_stock(5),
+                    }
+                })
+                .collect();
+            Product {
+                id: ProductId(SCALING_PRODUCT_ID_BASE + p_idx as u64),
+                product_type: dummy_product_type,
+                brand: dummy_brand,
+                category: dummy_category,
+                title: format!("Scaling Test Product {p_idx}"),
+                attributes: commerce_core::domain::attributes([]),
+                variants,
+            }
+        })
+        .collect();
+    Catalog { products }
 }
 
 #[cfg(test)]
@@ -442,6 +507,44 @@ mod tests {
             "mixed_merchant's furniture/apparel products must have no part_number attribute at \
              all -- the real, natural 'absent identifier across an entire different vertical' \
              case this fixture relies on rather than injecting"
+        );
+    }
+
+    #[test]
+    fn scaling_catalog_has_the_requested_shape_and_distinct_identifiers() {
+        let catalog = build_scaling_catalog(20, 5);
+        assert_eq!(catalog.products.len(), 20);
+        let mut all_ids = std::collections::BTreeSet::new();
+        for product in &catalog.products {
+            assert_eq!(product.variants.len(), 5);
+            for variant in &product.variants {
+                let AttributeValue::Text(pn) =
+                    variant.attributes.get(REAL_IDENTIFIER_FIELD).unwrap()
+                else {
+                    panic!("expected Text");
+                };
+                all_ids.insert(pn.clone());
+            }
+        }
+        assert_eq!(
+            all_ids.len(),
+            100,
+            "every variant across the whole scaling catalog must carry a distinct part_number"
+        );
+    }
+
+    #[test]
+    fn scaling_catalog_ids_never_collide_with_the_other_two_extension_ranges() {
+        let scaling = build_scaling_catalog(5, 3);
+        let (_cal, held) = build_calibration_and_held_out();
+        let scaling_product_ids: std::collections::BTreeSet<u64> =
+            scaling.products.iter().map(|p| p.id.0).collect();
+        let held_out_product_ids: std::collections::BTreeSet<u64> =
+            held.catalog.products.iter().map(|p| p.id.0).collect();
+        assert!(
+            scaling_product_ids.is_disjoint(&held_out_product_ids),
+            "SCALING_PRODUCT_ID_BASE must never collide with EXT_PRODUCT_ID_BASE or \
+             ingest::build_catalog's own generated range"
         );
     }
 }

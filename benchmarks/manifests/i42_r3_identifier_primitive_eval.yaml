@@ -86,18 +86,53 @@ claim: >
   mean_entropy_bits between runs -- fixed by switching to BTreeMap's
   deterministic order.
 
+  **Second correction round (adversarial review, before any production
+  change was made)**: a fresh reviewer with no implementation task
+  independently recomputed every number and claim above from the raw
+  artifacts and source and found four substantive issues plus one minor
+  one, all independently reproduced before being fixed: (1)
+  `IdentifierClassifier::accepts` silently narrowed the protocol's own
+  preregistered multi-signal classifier design down to uniqueness ratio
+  alone, undisclosed; (2) a concrete consequence -- `lumens` (a genuine
+  non-identifier field) scored uniqueness_ratio=0.94 on calibration,
+  only 0.01 below cutoff (a sample-size artifact: 0.89 on the
+  2x-larger held-out set). A first candidate fix (a format-consistency
+  gate) was tested with real numbers and found to EMPIRICALLY FAIL --
+  it would have incorrectly rejected the true `part_number` field
+  itself (~0.51-0.56, lower than several non-identifiers), because
+  automotive's own brand/type names vary in word count. This negative
+  result is recorded, not erased -- the statistic remains computed and
+  reported but does not gate. The real fix: also require
+  `variant_scoped` (already computed, previously unused; a structural,
+  not numeric, discriminator), verified to change zero existing
+  classification decisions. (3) Build/incremental-update cost had only
+  been measured at one variants-per-product level; fixed with a new
+  scaling-curve section measuring 4 dedicated levels independently --
+  Treatment C's build time scales linearly with total variant count as
+  expected; Treatment B's incremental-update cost shows the same
+  bimodal split already disclosed at the main catalog scale recurring
+  at every level, ruling out variants-per-product as the trigger. (4)
+  The general-lexical-regression check was argued (a built-then-
+  discarded catalog), not measured; fixed with a real
+  `CatalogIndex::execute_ranked` check against 3 real free-text
+  queries, run twice, asserting byte-identical hit counts. (5, minor)
+  the console print and JSON summary read `index_b.index_size_bytes()`
+  at two different points in the run under one label; fixed by
+  capturing one consistent snapshot (129,315 bytes, superseding --
+  not silently replacing -- the originally-published 129,713). None of
+  these fixes reverses the GO verdict.
+
   **Terminal verdict: GO for Treatment C.** Mirroring R2's own outcome
   (unlike R1's REVISE), Treatment C's calibrated-classifier-plus-
-  dictionary mechanism clears every preregistered GO-gate criterion.
-  Per Issue #42's own rule, this is a real candidate for a
-  RED-before-GREEN production change -- deliberately NOT made in this
-  same pass. A fresh, no-implementation-task adversarial reviewer must
-  first attempt to falsify this protocol/fixture/code/arithmetic/claim
-  (mirroring R1/R2's own second-correction-round process) and every
-  confirmed finding must be independently reproduced and fixed first;
-  the production-change step itself is tracked separately (task #63,
-  reviewing R1/R2/R3's serving-contract decisions together). Full
-  detail: `docs/experiments/ISSUE42_LOG.md`'s "I42-R3" section.
+  dictionary mechanism clears every preregistered GO-gate criterion,
+  including after the second-correction-round fixes above, confirmed
+  across 5 freshly regenerated runs byte-identical on every correctness/
+  classification field. Per Issue #42's own rule, this is a real
+  candidate for a RED-before-GREEN production change -- deliberately
+  NOT made in this same pass; the production-change step itself is
+  tracked separately (task #63, reviewing R1/R2/R3's serving-contract
+  decisions together). Full detail: `docs/experiments/ISSUE42_LOG.md`'s
+  "I42-R3" section.
 
 git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
 baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
@@ -125,11 +160,16 @@ dataset:
     part_number), and a hand-built 7-variant stress product (fresh id
     range, each variant with its own distinct part_number).
     mixed_merchant's 3,000-product mixed catalog (matching E3's own
-    established 1000/1000/1000 split) is retained separately for a
-    future general-lexical-regression comparison, not used for any
-    core identifier-classification metric.
+    established 1000/1000/1000 split) is used for a real, executed
+    general-lexical-regression check (second correction round -- see
+    below), not for any core identifier-classification metric. Several
+    additional small, dedicated synthetic catalogs (200 products each,
+    fixed variants_per_product in {1, 3, 7, 15}) are built and
+    discarded per level for the variants-per-product build/incremental-
+    update scaling curve (second correction round), on a third,
+    disjoint id range (`SCALING_PRODUCT_ID_BASE`/`SCALING_VARIANT_ID_BASE`).
   source: crates/issue42-eval/src/r3_workload.rs::build_calibration_and_held_out,
-    build_held_out_mixed
+    build_held_out_mixed, build_scaling_catalog
   size: 1500 calibration products + 3001 held-out products (3000 real +
     1 hand-built 7-variant stress product), 1 variant each except the
     stress product
@@ -161,7 +201,14 @@ workload:
     variants individually resolvable via C)
   min_uniqueness_ratio: 0.95 (issue42_eval::r3_experimental::MIN_UNIQUENESS_RATIO,
     chosen from the calibration set's own measured statistics alone,
-    never re-tuned against held-out numbers)
+    never re-tuned against held-out numbers). Second correction round:
+    IdentifierClassifier::accepts now additionally requires
+    variant_scoped (a field must be set directly on at least one
+    Variant, not merely inherited from its Product) -- verified to
+    change zero existing accept/reject decisions on this fixture, but
+    closes a real margin risk (lumens: uniqueness_ratio=0.94 on
+    calibration, only 0.01 below cutoff) a uniqueness-ratio-only gate
+    had no second signal to catch.
 
 seed: "fully hand-specified extension pieces layered on
   automotive::generate_catalog(4500)'s own deterministic RNG output --
@@ -176,15 +223,24 @@ latency_methodology: >
   byte-identical; only latency/build-time/incremental-update-time/RSS
   numbers vary run-to-run and are reported as ranges, not a single
   favorable run. Treatment B's incremental-update cost showed a real,
-  disclosed BIMODAL split across the 5 runs (2 of 5 ~4.4-7.4ms, 3 of 5
-  ~104.5-107.4ms) rather than a smooth range -- plausibly Tantivy's own
+  disclosed BIMODAL split across the 5 runs (2 of 5 ~6.5-6.7ms, 3 of 5
+  ~104.8-107.4ms) rather than a smooth range -- plausibly Tantivy's own
   segment-merge policy occasionally triggering synchronously on a
   single-document commit, not independently confirmed against Tantivy's
   internals (a disclosed open question, not asserted as settled).
   Treatment C's incremental update (a single HashMap insert) was
   consistently and substantially lower than B's in every run regardless
   of B's own variance, satisfying the GO gate's own build/update-cost
-  criterion unambiguously.
+  criterion unambiguously. Second correction round: a dedicated
+  variants-per-product scaling curve (4 levels, 200 products each,
+  measured independently on their own disjoint catalogs) shows this
+  same bimodal split recurring at every tested level -- roughly half of
+  the 20 (level x run) cells land ~3-8ms and half ~104-108ms, with no
+  single level showing only one mode -- which rules out
+  variants-per-product itself as the trigger, strengthening (without
+  proving) the segment-merge hypothesis above. Treatment C's build time
+  across the same 4 levels scales roughly linearly with total variant
+  count, consistent with a per-entry HashMap insert.
 
 raw_results: docs/research/artifacts/i42_r3_run1/
   - main_run{1,2,3,4,5}.txt (5 independent full runs)

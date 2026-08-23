@@ -1,8 +1,8 @@
 {
   "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
   "build_time_ms": {
-    "B": 13.141928,
-    "C": 3.7477970000000003
+    "B": 18.381294999999998,
+    "C": 2.3153370000000004
   },
   "calibration_stats": {
     "amperage_output": {
@@ -92,18 +92,72 @@
   "go_gate_pass": true,
   "held_out_sample_size": 2972,
   "incremental_update_ms": {
-    "B": 104.475179,
-    "C": 0.002692
+    "B": 104.80300600000001,
+    "C": 0.001838
   },
-  "index_size_bytes_b": 129713,
+  "index_size_bytes_b": 129315,
   "recall_at_1": {
     "A": 0,
     "B": 2972,
     "C": 2972
   },
   "rss_delta_kb": {
-    "B": 6128,
-    "C": 0
+    "B": 5824,
+    "C": 4
   },
+  "variants_per_product_scaling_curve": [
+    {
+      "build_time_ms": {
+        "B": 8.276465,
+        "C": 0.11934099999999999
+      },
+      "incremental_update_ms": {
+        "B": 104.99658000000001,
+        "C": 0.0014219999999999999
+      },
+      "products": 200,
+      "total_variants": 200,
+      "variants_per_product": 1
+    },
+    {
+      "build_time_ms": {
+        "B": 12.817340999999999,
+        "C": 0.203271
+      },
+      "incremental_update_ms": {
+        "B": 4.258484,
+        "C": 0.000941
+      },
+      "products": 200,
+      "total_variants": 600,
+      "variants_per_product": 3
+    },
+    {
+      "build_time_ms": {
+        "B": 6.1606380000000005,
+        "C": 0.393439
+      },
+      "incremental_update_ms": {
+        "B": 107.36664999999999,
+        "C": 0.002389
+      },
+      "products": 200,
+      "total_variants": 1400,
+      "variants_per_product": 7
+    },
+    {
+      "build_time_ms": {
+        "B": 7.342322,
+        "C": 0.8024049999999999
+      },
+      "incremental_update_ms": {
+        "B": 104.766818,
+        "C": 0.00152
+      },
+      "products": 200,
+      "total_variants": 3000,
+      "variants_per_product": 15
+    }
+  ],
   "violations": []
 }

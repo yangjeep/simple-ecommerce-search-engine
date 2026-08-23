@@ -219,9 +219,15 @@ pub fn execute_b(index: &VariantTextIndex, query_text: &str, limit: usize) -> Ve
 // Treatment C: a dedicated exact/normalized-key dictionary, built only
 // for fields the classifier accepts. `IdentifierClassifier` computes
 // per-field statistics from a whole `Catalog` (uniqueness ratio, mean
-// per-value Shannon entropy, and whether the field is ever set directly
-// on a Variant, not merely inherited from its Product) and calibrated
-// cutoffs decide acceptance -- never the field's name.
+// per-value Shannon entropy, format consistency, and whether the field
+// is ever set directly on a Variant, not merely inherited from its
+// Product) -- never the field's name -- and gates acceptance on two of
+// them (uniqueness ratio and variant scope; see `IdentifierClassifier::accepts`'s
+// own doc comment for why entropy and format-consistency are measured
+// and reported but do not gate, including a negative result: naive
+// format-consistency measures were tried and found to incorrectly
+// reject the real identifier field on this catalog's own data, not
+// merely assumed to work).
 // ---------------------------------------------------------------------
 
 #[derive(Debug, Clone, PartialEq)]
@@ -231,7 +237,42 @@ pub struct FieldStats {
     pub distinct_normalized_values: usize,
     pub uniqueness_ratio: f64,
     pub mean_entropy_bits: f64,
+    /// Fraction of this field's values sharing the single most common
+    /// character-class "shape" (every alphabetic char normalized to `A`,
+    /// every digit to `9`, every other character kept as-is -- e.g. a
+    /// real `part_number` like `"IA-1234-BP"` signs as `"AA-9999-AA"`).
+    /// Added during R3's second correction round (a fresh adversarial
+    /// review found the originally-shipped classifier silently narrowed
+    /// the protocol's preregistered multi-signal design down to
+    /// uniqueness ratio alone, with no dated deviation note, and that
+    /// `lumens` -- a genuine, non-identifier Numeric attribute -- scored
+    /// uniqueness_ratio=0.94 on the calibration set, only 0.01 below the
+    /// cutoff, a real margin risk the single-signal classifier had no
+    /// second signal to catch). A rigid, repeatable format is exactly
+    /// what a real identifier has and a loosely-formed numeric field
+    /// (whose digit count varies with its value's own magnitude) does
+    /// not.
+    pub format_consistency: f64,
     pub variant_scoped: bool,
+}
+
+/// Maps every alphabetic character to `A` and every digit to `9`,
+/// leaving every other character (hyphens, spaces, ...) as-is -- the
+/// same coarse identifier-shape signature commercial identifier
+/// detectors commonly use, cheap to compute and independent of a
+/// field's actual character values (only their *class* and position).
+fn format_signature(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_alphabetic() {
+                'A'
+            } else if c.is_ascii_digit() {
+                '9'
+            } else {
+                c
+            }
+        })
+        .collect()
 }
 
 fn shannon_entropy_bits(s: &str) -> f64 {
@@ -295,12 +336,24 @@ pub fn compute_field_stats(catalog: &Catalog) -> BTreeMap<String, FieldStats> {
             let uniqueness_ratio = distinct_normalized_values as f64 / total_occurrences as f64;
             let mean_entropy_bits = values.iter().map(|v| shannon_entropy_bits(v)).sum::<f64>()
                 / total_occurrences as f64;
+            // `BTreeMap`, not `HashMap`: the same deterministic-iteration
+            // requirement as `shannon_entropy_bits` above -- picking "the"
+            // most common signature via `HashMap` iteration order could
+            // silently pick a different tied-for-first signature across
+            // runs.
+            let mut signature_counts: BTreeMap<String, usize> = BTreeMap::new();
+            for v in &values {
+                *signature_counts.entry(format_signature(v)).or_insert(0) += 1;
+            }
+            let format_consistency = signature_counts.values().copied().max().unwrap_or(0) as f64
+                / total_occurrences as f64;
             let stats = FieldStats {
                 field: field.clone(),
                 total_occurrences,
                 distinct_normalized_values,
                 uniqueness_ratio,
                 mean_entropy_bits,
+                format_consistency,
                 variant_scoped: *variant_scoped.get(&field).unwrap_or(&false),
             };
             (field, stats)
@@ -336,15 +389,63 @@ pub const MIN_UNIQUENESS_RATIO: f64 = 0.95;
 pub struct IdentifierClassifier;
 
 impl IdentifierClassifier {
-    /// A field is accepted only on its measured uniqueness ratio -- see
-    /// `MIN_UNIQUENESS_RATIO`'s own doc comment for why entropy is
-    /// measured and reported (per the protocol's own required input
-    /// statistics) but is not this classifier's gating cutoff: on the
-    /// calibration set, the misleading non-unique field's *entropy* was
-    /// actually higher than the real identifier's, so entropy alone
-    /// cannot distinguish them -- uniqueness ratio can and does.
+    /// A field is accepted only when it clears the uniqueness-ratio
+    /// cutoff *and* is variant-scoped.
+    ///
+    /// **Second correction round** (a fresh adversarial review, before
+    /// any production change was made on the strength of R3's GO
+    /// verdict): the originally-shipped version of this function
+    /// checked uniqueness ratio alone, silently narrowing the
+    /// protocol's own preregistered multi-signal classifier design
+    /// (uniqueness ratio, entropy, format-consistency, collision rate,
+    /// Product-vs-Variant scope, exact-query rate) down to one signal,
+    /// with no dated deviation note recording the narrowing -- itself a
+    /// real, confirmed defect independent of any numeric consequence.
+    /// The reviewer also found a concrete numeric consequence: on the
+    /// calibration set, `lumens` (a genuine, non-identifier Numeric
+    /// attribute) measured uniqueness_ratio=0.94, only 0.01 below the
+    /// cutoff -- and traced this to sample size, not semantic
+    /// identifier-ness (`lumens`'s ratio drops further, to 0.89, on the
+    /// 2x-larger held-out set). A single-signal classifier has no
+    /// second check to catch a similarly-sampled non-identifier field
+    /// that happens to clear 0.95 by chance.
+    ///
+    /// Two candidate second signals were tried and *rejected* after
+    /// measuring them for real, not assumed to work from their
+    /// description in the protocol: `format_consistency` (this field's
+    /// own doc comment) and an equivalent fixed-length-ratio variant
+    /// both scored **part_number itself at ~0.51-0.56** -- LOWER than
+    /// several genuine non-identifier fields (`product_fingerprint` and
+    /// `sku_code` both score 1.0, trivially, since they are the
+    /// identical value/a single character everywhere) -- because
+    /// automotive's own brand names and product-type names vary in
+    /// word count (`"TrueDrive"` -> one-letter code; `"Ironclad Auto"`
+    /// -> two-letter code), so `part_number`'s own brand/type-code
+    /// segments genuinely vary in length across the catalog, spreading
+    /// its occurrences across multiple signatures/lengths with no
+    /// single majority. Gating on either would have INCORRECTLY
+    /// REJECTED the real identifier field -- a regression, not a fix.
+    /// This negative result is recorded, not erased (`CLAUDE.md`:
+    /// "Record failed experiments"), and both statistics remain
+    /// computed and reported (`FieldStats::format_consistency`) for
+    /// transparency, but neither gates.
+    ///
+    /// `variant_scoped` (already computed, but -- per the same
+    /// review -- never actually read anywhere before this fix) is the
+    /// signal that *does* discriminate correctly, and for a structural
+    /// reason, not a numeric coincidence: automotive's generator
+    /// (`crates/issue38-e2e3-eval/src/automotive.rs`) sets `part_number`/
+    /// `warranty_months`/`compatible_fitment` directly on each
+    /// `Variant`, and every other attribute (including `lumens`) only
+    /// on the parent `Product`. Requiring `variant_scoped` rejects
+    /// `lumens` outright regardless of its uniqueness-ratio margin,
+    /// confirmed to leave every other classification on both the
+    /// calibration and held-out sets unchanged (`warranty_months` is
+    /// also variant-scoped but already correctly rejected on
+    /// uniqueness ratio alone, so this addition introduces no new false
+    /// accept).
     pub fn accepts(stats: &FieldStats) -> bool {
-        stats.uniqueness_ratio >= MIN_UNIQUENESS_RATIO
+        stats.uniqueness_ratio >= MIN_UNIQUENESS_RATIO && stats.variant_scoped
     }
 }
 
@@ -482,6 +583,37 @@ mod tests {
              the real identifier's, proving entropy alone could not have rejected it -- \
              uniqueness ratio is the field doing the real work"
         );
+    }
+
+    /// Second correction round: `lumens` is a real, non-identifier
+    /// Numeric attribute (Headlight Bulbs' brightness) that a fresh
+    /// adversarial review found scores uniqueness_ratio=0.94 on the
+    /// calibration set -- only 0.01 below `MIN_UNIQUENESS_RATIO`, a
+    /// genuine margin risk a single-signal classifier has no second
+    /// check against. This test proves the fix (requiring
+    /// `variant_scoped` too) rejects `lumens` for a structural reason
+    /// (it is a product-level attribute in automotive's own generator,
+    /// never set on any `Variant`), not merely because its uniqueness
+    /// ratio happens to clear or miss a threshold by chance.
+    #[test]
+    fn identifier_classifier_rejects_lumens_a_genuine_near_miss_on_uniqueness_ratio_alone() {
+        let (cal, _held) = r3_workload::build_calibration_and_held_out();
+        let stats = compute_field_stats(&cal.catalog);
+        let lumens = stats
+            .get("lumens")
+            .expect("automotive sets a Numeric lumens attribute");
+        assert!(
+            lumens.uniqueness_ratio >= 0.9 && lumens.uniqueness_ratio < MIN_UNIQUENESS_RATIO,
+            "this test's premise is a genuine near-miss on uniqueness ratio alone; got {:.4} \
+             (cutoff {MIN_UNIQUENESS_RATIO})",
+            lumens.uniqueness_ratio
+        );
+        assert!(
+            !lumens.variant_scoped,
+            "lumens must be product-level only in this fixture -- the structural reason it is \
+             correctly rejected regardless of its uniqueness-ratio margin"
+        );
+        assert!(!IdentifierClassifier::accepts(lumens));
     }
 
     #[test]
