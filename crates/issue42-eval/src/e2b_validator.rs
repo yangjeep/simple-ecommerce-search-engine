@@ -300,6 +300,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/query.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn workload_evidence_is_found_for_a_real_alias_appearing_in_a_real_wands_query() {
         let queries = wands_query_texts();
         assert!(!queries.is_empty());
@@ -327,6 +328,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/{product,query}.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn real_wands_color_field_validated_against_real_stats_and_workload() {
         let feed = load_wands_feed();
         let stats: UnifiedFieldStats = feed.stats.get("color").unwrap().into();

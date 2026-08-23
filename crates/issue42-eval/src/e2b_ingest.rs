@@ -252,6 +252,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn build_catalog_materializes_only_accepted_enum_fields() {
         let accepted = vec![enum_descriptor("color")];
         let ingested = build_catalog(&accepted);
@@ -268,6 +269,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn naive_constraints_finds_a_real_color_value_in_a_real_query() {
         let accepted = vec![enum_descriptor("color")];
         let ingested = build_catalog(&accepted);
@@ -291,6 +293,7 @@ mod tests {
     /// baseline score 0 queries even though `color` really is present in
     /// the accepted set.
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn build_catalog_resolves_real_key_when_key_is_an_alias() {
         let aliased = Descriptor {
             key: "feature_1".to_string(),

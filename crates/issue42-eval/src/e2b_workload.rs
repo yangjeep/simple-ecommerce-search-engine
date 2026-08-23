@@ -418,6 +418,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn load_wands_feed_finds_every_sample_key_with_real_occurrences() {
         let feed = load_wands_feed();
         assert!(
@@ -438,6 +439,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn samplepartnumber_is_a_real_high_uniqueness_field() {
         let feed = load_wands_feed();
         let stats = feed.stats.get("samplepartnumber").unwrap();
@@ -450,6 +452,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn color_is_a_real_bounded_but_higher_cardinality_enum_field() {
         let feed = load_wands_feed();
         let stats = feed.stats.get("color").unwrap();
@@ -465,6 +468,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn overallproductweight_is_numeric_parseable_for_essentially_every_real_value() {
         let feed = load_wands_feed();
         let stats = feed.stats.get("overallproductweight").unwrap();
@@ -477,6 +481,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn commercialwarranty_is_a_real_two_valued_boolean_shaped_field() {
         let feed = load_wands_feed();
         let stats = feed.stats.get("commercialwarranty").unwrap();
@@ -487,6 +492,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/{query,label}.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn load_wands_queries_and_labels_match_the_real_dataset_sizes() {
         let queries = load_wands_queries();
         assert_eq!(queries.len(), 480, "WANDS's own real query count");

@@ -228,6 +228,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn classifies_color_as_enum_from_bounded_cardinality_alone() {
         let stats = wands_unified();
         let d = classify(stats.get("color").unwrap());
@@ -235,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn classifies_overallproductweight_as_numeric_from_shape_alone() {
         let stats = wands_unified();
         let d = classify(stats.get("overallproductweight").unwrap());
@@ -242,6 +244,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn classifies_samplepartnumber_as_identifier_but_cannot_know_it_is_not_retrieval_significant() {
         let stats = wands_unified();
         let d = classify(stats.get("samplepartnumber").unwrap());
@@ -260,6 +263,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires dataset_cache/wands/product.csv (run scripts/datasets/fetch_wands.sh first, then `cargo test -- --ignored`); not fetched in CI, matching this repo's own convention of keeping real-external-dataset dependence out of `cargo test`"]
     fn classifies_productcare_as_freetext_from_high_cardinality_alone() {
         let stats = wands_unified();
         let d = classify(stats.get("productcare").unwrap());
