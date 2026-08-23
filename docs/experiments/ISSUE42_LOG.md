@@ -1704,3 +1704,16 @@ Recall@10=0.0000 n_queries_scored=0`) and the round-3 (post-round-1,
 pre-round-2) numbers immediately above are both preserved per rule 9,
 superseded by, never silently replaced in favor of, the final corrected
 numbers.
+
+## Epic close-out
+
+Per Issue #42's own "Immediate execution order," step 9 ("stop and
+request direction with GO/REVISE/STOP findings") is reached here. The
+concise cross-experiment decision record this step and the issue's own
+"Deliverables" section both require is `ISSUE42_DECISION.md` (repo
+root, mirroring `ISSUE38_DECISION.md`'s established structure) — it
+covers R1 (REVISE, no production change), R2 (GO, merged), R3 (GO,
+merged), the production-merge review, and E2b (REVISE, both correction
+rounds) together, states each verdict precisely, and lists what remains
+unestablished and what should explicitly not be built yet. E4/E5/E6
+remain unauthorized (step 10) pending that direction.
