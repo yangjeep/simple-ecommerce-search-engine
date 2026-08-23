@@ -1,0 +1,153 @@
+=== Issue #42 R2: residual lexical semantics ===
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+
+--- compiled query diagnostics (same compile() output every treatment starts from) ---
+row  1 (     furniture sofas): constraints=[Structural(ProductType(ProductTypeId(1)))] residual_lexical=["furniture"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  2 (        banana sofas): constraints=[Structural(ProductType(ProductTypeId(1)))] residual_lexical=["banana"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  3 (    waterproof boots): constraints=[Structural(ProductType(ProductTypeId(2)))] residual_lexical=["waterproof"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  4 (        leathr sofas): constraints=[Structural(ProductType(ProductTypeId(1)))] residual_lexical=["leathr"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  5 (    bestseller sofas): constraints=[Structural(ProductType(ProductTypeId(1)))] residual_lexical=["bestseller"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  6 (        velvet boots): constraints=[Structural(ProductType(ProductTypeId(2)))] residual_lexical=["velvet"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  7 (     clearance boots): constraints=[Structural(ProductType(ProductTypeId(2)))] residual_lexical=["clearance"] outcome=Hybrid selectivity=Some(0.03571428571428571)
+row  8 (              banana): constraints=[] residual_lexical=["banana"] outcome=Punt selectivity=None
+
+--- Treatment A ---
+row  1 (     furniture sofas): outcome=Hybrid hits=0 products=[]
+row  2 (        banana sofas): outcome=Hybrid hits=0 products=[]
+row  3 (    waterproof boots): outcome=Hybrid hits=0 products=[]
+row  4 (        leathr sofas): outcome=Hybrid hits=0 products=[]
+row  5 (    bestseller sofas): outcome=Hybrid hits=0 products=[]
+row  6 (        velvet boots): outcome=Hybrid hits=0 products=[]
+row  7 (     clearance boots): outcome=Hybrid hits=0 products=[]
+row  8 (              banana): outcome=Punt hits=0 products=[]
+
+--- Treatment B ---
+row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  2 (        banana sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+  FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
+row  3 (    waterproof boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  4 (        leathr sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  5 (    bestseller sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  6 (        velvet boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+  FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
+row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  8 (              banana): outcome=Punt hits=0 products=[]
+
+--- Treatment C ---
+row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  2 (        banana sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+  FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
+row  3 (    waterproof boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  4 (        leathr sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  5 (    bestseller sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  6 (        velvet boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+  FALSE RECOVERY: 2 hit(s) for an adversarial row that should stay at zero results
+row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  8 (              banana): outcome=Punt hits=0 products=[]
+
+--- Treatment D ---
+row  1 (     furniture sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  2 (        banana sofas): outcome=Hybrid hits=0 products=[]
+row  3 (    waterproof boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  4 (        leathr sofas): outcome=Hybrid hits=0 products=[]
+row  5 (    bestseller sofas): outcome=Hybrid hits=2 products=[ProductId(1), ProductId(2)]
+row  6 (        velvet boots): outcome=Hybrid hits=0 products=[]
+row  7 (     clearance boots): outcome=Hybrid hits=2 products=[ProductId(3), ProductId(4)]
+row  8 (              banana): outcome=Punt hits=0 products=[]
+
+--- candidate-set growth (hits per row, per treatment) ---
+row  1 (     furniture sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
+row  2 (        banana sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 0)]
+row  3 (    waterproof boots): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
+row  4 (        leathr sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 0)]
+row  5 (    bestseller sofas): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
+row  6 (        velvet boots): [("A", 0), ("B", 2), ("C", 2), ("D", 0)]
+row  7 (     clearance boots): [("A", 0), ("B", 2), ("C", 2), ("D", 2)]
+row  8 (              banana): [("A", 0), ("B", 0), ("C", 0), ("D", 0)]
+
+--- latency (median of 7 independent batched trials) ---
+Treatment A: trials=["0.09209", "0.09200", "0.09031", "0.09500", "0.09163", "0.09305", "0.10217"] median=0.09209ms
+Treatment B: trials=["0.09478", "0.09556", "0.09567", "0.09520", "0.09454", "0.09341", "0.09387"] median=0.09478ms
+Treatment C: trials=["0.09376", "0.09325", "0.09370", "0.09327", "0.09510", "0.09305", "0.09361"] median=0.09361ms
+Treatment D: trials=["0.12588", "0.12578", "0.12586", "0.12520", "0.12507", "0.12575", "0.12560"] median=0.12575ms
+
+--- GO gate evaluation ---
+Note: with only 4 preregistered benign rows and 2 preregistered adversarial rows, the protocol's '>=90% recovery'/'<=1% false recovery' thresholds are numerically equivalent to 'all 4' and 'zero of 2' respectively -- no fractional pass point exists at this denominator. Disclosed here, not hidden behind the percentage framing.
+Treatment A: benign recovery=0/4 (0%, require >=90%), adversarial false recovery=0/2 (0%, require <=1%), mean benign NDCG@10=-0.0000, latency overhead vs A=0.0%, zero_model_calls=true => GO gate FAIL
+Treatment B: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=2/2 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=2.9%, zero_model_calls=true => GO gate FAIL
+Treatment C: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=2/2 (100%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=1.7%, zero_model_calls=true => GO gate FAIL
+Treatment D: benign recovery=4/4 (100%, require >=90%), adversarial false recovery=0/2 (0%, require <=1%), mean benign NDCG@10=1.0000, latency overhead vs A=36.6%, zero_model_calls=true => GO gate PASS
+
+--- row 4 (measured, out of scope for the GO gate): misspelling of a real registered lexicon value ('leather' -> 'leathr') ---
+See the per-treatment output above for row 4's outcome/hits under each treatment -- documented, not scored, per the protocol's own text ('misspelling correction is explicitly out of scope for R2').
+
+{
+  "adversarial_false_recovery": {
+    "B": 2,
+    "C": 2
+  },
+  "adversarial_total": 2,
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "benign_ndcg_mean": {
+    "A": -0.0,
+    "B": 1.0,
+    "C": 1.0,
+    "D": 1.0
+  },
+  "benign_recovered": {
+    "B": 4,
+    "C": 4,
+    "D": 4
+  },
+  "benign_total": 4,
+  "experiment_id": "I42-R2",
+  "hit_counts_per_row": {
+    "A": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0
+    },
+    "B": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 2,
+      "6": 2,
+      "7": 2,
+      "8": 0
+    },
+    "C": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 2,
+      "5": 2,
+      "6": 2,
+      "7": 2,
+      "8": 0
+    },
+    "D": {
+      "1": 2,
+      "2": 0,
+      "3": 2,
+      "4": 0,
+      "5": 2,
+      "6": 0,
+      "7": 2,
+      "8": 0
+    }
+  },
+  "latency_ms_per_call": {
+    "A": 0.092086185,
+    "B": 0.094781575,
+    "C": 0.09361173,
+    "D": 0.12574784
+  }
+}
+summary written to docs/research/artifacts/i42_r2_run1/summary_run2.json

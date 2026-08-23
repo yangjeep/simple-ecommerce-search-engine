@@ -1,0 +1,30 @@
+{
+  "experiment_id": "I42-R2",
+  "phase": "issue-42",
+  "issue": 42,
+  "benchmark_manifest": "benchmarks/manifests/i42_r2_residual_lexical_eval.yaml",
+  "git_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "dataset": {
+    "name": "small, purpose-built fixture (56 products: 2 Sofas, 2 Boots, 1 Coffee Tables, 1 Bookshelves, plus 50 plain filler products; not a modification of the frozen generators)",
+    "products": 56,
+    "source": "crates/issue42-eval/src/r2_workload.rs::build"
+  },
+  "engine_config": {
+    "native": "commerce_core::plan::plan -> commerce_core::plan::execute_planned (unmodified), via issue42_eval::r2_experimental",
+    "lexical_delegate": "phase9_eval::bitmap_delegate::BitmapTantivyDelegate (reused from Phase 9)"
+  },
+  "repetitions": "5 independent full runs; benign-recovery/adversarial-false-recovery/NDCG numbers are deterministic byte-for-byte across all 5 (confirmed by direct diff, this fixture has zero RNG); latency is the median of 7 black_box-guarded batched trials per row per run, and still shows real run-to-run variance at this catalog's few-microsecond absolute scale -- both extremes of the 5-run range are reported below, not a single favorable run",
+  "raw_results_path": "docs/research/artifacts/i42_r2_run1/",
+  "analysis_version": "docs/experiments/ISSUE42_LOG.md#i42-r2",
+  "decision": "docs/experiments/ISSUE42_LOG.md#i42-r2",
+  "headline_result": {
+    "treatment_a": "FAILS to recover any of the 4 preregistered benign rows (0/4): each compiles to a Hybrid outcome with a single ProductType structural constraint plus a one-word residual, and the delegate's own structural-set-restricted search for that residual word finds nothing (by fixture construction), so the query returns zero hits even though the entity alone has real, matching products. Confirms H2-A.",
+    "treatment_b": "recovers all 4 benign rows (mean NDCG@10 = 1.0000) but also recovers BOTH preregistered adversarial rows (2/2 false recovery) -- 'banana' (observed nowhere) and 'velvet' (observed only under a different product type) are recovered exactly as readily as the genuinely uninformative benign words. Confirms H2-B. FAILS the GO gate. Latency overhead vs A: 2.8%-5.2% across 5 runs.",
+    "treatment_c": "behaves IDENTICALLY to B on every row of this workload, since the delegate's raw hits are empty for every structurally-anchored row here -- a disclosed fixture limitation (no row has the delegate return a nonempty-but-wrong-context result, the only case where C's ranking-only behavior would visibly differ from B's filtering), not evidence the two treatments are identical in general. Confirms H2-C. FAILS the GO gate. Latency overhead vs A: 1.7%-4.8% across 5 runs.",
+    "treatment_d": "recovers all 4 benign rows (mean NDCG@10 = 1.0000) AND correctly rejects both adversarial rows (0/2 false recovery), with zero query-time model calls (structural fact). Confirms H2-D. PASSES every preregistered R2 GO-gate criterion. Latency overhead vs A is real and substantially higher (36.6%-41.3% across 5 runs) with an identified, disclosed root cause specific to this experimental implementation (execute_d calls the real execute_planned a second time -- redundantly re-running the delegate search -- as its lazy 'stay at zero' fallback for Required-classified tokens; a production implementation with internal access to verify_and_truncate would not pay this cost twice) -- but R2's own preregistered GO gate has no latency threshold, unlike R1's, so this does not affect the verdict.",
+    "verdict": "GO for Treatment D. Unlike R1 (REVISE), R2 reaches a clean pass: Treatment D's compiled-residual-policy mechanism clears every preregistered GO-gate criterion (benign recovery, adversarial false recovery, zero query-time model calls). Per Issue #42's own rule, this is a real candidate for a RED-before-GREEN production change to commerce_core -- deliberately not made in this same pass. A fresh, no-implementation-task adversarial reviewer must first attempt to falsify this protocol/fixture/code/arithmetic/claim and every confirmed finding independently reproduced and fixed, before that change is made; the production-change step itself is tracked separately (task #63, after R3), so R1/R2/R3's serving-contract decisions are reviewed together.",
+    "reproducibility": "all 5 runs byte-identical on every benign-recovery/adversarial-false-recovery/NDCG number (verified by direct diff excluding the latency_ms_per_call JSON block and the trials=/median= lines)",
+    "fixture_design_note": "Two problems found and fixed by direct source reading before any row was run: (1) compile_lexicon registers every Enum/MultiEnum value and true-Boolean attribute name unconditionally as a hard-constraint lexicon candidate -- every test residual word here is therefore a plain title word only, never a registered attribute value/name, or it could never remain residual text at all; (2) with only 6 real products, Sofas/Boots' 2-product share (33%) is far above the 0.05 selectivity threshold, so every row would have routed to Punt (whole-corpus delegate search, no restrict_to) instead of the intended Hybrid (delegate search restricted to the entity's own candidates, confirmed via direct read of phase9_eval::bitmap_delegate's BitmapRestrictQuery to filter inside the delegate's own scorer) -- silently replacing R2's intended test scenario with an unrelated one. Fixed by padding the fixture with 50 plain filler products until selectivity clears 0.05 with margin (2/56 ~= 3.6%), confirmed directly in this run's own compiled-query diagnostics (every structurally-anchored row shows outcome=Hybrid)."
+  }
+}

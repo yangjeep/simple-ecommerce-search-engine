@@ -392,3 +392,300 @@ Reproduction: `cargo build --release -p issue42-eval &&
 Raw artifacts: `docs/research/artifacts/i42_r1_run1/`. Manifest:
 `benchmarks/manifests/i42_r1_typed_ambiguity_eval.yaml`,
 `artifacts/manifests/i42_r1_typed_ambiguity_eval.json`.
+
+## I42-R2: residual lexical semantics
+
+### Hypotheses (from `ISSUE42_PROTOCOL.md`, restated for reference)
+
+- **H2-A**: Treatment A (current strict veto) fails to recover benign
+  zero-result cases.
+- **H2-B**: Treatment B (unconditional structural fallback) recovers
+  benign cases but also over-recovers adversarial ones.
+- **H2-C**: Treatment C (residual always advisory/ranking-only) has the
+  same over-recovery failure mode as B.
+- **H2-D**: Treatment D (compiled residual policy, ingestion-time,
+  catalog-statistics-only) recovers benign cases at high rate and
+  rejects adversarial cases at low false-recovery rate, with zero
+  query-time model calls.
+
+### Treatments (implemented in `issue42-eval::r2_experimental`, behind an experimental boundary)
+
+All four operate on `commerce_core::plan::plan`'s already-computed
+routing decision and call only real, public `commerce_core::plan`/
+`commerce_core::index` primitives — `commerce_core::plan::verify_and_truncate`
+is `pub(crate)` and unreachable from this crate, so wherever a
+treatment's correct behavior is identical to A's, it simply calls the
+real `execute_planned` again rather than reimplementing verification:
+
+- **A**: the real, unmodified `execute_planned`, reused verbatim
+  (`execute_a`).
+- **B**: if the delegate's own raw hits (replicated via
+  `raw_delegate_hits`, which mirrors `execute_planned`'s exact
+  `Hybrid`/`Punt` delegate-call shape) are empty for a `Hybrid`/`Punt`
+  outcome with a non-empty residual, fall back unconditionally to the
+  structural candidate set alone (`execute_b`).
+- **C**: residual lexical text is always advisory — delegate hits, if
+  any, only re-order the structural candidate set; if the delegate
+  finds nothing, behaves exactly like B (`execute_c`).
+- **D**: `ResidualPolicy`, compiled once from the whole `Catalog` at
+  "ingestion time" (a lowercased-token → `BTreeSet<ProductTypeId>`
+  occurrence map built from title words plus registered Enum/MultiEnum
+  values and true-Boolean attribute names), classifies every residual
+  token as `Required` (never observed anywhere, the safest default) or
+  `Preferred` (observed under the query's own product type, or under
+  `CROSS_TYPE_BREADTH_THRESHOLD = 2` or more *other* product types — a
+  broadly-used, generically descriptive term). At query time, a
+  `Required` token with zero raw delegate hits keeps the query at zero
+  results (A's behavior); a `Preferred` one triggers B's structural
+  fallback (`execute_d`). Only the two classes the preregistered R2
+  workload actually exercises are implemented — `Contextual`/`Unknown`
+  are named in the protocol but no row needs entity-dependent unit-word
+  handling or an unclassifiable-frequency case, so they are a disclosed
+  scope decision, not a silent omission.
+
+### Fixture design: two problems found and fixed before any row was run
+
+R2's fixture (`issue42_eval::r2_workload`, 56 hand-specified products —
+Sofas ×2, Boots ×2, Coffee Tables ×1, Bookshelves ×1, plus 50 plain
+filler products) is purpose-built, not a modification of the frozen
+`issue38_e2e3_eval` generators, for two reasons found by direct source
+reading *before* writing any experiment code, both consistent with this
+project's "verify against the real mechanism before trusting a fixture"
+discipline (first established during R1's own corrections):
+
+1. **The lexicon-auto-resolution trap.** `commerce_core::cold_start::compile_lexicon`
+   registers *every* Enum/MultiEnum attribute value and true-Boolean
+   attribute name in the catalog as a hard-constraint lexicon
+   candidate — unconditionally, with no per-product-type scoping. A
+   residual-lexical test word that happened to also be a registered
+   attribute value (the original plan: Enum `"purple"`, Boolean
+   `"waterproof"`, MultiEnum `"bestseller"`/`"clearance"`) would
+   therefore *never* reach `residual_lexical` at all — it auto-resolves
+   to a hard (or P9-E05-demoted) constraint before the Hybrid/Punt
+   residual-veto mechanism R2 exists to test is ever reached. Every
+   test residual word in the final fixture is therefore a plain title
+   word only, never a registered attribute value or name — enforced by
+   the fixture's own `no_test_residual_word_is_also_a_registered_enum_value`
+   test.
+2. **The Punt-vs-Hybrid routing trap.** `commerce_core::plan::plan`
+   routes a query with a non-empty structural constraint to `Hybrid`
+   (delegate search restricted to the structural candidate set via
+   `restrict_to`, confirmed by direct read of
+   `phase9_eval::bitmap_delegate`'s `BitmapRestrictQuery` to filter
+   *inside* the delegate's own scorer) only when
+   `structural_candidates / catalog_size <= policy.selectivity_threshold`
+   (0.05 throughout this protocol); otherwise to `Punt`, where the
+   delegate searches the *whole* corpus with no restriction at all and
+   a structural constraint is applied only as a post-hoc filter on
+   whatever it returns. With only the original 6 real products, Sofas/
+   Boots' own 2-product share (33%) is far above 0.05, so every row
+   would have routed to `Punt` — and since the four benign words are
+   deliberately *also* present elsewhere in the catalog (the same
+   cross-type "broadly used" signal `ResidualPolicy` itself needs to
+   observe), a whole-corpus `Punt` search for e.g. "furniture" would
+   have found the Coffee Tables/Bookshelves products even when
+   restricted-to-Sofas is what the row is meant to test — silently
+   replacing R2's intended "delegate found nothing" scenario with an
+   unrelated one ("delegate found something, but it belongs to the
+   wrong product type"), and never exercising `raw_delegate_hits`'
+   `raw.is_empty()` branch at all. Found by tracing `plan`/`execute_planned`'s
+   source directly, before running anything — not discovered by a
+   surprising experimental result. Fixed by padding the fixture with 50
+   plain filler products (distinct titles unrelated to every test word,
+   so no catalog-content invariant is disturbed) until Sofas/Boots'
+   selectivity clears the threshold with real margin (2/56 ≈ 3.6% <=
+   5%), forcing the intended `Hybrid` routing — confirmed directly in
+   this run's own "compiled query diagnostics" output (every
+   structurally-anchored row shows `outcome=Hybrid`, selectivity ≈
+   0.0357).
+
+### Workload
+
+| # | query | class | expectation |
+|---|---|---|---|
+| 1 | `furniture sofas` | benign | recover the Sofas structural set |
+| 2 | `banana sofas` | adversarial | must NOT recover ("banana" observed nowhere) |
+| 3 | `waterproof boots` | benign | recover the Boots structural set |
+| 4 | `leathr sofas` (misspelling of the real Enum value "leather") | measured only, out of scope for the GO gate | documents current behavior |
+| 5 | `bestseller sofas` | benign | recover the Sofas structural set |
+| 6 | `velvet boots` | adversarial | must NOT recover ("velvet" observed only under Sofas) |
+| 7 | `clearance boots` | benign | recover the Boots structural set |
+| 8 | `banana` (no entity at all) | regression guard | every treatment byte-identical to A; `query.constraints.is_empty()` path untouched |
+
+Deviation from the protocol's illustrative row 5 text ("a real
+collection/marketing term absent from every title"): `bestseller` *is*
+present in this fixture's Coffee Tables/Bookshelves titles (by
+necessary construction — `ResidualPolicy`'s cross-type-breadth signal
+requires a real, catalog-observable occurrence somewhere to classify a
+token `Preferred` rather than `Required`'s "never observed" default).
+"Absent from every title" is read here as "absent from the *target*
+entity's own titles" (Sofas), which is what the row's own mechanism
+actually needs and is true by the fixture's own tests. Disclosed here
+per this protocol's own correction discipline, not silently changed.
+
+Entity-level positive claims (rows 1/2/5/8's Sofas backing set; rows
+3/6/7's Boots backing set) are independently re-verified against
+`issue42_eval::oracle` at binary startup (`assert_positive`), not
+merely asserted in prose. The lexical-content claims (which word
+appears in which title, rows 2/4/6/8) are outside `oracle::classify`'s
+attribute-based `QueryIntent` scheme by construction — R2 is
+fundamentally about free-text residual words, not modeled
+`AttributeValue`s — and are instead independently checked by
+`r2_workload`'s own direct catalog-content invariant tests
+(`banana_appears_nowhere_at_all`, `velvet_is_exclusively_a_sofas_title_word`,
+`no_test_residual_word_is_also_a_registered_enum_value`), run by
+`cargo test -p issue42-eval`.
+
+### Results (5 independent runs; correctness numbers byte-identical across all 5, confirmed by direct diff)
+
+| Treatment | benign recovery (of 4) | adversarial false recovery (of 2) | mean benign NDCG@10 | latency overhead vs A (range across 5 runs) |
+|---|---|---|---|---|
+| A | 0/4 | 0/2 | 0.0000 | — (baseline) |
+| B | 4/4 | **2/2** | 1.0000 | 2.8%–5.2% |
+| C | 4/4 | **2/2** | 1.0000 | 1.7%–4.8% |
+| D | 4/4 | **0/2** | 1.0000 | 36.6%–41.3% |
+
+Every correctness/recovery/false-recovery number above is byte-for-byte
+identical across all 5 independent runs (confirmed by direct diff
+excluding the `latency_ms_per_call`/`trials=`/`median=` lines) — this
+fixture, like R1's, has zero RNG, so this is expected, not a claimed
+new finding.
+
+### Per-hypothesis verdicts
+
+- **H2-A: CONFIRMED.** Treatment A recovers 0 of the 4 benign rows.
+  Direct diagnostic: each benign row compiles to a `Hybrid` outcome
+  with a single `ProductType` structural constraint plus a one-word
+  residual; the delegate's own restricted search for that word finds
+  nothing (by fixture construction), so `verify_and_truncate` has
+  nothing to verify and the query returns zero hits even though the
+  entity alone (Sofas or Boots) has real, matching products.
+- **H2-B: CONFIRMED.** Treatment B recovers all 4 benign rows (mean
+  NDCG@10 = 1.0000) but also recovers *both* adversarial rows (2/2
+  false recovery) — row 2 ("banana sofas", a word observed nowhere)
+  and row 6 ("velvet boots", a word observed only under a different
+  product type) are both indiscriminately recovered via the same
+  unconditional structural fallback that fixes the benign rows.
+- **H2-C: CONFIRMED.** On this workload, Treatment C's behavior is
+  *identical* to Treatment B's on every row: since the delegate's raw
+  hits are empty for every structurally-anchored row here (both benign
+  and adversarial), C's `if raw.is_empty()` branch fires every time and
+  its distinguishing mechanism (re-ordering rather than filtering when
+  the delegate *does* find something) is never exercised by this
+  workload — a disclosed limitation of this fixture (it has no row
+  where the delegate returns a non-empty but wrong-context result for
+  C's ranking-only behavior to visibly differ from B's filtering
+  behavior on), not evidence the two treatments are conceptually
+  identical in general.
+- **H2-D: CONFIRMED.** Treatment D recovers all 4 benign rows (mean
+  NDCG@10 = 1.0000) and correctly rejects both adversarial rows (0/2
+  false recovery): "banana" was never observed anywhere in the catalog
+  (`Required`, the safest default) and "velvet" was observed only under
+  Sofas, a single *other* product type — below
+  `CROSS_TYPE_BREADTH_THRESHOLD = 2` — so it also classifies `Required`
+  for the Boots query in row 6. Zero query-time model/LLM calls: a
+  structural fact (no import of any `control_plane::provider::ModelProvider`
+  surface anywhere in `r2_experimental.rs`), not merely a measured
+  absence.
+
+### Root cause of D's measured overhead (disclosed, not hand-waved)
+
+Unlike R1, **R2's own preregistered GO gate has no latency threshold at
+all** — `ISSUE42_PROTOCOL.md`'s R2 GO-gate section requires only
+benign-recovery rate, adversarial-false-recovery rate, and zero
+query-time model calls; latency is listed only under "Metrics" (report,
+don't gate). This is a real, checked difference from R1's explicit
+"<=5%" bar, not an inconsistency this log is glossing over.
+
+D's overhead is nonetheless real and substantially larger than B/C's
+(36.6%–41.3% vs. B's 2.8%–5.2% and C's 1.7%–4.8%), and has an
+identifiable, disclosed cause in this specific experimental
+implementation: `execute_d` calls `raw_delegate_hits` once itself (to
+inspect whether the delegate found anything), and then — whenever a
+residual token classifies `Required` (rows 2, 4, 6: 3 of this
+workload's 8 rows) — calls the real `execute_planned` a *second* time
+as its "stay at zero, like A" fallback, rather than directly returning
+the already-known-empty result. `execute_planned` internally re-runs
+`plan()` and re-executes the identical `Hybrid`-restricted delegate
+search a second time, so these 3 rows pay roughly double the delegate
+cost. (Rows 1/3/5/7 do not hit this path — they classify `Preferred`
+and call the cheap `structural_only_hits`/`execute_ranked` instead,
+the same single extra call B/C also make; row 8 is deferred to
+`execute_a` directly, no duplication.) This is a real, disclosed,
+plausibly-fixable *implementation-cost* finding specific to this
+experimental harness's "reuse the real `execute_planned` as a lazy
+correctness-preserving fallback" choice (made because
+`verify_and_truncate` is `pub(crate)` and not reachable from this
+crate) — not an inherent property of "a compiled residual policy" as
+an architectural mechanism. A real production implementation, with
+access to `verify_and_truncate` internally, would know the delegate
+result is already empty and return directly, paying the delegate cost
+once, matching A's/B's/C's own single-call cost.
+
+### GO gate verdict: GO for Treatment D
+
+Per `ISSUE42_PROTOCOL.md`'s R2 GO gate: **GO** requires >=90% benign
+recovery (of the 4 preregistered rows — with this small a denominator,
+90% is numerically equivalent to "all 4", disclosed rather than hidden
+behind the percentage framing), <=1% adversarial false recovery (of 2
+— equivalent to "zero of 2"), and zero query-time model calls.
+
+- Treatment A: FAILS (0/4 benign recovery).
+- Treatment B: FAILS (2/2 adversarial false recovery).
+- Treatment C: FAILS (2/2 adversarial false recovery, identical to B on
+  this workload).
+- **Treatment D: PASSES every preregistered R2 GO-gate criterion** —
+  4/4 benign recovery, 0/2 adversarial false recovery, zero query-time
+  model calls (structural). Its latency overhead, while real and
+  substantially higher than B/C's, is not a gating criterion for R2 (see
+  above) and is disclosed, not hidden.
+
+Unlike R1 (REVISE — no treatment cleared every gate), **R2 reaches a
+clean GO**: Treatment D's `ResidualPolicy` mechanism is the winning
+design. Per Issue #42's own rule ("ship a production behavior change
+ONLY when its treatment wins the declared gate"), this is a real
+candidate for a RED-before-GREEN production change to
+`commerce_core::ir`/`commerce_core::plan`. That change is deliberately
+**not** made in this same pass: per this project's own governance, a
+fresh, no-implementation-task adversarial reviewer must first attempt
+to falsify this protocol/fixture/code/arithmetic/claim (exactly as
+R1's second correction round did before R1's REVISE verdict was
+finalized), and every confirmed finding independently reproduced and
+fixed, before a production change is made on the strength of this
+result. The production-change step itself is tracked separately (task
+#63, after R3 is also complete) so that R1/R2/R3's serving-contract
+decisions are reviewed together rather than merged piecemeal mid-epic.
+
+### Regression coverage added this pass
+
+- `issue42_eval::regression::assert_positive` for the Sofas-alone and
+  Boots-alone entity claims (rows 1/2/5/8 and 3/6/7's respective
+  backing sets), checked against the actually materialized 56-product
+  catalog, not asserted in prose.
+- `r2_workload`'s own 5 catalog-content invariant tests
+  (`build_is_deterministic`,
+  `benign_words_never_appear_in_sofas_or_boots_titles_but_do_appear_elsewhere`,
+  `velvet_is_exclusively_a_sofas_title_word`,
+  `banana_appears_nowhere_at_all`,
+  `no_test_residual_word_is_also_a_registered_enum_value`) — the R2
+  analogue of R1's oracle-based regression checks, adapted to check
+  lexical catalog content rather than typed attributes, since that is
+  what R2's own claims are about.
+- `r2_experimental`'s own 4 unit tests, including
+  `treatment_a_is_exactly_the_real_execute_planned_output` (proving
+  `execute_a` is not a reimplementation that could silently diverge
+  from production behavior) and two `ResidualPolicy::classify`
+  tests directly exercising the `Preferred`-via-own-type,
+  `Preferred`-via-cross-type-breadth, and `Required`-via-never-observed
+  branches.
+- A hard runtime assertion (not merely a printed metric) that row 8 (no
+  structural anchor at all) is byte-identical across all four
+  treatments — a violation would indicate a treatment's implementation
+  touches a code path the protocol requires it not to, which this run
+  treats as a bug in the experiment's own code, not a graded result.
+
+Reproduction: `cargo build --release -p issue42-eval &&
+./target/release/r2_residual_lexical_eval [output_summary_json_path]`.
+Raw artifacts: `docs/research/artifacts/i42_r2_run1/`. Manifest:
+`benchmarks/manifests/i42_r2_residual_lexical_eval.yaml`,
+`artifacts/manifests/i42_r2_residual_lexical_eval.json`.
