@@ -9,9 +9,12 @@ use std::fs;
 
 use issue42_eval::e2b_ingest::{build_catalog, naive_constraints_for_query};
 use issue42_eval::e2b_oracle::{automotive_oracle, wands_oracle};
-use issue42_eval::e2b_schema::{Descriptor, LlmPassOutput, PhysicalPrimitive, SemanticRole};
+use issue42_eval::e2b_pipeline::{
+    build_baselines_2_and_3, is_structural, load_all_runs, macro_f1, Baselines2And3, CONFIGS,
+};
+use issue42_eval::e2b_schema::{Descriptor, SemanticRole};
 use issue42_eval::e2b_statistics_baseline;
-use issue42_eval::e2b_validator::{cross_run_type_conflict, validate, wands_query_texts};
+use issue42_eval::e2b_validator::wands_query_texts;
 use issue42_eval::e2b_workload::{
     automotive_unified_stats, load_wands_feed, load_wands_labels, load_wands_queries,
     UnifiedFieldStats,
@@ -21,120 +24,16 @@ use phase9_eval::wands_relevance::ndcg_recall_mrr;
 const K: usize = 10;
 const BASELINE_SHA: &str = "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6";
 
-const EXPORT_DIR: &str = "dataset_cache/export";
-const CONFIGS: &[&str] = &[
-    "wands_baseline",
-    "wands_anonymized",
-    "wands_noisy",
-    "automotive",
-];
-/// The two unperturbed configurations -- real key names visible, the
-/// LLM's best fair shot at correct classification. Baselines 2/3's own
-/// headline per-key maps (`no_validator_by_key`/`validated_by_key`) are
-/// built ONLY from these two: a confirmed defect (found by a fresh
-/// adversarial review) had them built from whichever of the 4 configs
-/// happened to sort alphabetically first per real key -- for every one
-/// of WANDS's 36 keys that was `wands_anonymized`, silently substituting
-/// the hardest perturbation for the intended "real information visible"
-/// baseline. The anonymized/noisy configs still fully participate in
-/// `per_config_f1` (the degradation-under-perturbation analysis) and in
-/// `stability_agreements` (repeated-run agreement across all 4
-/// configurations) -- only the two headline per-key maps are restricted.
-const CANONICAL_CONFIGS: &[&str] = &["wands_baseline", "automotive"];
-
-fn export_path(config: &str, run: u32) -> String {
-    format!("{EXPORT_DIR}/e2b_llm_proposals_{config}_run{run}.json")
-}
-
-fn load_llm_pass(config: &str, run: u32) -> Option<LlmPassOutput> {
-    let path = export_path(config, run);
-    let content = fs::read_to_string(&path).ok()?;
-    match serde_json::from_str::<LlmPassOutput>(&content) {
-        Ok(v) => Some(v),
-        Err(e) => {
-            eprintln!("warning: failed to parse {path}: {e}");
-            None
-        }
-    }
-}
-
-/// `feature_NNN`/noisy-name -> real key, from the frozen mapping written
-/// alongside the bounded-input files the LLM passes were given.
+/// `feature_NNN`/noisy-name -> real key. Originally written only to a
+/// session-local `/tmp/e2b_key_mappings.json` by the bounded-input dump
+/// step and never committed -- a real reproducibility gap (Issue #42 rule
+/// 8) fixed by reconstructing and committing both mappings directly (see
+/// `e2b_key_mapping`'s own doc comment for the reconstruction method and
+/// its cross-check against real per-key statistics).
 fn load_key_mapping() -> (BTreeMap<String, String>, BTreeMap<String, String>) {
-    let content = fs::read_to_string("/tmp/e2b_key_mappings.json")
-        .expect("read /tmp/e2b_key_mappings.json (written by the bounded-input dump step)");
-    let v: serde_json::Value = serde_json::from_str(&content).unwrap();
-    let anon: BTreeMap<String, String> = serde_json::from_value(v["anonymized"].clone()).unwrap();
-    let noisy: BTreeMap<String, String> = serde_json::from_value(v["noisy"].clone()).unwrap();
-    (anon, noisy)
-}
-
-fn resolve_real_key<'a>(
-    config: &str,
-    shown_key: &'a str,
-    anon: &'a BTreeMap<String, String>,
-    noisy: &'a BTreeMap<String, String>,
-) -> &'a str {
-    match config {
-        "wands_anonymized" => anon.get(shown_key).map(String::as_str).unwrap_or(shown_key),
-        "wands_noisy" => noisy
-            .get(shown_key)
-            .map(String::as_str)
-            .unwrap_or(shown_key),
-        _ => shown_key,
-    }
-}
-
-fn macro_f1(
-    predicted: &BTreeMap<String, SemanticRole>,
-    oracle: &BTreeMap<String, SemanticRole>,
-) -> f64 {
-    let classes = [
-        SemanticRole::Identifier,
-        SemanticRole::Enum,
-        SemanticRole::Numeric,
-        SemanticRole::Boolean,
-        SemanticRole::FreeText,
-        SemanticRole::Relationship,
-        SemanticRole::Ignore,
-    ];
-    let mut f1_sum = 0.0;
-    let mut classes_present = 0;
-    for class in classes {
-        let tp = oracle
-            .iter()
-            .filter(|(k, &role)| role == class && predicted.get(*k) == Some(&class))
-            .count();
-        let predicted_positive = predicted.values().filter(|&&r| r == class).count();
-        let actual_positive = oracle.values().filter(|&&r| r == class).count();
-        if actual_positive == 0 {
-            continue;
-        }
-        classes_present += 1;
-        let precision = if predicted_positive == 0 {
-            0.0
-        } else {
-            tp as f64 / predicted_positive as f64
-        };
-        let recall = tp as f64 / actual_positive as f64;
-        let f1 = if precision + recall == 0.0 {
-            0.0
-        } else {
-            2.0 * precision * recall / (precision + recall)
-        };
-        f1_sum += f1;
-    }
-    if classes_present == 0 {
-        0.0
-    } else {
-        f1_sum / classes_present as f64
-    }
-}
-
-fn is_structural(role: SemanticRole) -> bool {
-    matches!(
-        role,
-        SemanticRole::Enum | SemanticRole::Numeric | SemanticRole::Boolean
+    (
+        issue42_eval::e2b_key_mapping::anonymized_mapping(),
+        issue42_eval::e2b_key_mapping::noisy_mapping(),
     )
 }
 
@@ -292,147 +191,6 @@ fn end_to_end_ndcg_recall(
     }
 }
 
-struct Baselines2And3 {
-    no_validator_by_key: BTreeMap<String, Descriptor>,
-    validated_by_key: BTreeMap<String, Descriptor>,
-    stability_agreements: usize,
-    stability_total: usize,
-    per_config_f1: BTreeMap<String, f64>,
-}
-
-/// Builds Baseline 2 (LLM proposal, no validator) and Baseline 3 (LLM +
-/// deterministic validator)'s headline per-real-key maps, plus the
-/// cross-configuration diagnostics (repeated-run agreement,
-/// per-configuration macro F1). Extracted into its own function (a
-/// confirmed defect, found by a fresh adversarial review, lived in this
-/// exact logic when it was inlined in `main()`) so the two headline maps'
-/// canonical-config restriction and the cross-run type-consistency check
-/// are both independently regression-testable.
-fn build_baselines_2_and_3(
-    per_config_runs: &BTreeMap<String, Vec<LlmPassOutput>>,
-    anon_mapping: &BTreeMap<String, String>,
-    noisy_mapping: &BTreeMap<String, String>,
-    all_unified: &BTreeMap<String, UnifiedFieldStats>,
-    wands_queries_text: &[String],
-    oracle_by_key: &BTreeMap<String, SemanticRole>,
-) -> Baselines2And3 {
-    let mut no_validator_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
-    let mut validated_by_key: BTreeMap<String, Descriptor> = BTreeMap::new();
-    let mut stability_agreements = 0usize;
-    let mut stability_total = 0usize;
-    let mut per_config_f1: BTreeMap<String, f64> = BTreeMap::new();
-    // Preregistered "type consistency" check (ISSUE42_PROTOCOL.md's E2b
-    // validator spec): a real key whose two runs within a canonical
-    // config disagree between a categorical (Enum/Boolean) and a
-    // Numeric role, with neither abstaining -- e.g. automotive's own
-    // real thread_size run1=enum/run2=numeric disagreement. Forced to
-    // abstain in `validated_by_key` below; a confirmed defect (found by
-    // a fresh adversarial review) had no such check anywhere, so this
-    // exact case sailed through fully accepted.
-    let mut type_conflicted_keys: BTreeSet<String> = BTreeSet::new();
-
-    for (config, runs) in per_config_runs {
-        let is_canonical = CANONICAL_CONFIGS.contains(&config.as_str());
-
-        // Repeated-run agreement (role + primitive), run1 vs run2,
-        // across all 4 configurations.
-        if runs.len() == 2 {
-            let run1: BTreeMap<&str, &Descriptor> = runs[0]
-                .descriptors
-                .iter()
-                .map(|d| (d.key.as_str(), d))
-                .collect();
-            let run2: BTreeMap<&str, &Descriptor> = runs[1]
-                .descriptors
-                .iter()
-                .map(|d| (d.key.as_str(), d))
-                .collect();
-            for (k, d1) in &run1 {
-                if let Some(d2) = run2.get(k) {
-                    stability_total += 1;
-                    if d1.semantic_role == d2.semantic_role
-                        && d1.candidate_physical_primitive == d2.candidate_physical_primitive
-                    {
-                        stability_agreements += 1;
-                    }
-                    // Only the two canonical configs feed the headline
-                    // baselines, so only their own internal
-                    // run1-vs-run2 conflicts need to force an abstain
-                    // there.
-                    if is_canonical && cross_run_type_conflict(d1, d2) {
-                        let real_key = resolve_real_key(config, k, anon_mapping, noisy_mapping);
-                        type_conflicted_keys.insert(real_key.to_string());
-                    }
-                }
-            }
-        }
-
-        let mut config_predicted_roles: BTreeMap<String, SemanticRole> = BTreeMap::new();
-        for run in runs {
-            for d in &run.descriptors {
-                let real_key = resolve_real_key(config, &d.key, anon_mapping, noisy_mapping);
-                let mut resolved = d.clone();
-                resolved.real_key = Some(real_key.to_string());
-
-                config_predicted_roles
-                    .entry(real_key.to_string())
-                    .or_insert(resolved.semantic_role);
-
-                // Headline Baselines 2/3 draw only from the canonical
-                // (unperturbed) configs -- real key names visible, the
-                // LLM's best fair shot -- keeping the first (canonical)
-                // run's proposal as "the" no-validator proposal per
-                // real key. The anonymized/noisy configs still fully
-                // drive `per_config_f1` above/below, just not this map.
-                if !is_canonical {
-                    continue;
-                }
-
-                no_validator_by_key
-                    .entry(real_key.to_string())
-                    .or_insert_with(|| resolved.clone());
-
-                if let Some(stats) = all_unified.get(real_key) {
-                    let validation = validate(&resolved, stats, wands_queries_text);
-                    validated_by_key
-                        .entry(real_key.to_string())
-                        .or_insert_with(|| {
-                            if validation.accepted {
-                                resolved.clone()
-                            } else {
-                                let mut abstained = resolved.clone();
-                                abstained.abstain = true;
-                                abstained.semantic_role = SemanticRole::Ignore;
-                                abstained.candidate_physical_primitive = PhysicalPrimitive::None;
-                                abstained
-                            }
-                        });
-                }
-            }
-        }
-        let config_f1 = macro_f1(&config_predicted_roles, oracle_by_key);
-        per_config_f1.insert(config.clone(), config_f1);
-    }
-
-    for real_key in &type_conflicted_keys {
-        if let Some(d) = validated_by_key.get_mut(real_key) {
-            if !d.abstain {
-                d.abstain = true;
-                d.semantic_role = SemanticRole::Ignore;
-                d.candidate_physical_primitive = PhysicalPrimitive::None;
-            }
-        }
-    }
-
-    Baselines2And3 {
-        no_validator_by_key,
-        validated_by_key,
-        stability_agreements,
-        stability_total,
-        per_config_f1,
-    }
-}
-
 fn main() {
     println!("=== Issue #42 E2b: actual offline LLM-assisted feature discovery ===");
     println!("baseline_sha: {BASELINE_SHA}");
@@ -489,24 +247,14 @@ fn main() {
 
     // --- Baselines 2/3: LLM proposal (no validator) / LLM + validator ---
     let wands_queries_text = wands_query_texts();
-    let mut per_config_runs: BTreeMap<String, Vec<LlmPassOutput>> = BTreeMap::new();
-    for &config in CONFIGS {
-        let mut runs = Vec::new();
-        for run in 1..=2 {
-            if let Some(pass) = load_llm_pass(config, run) {
-                runs.push(pass);
-            }
-        }
-        if !runs.is_empty() {
-            per_config_runs.insert(config.to_string(), runs);
-        }
-    }
+    let per_config_runs = load_all_runs(CONFIGS);
 
     if per_config_runs.is_empty() {
         println!(
-            "\nNo LLM proposal artifacts found under {EXPORT_DIR}/ yet -- run the 8 offline LLM \
-             passes and save their output there first (see docs/experiments/ISSUE42_PROTOCOL.md's \
-             E2b amendment 1). Reporting statistics-only/oracle results only."
+            "\nNo LLM proposal artifacts found under dataset_cache/export/ yet -- run the 8 \
+             offline LLM passes and save their output there first (see \
+             docs/experiments/ISSUE42_PROTOCOL.md's E2b amendment 1). Reporting \
+             statistics-only/oracle results only."
         );
     } else {
         let Baselines2And3 {
@@ -735,7 +483,9 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use issue42_eval::e2b_schema::{Operator, PhysicalPrimitive, Scope, Significance, ValueType};
+    use issue42_eval::e2b_schema::{
+        LlmPassOutput, Operator, PhysicalPrimitive, Scope, Significance, ValueType,
+    };
 
     fn descriptor(role: SemanticRole, abstain: bool) -> Descriptor {
         Descriptor {

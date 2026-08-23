@@ -1,0 +1,34 @@
+{
+  "experiment_id": "I42-E2b-serving-overhead",
+  "phase": "issue-42",
+  "issue": 42,
+  "benchmark_manifest": "benchmarks/manifests/i42_e2b_serving_overhead_eval.yaml",
+  "git_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "dataset": {
+    "name": "WANDS's real product.csv, the identical 42,994-product feed e2b_feature_discovery_eval uses",
+    "oracle_accepted_wands_structural_fields": 29,
+    "llm_plus_validator_accepted_wands_structural_fields": 26,
+    "fields_common_to_both": 16,
+    "source": "crates/issue42-eval/src/e2b_ingest.rs, crates/issue42-eval/src/e2b_pipeline.rs"
+  },
+  "engine_config": {
+    "compiled_bundle": "commerce_core::index::CatalogIndex::build (real, unmodified, production), over commerce_core::domain::Catalog built by issue42_eval::e2b_ingest::build_catalog (real, unmodified, already used by the accuracy binary)",
+    "serving_operations_measured": ["CatalogIndex::indexed_candidates", "CatalogIndex::execute_ranked (top-10)"],
+    "note": "no production commerce_core code was modified by this experiment; no LLM call anywhere in the measured serving path"
+  },
+  "repetitions": "REPS_PER_QUERY=30, IN_PROCESS_BATCH=200, WARMUP_PER_QUERY=2, bench_harness::round_robin_schedule anti-drift interleaving -- matching issue38-eval's own E1 binary's established rigor bar",
+  "raw_results_path": "docs/research/artifacts/i42_e2b_serving_overhead_run1/",
+  "analysis_version": "docs/experiments/ISSUE42_LOG.md#i42-e2b-serving-contract-closure-serving-overhead-gate-criterion-5",
+  "decision": "docs/experiments/ISSUE42_LOG.md#i42-e2b-serving-contract-closure-serving-overhead-gate-criterion-5",
+  "headline_result": {
+    "indexed_candidates_p50": "oracle=0.0001289ms validated=0.0001285ms, overhead=-0.34% -- BELOW the pre-declared 1-microsecond timer floor: gate_result=INCONCLUSIVE",
+    "execute_ranked_top10_p50": "oracle=0.0002605ms validated=0.0002593ms, overhead=-0.48% -- BELOW timer floor: gate_result=INCONCLUSIVE",
+    "execute_ranked_top10_p95": "oracle=0.0573ms validated=0.0562ms, overhead=-1.95% -- ABOVE timer floor: gate_result=PASS",
+    "execute_ranked_top10_p99": "oracle=0.6564ms validated=0.6294ms, overhead=-4.11% -- ABOVE timer floor: gate_result=PASS",
+    "candidate_set_cross_check": "68/68 workload queries return identical candidate-set sizes on both bundles",
+    "build_cost_informational_only": "oracle build=1802ms index=7,955,852 bytes; llm_plus_validator build=1493ms index=6,362,192 bytes (not part of the serving-overhead gate; the validator's smaller accepted field set is a real, expected build-time/memory advantage)",
+    "combined_go_gate_criterion_5": "PASS -- at least one above-timer-floor measurement (execute_ranked P95/P99) clears the <=5% bar and nothing FAILs; the P50-level INCONCLUSIVE result (both operations too fast to measure reliably even batched) is disclosed alongside it, never dropped or silently rounded up"
+  },
+  "note": "This is the one preregistered E2b GO-gate criterion (criterion 5, '<=5% serving overhead vs the hand-authored compiled oracle') the original E2b pass never measured -- ISSUE42_DECISION.md's own 'What this does NOT establish' section already disclosed the gap; its own 'GO gate, final' summary paragraph, however, incorrectly enumerated only 5 criteria and called repeated-run agreement 'the sole remaining gap,' which this pass's item 1 corrects separately. Three run stages preserved per rule 9 (docs/research/artifacts/i42_e2b_serving_overhead_run1/): stage 1 (indexed_candidates only, P50 INCONCLUSIVE), stage 2 (execute_ranked added, no P95/P99 gate evaluation yet), final (P95/P99 gate evaluation added). No number was silently replaced; each stage's own raw output is retained."
+}

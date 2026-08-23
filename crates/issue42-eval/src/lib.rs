@@ -11,7 +11,9 @@
 //! between a catalog generator and its own labels cannot hide from it.
 
 pub mod e2b_ingest;
+pub mod e2b_key_mapping;
 pub mod e2b_oracle;
+pub mod e2b_pipeline;
 pub mod e2b_schema;
 pub mod e2b_statistics_baseline;
 pub mod e2b_validator;
