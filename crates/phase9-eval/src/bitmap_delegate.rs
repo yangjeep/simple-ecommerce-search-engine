@@ -70,7 +70,28 @@ pub struct BuiltIndex {
 pub fn build_index(catalog: &Catalog) -> tantivy::Result<BuiltIndex> {
     let (schema, ordinal_field, title_field, description_field) = schema();
     let index = Index::create_in_ram(schema);
-    let mut writer = index.writer(64_000_000)?;
+    // Single-threaded indexing, not `index.writer(...)`'s own default of
+    // `min(num_cpus::get(), 8)` threads: found necessary for genuine
+    // run-to-run determinism, not merely a style preference. Tantivy's own
+    // source (`Index::writer_for_tests`'s doc comment) states plainly that
+    // multi-threaded indexing does not give a deterministic DocId
+    // allocation. This module's own `product_ordinal` field already
+    // protects *correctness* (which document is which) against that --
+    // but a real, measured effect survived anyway: `TopDocs`' score-tie
+    // ordering among multiple equally-scored documents can still depend on
+    // DocId order, which is exactly the case a multi-word free-text query
+    // against several same-scoring titles produces. Caught by rerunning
+    // `issue38-e2e3-eval`'s E2 binary 5 times and diffing raw output
+    // byte-for-byte (not merely eyeballing summary stats): one template's
+    // mean NDCG genuinely differed between two runs of the identical
+    // binary against the identical seeded catalog (0.5386 vs 0.5869),
+    // contradicting this project's own repeated "byte-identical across 5
+    // runs" claim for every prior experiment built on this delegate. A
+    // 3,000-product in-memory catalog indexes in a few milliseconds either
+    // way, so single-threaded indexing costs nothing measurable here in
+    // exchange for the determinism Issue #42 explicitly requires ("one
+    // deterministic headless reproduction command").
+    let mut writer = index.writer_with_num_threads(1, 64_000_000)?;
     for product in &catalog.products {
         let mut doc = tantivy::TantivyDocument::default();
         doc.add_u64(ordinal_field, product.id.0);
