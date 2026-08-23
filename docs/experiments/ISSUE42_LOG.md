@@ -1194,3 +1194,158 @@ Reproduction: `cargo build --release -p issue42-eval &&
 Raw artifacts: `docs/research/artifacts/i42_r3_run1/`. Manifest:
 `benchmarks/manifests/i42_r3_identifier_primitive_eval.yaml`,
 `artifacts/manifests/i42_r3_identifier_primitive_eval.json`.
+
+## I42-Merge: R1/R2/R3 serving-contract decisions reviewed together, evidence-supported changes merged into `commerce_core`
+
+Per Issue #42's own sequencing rule, no experiment's GO verdict was acted
+on in production code until all three (R1/R2/R3) could be reviewed
+together, here:
+
+- **R1 (typed ambiguity and corroborated resolution): REVISE.** No
+  treatment cleared every preregistered gate (Treatment D fails only the
+  latency bar). Per Issue #42's own rule ("ship a production behavior
+  change ONLY when its treatment wins the declared gate — otherwise
+  record REVISE/INCONCLUSIVE"), **no production change was made for
+  R1.** Current production behavior (`commerce_core::ir::query::compile`'s
+  unmodified ambiguity handling) is retained unchanged.
+- **R2 (residual lexical semantics): GO for Treatment D.** Merged.
+- **R3 (identifier serving primitive): GO for Treatment C.** Merged.
+
+### What was merged
+
+**R2 (`docs/adr/0012-residual-lexical-policy.md`)**: a new
+`commerce_core::plan::residual` submodule (`ResidualPolicy`/
+`ResidualClass`, ported from `issue42-eval::r2_experimental` with the
+eval prototype's own proven-dead `_product_type` classify parameter
+dropped from the production signature). `execute_planned` gained one
+new, additive, trailing parameter, `residual_policy:
+Option<&ResidualPolicy>` — `None` (every pre-existing call site) is
+byte-identical to prior behavior; `Some` lets a `Hybrid`/`Punt` outcome
+with zero raw delegate hits fall back to the structural candidate set
+instead of collapsing to empty, but only when a corroborating
+`ProductType` constraint is present **and** every residual token
+classifies `Preferred` (a real defect this exact interaction between
+"corroborating constraint" and "classify's own signal" was found and
+fixed twice — once during R2's own second correction round, and once
+more during this production merge's own review, below).
+
+**R3 (`docs/adr/0013-identifier-serving-primitive.md`)**: a new
+`commerce_core::index::identifier` submodule (`FieldStats`,
+`compute_field_stats`, `IdentifierClassifier`, `IdentifierDictionary`,
+ported from `issue42-eval::r3_experimental`). `CatalogIndex::build` now
+computes per-field statistics and builds a dictionary for every field
+the classifier accepts (`uniqueness_ratio >= 0.95 && variant_scoped`,
+R3's own fully-corrected condition), **plus one new safeguard added
+during this production integration and disclosed as such, not part of
+R3's own experimental evidence**: `MIN_IDENTIFIER_SAMPLE_SIZE = 100`,
+since R3's own calibration/held-out catalogs (1,500+ products) never
+exercised the real risk of a tiny hand-authored test catalog spuriously
+accepting a field on small-sample noise alone. `plan::LexicalHit`
+gained one new, additive field, `variant: Option<VariantId>` (every
+existing delegate constructs `None`); `verify_and_truncate` now prefers
+a delegate-named variant when present, but only if it also satisfies
+every constraint, never falling back to a different variant of the
+same product on failure. `execute_planned`'s `Hybrid`/`Punt` arms try
+an exact identifier-dictionary lookup across `query.residual_lexical`
+*before* calling the delegate at all, re-verifying every candidate
+against `query.matches_variant`/`restrict_to` exactly like any other
+hit — never a correctness bypass.
+
+`commerce_core::admission.rs`'s separate, structurally unrelated
+native-vs-Solr strict-veto functions (`admit`/`admit_lexically_narrowed`/
+`admit_structurally_anchored_lexical`) were explicitly out of scope for
+both merges and were left untouched — verified directly (`git diff`
+shows zero changes to that file or its tests).
+
+### How the merge was executed and reviewed
+
+Both merges were implemented against the real, exact current
+`commerce_core::plan`/`commerce_core::index` source (not assumed from
+memory), each as its own focused change with new regression tests
+before being considered complete, followed by a fresh, no-implementation-task
+adversarial review of the combined result — the same "do not trust the
+author" governance already applied three times to R1/R2/R3 themselves,
+now applied a fourth time to the act of merging their conclusions into
+production. The reviewer independently re-ran the full quality gate
+from scratch (not trusting a prior "all green" claim), traced every one
+of the 34 `execute_planned` call-site migrations and 15 `LexicalHit`
+construction-site migrations by file:line, and specifically hunted for
+undisclosed behavior changes, scope creep into `admission.rs`, and any
+path by which an identifier-dictionary or named-variant hit could
+bypass `query.matches_variant`. It found two confirmed defects, both
+independently reproduced and fixed before this checkpoint:
+
+1. **ADR 0012 misreported its own call-site migration count** ("13
+   existing call sites across 11 files," when the ADR's own itemized
+   list, plus `r2_experimental.rs`'s 9 sites disclosed separately, sums
+   to 34 — the "11 files" claim was correct, only the site count was
+   wrong, by more than 2x). Purely a documentation/disclosure defect —
+   every one of the 34 real sites was independently re-verified (by
+   direct grep, both before and after the fix) to actually pass `None`
+   correctly; no behavior was ever affected. Fixed by correcting the
+   ADR's text to the verified count (34) with the arithmetic shown
+   explicitly, and disclosing the original error rather than silently
+   replacing the number (Issue #42 rule 9).
+2. **`commerce-core`'s own `residual_policy_catalog` fixture
+   (`crates/commerce-core/src/fixtures.rs`) could never compile a
+   *compound* structural constraint at all** — every product was built
+   with `attributes([])`, so no test in `commerce-core`'s own suite
+   could reproduce the exact shape (`ProductType(Sofas) AND
+   Enum(color=...)`) R2's own second correction round needed to catch a
+   real false positive. Production's `ResidualPolicy::classify` no
+   longer even accepts a `ProductTypeId` parameter, so the *specific*
+   old bug cannot be reintroduced through `classify` itself — but the
+   reviewer correctly noted this left the *observable* behavior
+   (`residual_fallback_hits`'s structural recovery respecting a
+   compound constraint's full, narrowed candidate set — not just the
+   bare `ProductType`) completely unguarded by `commerce-core`'s own
+   test suite, dependent entirely on `issue42-eval`'s separate, frozen
+   historical test to ever catch a future regression in this area.
+   Fixed by giving `residual_policy_catalog`'s Sofas products real
+   `color`/`material` Enum attributes (matching
+   `issue42-eval::r2_workload::build()`'s own shape) and adding a new
+   regression test,
+   `plan::tests::residual_fallback_respects_a_compound_constraints_full_narrowed_candidate_set`
+   — an all-`Preferred` residual word ("furniture") plus a compound
+   `ProductType(Sofas) AND Enum(color=Blue)` constraint must recover
+   *only* the Blue Leather Sofa, never the Purple Velvet Sofa, which
+   satisfies the bare `ProductType` constraint alone but not the
+   compound one. (The test's first draft used "velvet" as the residual
+   word, matching R2's own original adversarial case — that draft
+   failed for an instructive reason, not a defect: "velvet" is
+   observed under only one product type in this fixture, so it
+   classifies `Required` regardless of any product type, meaning it
+   never reaches the compound-constraint-sensitive code path at all;
+   corrected to use "furniture," the fixture's genuinely `Preferred`
+   cross-type word, which does.)
+
+Both findings were independently reproduced (by direct grep/computation
+and by writing/running the corrected test, not by trusting either the
+implementing agents' or the reviewer's own description) before being
+accepted and fixed. Every other item the reviewer checked — call-site
+behavior preservation, cross-variant correctness (no unverified
+identifier or named-variant hit can bypass `matches_variant`), the
+`MIN_IDENTIFIER_SAMPLE_SIZE` safeguard's own RED-before-GREEN test,
+`admission.rs`'s isolation, ADR 0013's accuracy, and R1/R2's own
+existing tests being functionally untouched (only mechanical `,
+None`/`variant: None` additions, confirmed directly by `git diff`) —
+checked out clean.
+
+### Final verification
+
+After both fixes: `cargo fmt --all -- --check` clean; `cargo clippy
+--workspace --all-targets --all-features -- -D warnings` clean;
+`cargo test --workspace --all-features` — every test binary green, 0
+failures, including `commerce-core`'s lib suite (52 passed — 46
+pre-existing plus the 4 R2 regression tests, 3 R3 regression tests, and
+1 new compound-constraint test, minus overlaps already counted by the
+merge phases) and `tests/plan.rs` (10 passed); `cargo build --workspace
+--release` clean. `cargo test -p issue42-eval --release` confirms every
+one of R1/R2/R3's own historical tests — the actual evidence artifacts
+this whole merge is based on — still passes completely unchanged.
+
+Full detail: `docs/adr/0012-residual-lexical-policy.md`,
+`docs/adr/0013-identifier-serving-primitive.md`. This section is itself
+the decision record Issue #42 rule 9 requires for a production change
+made on the strength of a GO verdict — R2's and R3's own sections above
+remain the primary experimental evidence and are not restated here.

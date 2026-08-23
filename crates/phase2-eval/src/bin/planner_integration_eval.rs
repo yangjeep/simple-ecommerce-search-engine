@@ -168,6 +168,7 @@ impl LexicalDelegate for TantivyDelegate<'_> {
                 Some(LexicalHit {
                     product,
                     score: score as f64,
+                    variant: None,
                 })
             })
             .collect()
@@ -289,6 +290,7 @@ fn main() -> tantivy::Result<()> {
                 Some(&delegate),
                 K,
                 &policy,
+                None,
             );
             latency_samples.push(start.elapsed().as_nanos());
 

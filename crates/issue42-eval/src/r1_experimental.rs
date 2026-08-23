@@ -365,7 +365,7 @@ pub fn run_treatment(
     let mut outcomes = Vec::with_capacity(resolution.queries.len());
     let mut by_key: BTreeMap<(ProductId, VariantId), PlannedHit> = BTreeMap::new();
     for query in &resolution.queries {
-        let (planned, hits) = execute_planned(query, catalog, index, delegate, k, policy);
+        let (planned, hits) = execute_planned(query, catalog, index, delegate, k, policy, None);
         outcomes.push(planned);
         for hit in hits {
             by_key

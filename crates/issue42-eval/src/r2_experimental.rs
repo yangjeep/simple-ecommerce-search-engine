@@ -257,7 +257,7 @@ pub fn execute_a(
     k: usize,
     policy: &PlannerPolicy,
 ) -> (PlannedQuery, Vec<PlannedHit>) {
-    execute_planned(query, catalog, index, delegate, k, policy)
+    execute_planned(query, catalog, index, delegate, k, policy, None)
 }
 
 /// Treatment B: if the delegate returns zero raw hits for a `Hybrid`/
@@ -277,13 +277,13 @@ pub fn execute_b(
 ) -> (PlannedQuery, Vec<PlannedHit>) {
     let planned = plan(query, index, catalog.products.len(), policy);
     if matches!(planned.outcome, ExecutionOutcome::FastPath) || query.constraints.is_empty() {
-        return execute_planned(query, catalog, index, delegate, k, policy);
+        return execute_planned(query, catalog, index, delegate, k, policy, None);
     }
     let raw = raw_delegate_hits(query, index, delegate, k, policy, planned.outcome);
     if raw.is_empty() {
         (planned, structural_only_hits(query, catalog, index, k))
     } else {
-        execute_planned(query, catalog, index, delegate, k, policy)
+        execute_planned(query, catalog, index, delegate, k, policy, None)
     }
 }
 
@@ -303,7 +303,7 @@ pub fn execute_c(
 ) -> (PlannedQuery, Vec<PlannedHit>) {
     let planned = plan(query, index, catalog.products.len(), policy);
     if matches!(planned.outcome, ExecutionOutcome::FastPath) || query.constraints.is_empty() {
-        return execute_planned(query, catalog, index, delegate, k, policy);
+        return execute_planned(query, catalog, index, delegate, k, policy, None);
     }
     let raw = raw_delegate_hits(query, index, delegate, k, policy, planned.outcome);
     let structural_limit = (k * policy.delegate_oversample).max(k);
@@ -354,21 +354,21 @@ pub fn execute_d(
 ) -> (PlannedQuery, Vec<PlannedHit>) {
     let planned = plan(query, index, catalog.products.len(), policy);
     if matches!(planned.outcome, ExecutionOutcome::FastPath) || query.constraints.is_empty() {
-        return execute_planned(query, catalog, index, delegate, k, policy);
+        return execute_planned(query, catalog, index, delegate, k, policy, None);
     }
     let raw = raw_delegate_hits(query, index, delegate, k, policy, planned.outcome);
     if !raw.is_empty() {
-        return execute_planned(query, catalog, index, delegate, k, policy);
+        return execute_planned(query, catalog, index, delegate, k, policy, None);
     }
     let Some(product_type) = corroborating_product_type(query) else {
-        return execute_planned(query, catalog, index, delegate, k, policy);
+        return execute_planned(query, catalog, index, delegate, k, policy, None);
     };
     let any_required = query
         .residual_lexical
         .iter()
         .any(|tok| residual_policy.classify(tok, product_type) == ResidualClass::Required);
     if any_required {
-        execute_planned(query, catalog, index, delegate, k, policy)
+        execute_planned(query, catalog, index, delegate, k, policy, None)
     } else {
         (planned, structural_only_hits(query, catalog, index, k))
     }
@@ -569,6 +569,7 @@ mod tests {
             Some(&delegate),
             10,
             &policy,
+            None,
         );
         let via_a = execute_a(
             &query,
@@ -615,6 +616,7 @@ mod tests {
         let stub = FixedDelegate(vec![LexicalHit {
             product: ProductId(1),
             score: 1.0,
+            variant: None,
         }]);
 
         let (_planned_b, hits_b) =
