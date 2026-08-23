@@ -41,12 +41,12 @@ claim: >
   fitment queries are asked, not the underlying finding.
 
   Aggregate correctness (excluding exact_lookup, see finding below):
-  NDCG@10 mean 0.9134-0.9183 across 5 runs, n=26 (CORRECTED from 0.9271,
-  same root cause as above). Aggregate over ALL templates including
-  exact_lookup: NDCG@10 mean ~0.416-0.419 (CORRECTED from ~0.422-0.425;
-  deterministic across runs) -- dominated by exact_lookup's near-zero
-  score, disclosed as a delegate-scope finding, not a generalization
-  failure (see below).
+  NDCG@10 mean 0.9135, n=26 (CORRECTED AGAIN, from a 0.9134-0.9183 range,
+  to a single exact value -- see "second correction round" below).
+  Aggregate over ALL templates including exact_lookup: NDCG@10 mean
+  0.4167 (CORRECTED AGAIN from a ~0.416-0.419 range) -- dominated by
+  exact_lookup's near-zero score, disclosed as a delegate-scope finding,
+  not a generalization failure (see below).
 
   Routing: 35.1% FastPath, 0% Hybrid, 64.9% Punt (fallback rate). Failure
   taxonomy: 35.1% entity_resolved_structural, 56.1%
@@ -56,16 +56,34 @@ claim: >
   fires correctly on unseen vocabulary).
 
   Candidate-set size: p50 3,000 (full catalog -- most queries here are
-  either FastPath entity-only or the large exact_lookup share), p10 17.2
-  (CORRECTED from 15.2 -- a different set of fitment queries now
-  produces a slightly different candidate-set distribution).
+  either FastPath entity-only or the large exact_lookup share), p10 17.2.
 
-  Latency (execute_planned, single-call/query, post-warmup): p50 ~0.099ms
-  across 4/5 runs (run4 an outlier at 0.132ms, still sub-millisecond) --
-  this synthetic in-memory catalog is far smaller than WANDS's 42,994
-  products, so absolute latency here is not comparable to Phase 9's own
-  numbers; only the qualitative routing/correctness behavior is the
-  point of E2.
+  Latency (execute_planned, single-call/query, post-warmup): p50 ~0.032ms
+  (CORRECTED from ~0.099ms -- single-threaded Tantivy indexing, see
+  "second correction round" below, was measurably faster here, not a
+  regression) -- this synthetic in-memory catalog is far smaller than
+  WANDS's 42,994 products, so absolute latency here is not comparable to
+  Phase 9's own numbers; only the qualitative routing/correctness
+  behavior is the point of E2.
+
+  **Second correction round (Issue #42's pre-merge independent review,
+  before this PR was merged)**: found and fixed (1) a
+  `failure_taxonomy::classify` bug conflating successfully-routed
+  non-entity hard constraints with the P9-E05 demotion path; (2) the
+  last of `automotive.rs`'s fixed-candidate-list templates
+  (material_grade+position, thread_size, oem/aftermarket), inconsistently
+  left unfixed after the first correction round; (3) non-deterministic
+  Tantivy multi-threaded indexing in the shared
+  `phase9_eval::bitmap_delegate` module (found by this session's own
+  continued verification -- rerunning 5 times and diffing raw output
+  byte-for-byte caught a genuine NDCG difference across runs, contradicting
+  this project's own "byte-identical" claim), fixed by switching to
+  single-threaded indexing. All three verified by rerunning E2/E3 five
+  times each post-fix and diffing byte-for-byte: every
+  correctness/routing/taxonomy number is now genuinely identical across
+  runs. Neither E2/E3 verdict changes. The Tantivy fix is scoped to E2/E3;
+  Phase 9's own already-published numbers used the unfixed module and
+  have not been re-audited (GitHub Issue #43).
 
   Named finding (delegate scope, not a compile()/plan() defect): the
   "exact_lookup" template (part-number search, n=31/57 = 54% of the

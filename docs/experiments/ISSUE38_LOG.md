@@ -363,17 +363,17 @@ templates, real production pipeline (`ir::query::compile` ->
 0.05, delegate_oversample: 20}`), `phase9_eval::bitmap_delegate::BitmapTantivyDelegate`
 reused unmodified as the lexical delegate. 5 independent runs.
 
-### Results (byte-identical across all 5 runs for every correctness/routing number; only latency varies) -- CORRECTED, see below
+### Results (genuinely byte-identical across all 5 runs for every correctness/routing/taxonomy number; only latency varies) -- CORRECTED TWICE, see below
 
 | metric | value |
 |---|---|
 | fitment_exact NDCG@10 (n=8) | mean **0.9472**, min 0.7211 |
-| aggregate NDCG@10, excluding exact_lookup (n=26) | mean **0.9134-0.9183** across 5 runs |
-| aggregate NDCG@10, all templates (n=57) | mean ~0.416-0.419 (see finding below) |
+| aggregate NDCG@10, excluding exact_lookup (n=26) | mean **0.9135** |
+| aggregate NDCG@10, all templates (n=57) | mean **0.4167** (see finding below) |
 | routing | 35.1% FastPath, 0% Hybrid, 64.9% Punt |
 | failure taxonomy | 35.1% entity_resolved_structural, 56.1% no_structural_signal_punt, 8.8% vocabulary_gap_demoted_to_punt |
 | candidate-set size | p50 3,000 (full catalog), p10 17.2 |
-| latency (execute_planned, p50) | ~0.078-0.108ms across 5 runs |
+| latency (execute_planned, p50) | ~0.032ms (single-threaded Tantivy indexing, see second correction below -- materially faster than the earlier multi-threaded figures, not a regression) |
 
 The `vocabulary_gap_no_entity` template (`"ceramic front pads"`, n=2,
 mean NDCG 0.58) is a deliberate regression check reproducing P9-E05's
@@ -606,7 +606,7 @@ same two functions).
 | size_schema_conflict | mean NDCG@10 = 0.5000 (n=2, both FastPath) -- see Finding 1 |
 | routing | 45.5% FastPath, 9.1% Hybrid, 45.5% Punt |
 | candidate-set size | p50 250 |
-| latency (execute_planned, p50) | ~0.030-0.049ms across 5 runs |
+| latency (execute_planned, p50) | ~0.019ms (single-threaded Tantivy indexing, see second correction below) |
 
 ### I38-E3 verdict
 
@@ -639,6 +639,82 @@ ground-truth judge's semantics, the crate's determinism (confirmed:
 iteration-order non-determinism), and the latency methodology (single-call,
 post-warmup, millisecond-scale -- correctly not needing E1's
 batching/`black_box` treatment) were verified clean.
+
+## Second correction round: Issue #42's pre-merge independent review
+
+Issue #42 established a stricter governing rule for this repository
+("do not trust the experiment author") and required an independent
+review of PR #39 before it could be merged and frozen as the E1-E3
+baseline. That review found three further real issues, all confirmed by
+direct reproduction (not accepted on the reviewer's word alone) before
+being fixed:
+
+1. **`failure_taxonomy::classify` misclassified successfully-routed,
+   non-entity hard constraints as "demoted to Punt."** The function's
+   final `else` branch keyed only on `has_entity == false` and
+   `constraints`/`preferences` non-emptiness, never checking the actual
+   routing `outcome` the way the `has_entity` branch above it does. A
+   query resolving a non-entity hard constraint (e.g. `compile()`'s
+   `"size N"` keyword branch, which never goes through the P9-E05
+   demotion path at all) and routing `FastPath` was bucketed under a
+   class literally named "demoted to Punt" -- reproduced directly: an E3
+   rerun showed `outcome fast_path: 5` alongside
+   `vocabulary_gap_demoted_to_punt: 5` in the same printout, silently
+   folding 3 genuine Punts together with 2 unrelated FastPath queries.
+   **Fixed** by adding two new classes,
+   `NonEntityConstraintResolved`/`NonEntityConstraintPunted`, checked
+   before the demotion-path branch; a fresh unit test in
+   `failure_taxonomy.rs` proves the corrected behavior directly (not
+   only via a rerun). E3's corrected breakdown now reads
+   `non_entity_constraint_resolved: 2 (18.2%)` /
+   `vocabulary_gap_demoted_to_punt: 3 (27.3%)`, consistent with its own
+   routing table for the first time.
+2. **`automotive.rs`'s remaining `attribute_plus_entity` sub-templates**
+   (material_grade+position, thread_size, oem/aftermarket) shared the
+   same "fixed candidate list, no generation guarantee" defect class
+   already found and fixed once in this crate's other templates --
+   inconsistently left unfixed here, though it happened to pass at this
+   crate's own smaller test catalog size (verified by adding the same
+   `assert_every_query_of_template_has_an_exact_match` check used
+   elsewhere: it passed at n=120, meaning this specific instance was not
+   currently producing an ungrounded case, but nothing guaranteed that).
+   **Fixed** the same way as the other templates, deriving from real
+   generated products.
+3. **Non-deterministic Tantivy indexing** (found by this session's own
+   continued verification, not by the reviewer): rerunning E2 five times
+   and diffing raw output byte-for-byte -- rather than only comparing
+   summary statistics as earlier verification passes had done -- found
+   `vocabulary_gap_no_entity`'s mean NDCG genuinely differing between
+   runs (0.5386 vs. 0.5869) against the identical seeded catalog. Root
+   cause: `phase9_eval::bitmap_delegate::build_index` used Tantivy's
+   default multi-threaded indexing (`index.writer(...)`, `min(num_cpus,
+   8)` threads); Tantivy's own source states plainly that only
+   single-threaded indexing gives a deterministic DocId allocation, and
+   `TopDocs`' tie-breaking among equally-scored documents can depend on
+   that allocation. This directly contradicted this log's own repeated
+   "byte-identical across 5 runs" claim. **Fixed** in the shared
+   `bitmap_delegate.rs` (single-threaded indexing -- costs nothing
+   measurable for catalogs this size, and was measurably *faster* here
+   with no thread-coordination overhead). Verified: reran E2 and E3 five
+   times each after the fix and diffed every run byte-for-byte; every
+   correctness/routing/taxonomy number is now genuinely identical.
+   **Scope note**: this fix covers Issue #38's own E2/E3 binaries only.
+   Phase 9's already-published results (P9-E01 through P9-E06) were
+   measured against the unfixed, multi-threaded version of this same
+   shared module and have **not** been re-audited here -- filed as
+   GitHub Issue #43, not silently left unmentioned.
+
+Both the pre- and post-this-round figures are named explicitly, per this
+project's own established discipline: fitment_exact NDCG@10 was 0.9913
+(min 0.9306) after the *first* correction round, then 0.9472 (min
+0.7211) after automotive's other templates were also grounded in this
+round -- unchanged again by the determinism fix, since `fitment_exact`
+never depends on Tantivy tie-breaking (routes via `MultiEnumContains`,
+not free-text search). The aggregate-excluding-exact_lookup figure moved
+from a range (0.9134-0.9183 across runs, itself already a symptom of the
+determinism bug) to a single exact value, 0.9135, now that the
+non-determinism is fixed. Every number in the Results tables above is
+this round's final, corrected figure.
 
 ## E2/E3 quality gate
 

@@ -157,6 +157,7 @@ fn all_three_paths_agree_on_a_query_type_with_a_single_hit() {
     let b = CompiledEnumIndex::compile(&catalog, "product_type", |p| {
         product_type_name(p.product_type)
     });
+    let b2 = CompiledOrdinalIndex::compile(&catalog, |p| product_type_name(p.product_type));
     let c = GenericStore::build(&catalog, |p| {
         vec![(
             "product_type".to_string(),
@@ -177,6 +178,10 @@ fn all_three_paths_agree_on_a_query_type_with_a_single_hit() {
         .candidate_product_variant_ids(&b.query_eq("product_type", "Beds"))
         .into_iter()
         .collect();
+    let b2_hits: BTreeSet<(ProductId, VariantId)> = b2
+        .candidate_product_variant_ids(&b2.query_eq("Beds"))
+        .into_iter()
+        .collect();
     let c_hits: BTreeSet<(ProductId, VariantId)> = c
         .query_eq("product_type", &GenericValue::Str("Beds".to_string()))
         .into_iter()
@@ -187,6 +192,10 @@ fn all_three_paths_agree_on_a_query_type_with_a_single_hit() {
 
     assert_eq!(a_hits, expected);
     assert_eq!(b_hits, expected);
+    assert_eq!(
+        b2_hits, expected,
+        "path B2 (compiled ordinal schema) disagrees with path A: {b2_hits:?}"
+    );
     assert_eq!(c_hits, expected);
 }
 
@@ -197,6 +206,7 @@ fn all_three_paths_agree_a_value_absent_from_the_catalog_returns_nothing() {
     let b = CompiledEnumIndex::compile(&catalog, "product_type", |p| {
         product_type_name(p.product_type)
     });
+    let b2 = CompiledOrdinalIndex::compile(&catalog, |p| product_type_name(p.product_type));
     let c = GenericStore::build(&catalog, |p| {
         vec![(
             "product_type".to_string(),
@@ -209,6 +219,10 @@ fn all_three_paths_agree_a_value_absent_from_the_catalog_returns_nothing() {
     )]);
     assert!(a_hits.is_empty());
     assert!(b.query_eq("product_type", "Never Seen").is_empty());
+    assert!(
+        b2.query_eq("Never Seen").is_empty(),
+        "path B2 (compiled ordinal schema) should also find nothing for an absent value"
+    );
     assert!(c
         .query_eq("product_type", &GenericValue::Str("Never Seen".to_string()))
         .is_empty());

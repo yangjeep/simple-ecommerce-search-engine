@@ -157,6 +157,17 @@ mod tests {
             &judgments,
             "fitment_exact",
         );
+        // An adversarial review (Issue #42's pre-merge governance) found
+        // this template -- grade+position, thread_size, and oem/aftermarket
+        // sub-templates all share the tag "attribute_plus_entity" -- was
+        // never checked this way, even though apparel's/furniture's own
+        // "attribute_plus_entity" templates already were, after the same
+        // review found and fixed exactly this gap for them.
+        ground_truth::assert_every_query_of_template_has_an_exact_match(
+            &queries,
+            &judgments,
+            "attribute_plus_entity",
+        );
     }
 
     #[test]

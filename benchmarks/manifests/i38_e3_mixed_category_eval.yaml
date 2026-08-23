@@ -83,6 +83,29 @@ claim: >
   treats a bare shared-attribute query as spanning every matching family,
   no hidden single-family bias found.
 
+  **Second correction round (Issue #42's pre-merge independent review,
+  before this PR was merged)**: found and fixed (1) a
+  `failure_taxonomy::classify` bug conflating successfully-routed
+  non-entity hard constraints (size_schema_conflict's own FastPath-routed
+  queries) with the P9-E05 demotion path -- E3's corrected failure-taxonomy
+  breakdown now reads non_entity_constraint_resolved: 2 (18.2%) /
+  vocabulary_gap_demoted_to_punt: 3 (27.3%), consistent for the first time
+  with its own routing table; (2) the last of `automotive.rs`'s
+  fixed-candidate-list templates (material_grade+position, thread_size,
+  oem/aftermarket) -- this does not change E3's own numbers, since E3
+  reuses `automotive::generate_catalog` but not `automotive::generate_workload`;
+  (3) non-deterministic Tantivy multi-threaded indexing in the shared
+  `phase9_eval::bitmap_delegate` module (found by this session's own
+  continued verification -- rerunning 5 times and diffing raw output
+  byte-for-byte caught a genuine NDCG difference across runs, contradicting
+  this project's own "byte-identical" claim), fixed by switching to
+  single-threaded indexing. All three verified by rerunning E2/E3 five
+  times each post-fix and diffing byte-for-byte: every
+  correctness/routing/taxonomy number is now genuinely identical across
+  runs. E3's verdict does not change. The Tantivy fix is scoped to E2/E3;
+  Phase 9's own already-published numbers used the unfixed module and
+  have not been re-audited (GitHub Issue #43).
+
 git_sha: a7c522af03d646ec2cbee0585f2b4c16c8ae0f85
 binary: crates/issue38-e2e3-eval/src/bin/e3_mixed_category_eval.rs
 build_command: cargo build --release -p issue38-e2e3-eval

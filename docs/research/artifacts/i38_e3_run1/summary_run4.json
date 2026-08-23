@@ -4,11 +4,12 @@
   "failure_taxonomy": {
     "entity_resolved_but_punted": 2,
     "entity_resolved_structural": 4,
-    "vocabulary_gap_demoted_to_punt": 5
+    "non_entity_constraint_resolved": 2,
+    "vocabulary_gap_demoted_to_punt": 3
   },
   "fallback_rate": 0.45454545454545453,
-  "latency_ms_p50": 0.030252,
-  "latency_ms_p95": 0.168887,
+  "latency_ms_p50": 0.015846,
+  "latency_ms_p95": 0.1477085,
   "mrr_mean": 0.7272727272727273,
   "n_per_family": 1000,
   "n_queries": 11,

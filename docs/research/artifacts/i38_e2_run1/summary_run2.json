@@ -8,13 +8,13 @@
   },
   "fallback_rate": 0.6491228070175439,
   "fitment_exact_ndcg_mean": 0.9471895084755735,
-  "latency_ms_p50": 0.098926,
-  "latency_ms_p95": 0.139157,
+  "latency_ms_p50": 0.032907,
+  "latency_ms_p95": 0.06481119999999997,
   "mrr_mean": 0.45614035087719296,
   "n_products": 3000,
   "n_queries": 57,
-  "ndcg_mean": 0.4188666119941052,
-  "ndcg_mean_excluding_exact_lookup": 0.9182844955255383,
+  "ndcg_mean": 0.41669001339617456,
+  "ndcg_mean_excluding_exact_lookup": 0.9135127216762289,
   "outcome_counts": {
     "fast_path": 20,
     "punt": 37

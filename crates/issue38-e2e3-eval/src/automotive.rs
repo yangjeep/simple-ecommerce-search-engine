@@ -439,42 +439,81 @@ pub fn generate_workload(
 
     // Template 2: material_grade + position, two independent attributes,
     // both corroborated by the same registered product-type phrase.
-    for grade in ["Ceramic", "Semi-Metallic", "Organic"] {
-        for position in ["Front", "Rear"] {
-            let text = format!(
-                "{} {} brake pads",
-                grade.to_lowercase(),
-                position.to_lowercase()
-            );
-            let id = format!("auto-q-gradepos-{qi:03}");
-            push_query(id, text, "attribute_plus_entity", &|p| {
-                if p.product_type != "Brake Pads" {
-                    return RelevanceLabel::Irrelevant;
-                }
-                let g = attr_str(p, "material_grade");
-                let pos = attr_str(p, "position");
-                match (
-                    g.as_deref() == Some(grade),
-                    pos.as_deref() == Some(position),
-                ) {
-                    (true, true) => RelevanceLabel::Exact,
-                    (true, false) | (false, true) => RelevanceLabel::Partial,
-                    (false, false) => RelevanceLabel::Partial,
-                }
-            });
-            qi += 1;
+    // Derived from real generated Brake Pads products' own actual
+    // (material_grade, position) pairs (up to 6 distinct ones
+    // encountered), not a fixed candidate list -- an adversarial review
+    // (Issue #42's pre-merge governance) found this template shared the
+    // same "no generation guarantee" defect class as the already-fixed
+    // size/color templates elsewhere in this crate; it happened to pass
+    // at this crate's own test catalog size, but nothing guaranteed it.
+    let mut gradepos_seen: Vec<(String, String)> = Vec::new();
+    for p in products {
+        if p.product_type != "Brake Pads" {
+            continue;
+        }
+        if let (Some(g), Some(pos)) = (attr_str(p, "material_grade"), attr_str(p, "position")) {
+            let pair = (g, pos);
+            if !gradepos_seen.contains(&pair) {
+                gradepos_seen.push(pair);
+            }
+        }
+        if gradepos_seen.len() >= 6 {
+            break;
         }
     }
+    for (grade, position) in gradepos_seen {
+        let text = format!(
+            "{} {} brake pads",
+            grade.to_lowercase(),
+            position.to_lowercase()
+        );
+        let id = format!("auto-q-gradepos-{qi:03}");
+        let grade_for_judge = grade.clone();
+        let position_for_judge = position.clone();
+        push_query(id, text, "attribute_plus_entity", &move |p| {
+            if p.product_type != "Brake Pads" {
+                return RelevanceLabel::Irrelevant;
+            }
+            let g = attr_str(p, "material_grade");
+            let pos = attr_str(p, "position");
+            match (
+                g.as_deref() == Some(grade_for_judge.as_str()),
+                pos.as_deref() == Some(position_for_judge.as_str()),
+            ) {
+                (true, true) => RelevanceLabel::Exact,
+                (true, false) | (false, true) => RelevanceLabel::Partial,
+                (false, false) => RelevanceLabel::Partial,
+            }
+        });
+        qi += 1;
+    }
 
-    // Template 3: thread_size spark plugs.
-    for thread in ["14mm", "12mm", "10mm"] {
+    // Template 3: thread_size spark plugs. Derived from real generated
+    // Spark Plugs products' own actual thread_size values (up to 3
+    // distinct ones encountered), same fix as Template 2 above.
+    let mut thread_seen: Vec<String> = Vec::new();
+    for p in products {
+        if p.product_type != "Spark Plugs" {
+            continue;
+        }
+        if let Some(thread) = attr_str(p, "thread_size") {
+            if !thread_seen.contains(&thread) {
+                thread_seen.push(thread);
+            }
+        }
+        if thread_seen.len() >= 3 {
+            break;
+        }
+    }
+    for thread in thread_seen {
         let text = format!("{thread} spark plug");
         let id = format!("auto-q-thread-{qi:03}");
-        push_query(id, text, "attribute_plus_entity", &|p| {
+        let thread_for_judge = thread.clone();
+        push_query(id, text, "attribute_plus_entity", &move |p| {
             if p.product_type != "Spark Plugs" {
                 return RelevanceLabel::Irrelevant;
             }
-            if attr_str(p, "thread_size").as_deref() == Some(thread) {
+            if attr_str(p, "thread_size").as_deref() == Some(thread_for_judge.as_str()) {
                 RelevanceLabel::Exact
             } else {
                 RelevanceLabel::Partial
@@ -497,17 +536,37 @@ pub fn generate_workload(
         qi += 1;
     }
 
-    // Template 5: oem/aftermarket + product type.
-    for oem in ["oem", "aftermarket"] {
-        for spec in PRODUCT_TYPES.iter().take(3) {
-            let text = format!("{oem} {}", spec.name.to_lowercase());
+    // Template 5: oem/aftermarket + product type. Derived from real
+    // generated products' own actual oem_or_aftermarket value per type
+    // (not assumed present for both "oem" and "aftermarket" -- each
+    // combo is only emitted if a real product with that exact
+    // (product_type, oem_or_aftermarket) pair was actually generated),
+    // same fix as Templates 2/3 above.
+    for spec in PRODUCT_TYPES.iter().take(3) {
+        let mut values_seen: Vec<String> = Vec::new();
+        for p in products {
+            if p.product_type != spec.name {
+                continue;
+            }
+            if let Some(v) = attr_str(p, "oem_or_aftermarket") {
+                if !values_seen.contains(&v) {
+                    values_seen.push(v);
+                }
+            }
+            if values_seen.len() >= 2 {
+                break;
+            }
+        }
+        for want in values_seen {
+            let text = format!("{} {}", want.to_lowercase(), spec.name.to_lowercase());
             let id = format!("auto-q-oem-{qi:03}");
-            let want = if oem == "oem" { "OEM" } else { "Aftermarket" };
-            push_query(id, text, "attribute_plus_entity", &|p| {
-                if p.product_type != spec.name {
+            let want_for_judge = want.clone();
+            let type_name = spec.name;
+            push_query(id, text, "attribute_plus_entity", &move |p| {
+                if p.product_type != type_name {
                     return RelevanceLabel::Irrelevant;
                 }
-                if attr_str(p, "oem_or_aftermarket").as_deref() == Some(want) {
+                if attr_str(p, "oem_or_aftermarket").as_deref() == Some(want_for_judge.as_str()) {
                     RelevanceLabel::Exact
                 } else {
                     RelevanceLabel::Partial

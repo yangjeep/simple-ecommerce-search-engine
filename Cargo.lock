@@ -608,10 +608,7 @@ dependencies = [
  "phase9-eval",
  "rand",
  "rand_chacha",
- "roaring",
- "round1-eval",
  "serde_json",
- "ureq",
 ]
 
 [[package]]

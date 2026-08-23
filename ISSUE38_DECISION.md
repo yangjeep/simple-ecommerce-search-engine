@@ -136,6 +136,25 @@ design questions for a future dedicated cycle (matching how P9-E05
 treated a structurally similar resolution-priority gap), not patched in
 this pass.
 
+**Second correction round (Issue #42's pre-merge independent review)**:
+before merging, a fresh independent review found and this pass fixed
+three further real issues -- a `failure_taxonomy::classify` bug that
+mislabeled successfully-routed non-entity hard constraints as "demoted
+to Punt"; the last of `automotive.rs`'s fixed-candidate-list templates,
+inconsistently left unfixed after the first correction round; and a
+non-deterministic Tantivy multi-threaded indexing default in the shared
+`phase9_eval::bitmap_delegate` module that contradicted this project's
+own "byte-identical across 5 runs" claim (found by this session's own
+continued verification, not by the reviewer). All three are fixed, with
+regression coverage, and verified by rerunning E2/E3 five times each and
+diffing raw output byte-for-byte. **Neither E2/E3 verdict above changes**
+-- both underlying architectural findings hold under the corrected
+numbers. The Tantivy-determinism fix is scoped to Issue #38's own E2/E3
+binaries; Phase 9's already-published results used the same shared
+module before this fix and have not been re-audited (GitHub Issue #43,
+not silently left unmentioned). Full detail:
+`docs/experiments/ISSUE38_LOG.md`'s "Second correction round" section.
+
 ## The E1 verdict, stated precisely
 
 **PASSES**, via B2. The naive B design's failure was real and

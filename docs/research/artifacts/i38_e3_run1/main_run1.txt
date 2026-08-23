@@ -8,8 +8,8 @@ distinct enum values registered in the lexicon: 178
 'size' Numeric values profiled (automotive Wiper Blades only): 13 distinct (profiled separately from the Enum lexicon entirely -- CatalogProfile's numeric_values map is never consulted by compile_lexicon)
 lexicon.resolve("34") candidate count: 1 (this run's actual apparel-jeans size anchor, derived the same way the size_schema_conflict workload derives it -- expected 1 if only apparel jeans registers this Enum value; confirms automotive's Numeric size values never reach the lexicon at all, so there is no 'ambiguous candidate list' for the profiler to resolve; the gap is entirely in compile()'s keyword branch, not here)
 
-  [manifest] experiment=I38-E3 method=native_compiled_pipeline commit=806b807af34d dirty=true host=vm cpus=4 os=linux seed=954450142 warmup=1 reps=1
-  [manifest] dataset=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787425233)  query_set=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787425233)
+  [manifest] experiment=I38-E3 method=native_compiled_pipeline commit=774c00825c1c dirty=true host=vm cpus=4 os=linux seed=954450142 warmup=1 reps=1
+  [manifest] dataset=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787445538)  query_set=crates/issue38-e2e3-eval/src/mixed_merchant.rs (size=14469b_mtime=1787445538)
   [manifest] config={"delegate_oversample":20,"k":10,"min_enum_frequency":1,"n_per_family":1000,"selectivity_threshold":0.05}
 catalog: 3000 products (1000 furniture + 1000 apparel + 1000 automotive)
 workload: 11 queries
@@ -25,7 +25,8 @@ fallback rate (Punt share of all queries): 45.5%
 --- failure taxonomy ---
   entity_resolved_but_punted: 2 (18.2%)
   entity_resolved_structural: 4 (36.4%)
-  vocabulary_gap_demoted_to_punt: 5 (45.5%)
+  non_entity_constraint_resolved: 2 (18.2%)
+  vocabulary_gap_demoted_to_punt: 3 (27.3%)
 
 --- correctness ---
   NDCG@10: n=11 mean=0.7273 sd=0.4671 | p10=-0.0000 p25=0.5000 p50=1.0000 p75=1.0000 p90=1.0000 p95=1.0000 p99=1.0000 | min=-0.0000 max=1.0000
@@ -47,7 +48,7 @@ fallback rate (Punt share of all queries): 45.5%
   candidates: n=11 mean=928.1818 docs sd=1333.9177 docs | p10=10.0000 p25=100.0000 p50=250.0000 p75=1625.0000 p90=3000.0000 p95=3000.0000 p99=3000.0000 | min=0.0000 max=3000.0000 docs
 
 --- latency (execute_planned, end-to-end, single-call per query) ---
-  execute_planned: n=11 mean=0.0628ms sd=0.0719ms | p10=0.0021 p25=0.0148 p50=0.0297 p75=0.0956 p90=0.1434 p95=0.1823 p99=0.2134 | min=0.0003 max=0.2211ms
+  execute_planned: n=11 mean=0.0420ms sd=0.0646ms | p10=0.0014 p25=0.0092 p50=0.0187 p75=0.0360 p90=0.0869 p95=0.1547 p99=0.2089 | min=0.0003 max=0.2224ms
 
 summary written to docs/research/artifacts/i38_e3_run1/summary.json
 
