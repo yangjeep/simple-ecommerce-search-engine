@@ -634,6 +634,7 @@ dependencies = [
  "phase9-eval",
  "rand",
  "rand_chacha",
+ "serde",
  "serde_json",
  "tantivy",
 ]

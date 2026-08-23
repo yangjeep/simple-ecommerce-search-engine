@@ -1,0 +1,178 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I42-E2b
+phase: issue-42
+issue: 42
+decision_document: docs/experiments/ISSUE42_LOG.md#i42-e2b-actual-offline-llm-assisted-feature-discovery-and-physical-selection
+claim: >
+  Issue #42 E2b: can an offline LLM-assisted feature-discovery pass,
+  gated by a deterministic validator that only ever consults real
+  measured statistics (never the oracle), discover a real feed's
+  structural feature roles and physical primitives well enough to be
+  worth compiling into the fast path? Evaluated on two independent real
+  sources -- WANDS's real product.csv (a preregistered 36-key sample)
+  and automotive's real 17-field native attribute set -- plus 3
+  name-perturbation configurations of the WANDS sample (unperturbed,
+  anonymized `feature_NNN`, noisy-but-plausible misleading names).
+
+  Per the user's own chosen mechanism for the "LLM proposal" step (an
+  independent offline agent pass captured as a frozen JSON artifact,
+  mirroring this repo's own P2-E09 "model-assisted canonicalization"
+  precedent -- never a live model call embedded in test/production
+  code), 8 independent, blinded subagents (4 configurations x 2 runs)
+  each received only bounded inputs (key names/aliases, sample values,
+  real statistics) and returned a raw JSON array of Descriptors, saved
+  verbatim to dataset_cache/export/e2b_llm_proposals_<config>_run<N>.json
+  and never regenerated after being written.
+
+  Three baselines were scored against e2b_oracle.rs's hand-authored
+  ground truth (53 fields: 17 automotive + 36 WANDS): statistics-only
+  (no access to key names), LLM proposal with no validator, and LLM +
+  deterministic validator (reusing production's own
+  commerce_core::index::IdentifierClassifier::accepts for the
+  identifier-uniqueness check). Results: statistics-only macro
+  F1=0.5366 (the honest "no semantic understanding" floor),
+  LLM-no-validator F1=0.6050, LLM+validator F1=0.6269 (recall 0.8889 at
+  precision 0.9756 on the accepted-structural set). Repeated-run
+  agreement (role + physical primitive, run1 vs run2, across all 4
+  configurations): 107/125 (85.60%) -- a real, concrete disagreement:
+  automotive's thread_size was classified enum/bitmap_enum by run 1 and
+  numeric/numeric_range by run 2. Macro F1 degradation under name
+  perturbation: wands_baseline 0.6753 (best, real key visible),
+  wands_noisy 0.6573 (close to baseline -- misleading names did NOT
+  meaningfully fool the proposing passes), wands_anonymized 0.4900 (the
+  clearest real degradation -- losing the key's own name costs real
+  accuracy, as hypothesized).
+
+  **Two confirmed implementation defects were found by adversarial
+  self-review before any number was trusted, both fixed with a
+  regression test, both preserved pre-/post-correction (rule 9 --
+  raw_results below)**: (1) unsafe_accepted_count originally incremented
+  on every validator *rejection*, measuring the opposite of "unsafe
+  accepted structural classification" -- first (buggy) run: 29; fixed
+  by redefining against the protocol's own wording (an accepted
+  structural descriptor whose oracle-confirmed role is actually
+  Identifier/Relationship) -- corrected: 0. (2) e2b_ingest::build_catalog
+  matched the real CSV feature key against a descriptor's raw `.key`
+  field, never `.real_key` -- silently zero-coverage for every
+  anonymized/noisy-named accepted field, since WANDS's alphabetically-
+  first config ("wands_anonymized") always won the per-real-key
+  first-resolved race. First (buggy) run: LLM+validator end-to-end
+  NDCG@10=0.0000 (n_queries_scored=0); fixed with real_key_of(); corrected:
+  NDCG@10=0.0108 (n_queries_scored=251), directly comparable to oracle's
+  own NDCG@10=0.0100 (n_queries_scored=270). Both defects were in the
+  evaluation harness only -- nothing in commerce_core was touched by
+  E2b's own implementation, and no GO-gate threshold was changed after
+  seeing results.
+
+  **GO gate (verbatim, Issue #42's own E2b section)**: zero confirmed
+  unsafe accepted structural classifications -- PASS (0 found); >=80%
+  recall on retrieval-significant reference features -- PASS (100.0%);
+  end-to-end relevance within 5% of oracle -- INCONCLUSIVE (relative gap
+  7.57%, but the naive substring-matched end-to-end check itself scores
+  only 251-270 of 480 real queries and applies no ranking to
+  Catalog::search's raw hits, so a near-floor NDCG (~0.01) for every
+  baseline including oracle is expected and a relative gap against it is
+  not a trustworthy signal in either direction -- a real, disclosed
+  limitation of this naive check's own design, not a new threshold
+  introduced after seeing results); >=90% repeated-run agreement --
+  FAIL (85.60%); real structured unseen feed evidence (WANDS) -- PASS.
+
+  **Terminal verdict: REVISE, not GO, not STOP.** Two gates pass
+  cleanly, one fails outright (stability, a real if modest shortfall),
+  one is inconclusive because the end-to-end check's own naive,
+  unranked design cannot produce a trustworthy signal at this magnitude
+  -- recorded as inconclusive rather than manufactured into a pass or
+  fail. Directionally encouraging (statistics-only's honest floor vs.
+  LLM+validator's real F1 gain; zero confirmed unsafe acceptances; 100%
+  retrieval-significant recall; graceful degradation under misleading
+  names) but does not clear the preregistered bar as stated. Per Issue
+  #42's own scope boundary, E4/E5/E6 remain explicitly out of scope
+  (protocol/design only). Full detail:
+  docs/experiments/ISSUE42_LOG.md's "I42-E2b" section.
+
+git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+binary: crates/issue42-eval/src/bin/e2b_feature_discovery_eval.rs
+build_command: cargo build --release -p issue42-eval
+run_command: |
+  ./target/release/e2b_feature_discovery_eval [output_summary_json_path]
+  # requires dataset_cache/export/e2b_llm_proposals_<config>_run<N>.json
+  # (8 files: wands_baseline/wands_anonymized/wands_noisy/automotive x
+  # run1/run2) to already exist -- these are frozen subagent outputs,
+  # never regenerated by this binary itself.
+
+dataset:
+  name: WANDS's real dataset_cache/wands/product.csv (a preregistered
+    36-key sample spanning numeric/boolean/enum/ambiguous/free-text/
+    identifier-trap/relationship fields, selected once from real
+    statistics before any oracle role was assigned) plus automotive's
+    real 17-field native attribute set (issue42_eval::e2b_workload::automotive_unified_stats(1500),
+    reusing commerce_core's own compute_field_stats mechanism directly).
+    End-to-end scoring uses WANDS's real 480 queries (query.csv) and
+    233,448 real relevance judgments (label.csv, 231,873 distinct
+    (query_id, product_id) pairs after dedup).
+  source: crates/issue42-eval/src/e2b_workload.rs::{load_wands_feed,
+    automotive_unified_stats, load_wands_queries, load_wands_labels},
+    crates/issue42-eval/src/e2b_oracle.rs::{wands_oracle, automotive_oracle}
+  size: 53 oracle fields (17 automotive + 36 WANDS), 45 oracle-accepted
+    as structural (Enum/Numeric/Boolean); 42,994 real WANDS products in
+    the ingested end-to-end catalog per baseline
+
+engine:
+  statistics_only: issue42_eval::e2b_statistics_baseline::classify (no
+    access to a field's own name; uniqueness/cardinality/numeric-
+    parseable-fraction/mean-value-length only)
+  llm_no_validator: frozen subagent JSON output, first-run-wins per
+    real key across the 4 configurations, used directly -- evaluation
+    only, explicitly never a "ship this" baseline
+  llm_plus_validator: issue42_eval::e2b_validator::validate, reusing
+    commerce_core::index::IdentifierClassifier::accepts directly for
+    the Identifier re-check
+  oracle: issue42_eval::e2b_oracle::{wands_oracle, automotive_oracle}
+    (hand-authored, the comparison target every other baseline is scored
+    against, not itself scored)
+  end_to_end_ingestion: issue42_eval::e2b_ingest::build_catalog (real
+    commerce_core::domain::Catalog, materializing only each baseline's
+    own accepted Enum/Boolean/Numeric descriptors)
+  note: no production commerce_core code was touched by E2b's own
+    implementation; the end-to-end check is a disclosed, scoped
+    substitute for commerce_core::ir::query::compile (see
+    e2b_ingest.rs's own doc comment) -- naive literal-substring
+    constraint matching, real unmodified Catalog::search, no ranking
+    applied to raw hits.
+
+workload:
+  perturbation_configurations: 4 (wands_baseline unperturbed,
+    wands_anonymized feature_NNN by sorted-key order,
+    wands_noisy hand-picked plausible-but-wrong merchant-style names,
+    automotive unperturbed synthetic control), 2 independent runs each
+    = 8 total frozen LLM-proposal artifacts
+  repeated_run_agreement: 107/125 role+primitive agreements across all
+    4 configurations (85.60%)
+  macro_f1_by_configuration: wands_baseline=0.6753, wands_noisy=0.6573,
+    wands_anonymized=0.4900, automotive=0.2597
+  end_to_end_queries_scored: oracle 270/480, statistics-only 270/480
+    (identical set of accepted Enum fields to oracle for this check),
+    LLM+validator 251/480 -- of WANDS's 480 real queries, only those
+    producing >=1 naive substring-matched constraint are scored
+
+seed: "no seed -- the 8 LLM-proposal artifacts are frozen, hand-saved
+  JSON files, never regenerated by this binary; WANDS's product.csv/
+  query.csv/label.csv are the dataset's own real, static files"
+
+latency_methodology: N/A -- E2b measures classification
+  accuracy/agreement/relevance, not serving latency; <=5% serving
+  overhead vs oracle (the GO gate's own 5th criterion) was not measured
+  in this pass and remains open (see ISSUE42_LOG.md's own limitations
+  section)
+
+raw_results: docs/research/artifacts/i42_e2b_run1/
+  - main_run1.txt (corrected, post-fix console output)
+  - summary.json (corrected, post-fix machine-readable summary)
+  - main_run1_pre_correction_buggy.txt / summary_pre_correction_buggy.json
+    (the original, pre-fix run -- preserved per rule 9, never deleted
+    in favor of the corrected numbers)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE42_LOG.md's "I42-E2b" section for the full
+  defect-by-defect correction history and the GO-gate breakdown.

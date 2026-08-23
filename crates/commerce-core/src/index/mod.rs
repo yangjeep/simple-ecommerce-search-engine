@@ -19,7 +19,10 @@ use crate::domain::{
 };
 use crate::ir::{CommerceQuery, ResolvedConstraint, StructuralConstraint};
 
-pub use identifier::{FieldStats, IdentifierClassifier, IdentifierDictionary};
+pub use identifier::{
+    compute_field_stats, FieldStats, IdentifierClassifier, IdentifierDictionary,
+    MIN_IDENTIFIER_SAMPLE_SIZE, MIN_UNIQUENESS_RATIO,
+};
 pub use rank::RankedHit;
 
 type Ordinal = u32;

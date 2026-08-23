@@ -1349,3 +1349,203 @@ Full detail: `docs/adr/0012-residual-lexical-policy.md`,
 the decision record Issue #42 rule 9 requires for a production change
 made on the strength of a GO verdict — R2's and R3's own sections above
 remain the primary experimental evidence and are not restated here.
+
+## I42-E2b: actual offline LLM-assisted feature discovery and physical selection
+
+**Hypothesis** (`docs/experiments/ISSUE42_PROTOCOL.md`'s E2b amendment
+1): an LLM proposal pass, gated by a deterministic validator that only
+ever consults real measured statistics (never the oracle), can discover
+a real feed's structural feature roles and physical primitives with
+recall/precision/stability/end-to-end-relevance/serving-overhead close
+enough to a hand-authored oracle to be worth compiling into the fast
+path — evaluated on two independent real sources (WANDS's real
+`product.csv`, a 36-key sample; automotive's real 17-field native
+attribute set) plus 3 name-perturbation configurations of the WANDS
+sample (unperturbed, anonymized `feature_NNN`, noisy-but-plausible
+misleading names).
+
+**Method**: per the user's own chosen mechanism for the "LLM proposal"
+step (an independent offline agent pass captured as a frozen JSON
+artifact, mirroring the repo's own P2-E09 "model-assisted
+canonicalization" precedent — never a live model call embedded in
+test/production code), 8 independent, blinded subagents (4
+configurations x 2 runs) were each given only bounded inputs (key
+names/aliases, sample values, real statistics) and returned a raw JSON
+array of `Descriptor`s, saved verbatim to
+`dataset_cache/export/e2b_llm_proposals_<config>_run<N>.json`. Three
+baselines were then computed and scored against `e2b_oracle.rs`'s
+hand-authored ground truth (53 fields: 17 automotive + 36 WANDS):
+statistics-only (`e2b_statistics_baseline.rs`, no access to key names),
+LLM proposal with no validator (first-run-wins per real key), and LLM +
+deterministic validator (`e2b_validator.rs`, reusing production's own
+`IdentifierClassifier::accepts` for the identifier-uniqueness check).
+End-to-end Recall@10/NDCG@10 was computed via
+`phase9_eval::wands_relevance::ndcg_recall_mrr` against WANDS's real 480
+queries and 233,448 judgments, using a disclosed, scoped substitute for
+the full `ir::query::compile` pipeline (`e2b_ingest::naive_constraints_for_query`
+— literal substring matching of a query against each accepted Enum
+descriptor's own real known values; see that module's own doc comment).
+Reproduction: `cargo build --release -p issue42-eval &&
+./target/release/e2b_feature_discovery_eval <output.json>` (requires the
+8 files above to already exist under `dataset_cache/export/`).
+
+### Two confirmed defects found by adversarial self-review, before trusting any number
+
+Per Issue #42's own governance ("do not trust the experiment author"),
+the eval binary's own first output was not accepted at face value.
+Re-reading the binary against its own preregistered metric definitions
+surfaced two real, confirmed implementation defects — both fixed with a
+regression test, both preserved below labeled pre-/post-correction
+(rule 9: never silently replace an invalidated number):
+
+1. **`unsafe_accepted_count` measured the opposite of its own
+   definition.** The first version incremented on every validator
+   *rejection* (`!validation.accepted`) — i.e. it counted the validator
+   successfully catching a bad proposal, not a bad proposal it let
+   through. First (buggy) run: **29** "unsafe accepted" — a number that
+   would have failed the "zero confirmed unsafe accepted structural
+   classifications" gate outright, for exactly the wrong reason. Fixed
+   by redefining the metric against `docs/experiments/ISSUE42_PROTOCOL.md`'s
+   own wording — an *accepted* (non-abstain, structural) descriptor in
+   the final validated set whose oracle-confirmed real role is actually
+   `Identifier`/`Relationship` (the cross-item-identity conflation R3's
+   own identifier-serving-primitive work exists to prevent) — extracted
+   into a standalone `unsafe_accepted_count` function with 2 new unit
+   tests (`e2b_feature_discovery_eval.rs`'s own `#[cfg(test)]` module).
+   Corrected count: **0**.
+2. **`e2b_ingest::build_catalog` matched the real CSV feature key
+   against a descriptor's raw `.key` field, never `.real_key`.** This is
+   correct for the oracle/statistics-only baselines (their `key` is
+   always the true feed column) but wrong for the "LLM + validator"
+   baseline: because `per_config_runs` iterates configs in
+   `BTreeMap` order and `"wands_anonymized" < "wands_baseline" <
+   "wands_noisy"` alphabetically, every WANDS real key's *first*-resolved
+   descriptor came from the **anonymized** config, whose own `.key` is
+   an alias like `feature_5` — `real_key` correctly carried the true
+   column name, but `build_catalog` never consulted it. Every accepted
+   WANDS field in the "LLM + validator" baseline was silently looking
+   for a CSV column that does not exist. First (buggy) run: **LLM +
+   validator: NDCG@10=0.0000 Recall@10=0.0000 (n_queries_scored=0)** — a
+   hard zero that looked like a real relevance failure but was actually
+   a lookup bug. Fixed by adding `real_key_of(d) ->
+   d.real_key.as_deref().unwrap_or(&d.key)` and using it everywhere
+   `build_catalog` keys its `typed_keys`/`typed_by_key` maps, plus a new
+   regression test,
+   `e2b_ingest::tests::build_catalog_resolves_real_key_when_key_is_an_alias`.
+   Corrected: **LLM + validator: NDCG@10=0.0108 Recall@10=0.0004
+   (n_queries_scored=251)** — now directly comparable to oracle's own
+   NDCG@10=0.0100 (n_queries_scored=270).
+
+Both defects were in the evaluation harness itself, not in
+`commerce_core` — nothing in production was touched by E2b's own
+implementation, and no threshold in the preregistered GO gate was
+changed after seeing results; only genuine code bugs (backwards metric
+semantics; a key-resolution lookup bug) were fixed, each with its own
+regression test, exactly the class of correction Issue #42 rule 6
+(RED-before-GREEN for production changes) and rule 10 (fresh adversarial
+review + regression tests for confirmed defects) call for.
+
+### Results (post-correction; both fmt/clippy/test/build gates green, `cargo test --workspace --all-features` 0 failures)
+
+| Baseline | macro F1 (role) | accepted-structural precision/recall | n accepted | abstention rate |
+|---|---|---|---|---|
+| 1. Statistics-only | 0.5366 | 0.9783 / 1.0000 | 46 | 0.0000 |
+| 2. LLM proposal, no validator | 0.6050 | 0.9778 / 0.9778 | 45 | 0.0189 |
+| 3. LLM + deterministic validator | 0.6269 | 0.9756 / 0.8889 | 41 | 0.1321 |
+
+Repeated-run agreement (role + physical primitive, run1 vs run2, across
+all 4 configurations): **107/125 (85.60%)**. A concrete real
+disagreement the metric is designed to catch: automotive's
+`thread_size` was classified `enum`/`bitmap_enum` by run 1 and
+`numeric`/`numeric_range` by run 2 — a genuine judgment call (thread
+sizes are conventionally written as a small bounded set of strings like
+"M12x1.5", but are also plausibly parsed/range-filtered) that the two
+independent runs resolved differently.
+
+Macro F1 by perturbation configuration (degradation under each
+perturbation class): automotive 0.2597 (lowest — a smaller, 17-field
+sample makes each misclassification proportionally costlier, not
+evidence the LLM handles synthetic data worse), `wands_anonymized`
+0.4900 (the clearest real degradation — losing the key's own name costs
+real accuracy, as hypothesized), `wands_baseline` 0.6753 (best, as
+expected with the real key name visible), `wands_noisy` 0.6573 (close to
+baseline — the misleading names did **not** meaningfully fool the
+proposing passes, which leaned on value-shape/statistics evidence over
+the name when the two conflicted; e.g. `samplepartnumber`'s noisy alias
+`product_code` was still correctly flagged `identifier`/low retrieval
+significance in every one of the 8 runs that saw it).
+
+End-to-end (naive substring-matched structural retrieval; `commerce_core::domain::Catalog::search`,
+unmodified): oracle NDCG@10=0.0100 Recall@10=0.0004 (n_queries_scored=270,
+mean_match_set_size=21.3), statistics-only identical to oracle
+(NDCG@10=0.0100, since neither baseline diverges enough in *which*
+Enum fields are accepted to change the naive constraint set materially),
+LLM+validator NDCG@10=0.0108 Recall@10=0.0004 (n_queries_scored=251,
+mean_match_set_size=23.1) — relative NDCG gap vs oracle 0.0757.
+
+**This end-to-end check's own absolute magnitude is not a reliable
+signal in either direction, and this is disclosed rather than papered
+over.** Only 251-270 of WANDS's 480 real queries produce even one naive
+substring-matched constraint (most are noun-phrase searches with no
+literal enum-value substring), and `Catalog::search`'s raw hits are
+truncated to the first `K` in catalog file order with **no ranking
+applied at all** — so a near-floor NDCG (~0.01) is expected for *every*
+baseline, oracle included, and a relative gap computed against a
+near-zero oracle score is numerically unstable. The eval binary itself
+flags this (`e2e_check_reliable = false` whenever oracle scores fewer
+than 20 queries or NDCG@10 < 0.05) rather than letting a bare pass/fail
+boolean imply more precision than a naive, unranked, substring-matched
+check can support. This is a real, disclosed limitation of the scoped
+end-to-end check (documented in `e2b_ingest.rs`'s own doc comment from
+the start), not a new threshold introduced after seeing results — the
+preregistered 5%-relative-gap computation itself was never changed.
+
+### GO gate evaluation (verbatim thresholds from Issue #42's own E2b section)
+
+| Gate | Result | Verdict |
+|---|---|---|
+| Zero confirmed unsafe accepted structural classifications | 0 found | **PASS** |
+| >=80% recall on retrieval-significant reference features | 100.0% | **PASS** |
+| End-to-end relevance within 5% of oracle | relative gap 7.57%, check itself unreliable (see above) | **INCONCLUSIVE** |
+| >=90% repeated-run agreement on accepted physical primitive | 85.60% | **FAIL** |
+| Real structured unseen feed evidence (WANDS) | yes | **PASS** |
+
+**Overall: REVISE, not GO, not STOP.** Two of five gates pass cleanly,
+one fails outright (stability, 85.60% < 90% — a real, if modest,
+shortfall, not a rounding artifact), and one is inconclusive because the
+end-to-end check's own design (naive, unranked, substring-matched) does
+not produce a trustworthy signal at this magnitude — recording it as
+inconclusive rather than manufacturing a pass or fail (Issue #42 rule
+12). The evidence is directionally encouraging for the underlying idea
+(statistics-only's honest floor at F1=0.5366 vs LLM+validator's 0.6269;
+zero confirmed unsafe accepted classifications; 100% retrieval-significant
+recall; graceful degradation under noisy-but-misleading names) but does
+not clear the preregistered bar as stated. This is the E2b epic's own
+final measurement — no threshold was loosened to reach a different
+verdict.
+
+### Limitations and what would be needed to re-test
+
+- The end-to-end check needs either a real `ir::query::compile`
+  integration (exercising the full lexicon/ranking pipeline WANDS's own
+  480 queries deserve) or a differently-scoped proxy that applies actual
+  ranking to `Catalog::search`'s raw hits, not a `take(K)` in file
+  order — the current naive check cannot discriminate baselines at this
+  magnitude and should not be relied on as the sole evidence for the
+  relevance-parity gate in any future round.
+- 85.60% repeated-run agreement is close to, but short of, the 90% bar;
+  a larger N of independent runs (more than 2 per configuration) would
+  narrow the confidence interval on this specific number, which the
+  current 2-run design cannot distinguish from a slightly-higher true
+  rate.
+- Per Issue #42's own scope boundary, E4/E5/E6 are explicitly **not**
+  implemented here (protocol/design only) — this section closes out
+  E2b's own measurement phase, not the full epic.
+
+Raw artifacts preserved: all 8 `dataset_cache/export/e2b_llm_proposals_*.json`
+files (the frozen subagent outputs, never regenerated after being
+written); the pre-correction run's own console output and summary JSON
+(`unsafe_accepted_count=29`, `LLM + validator: NDCG@10=0.0000
+Recall@10=0.0000 n_queries_scored=0`) is preserved in this session's own
+history per rule 9, superseded by, not deleted in favor of, the
+corrected numbers reported above.

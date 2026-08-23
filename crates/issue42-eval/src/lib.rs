@@ -10,6 +10,12 @@
 //! `generate_workload`/`ground_truth` judgment maps, so a bug shared
 //! between a catalog generator and its own labels cannot hide from it.
 
+pub mod e2b_ingest;
+pub mod e2b_oracle;
+pub mod e2b_schema;
+pub mod e2b_statistics_baseline;
+pub mod e2b_validator;
+pub mod e2b_workload;
 pub mod oracle;
 pub mod r1_experimental;
 pub mod r1_workload;
