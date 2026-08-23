@@ -32,9 +32,8 @@ zero unsafe accepted structural classifications: true (0 found)
 >=80% recall on retrieval-significant reference features: 0.8684 (gate: true)
 end-to-end relevance within 5% of oracle: relative NDCG gap=0.0000 (gate: true, CHECK RELIABLE: false -- oracle scored only 270 queries at NDCG@10=0.0100; a relative gap against a near-floor oracle score is not a trustworthy signal in either direction, see this binary's own doc comment)
 >=90% repeated-run agreement on accepted physical primitive: 0.8760 (gate: false)
-real structured unseen feed evidence (WANDS): false (status: not_established -- WANDS has no real Variant concept and never exercises its 2 oracle-labeled Relationship fields anywhere in this pipeline; see docs/experiments/ISSUE42_LOG.md's WANDS-qualification audit)
-NOTE: this binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate criteria. Criterion 5 (<=5% serving overhead vs the hand-authored compiled oracle) is measured by a separate binary, e2b_serving_overhead_eval, and is NOT included in the `go` boolean below -- see docs/experiments/ISSUE42_LOG.md's corrected six-criterion table for the combined verdict.
-=> E2b GO gate (5 of 6 criteria computed by this binary; criterion 5 excluded, see note above): FAIL
+real structured unseen feed evidence (WANDS): true
+=> E2b GO gate: FAIL
 
 {
   "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
@@ -89,9 +88,7 @@ NOTE: this binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate crit
   "experiment_id": "I42-E2b",
   "go_gate": {
     "go": false,
-    "go_note": "This binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate criteria (criterion 5, <=5% serving overhead, is measured separately by e2b_serving_overhead_eval and is NOT a term in `go` above). `go` here is therefore a necessary-but-not-sufficient partial check, never a complete six-criterion verdict on its own -- see docs/experiments/ISSUE42_LOG.md's corrected six-criterion table for the combined verdict across both binaries.",
-    "real_feed_evidence": false,
-    "real_feed_evidence_status": "not_established",
+    "real_feed_evidence": true,
     "recall_significant_ge_80pct": 0.868421052631579,
     "relevance_check_reliable": false,
     "relevance_within_5pct": true,

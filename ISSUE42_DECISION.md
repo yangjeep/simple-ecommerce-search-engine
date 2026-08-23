@@ -25,6 +25,20 @@ overall verdict remains REVISE. Full detail throughout the E2b sections
 below, each updated in place with the correction and the original text
 preserved, quoted and labeled superseded, per Issue #42's own rule 9.
 
+A fresh, independent adversarial review of that closure pass itself
+(two reviewers, no implementation mandate, converging independently on
+the same findings) then found and required fixing two real defects: the
+original serving-overhead PASS was reached through a reactive,
+stage-by-stage measurement process (a genuine self-grading/optional-
+stopping risk), remedied with a confirmatory re-run taken after the
+methodology was fixed (verdict unchanged: PASS, now on confirmatory
+evidence); and the corrected gate accounting existed only in
+documentation, never in the machine-readable artifact
+`e2b_feature_discovery_eval.rs` itself produces (fixed directly in code,
+verified by rebuilding and re-running). See
+`docs/experiments/ISSUE42_LOG.md`'s own "Fresh adversarial review:
+findings and corrections" subsection for full detail.
+
 ## What this covers
 
 - **Phase 0**: PR #39 (Issue #38's E1-E3) merged cleanly into

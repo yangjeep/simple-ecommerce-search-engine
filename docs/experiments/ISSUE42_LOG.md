@@ -1895,6 +1895,33 @@ PASS. Full detail: `benchmarks/manifests/i42_e2b_serving_overhead_eval.yaml`,
 preserved per rule 9 — indexed-candidates-only, execute_ranked-added-
 no-tail-gate, and the final run with the P95/P99 gate evaluation added).
 
+**Correction (fresh adversarial review — see section 7 below for full
+detail)**: both independent reviewers confirmed a real methodological
+concern with how this PASS was originally reached — the three
+measurement stages above were added reactively, each specifically after
+the prior stage's own INCONCLUSIVE result, and the P95/P99 stdout output
+was already visible before the gate-evaluation code for it existed (see
+`main_run1_stage2_no_tail_gate.txt`'s own timestamped, preserved raw
+output). This is a real self-grading/optional-stopping risk, not merely
+a hypothetical one, even though the underlying P95/P99 numbers
+themselves were independently re-verified as arithmetically correct by
+both reviewers. The standard remedy — a confirmatory measurement taken
+AFTER the methodology is fixed, with no further changes — was run:
+`docs/research/artifacts/i42_e2b_serving_overhead_run1/main_run2_confirmatory.txt`/
+`summary_confirmatory_run2.json`, using the exact same, now-unchanged
+code. Result: P95 **-4.17%**, P99 **-2.65%** (both above the timer floor,
+both clear <=5%) — the same direction and magnitude class as the
+original run (-1.95%/-4.11%) and as reviewer B's own independent
+re-run performed during the review itself (-0.41%/-2.28%) — three
+independent above-floor measurements, all comfortably within the ±5%
+bar, all favoring (or statistically indistinguishable from) the
+LLM+validator bundle. **Verdict stands: PASS**, now on genuinely
+confirmatory evidence gathered under a fixed methodology, not only the
+exploratory run that originally established it — the exploratory
+process that produced the first PASS is a disclosed methodology
+weakness in how the result was ORIGINALLY reached, not evidence that
+the result itself is wrong.
+
 ### 4. WANDS "real structured unseen feed" qualification audit (GO-gate criterion 6)
 
 **Question**: does WANDS, AS ACTUALLY USED in E2b, expose genuine
@@ -1931,14 +1958,36 @@ previously connected to this specific gate requirement:
 3. **The two relationship fields' real values do not reference other
    in-catalog products at all.** Direct inspection of the real
    `dataset_cache/wands/product.csv` values for both fields
-   (`compatibledrainassemblypartnumber`: `"d102rg"`, `"1795"`, ...;
-   `compatiblediningchairpartnumber`: `"dp519s or dp520s"`, `"does not
-   apply"`, ...) shows free-text external manufacturer part-number
-   strings — some containing disjunctions ("or"), some literally "does
-   not apply" — never a WANDS `product_id` or any other in-catalog
-   identifier. These are cross-references to a DIFFERENT company's parts
-   catalog, not a real Product/Variant relationship within this commerce
-   catalog.
+   (`compatibledrainassemblypartnumber`: `"d102rg"`, `"1795"`, `"does not
+   apply"`, ...; `compatiblediningchairpartnumber`: `"dp519s or
+   dp520s"`, `"810ec-bs293kd"`, ...) shows free-text external
+   manufacturer part-number strings — some containing disjunctions
+   ("or"), `compatibledrainassemblypartnumber` in particular sometimes
+   literally "does not apply" — never a WANDS `product_id` or any other
+   in-catalog identifier. These are cross-references to a DIFFERENT
+   company's parts catalog, not a real Product/Variant relationship
+   within this commerce catalog.
+
+   **Correction (fresh adversarial review, reviewer B)**: this
+   paragraph's own first draft misattributed `"does not apply"` to
+   `compatiblediningchairpartnumber`'s sample values; it is a real value
+   of `compatibledrainassemblypartnumber` only (independently
+   re-verified directly against `product.csv`: `grep -o
+   'compatiblediningchairpartnumber\s*:\s*[^|]*'` finds zero occurrences
+   of "does not apply" among that field's real values; `grep -o
+   'compatibledrainassemblypartnumber\s*:\s*[^|]*'` finds it repeatedly).
+   Fixed above. The underlying claim (both fields are external
+   cross-references, never in-catalog identifiers) is unaffected — this
+   was a misattributed example, not a wrong conclusion. A related,
+   separately-confirmed, immaterial spot-check (reviewer A): 5/146
+   `compatibledrainassemblypartnumber` values and 1/53
+   `compatiblediningchairpartnumber` values happen to coincide with real
+   WANDS `product_id`s (e.g. `"1795"`) — almost certainly coincidental
+   given these are short numeric strings measured against a 42,994-row
+   ID space, and does not change the conclusion either: the pipeline
+   never materializes or queries either field regardless (point 2
+   above), so even a genuine incidental ID match would not be a tested
+   relationship capability.
 
 WANDS genuinely satisfies the OTHER dataset requirements beyond dispute
 — real, license-compatible, unseen, category-specific attributes (42,994
@@ -2011,13 +2060,27 @@ the code change).
 
 All three real-WANDS-derived configurations independently and
 consistently sit in an 86-88% band, below 90%, while the smaller
-synthetic automotive control clears it. This is a materially more
-precise measurement (10x the pairwise sample) pointing at a real, stable
-population rate for real messy feed data around 86-88%, not a sampling
-artifact of the original small-N measurement — the larger sample moved
-the number (85.60% -> 87.60%) but did not close the gap to 90%, and the
-per-configuration consistency across three independently-perturbed real
-configurations argues against attributing the shortfall to noise.
+synthetic automotive control clears it. The larger sample moved the
+aggregate number (85.60% -> 87.60%) but did not close the gap to 90%.
+
+**Correction (fresh adversarial review, reviewer B)**: the phrase "10x
+the pairwise sample" / "materially more precise," as originally written
+here, overstated the independence of that sample. `C(5,2)=10` pairwise
+comparisons per configuration are derived from only 5 underlying runs —
+each run participates in 4 of the 10 pairs, so the 10 pairs are
+correlated with each other, not 10 independent Bernoulli trials; the
+effective sample size for estimating a true population rate is closer
+to 5 runs than to 1250 independent draws. This does not overturn the
+FAIL verdict — the aggregate estimate still moved further from 90%, not
+closer, and all three real-WANDS configurations independently (i.e.
+across configurations, which genuinely are independent samples of each
+other) landed in the same 86-88% band — but "not attributable to
+rounding" is a fairer characterization than "materially more precise" or
+"not a sampling artifact," which overclaimed the statistical power a
+correlated-pairs sample actually provides. No confidence interval or
+formal hypothesis test was constructed for this correction; a proper one
+(e.g. treating the 5 runs, not the 10 pairs, as the sampling unit) is
+listed as follow-up work, not computed here.
 
 **Proposal instability vs deterministic-validator instability**: this
 metric compares RAW LLM proposals (role + physical primitive) run to
@@ -2048,7 +2111,7 @@ unlucky).
 | 2 | >=80% recall on retrieval-significant reference features | 86.84% | **PASS** |
 | 3 | End-to-end relevance within 5% of oracle | relative gap 0.00% | **PASS**, with a standing reliability caveat (only 270/480 real queries scored, no ranking applied to raw hits — `e2e_check_reliable=false`, disclosed in the original pass, restated here for completeness) |
 | 4 | >=90% repeated-run agreement | 1095/1250 (87.60%), materially larger sample | **FAIL** |
-| 5 | <=5% serving overhead vs hand-authored oracle | P50 INCONCLUSIVE (timer floor); P95 -1.95%, P99 -4.11% (both above floor) | **PASS**, with the P50 INCONCLUSIVE result disclosed alongside it |
+| 5 | <=5% serving overhead vs hand-authored oracle | P50 INCONCLUSIVE (timer floor) both runs; P95/P99 above floor and within the bar on 3 independent measurements (original run: -1.95%/-4.11%; confirmatory run taken after the methodology was fixed per section 7's own review: -4.17%/-2.65%; reviewer B's own independent re-run: -0.41%/-2.28%) | **PASS**, with the P50 INCONCLUSIVE result disclosed alongside it — see section 7 for the adversarial review that required a confirmatory re-run before this verdict was trusted |
 | 6 | Real structured unseen feed evidence | WANDS has no real Variant concept and never exercises its 2 labeled Relationship fields anywhere in this pipeline | **NOT ESTABLISHED** |
 
 **Overall: still REVISE — for a different, more complete reason than
@@ -2079,6 +2142,149 @@ passed cleanly"; now "one gate fails on stronger evidence, a second was
 never actually established, a third (serving overhead) is newly and
 genuinely measured as passing."
 
+### 7. Fresh adversarial review: findings and corrections
+
+Per Issue #42's own rule 10 and this pass's own instructions, two
+independent reviewer subagents (no implementation task, no access to
+this session's history) inspected the corrected write-up above against
+the actual committed source, raw artifacts, and Issue #42's own live
+preregistration text. Both reviewers independently converged on the
+same two confirmed defects, cross-validating each other without
+coordination — strong evidence both are real, not one reviewer's
+artifact.
+
+**Confirmed defect 1 (both reviewers, independently): criterion 5's
+original PASS verdict was reached through a reactive measurement
+process, a real self-grading/optional-stopping risk.** Both reviewers
+independently reconstructed, from the three preserved artifact stages'
+own file timestamps and raw stdout, that the measurement scope was
+expanded specifically after each prior stage failed to produce a clean
+PASS: stage 1 (`indexed_candidates` only) → INCONCLUSIVE; stage 2 adds
+`execute_ranked`, but its own raw stdout already shows P95/P99 numbers
+comfortably within the ±5% bar *before any gate-evaluation code for
+them existed*; the final stage adds exactly that gate logic, which then
+reports PASS. Reviewer A: "within a five-minute window, three code
+states were run in sequence, each adding a new measurement axis
+specifically after the previous one failed to produce a clean PASS...
+this is exactly the 'cherry-picking whichever measurement happened to
+pass' pattern." Reviewer B, independently: "an explicit acknowledgment
+[in the code's own comment] that the next measurement was chosen
+because the previous one didn't pass." Both reviewers stress the
+underlying P95/P99 arithmetic itself is correct (independently
+recomputed and confirmed by both) — the defect is in the *process* by
+which "PASS" was declared, not a fabricated number.
+
+**Fix**: rather than defend the original process or discard the
+evidence, the standard remedy was applied — a genuine confirmatory
+measurement, taken strictly after the methodology (which stage/operation/
+percentile to gate on) was fixed in code, with no further changes made
+after seeing its result. `e2b_serving_overhead_eval` was re-run once
+more, unchanged, producing
+`docs/research/artifacts/i42_e2b_serving_overhead_run1/main_run2_confirmatory.txt`/
+`summary_confirmatory_run2.json`: P95 **-4.17%**, P99 **-2.65%**, both
+comfortably within ±5%. Combined with reviewer B's own independent
+re-run during the review itself (P95 -0.41%, P99 -2.28%), there are now
+three independent above-timer-floor measurements, all clearing the bar,
+none produced by a process still under suspicion (the confirmatory run
+and reviewer B's run both post-date the methodology being fixed).
+**Verdict stands: PASS** — now resting on confirmatory, not only
+exploratory, evidence. Section 3 above is updated in place with this
+correction; the original exploratory numbers are preserved, not deleted
+(rule 9).
+
+**Confirmed defect 2 (both reviewers, independently): the corrected
+gate accounting was never applied to the actual code that emits the
+machine-readable artifact.** `e2b_feature_discovery_eval.rs`'s own `go`
+boolean and `"go_gate"` JSON object still computed only the original
+five terms, with `real_feed_evidence` hardcoded `true` — the exact
+five-criterion omission this section's own item 1 called a defect in
+prose was still live in code. Reviewer B, independently: "It happens to
+still emit `go: false` only because criterion 4 (stability) independently
+fails; if stability had cleared 90% on this or a future run, this code
+would emit `go: true` while criterion 6 is genuinely NOT ESTABLISHED."
+A real, serious correctness risk for any future automated consumer of
+this JSON, not merely a stale comment.
+
+**Fix**: `real_feed_evidence` is now `false` (reflecting "not confirmed
+to pass," matching the NOT ESTABLISHED finding), with a new
+`real_feed_evidence_status: "not_established"` field explaining why; the
+binary's own console output and JSON now explicitly disclose that it
+computes only 5 of Issue #42's own 6 preregistered criteria, names which
+one is excluded (serving overhead, computed by the separate
+`e2b_serving_overhead_eval` binary), and states that `go` here is a
+partial, necessary-but-not-sufficient check, never a complete
+six-criterion verdict on its own. Verified directly: rebuilt and re-ran
+the binary; the new `docs/research/artifacts/i42_e2b_stability_rerun_run1/summary.json`
+now carries `"real_feed_evidence": false`, `"real_feed_evidence_status":
+"not_established"`, and an explicit `"go_note"` field. The prior state
+is preserved as
+`main_run1_pre_go_gate_fix.txt`/`summary_pre_go_gate_fix.json` (rule 9).
+
+**A third, minor confirmed defect (reviewer B only): a misattributed
+data quote in the WANDS-qualification audit.** Section 4's original text
+attributed the real value `"does not apply"` to
+`compatiblediningchairpartnumber`'s sample values; it is a real value of
+`compatibledrainassemblypartnumber` only (independently re-verified
+directly against `product.csv` before accepting the correction — a
+direct `grep` for `compatiblediningchairpartnumber`'s own real values
+finds zero occurrences of "does not apply"; the same `grep` against
+`compatibledrainassemblypartnumber` finds it repeatedly). Fixed in
+section 4 above. The underlying conclusion (both fields are external
+manufacturer cross-references, never in-catalog identifiers) is
+unaffected — this was a misattributed example, not a wrong finding.
+
+**Plausible concerns raised, addressed by softened framing (not
+"fixed," since neither is a factual error):**
+
+- Reviewer B: the stability re-run's "10x the pairwise sample" /
+  "materially more precise" framing overstated independence, since
+  `C(5,2)=10` pairs per configuration are correlated (derived from only
+  5 underlying runs, not 10 independent trials). Section 5's own framing
+  is corrected above to the fairer "not attributable to rounding,"
+  dropping the overclaimed "materially more precise"/"not a sampling
+  artifact" language. The FAIL verdict itself is unaffected — the
+  aggregate moved further from 90%, not closer, and the per-configuration
+  consistency (a genuinely independent signal, since the three real-WANDS
+  configurations are independent of each other) still holds.
+- Reviewer A: run-count preregistration ("3 new runs, decided before
+  seeing results") is self-reported in the same script that performed
+  the run, with no independently-timestamped commitment predating
+  execution to point to beyond the script's own git commit history.
+  Reviewer B separately found the commit that added this decision
+  (`bc4e616`, 19:14:08) predates the new artifact files' own mtimes
+  (~19:23) and the results commit (`cf6f041`, 19:34:55) — consistent
+  with, though (per reviewer A's own standard) not airtight proof of,
+  a genuine pre-commitment. Recorded as a real, disclosed limitation of
+  self-reported process claims generally, not specific to this run.
+- Reviewer A: criterion 3's PASS (0.00% relative NDCG gap) is close to
+  vacuous evidence, since oracle/statistics-only/LLM+validator all
+  produce byte-identical near-floor scores on the naive end-to-end
+  check — already disclosed via `check_reliable: false` before this
+  review, but the "four of six clear cleanly" framing in section 6 gives
+  it equal rhetorical weight to the more informative PASSes. Noted here;
+  section 6's own table already carries the `e2e_check_reliable=false`
+  caveat inline, which is judged sufficient disclosure without further
+  rewording.
+
+**What both reviewers explicitly cleared** (i.e. checked and found no
+defect): the six-criterion enumeration against Issue #42's own live
+preregistration text (word-for-word, reviewer B fetched the issue body
+directly via the GitHub API); all headline arithmetic (1095/1250 and
+every per-configuration figure, independently recomputed by both
+reviewers from all 20 raw `dataset_cache/export/e2b_llm_proposals_*.json`
+files, byte-for-byte match with no evidence of caching or non-independent
+runs — no two files are identical); the N=2→N pairwise generalization's
+mathematical correctness; the WANDS-qualification audit's core
+conclusions (independently re-verified against live source and raw CSV
+by both); no self-grading (the oracle, validator, and statistics-only
+baseline have no functional dependency on each other, confirmed by
+`grep`); no selective dropping (all 20 expected proposal files present,
+the 270/480 end-to-end scoring filter is code-documented, not silent).
+
+Full workspace quality gate (`cargo fmt`/`clippy`/`test`/`build`)
+re-run clean after all three fixes above — see the completion bar at the
+end of this pass.
+
 ## Epic close-out
 
 Per Issue #42's own "Immediate execution order," step 9 ("stop and
@@ -2102,4 +2308,12 @@ verdict remains REVISE, now for two established gaps (repeated-run
 agreement, materially re-confirmed on a larger sample; real-feed
 Product/Variant/relationship complexity, newly audited and found not
 established) rather than one, alongside a newly-measured, genuine PASS
-on serving overhead. `ISSUE42_DECISION.md` is updated to match.
+on serving overhead. A fresh, independent adversarial review of that
+closure pass itself (section 7 above) found and fixed two real
+defects — a reactive, self-grading-risk measurement process behind the
+original serving-overhead PASS (remedied with a genuine confirmatory
+re-run) and a live code inconsistency where the corrected gate
+accounting existed only in prose, never in the machine-readable
+artifact (fixed directly in `e2b_feature_discovery_eval.rs`) — plus one
+minor misattributed data quote. `ISSUE42_DECISION.md` is updated to
+match.

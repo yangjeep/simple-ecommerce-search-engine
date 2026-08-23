@@ -140,8 +140,21 @@ latency_methodology: bench_harness::Distribution (R-7/Excel-style
   fast to trust
 
 raw_results: docs/research/artifacts/i42_e2b_serving_overhead_run1/
-  - main_run1.txt / summary.json (final -- indexed_candidates P50 +
-    execute_ranked P50/P95/P99, all four gate evaluations)
+  - main_run2_confirmatory.txt / summary_confirmatory_run2.json
+    (CONFIRMATORY -- the operative result. A fresh adversarial review
+    found the original run1 (below) was reached via a reactive,
+    stage-by-stage measurement expansion, a real self-grading/optional-
+    stopping risk (each stage was added specifically after the prior
+    one failed to produce a clean PASS). The standard remedy: this run
+    was taken strictly after the methodology was fixed in code, with no
+    further changes made after seeing its result. P95=-4.17%,
+    P99=-2.65%, both above the timer floor and within the +-5% bar --
+    the same direction as run1 and as a reviewer's own independent
+    re-run performed during the review (P95=-0.41%, P99=-2.28%). Three
+    independent above-floor measurements now agree.)
+  - main_run1.txt / summary.json (original exploratory run, preserved
+    per rule 9, not superseded/deleted -- see the correction note above
+    for why it alone should not be trusted as confirmatory)
   - main_run1_indexed_candidates_only_stage1.txt /
     summary_indexed_candidates_only_stage1.json (preserved per rule 9:
     the first run, before execute_ranked was added as a second,
@@ -150,7 +163,9 @@ raw_results: docs/research/artifacts/i42_e2b_serving_overhead_run1/
     (preserved per rule 9: execute_ranked added but before its own
     P95/P99 gate evaluation was added -- the raw P95/P99 numbers are
     present in this stage's own JSON but not yet evaluated against the
-    5%/timer-floor gate logic)
+    5%/timer-floor gate logic; this is the exact stage the adversarial
+    review flagged as evidence the gate logic was written after the
+    passing numbers were already visible)
 
 analysis: printed directly by the binary per run; see
   docs/experiments/ISSUE42_LOG.md's "I42-E2b serving-contract closure"

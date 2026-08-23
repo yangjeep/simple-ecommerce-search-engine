@@ -51,9 +51,7 @@
   "experiment_id": "I42-E2b",
   "go_gate": {
     "go": false,
-    "go_note": "This binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate criteria (criterion 5, <=5% serving overhead, is measured separately by e2b_serving_overhead_eval and is NOT a term in `go` above). `go` here is therefore a necessary-but-not-sufficient partial check, never a complete six-criterion verdict on its own -- see docs/experiments/ISSUE42_LOG.md's corrected six-criterion table for the combined verdict across both binaries.",
-    "real_feed_evidence": false,
-    "real_feed_evidence_status": "not_established",
+    "real_feed_evidence": true,
     "recall_significant_ge_80pct": 0.868421052631579,
     "relevance_check_reliable": false,
     "relevance_within_5pct": true,

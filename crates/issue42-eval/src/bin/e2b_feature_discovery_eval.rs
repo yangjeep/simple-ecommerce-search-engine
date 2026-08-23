@@ -427,7 +427,26 @@ fn main() {
         };
         let relevance_within_5pct = relative_ndcg_gap <= 0.05;
         let stability_ge_90pct = stability_rate >= 0.90;
-        let real_feed_evidence = true; // WANDS is a real, unseen, external structured feed.
+        // Corrected by a fresh adversarial review (Issue #42's own E2b
+        // serving-contract-closure pass): this field previously asserted
+        // `true` on the unaudited claim "WANDS is a real, unseen,
+        // external structured feed" -- true as far as it goes, but
+        // Issue #42's own dataset requirement is "real structured
+        // catalog/feed with category-specific attributes AND
+        // Product/Variant or relationship complexity," and a direct
+        // audit (docs/experiments/ISSUE42_LOG.md's "I42-E2b
+        // serving-contract closure" section, item 4) found WANDS as
+        // actually used in this pipeline has no real Variant concept
+        // (e2b_ingest::build_catalog maps every WANDS row to exactly one
+        // Product with exactly one Variant) and never materializes or
+        // exercises either of its two oracle-labeled Relationship
+        // fields anywhere in this pipeline (accepted_typed_keys filters
+        // to Enum/Boolean/Numeric only). This criterion is therefore NOT
+        // ESTABLISHED, not PASS -- `false` here reflects "not confirmed
+        // to pass," the correct, conservative reading, not a claim that
+        // the criterion affirmatively fails.
+        let real_feed_evidence = false;
+        const REAL_FEED_EVIDENCE_STATUS: &str = "not_established";
 
         println!(
             "zero unsafe accepted structural classifications: {zero_unsafe} ({unsafe_accepted_count} found)"
@@ -448,14 +467,30 @@ fn main() {
             ">=90% repeated-run agreement on accepted physical primitive: {stability_rate:.4} \
              (gate: {stability_ge_90pct})"
         );
-        println!("real structured unseen feed evidence (WANDS): {real_feed_evidence}");
+        println!(
+            "real structured unseen feed evidence (WANDS): {real_feed_evidence} \
+             (status: {REAL_FEED_EVIDENCE_STATUS} -- WANDS has no real Variant concept and never \
+             exercises its 2 oracle-labeled Relationship fields anywhere in this pipeline; see \
+             docs/experiments/ISSUE42_LOG.md's WANDS-qualification audit)"
+        );
+        println!(
+            "NOTE: this binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate \
+             criteria. Criterion 5 (<=5% serving overhead vs the hand-authored compiled oracle) \
+             is measured by a separate binary, e2b_serving_overhead_eval, and is NOT included in \
+             the `go` boolean below -- see docs/experiments/ISSUE42_LOG.md's corrected \
+             six-criterion table for the combined verdict."
+        );
 
         let go = zero_unsafe
             && recall_significant_ge_80pct >= 0.80
             && relevance_within_5pct
             && stability_ge_90pct
             && real_feed_evidence;
-        println!("=> E2b GO gate: {}", if go { "PASS" } else { "FAIL" });
+        println!(
+            "=> E2b GO gate (5 of 6 criteria computed by this binary; criterion 5 excluded, see \
+             note above): {}",
+            if go { "PASS" } else { "FAIL" }
+        );
 
         let summary = serde_json::json!({
             "experiment_id": "I42-E2b",
@@ -483,7 +518,15 @@ fn main() {
                 "relevance_check_reliable": e2e_check_reliable,
                 "stability_ge_90pct": stability_ge_90pct,
                 "real_feed_evidence": real_feed_evidence,
+                "real_feed_evidence_status": REAL_FEED_EVIDENCE_STATUS,
                 "go": go,
+                "go_note": "This binary computes 5 of Issue #42's own 6 preregistered E2b GO-gate \
+                    criteria (criterion 5, <=5% serving overhead, is measured separately by \
+                    e2b_serving_overhead_eval and is NOT a term in `go` above). `go` here is \
+                    therefore a necessary-but-not-sufficient partial check, never a complete \
+                    six-criterion verdict on its own -- see \
+                    docs/experiments/ISSUE42_LOG.md's corrected six-criterion table for the \
+                    combined verdict across both binaries.",
             },
         });
         println!("\n{}", serde_json::to_string_pretty(&summary).unwrap());
