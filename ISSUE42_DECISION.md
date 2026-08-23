@@ -193,11 +193,18 @@ the correction above), four now clear cleanly: zero unsafe accepted,
 >=80% recall on retrieval-significant features, end-to-end relevance
 within 5% (with a standing reliability caveat, unchanged), and — newly
 measured this pass — <=5% serving overhead vs the hand-authored oracle
-(P95/P99 both above this measurement's own timer floor, -1.95%/-4.11%).
-Two do not: repeated-run agreement, re-measured on a 10x larger sample
-at 87.60% (1095/1250), still short of 90% and, with per-configuration
-consistency across all three real-WANDS-derived configurations (86-88%
-each), not attributable to the original small sample being unlucky; and
+(P95/P99 both above this measurement's own timer floor, confirmed PASS
+on 3 independent above-floor runs after a fresh adversarial review
+required a confirmatory re-run: -4.17%/-2.65% confirmatory,
+-1.95%/-4.11% original, -0.41%/-2.28% a reviewer's own independent
+run). Two do not: repeated-run agreement, re-measured on a materially
+larger sample at 87.60% (1095/1250, up from 85.60%), still short of 90%
+and, with per-configuration consistency across all three
+real-WANDS-derived configurations (86-88% each, a genuinely independent
+cross-check even though the underlying pairwise comparisons within each
+configuration are correlated, not fully independent trials — see
+`docs/experiments/ISSUE42_LOG.md`'s own adversarial-review section),
+not attributable to the original small sample being unlucky; and
 real structured unseen feed evidence, previously asserted as PASS
 without ever being audited against its own "Product/Variant or
 relationship complexity" wording — WANDS, as actually used in this
