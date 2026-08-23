@@ -1445,6 +1445,33 @@ regression test, exactly the class of correction Issue #42 rule 6
 (RED-before-GREEN for production changes) and rule 10 (fresh adversarial
 review + regression tests for confirmed defects) call for.
 
+### A third defect, caught by CI rather than local review: real-dataset-dependent unit tests
+
+After the commit above was pushed, GitHub's own CI (`.github/workflows/rust-ci.yml`'s
+`quality-gate` job) failed — the first red run anywhere in this PR's
+history (every prior commit, verified via GitHub's own Actions run
+list, was green). Root cause: 15 new unit tests across
+`e2b_ingest.rs`/`e2b_statistics_baseline.rs`/`e2b_validator.rs`/`e2b_workload.rs`
+read `dataset_cache/wands/{product,query,label}.csv` directly inside
+`#[test]` functions. `dataset_cache/` is gitignored (large downloaded
+datasets, "never committed," per this repo's own established
+convention) and CI's runner starts from a fresh checkout with no fetch
+step — these tests only ever passed locally because this session's own
+`dataset_cache/wands/` was already cached from earlier work. Checking
+every other WANDS-adjacent module in this repo
+(`phase9_eval::wands_relevance`, `phase6a_eval::data`, and every
+`p6a_*`/`p9_*` bin target) confirmed none of them puts a real-file read
+inside `#[cfg(test)]` — that verification only ever happens from a
+`bin`'s own `main()`, which CI never executes; my new e2b_* tests were
+the sole violators of this convention. Fixed by adding `#[ignore = "..."]`
+to exactly the 15 failing tests, pointing at `scripts/datasets/fetch_wands.sh`
++ `cargo test -- --ignored` for local verification — reproduced the
+exact CI failure locally by moving `dataset_cache/wands` aside and
+re-running the full gate (green afterward, 69 passed/15 ignored in
+`issue42-eval`'s lib suite), then restored the dataset and confirmed
+all 15 still pass when run explicitly with `--ignored`, so nothing is
+silently broken, only correctly excluded from CI's default run.
+
 ### Results (post-correction; both fmt/clippy/test/build gates green, `cargo test --workspace --all-features` 0 failures)
 
 | Baseline | macro F1 (role) | accepted-structural precision/recall | n accepted | abstention rate |
