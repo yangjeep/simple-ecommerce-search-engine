@@ -11,4 +11,6 @@
 //! between a catalog generator and its own labels cannot hide from it.
 
 pub mod oracle;
+pub mod r1_experimental;
+pub mod r1_workload;
 pub mod regression;
