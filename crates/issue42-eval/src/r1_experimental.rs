@@ -244,6 +244,57 @@ pub fn resolve_c(text: &str, lexicon: &SemanticLexicon) -> Resolution {
     }
 }
 
+/// Diagnostic only, NOT a fifth preregistered treatment: identical to
+/// [`resolve_c`] except it does not push the demoted token into
+/// `residual_lexical`. Added after an adversarial review of R1's results
+/// found that `resolve_c`'s residual-push, combined with
+/// `plan::execute_planned`'s Hybrid/Punt outcomes never falling back to
+/// a structural-only result when the lexical delegate returns nothing
+/// (the same strict-veto mechanism R2 exists to address), silently
+/// discards a corroborating `ProductType` entity constraint's own
+/// narrowing power on a query C would otherwise resolve to `FastPath`.
+/// Comparing this isolated variant's corroborated-row NDCG against
+/// `resolve_c`'s own tells us how much of C's measured NDCG gap vs. D is
+/// attributable to *that* confound rather than to C's own defining
+/// property (never selecting one interpretation using corroborating
+/// context) -- see `docs/experiments/ISSUE42_LOG.md`'s R1 section for
+/// the reasoning and the isolated measurement itself. This function must
+/// never be used to compute R1's own preregistered GO-gate numbers for
+/// Treatment C -- only as a side, disclosed diagnostic.
+pub fn resolve_c_isolated_no_residual_push(text: &str, lexicon: &SemanticLexicon) -> Resolution {
+    let mut base = compile(text, lexicon);
+    let Some((_raw, n)) = find_size_numeric_token(text) else {
+        return Resolution {
+            queries: vec![base],
+        };
+    };
+    let alternatives = lexicon_alternatives(&_raw, lexicon);
+    if alternatives.is_empty() {
+        return Resolution {
+            queries: vec![base],
+        };
+    }
+    if let Some(pos) = base
+        .constraints
+        .iter()
+        .position(|c| is_size_eq_numeric(c, n))
+    {
+        let numeric = Constraint::Numeric {
+            attribute: "size".to_string(),
+            op: NumericOp::Eq,
+            value: n,
+        };
+        base.constraints.remove(pos);
+        base.preferences.push(constraint_to_preference(&numeric));
+    }
+    for alt in &alternatives {
+        base.preferences.push(constraint_to_preference(alt));
+    }
+    Resolution {
+        queries: vec![base],
+    }
+}
+
 /// Treatment D: like C, but when a corroborating `ProductType` entity
 /// constraint is present elsewhere in the same query, uses the real
 /// materialized catalog to select exactly one typed interpretation as the
@@ -416,6 +467,32 @@ mod tests {
             q.preferences.len() >= 2,
             "both the numeric and the enum interpretation must appear as preferences: {:?}",
             q.preferences
+        );
+    }
+
+    #[test]
+    fn isolated_c_diagnostic_differs_from_c_only_in_residual_lexical() {
+        let (lexicon, _, _) = lexicon_and_catalog();
+        let c = resolve_c("size 34 jeans", &lexicon);
+        let isolated = resolve_c_isolated_no_residual_push("size 34 jeans", &lexicon);
+        assert_eq!(c.queries.len(), 1);
+        assert_eq!(isolated.queries.len(), 1);
+        assert_eq!(
+            c.queries[0].constraints, isolated.queries[0].constraints,
+            "the isolated diagnostic must demote the same constraints C does"
+        );
+        assert_eq!(
+            c.queries[0].preferences, isolated.queries[0].preferences,
+            "the isolated diagnostic must produce the same preferences C does"
+        );
+        assert!(
+            !c.queries[0].residual_lexical.is_empty(),
+            "resolve_c is expected to push the demoted token into residual_lexical"
+        );
+        assert!(
+            isolated.queries[0].residual_lexical.is_empty(),
+            "the isolated diagnostic must NOT push the demoted token into residual_lexical -- \
+             that is precisely the one behavior it isolates away"
         );
     }
 

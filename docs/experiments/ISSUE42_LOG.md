@@ -128,9 +128,9 @@ in this document.
 | Treatment | corroborated mean NDCG@10 (rows 2/3/6) | wrong-family FPs | row 1 (uncorroborated) | negative rows 9/10 | latency overhead vs A |
 |---|---|---|---|---|---|
 | A | 0.6667 | 0 | **FAILS** (silently keeps only Numeric as sole hard constraint) | passes | 0.0% (baseline) |
-| B | **1.0000** | **1** (Bolt Kits, every run) | passes (returns both interpretations) | passes | 2.6%-6.8% (borderline; moot given the FP) |
-| C | 0.3333 | 0 | passes (falls back to demotion) | passes | 42.4%-50.8% |
-| D | **1.0000** | 0 | passes (falls back to demotion, no entity present) | passes | **11.6%-21.1%** |
+| B | **1.0000** | **1** (Bolt Kits, every run) | passes (returns both interpretations) | passes | 0.4%-3.5% (moot given the FP) |
+| C | 0.3333 | 0 | passes (falls back to demotion) | passes | 47.4%-52.2% |
+| D | **1.0000** | 0 | passes (falls back to demotion, no entity present) | passes | **13.6%-17.8%** |
 
 Latency is the median of 7 independent `std::hint::black_box`-guarded
 200-call batched trials per row per treatment (E1's own discipline). A
@@ -140,10 +140,17 @@ for Treatment B relative to A despite B provably doing strictly more
 work (two real `execute_planned` calls, not one): a clear sign the
 single-batch measurement floor had been reached at this fixture's
 few-microsecond absolute scale, not a real speed advantage. Taking the
-median of several independent batches fixed the sign-flip and produced
-a stable, reproducible reading (Issue #42 rule 9 does not apply
-retroactively here, since no verdict had been finalized from the
-uncorrected numbers).
+median of 7 independent batches within one run eliminated that
+*within-run* sign-flip, but **run-to-run (separate process invocation)
+variance remains real at this catalog's few-microsecond absolute
+scale**: an earlier batch of 5 runs, before this pass's diagnostic
+section was added (below), measured B's overhead ranging from -6.9% to
+14.1% (i.e. the sign-flip still appeared *across* runs, just not
+*within* one run's own 7 trials) — disclosed here rather than silently
+dropped now that a fresh batch happens to show a tighter, all-positive
+range. Neither batch changes D's own conclusion: every individual
+measurement of D's overhead across both batches (10 runs total) exceeds
+5%, with a combined observed range of 10.2%-18.0%.
 
 ### Per-hypothesis verdicts
 
@@ -158,15 +165,30 @@ uncorrected numbers).
 - **H1-B: CONFIRMED.** Treatment B recovers every corroborated case
   (NDCG 1.0) but introduces exactly the predicted wrong-family false
   positive on the dedicated adversarial case, every one of 5 runs.
-- **H1-C: CONFIRMED.** Treatment C eliminates the false positive (0
-  measured) but scores far below the 0.95 bar on corroborated queries
-  (0.3333), exactly as predicted — it never uses corroborating context
-  to select an interpretation.
+- **H1-C: CONFIRMED that Treatment C fails its own gate, but the
+  reason is NOT what was originally claimed here** — see "Second
+  correction round" below. Treatment C, as implemented, does score
+  0.3333 (far below 0.95) and does fail the GO gate; that measurement
+  is real and reproducible. But an adversarial review found, and a new
+  diagnostic measurement confirmed, that this score is not actually
+  evidence that "C never uses corroborating context to select an
+  interpretation" as originally written — an isolated variant of C that
+  differs *only* in not triggering a separate, already-known
+  architectural issue (the residual-lexical strict veto, R2's own
+  subject) scores a perfect 1.0000, identical to D, on the same
+  corroborated rows. R1's fixture, as built, cannot actually distinguish
+  "select one interpretation via corroboration" (D) from "demote both
+  but don't also trigger the residual veto" as competing explanations
+  for corroborated-row NDCG, because every product type in this fixture
+  has exactly one candidate product, so the untouched `ProductType`
+  entity constraint alone already uniquely identifies it once nothing
+  vetoes the query.
 - **H1-D: PARTIALLY CONFIRMED.** Every correctness claim in H1-D holds:
   zero wrong-family false positives, corroborated NDCG 1.0, correct
   fallback-to-demotion for the genuinely uncorroborated case. The
   `<=5%` serving-overhead claim does **not** hold: measured overhead is
-  11.6%-21.1% across 5 runs, consistently and reproducibly above the
+  13.6%-17.8% in this pass's 5 runs (10.2%-18.0% combined with an
+  earlier batch, see above), consistently and reproducibly above the
   bar.
 
 ### Root cause of D's measured overhead (disclosed, not hand-waved)
@@ -222,13 +244,14 @@ correction to what was already measured.
 - `issue42-eval::r1_experimental` (7 tests): each treatment's real
   output shape, including that A/B degrade to exactly A's output when
   no size-numeric token is present.
-- `issue42-eval::r1_workload` (9 tests): the typed-ambiguity fixture's
+- `issue42-eval::r1_workload` (7 tests): the typed-ambiguity fixture's
   determinism, every claimed positive/negative independently verified
   against the oracle (not asserted in prose), and the Bolt Kits
   adversarial case's own reality (a genuinely distinct attribute, not a
   disguised duplicate of the size collision).
-- `r1_typed_ambiguity_eval`'s own measurement logic (8 tests): the
-  binary's own `ndcg_at_k`, `row1_does_not_silently_pick_one_family`,
+- `r1_typed_ambiguity_eval`'s own measurement logic (9 tests, after the
+  second correction round below): the binary's own `ndcg_at_k`,
+  `row1_does_not_silently_pick_one_family` (all 4 branches, see below),
   `negative_row_has_zero_size_hard_constraints`, and `median` helpers
   are independently unit-tested, not merely trusted because they are
   simple — per this project's own "do not trust the experiment author"
@@ -258,6 +281,111 @@ is fine). Caught by comparing a "violation" the binary reported against
 the protocol's own literal text; fixed by splitting `RowClass::Negative`
 into `NegativeZeroSizeConstraint` (row 9) and `NegativeZeroHits` (row
 10).
+
+### Second correction round: fresh adversarial review
+
+Per Issue #42's own governance, a fresh subagent with no implementation
+task in this session's history was asked to independently try to
+falsify this experiment's protocol, ground truth, code, arithmetic, and
+written claims — not to accept anything above on this session's own
+say-so. Every finding below was independently reproduced by this
+session before being accepted or fixed, per the same rule.
+
+1. **The latency-overhead ranges originally published in this document
+   and both manifests did not match the raw run artifacts they cited as
+   their source.** The reviewer diffed the actual committed
+   `main_run{1..5}.txt` files directly and found the true per-run
+   overheads (B: 2.7%, 14.1%, 0.6%, **-6.9%**, **-1.9%**; C: 49.2%,
+   47.7%, 47.5%, 35.0%, 46.7%; D: 18.0%, 15.5%, 13.9%, 10.2%, 14.5%)
+   did not match this document's previously-published ranges (B:
+   "2.6%-6.8%", C: "42.4%-50.8%", D: "11.6%-21.1%") at all — the true
+   minimum for D (10.2%) was even below the previously-published floor
+   (11.6%), and the previous write-up's B range entirely omitted that 2
+   of 5 runs were negative. Independently reproduced by re-reading the
+   same committed files directly. This also falsified the "median of
+   several independent batches fixed the sign-flip" claim: 2 of the
+   same 5 files it cited as evidence still showed a negative overhead
+   for B, meaning the *within-run* sign-flip was fixed by the
+   median-of-7 correction but *cross-run* (separate process invocation)
+   variance was not, and the original write-up should have said so.
+   Root cause: the published numbers were transcribed from an earlier,
+   uncommitted set of interactive terminal runs, never reconciled
+   against the raw artifact files actually committed alongside them — a
+   real process gap in how this session moved from "watched the numbers
+   scroll by" to "wrote them down as the record." Fixed by regenerating
+   a fresh, complete 5-run batch (below) and citing only numbers read
+   directly from the files being committed.
+2. **A smaller internal inconsistency**: `benchmarks/manifests/i42_r1_typed_ambiguity_eval.yaml`
+   stated D's overhead was measured "across 10 independent runs" while
+   every other document said 5, and only 5 raw run files exist. Fixed
+   to say 5.
+3. **A test-count error**: this document claimed `issue42-eval::r1_workload`
+   had 9 tests; `cargo test -p issue42-eval --release` and a direct read
+   of the file's own `#[cfg(test)] mod tests` block both confirm exactly
+   7. Fixed.
+4. **The most significant finding**: Treatment C's causal explanation
+   was materially incomplete. Tracing the reviewer's claim directly
+   (`r1_experimental.rs`'s `resolve_c`, `commerce_core::plan::execute_planned`,
+   `phase9_eval::bitmap_delegate::build_index`): `resolve_c` demotes the
+   ambiguous constraints to preferences correctly, but *also*
+   unconditionally pushes the demoted token into `residual_lexical` —
+   which downgrades `plan()`'s routing from `FastPath` to `Hybrid`/`Punt`
+   even though the untouched `ProductType` entity constraint alone
+   already uniquely identifies the correct product in this fixture.
+   Once routed to `Hybrid`/`Punt`, `execute_planned` builds its result
+   set exclusively from the lexical delegate's own hits
+   (`verify_and_truncate`); the delegate finds nothing for a bare
+   numeric token never present in any title/attribute text, so the
+   query returns zero results regardless of how good the surviving
+   structural constraint is — precisely the strict-veto mechanism R2
+   exists to address, confirmed directly in the raw runs (`main_run1.txt`:
+   rows 2/3 under Treatment C print `outcomes=["punt"], hits=0`). This
+   is not what H1-C's original causal story here claimed
+   ("never uses corroborating context to select an interpretation").
+   **Independently verified via a new diagnostic**, not merely
+   accepted on the reviewer's telling: added
+   `resolve_c_isolated_no_residual_push` (`r1_experimental.rs`),
+   identical to `resolve_c` except it does not push the demoted token
+   into `residual_lexical` — proven, via a new unit test, to differ
+   from `resolve_c`'s own output *only* in that one field. Measuring
+   this isolated variant's corroborated-row NDCG@10 directly: **1.0000
+   — identical to Treatment D**, not 0.3333. This confirms the
+   reviewer's finding precisely: essentially all of Treatment C's
+   measured NDCG gap vs. D is attributable to the residual-lexical-veto
+   confound, not to any actual difference between "select one
+   interpretation via corroboration" (D) and "demote both, don't also
+   veto via residual" on this fixture. A genuine, previously-undisclosed
+   limitation follows from this: **R1's fixture, because every product
+   type maps to exactly one candidate product, cannot by itself
+   distinguish D's corroboration-based selection mechanism from an
+   isolated C that merely avoids the residual veto** — a finer-grained
+   fixture (multiple candidates per product type, where picking the
+   wrong typed interpretation could retrieve a genuinely wrong
+   *additional* candidate, not just zero-vs-one) would be needed to
+   test whether D's selection step itself adds value beyond avoiding
+   that veto. This limitation, and the diagnostic measurement, are now
+   part of this document's own record rather than left as an unstated
+   gap. Per-hypothesis verdicts above are updated accordingly; neither
+   this finding nor its fix changes the REVISE verdict or which
+   treatment is retained, since Treatment C's own preregistered
+   measurement (0.3333, with the residual push intact, exactly as
+   defined) still genuinely fails the 0.95 NDCG bar regardless of why.
+5. **A minor test-coverage gap**: the reviewer noted
+   `row1_does_not_silently_pick_one_family`'s `(enum-hard,
+   numeric-preference)` branch had no dedicated unit test (only its
+   mirror image did) — by inspection the branch appeared correct and no
+   treatment in this run exercises it, but per this project's own
+   standard that is not a reason to leave it untested. Added
+   `row1_check_passes_when_enum_is_hard_and_numeric_survives_as_a_preference`.
+
+All five findings were independently reproduced (by direct file
+diffing, `cargo test`, or line-by-line source tracing) before being
+accepted; none required overturning the REVISE verdict itself. The
+result tables, hypothesis verdicts, and manifests above reflect the
+corrected figures; this section keeps the original, now-superseded
+figures visible (rather than silently editing them out of existence)
+per Issue #42's own "no silent replacement of invalidated numbers"
+rule.
 
 Reproduction: `cargo build --release -p issue42-eval &&
 ./target/release/r1_typed_ambiguity_eval [output_summary_json_path]`.

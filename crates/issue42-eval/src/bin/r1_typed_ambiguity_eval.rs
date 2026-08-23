@@ -23,7 +23,8 @@ use commerce_core::ir::{Preference, ResolvedConstraint, SemanticLexicon};
 use commerce_core::plan::{ExecutionOutcome, LexicalDelegate, PlannedHit, PlannerPolicy};
 use issue42_eval::oracle::{self, AttrRequirement, QueryIntent};
 use issue42_eval::r1_experimental::{
-    resolve_a, resolve_b, resolve_c, resolve_d, run_treatment, Resolution,
+    resolve_a, resolve_b, resolve_c, resolve_c_isolated_no_residual_push, resolve_d, run_treatment,
+    Resolution,
 };
 use issue42_eval::r1_workload::{
     build_typed_ambiguity_catalog, AMBIGUOUS_SIZE_VALUE, FITMENT_PHRASE, IDENTIFIER_VALUE,
@@ -461,6 +462,65 @@ fn main() {
         }
     }
 
+    // Diagnostic added after an adversarial review of R1's results found
+    // that Treatment C's poor corroborated-row NDCG is confounded with
+    // execute_planned's strict residual-lexical veto (the same mechanism
+    // R2 exists to address): resolve_c pushes the demoted token into
+    // residual_lexical, which downgrades an otherwise-FastPath-eligible
+    // query (a single ProductType entity constraint, already sufficient
+    // to identify the correct product on its own) to Hybrid/Punt, where
+    // the delegate finds nothing and the structural narrowing's own
+    // result is discarded. This is NOT part of Treatment C's own
+    // preregistered GO-gate measurement above -- it is a side diagnostic
+    // isolating how much of the C-vs-D NDCG gap is attributable to that
+    // confound rather than to C's own defining property (never using
+    // corroborating context to select an interpretation).
+    println!("\n--- diagnostic (NOT part of the preregistered GO gate): isolated C without the residual_lexical push ---");
+    let mut isolated_c_ndcgs: Vec<f64> = Vec::new();
+    for row in &rows {
+        if row.class != RowClass::Corroborated {
+            continue;
+        }
+        let resolution = resolve_c_isolated_no_residual_push(row.text, &lexicon);
+        let (planned, hits) = run_treatment(
+            &resolution,
+            catalog,
+            &index,
+            Some(&delegate as &dyn LexicalDelegate),
+            K,
+            &policy,
+        );
+        let outcomes: Vec<&str> = planned
+            .iter()
+            .map(|p| match p.outcome {
+                ExecutionOutcome::FastPath => "fast_path",
+                ExecutionOutcome::Hybrid => "hybrid",
+                ExecutionOutcome::Punt => "punt",
+            })
+            .collect();
+        let relevant: BTreeSet<_> = row.relevant.into_iter().collect();
+        let ndcg = ndcg_at_k(&hits, &relevant, K);
+        isolated_c_ndcgs.push(ndcg);
+        println!(
+            "row {:>2} ({:>20}): outcomes={:?}, hits={}, ndcg={:.4}",
+            row.id,
+            row.text,
+            outcomes,
+            hits.len(),
+            ndcg
+        );
+    }
+    let isolated_c_mean = isolated_c_ndcgs.iter().sum::<f64>() / isolated_c_ndcgs.len() as f64;
+    let c_mean = corroborated_ndcgs
+        .get(Treatment::C.label())
+        .map(|v| v.iter().sum::<f64>() / v.len() as f64)
+        .unwrap_or(0.0);
+    println!(
+        "isolated-C mean corroborated NDCG@10 = {isolated_c_mean:.4} vs. Treatment C's own \
+         measured {c_mean:.4} -- the gap between these two numbers is attributable to the \
+         residual-lexical-veto confound, not to C's own corroboration-blindness"
+    );
+
     println!("\n--- latency (median of {LATENCY_TRIALS} independent batched trials) ---");
     for treatment in Treatment::ALL {
         let trials: Vec<f64> = (0..LATENCY_TRIALS)
@@ -684,6 +744,33 @@ mod tests {
                 op: NumericOp::Eq,
                 value: 22.0,
             })]);
+        q.preferences.push(Preference::Boost {
+            attribute: "size".to_string(),
+            value: "22".to_string(),
+            weight: 0.5,
+        });
+        let resolution = Resolution { queries: vec![q] };
+        assert!(row1_does_not_silently_pick_one_family(
+            &resolution,
+            22.0,
+            "22"
+        ));
+    }
+
+    /// Symmetric counterpart of the test above: the Enum interpretation
+    /// kept hard, the Numeric one surviving only as a preference. An
+    /// adversarial review found this (false, true) branch of
+    /// `row1_does_not_silently_pick_one_family` had no dedicated test --
+    /// no treatment in the actual R1 run exercises it (only Treatment A
+    /// ever keeps a numeric-only hard constraint for row 1), but the
+    /// branch itself must still be independently verified, not left
+    /// untested merely because it happens not to fire on this fixture.
+    #[test]
+    fn row1_check_passes_when_enum_is_hard_and_numeric_survives_as_a_preference() {
+        let mut q = query_with_constraints(vec![ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "size".to_string(),
+            value: "22".to_string(),
+        })]);
         q.preferences.push(Preference::Boost {
             attribute: "size".to_string(),
             value: "22".to_string(),

@@ -37,10 +37,19 @@ claim: >
 
   C (demote every interpretation to a Preference::Boost, generalizing
   P9-E05's existing demotion rule to numeric-keyword-derived constraints):
-  eliminates the wrong-family false positive (0 measured) but, exactly as
-  H1-C predicted, scores far below the 0.95 NDCG bar on corroborated
-  queries (mean 0.3333) because it never uses corroborating context to
-  select an interpretation, unlike D. FAILS the GO gate.
+  its own preregistered measurement scores far below the 0.95 NDCG bar
+  on corroborated queries (mean 0.3333, 0 wrong-family false positives)
+  and genuinely FAILS the GO gate on that basis. A second-correction-
+  round diagnostic (see below and docs/experiments/ISSUE42_LOG.md) found
+  the *reason* originally attributed to this ("never uses corroborating
+  context to select an interpretation") was materially incomplete: an
+  isolated variant of C that differs only in not pushing the demoted
+  token into residual_lexical (avoiding execute_planned's strict
+  residual-lexical veto, the same mechanism R2 exists to address) scores
+  a perfect 1.0000 -- identical to D -- on the same rows. Most of C's
+  measured NDCG gap vs. D on this fixture is attributable to that
+  confound, not to a difference in corroboration-awareness; see the
+  second-correction-round note for the resulting disclosed limitation.
 
   D (like C, but selects exactly one interpretation as the hard
   constraint when a corroborating ProductType entity is present AND the
@@ -51,13 +60,33 @@ claim: >
   zero wrong-family false positives, correct fallback-to-demotion
   behavior for the uncorroborated case, zero hard constraints surviving
   either negative case -- but FAILS the <=5% latency-overhead bar,
-  consistently measuring 11.6%-21.1% overhead vs Treatment A across 10
-  independent runs (median-of-7-trials each), attributable to this
-  specific experimental implementation's O(catalog-size)
+  consistently measuring 13.6%-17.8% overhead vs Treatment A across this
+  pass's 5 independent runs (median-of-7-trials each; 10.2%-18.0%
+  combined with an earlier batch of 5 runs before this pass's diagnostic
+  section was added -- see second-correction-round note), attributable
+  to this specific experimental implementation's O(catalog-size)
   `constraint_kind_registered_on_product_type` scan run per query rather
   than precomputed once at ingestion (as CatalogProfile already does for
   other lexicon data) -- a real, disclosed implementation-cost finding,
   not a defect in the corroboration *concept* itself.
+
+  **Second correction round (adversarial review, before this PR was
+  merged)**: a fresh reviewer with no implementation task found (1) the
+  latency-overhead ranges first published here and in
+  docs/experiments/ISSUE42_LOG.md did not match the raw run artifacts
+  cited as their source -- fixed by regenerating a fresh 5-run batch and
+  citing only numbers read directly from the committed files, and by
+  disclosing that even the corrected median-of-7 latency methodology
+  still shows real run-to-run (not just within-run) variance at this
+  catalog's few-microsecond absolute scale; (2) this manifest's own "10
+  independent runs" claim, inconsistent with every other document's "5";
+  (3) a test-count error (7, not 9, issue42-eval::r1_workload tests);
+  (4) the Treatment C causal-explanation confound described above,
+  confirmed via a new resolve_c_isolated_no_residual_push diagnostic;
+  (5) a missing unit-test branch for row1_does_not_silently_pick_one_family.
+  All five independently reproduced before being fixed. None reverses
+  the REVISE verdict or which treatment is retained. Full detail:
+  docs/experiments/ISSUE42_LOG.md's "Second correction round" section.
 
   **Adversarial case for Treatment B** (Issue #42 rule 4: every
   treatment needs a case capable of disproving it, not just cases it
@@ -129,10 +158,14 @@ latency_methodology: >
   provably doing strictly more work (two real execute_planned calls, not
   one) -- a clear sign the single-batch measurement floor had been
   reached at this fixture's few-microsecond absolute scale. Taking the
-  median of several independent batches is a real, disclosed correction
-  to this experiment's own methodology (Issue #42 rule 9 does not apply
-  retroactively here since no verdict had been finalized from the
-  uncorrected numbers).
+  median of several independent batches within one run eliminates that
+  *within-run* sign-flip, but does NOT eliminate *cross-run* (separate
+  process invocation) variance at this scale: an adversarial review
+  found this pass's first published ranges did not match the raw
+  artifacts cited as their source, and a fresh batch of 5 runs shows a
+  materially different (though overlapping) range than an earlier batch
+  of 5 -- both are disclosed in docs/experiments/ISSUE42_LOG.md's
+  "Second correction round" rather than only the more favorable one.
 
 raw_results: docs/research/artifacts/i42_r1_run1/
   - main_run{1,2,3,4,5}.txt (5 independent full runs)

@@ -46,20 +46,26 @@ row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
 row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
 row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
 
+--- diagnostic (NOT part of the preregistered GO gate): isolated C without the residual_lexical push ---
+row  2 (       size 22 jeans): outcomes=["fast_path"], hits=1, ndcg=1.0000
+row  3 (size 22 wiper blades): outcomes=["fast_path"], hits=1, ndcg=1.0000
+row  6 (2015 honda civic brake pads): outcomes=["fast_path"], hits=1, ndcg=1.0000
+isolated-C mean corroborated NDCG@10 = 1.0000 vs. Treatment C's own measured 0.3333 -- the gap between these two numbers is attributable to the residual-lexical-veto confound, not to C's own corroboration-blindness
+
 --- latency (median of 7 independent batched trials) ---
-Treatment A: trials=["0.05809", "0.05742", "0.05630", "0.05631", "0.05428", "0.05415", "0.05445"] median=0.05630ms
-Treatment B: trials=["0.05476", "0.05468", "0.05500", "0.05631", "0.05522", "0.05590", "0.05926"] median=0.05522ms
-Treatment C: trials=["0.08505", "0.08134", "0.08104", "0.08041", "0.08259", "0.08414", "0.08534"] median=0.08259ms
-Treatment D: trials=["0.06948", "0.06815", "0.06447", "0.06520", "0.06404", "0.06315", "0.06329"] median=0.06447ms
+Treatment A: trials=["0.05736", "0.05470", "0.05553", "0.05833", "0.05540", "0.05532", "0.05521"] median=0.05540ms
+Treatment B: trials=["0.05859", "0.05699", "0.05895", "0.05734", "0.05633", "0.05719", "0.05608"] median=0.05719ms
+Treatment C: trials=["0.08517", "0.08960", "0.08434", "0.08186", "0.08373", "0.08465", "0.08330"] median=0.08434ms
+Treatment D: trials=["0.06312", "0.06528", "0.06701", "0.06434", "0.06439", "0.06615", "0.06565"] median=0.06528ms
 
 --- GO gate evaluation ---
 wrong-family false positives, per treatment: {"B": 1} (require: 0 for that treatment)
 row 1 silent-single-family violations: ["A"] (require: empty)
 negative-row hard-constraint violations: [] (require: empty)
 Treatment A: corroborated mean NDCG@10=0.6667 (require >=0.95), latency overhead vs A=0.0% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=false, negatives_ok=true => GO gate FAIL
-Treatment B: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=-1.9% (require <=5% except for A itself), wrong_family_fps=1 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
-Treatment C: corroborated mean NDCG@10=0.3333 (require >=0.95), latency overhead vs A=46.7% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
-Treatment D: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=14.5% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment B: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=3.2% (require <=5% except for A itself), wrong_family_fps=1 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment C: corroborated mean NDCG@10=0.3333 (require >=0.95), latency overhead vs A=52.2% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment D: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=17.8% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
 
 Note: wrong-family false-positive count is measured against this experiment's small (4-product, 1-candidate-per-family) fixture -- Constraint::matches's own AttributeValue-kind catch-all (commerce_core/src/domain/constraint.rs) structurally guarantees a type-mismatched constraint can never match, so this fixture cannot by itself stress-test a *larger*-catalog coincidental cross-family collision; that remains a disclosed limitation, not fabricated as already covered.
 
@@ -73,10 +79,10 @@ Note: wrong-family false-positive count is measured against this experiment's sm
   },
   "experiment_id": "I42-R1",
   "latency_ms_per_call": {
-    "A": 0.056300884999999995,
-    "B": 0.05522253,
-    "C": 0.08258639999999999,
-    "D": 0.06446523
+    "A": 0.055403,
+    "B": 0.057185955,
+    "C": 0.084335125,
+    "D": 0.06528268
   },
   "negative_violations": [],
   "row1_violations": [
