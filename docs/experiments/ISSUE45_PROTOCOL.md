@@ -423,7 +423,7 @@ which real key disagreed and why, weighted by pair count:
 | Category | Pairs | % of disagreement | Root cause |
 |---|---|---|---|
 | Primitive-selection ambiguity | 101 | 65.2% | `candidate_physical_primitive` (`bitmap_enum` vs `lexical_postings`, or `numeric_range` vs `bitmap_enum`) flip-flops **at identical measured statistics** for the same key — a genuinely free, evidence-independent choice under E2b's own schema, fully resolved by R1 (§4) once role is stable, since R1 removes primitive as an independent degree of freedom entirely. Affects `basecolor`, `finish`, `upholsterycolor`, `upholsterymaterial`, `primarymaterial`, `voltage`, `heat_range`. |
-| Value-type ambiguity | 28 | 18.1% | Genuine Enum-vs-Numeric (`thread_size`: unit-suffixed values defeat naive numeric parsing) or Enum-vs-FreeText (`productwarranty`, `warrantylength`: low distinct-value count but a few outlier full-sentence values) boundary cases — resolved by R3. |
+| Value-type ambiguity | 28 | 18.1% | Genuine Enum-vs-Numeric (`thread_size`: unit-suffixed values defeat naive numeric parsing) or Enum-vs-FreeText (`productwarranty`, `warrantylength`: low distinct-value count but a few outlier full-sentence values) boundary cases. ~~resolved by R3~~ **Corrected (Addendum 1 below): only the Enum-vs-Numeric half is resolved by R3. R3 structurally cannot engage on Enum-vs-FreeText at all** (`e2b_validator::cross_run_type_conflict`, which gates R3's every engagement, only ever fires Enum/Boolean-vs-Numeric) — `productwarranty`/`warrantylength` are resolved by plain R2 plurality alone, same as most of the dataset. This was a confirmed factual error in this table, found by this checkpoint's own fresh adversarial review (all three independent reviewers converged on it), corrected here per rule 9 rather than silently. |
 | Model hallucination/error | 22 | 14.2% | `color` alone: one `wands_anonymized` run reads a literal junk placeholder sample value (`"[ tied to : color ]"`, almost certainly a WANDS export artifact) as evidence of a real cross-product relationship and proposes `Relationship`/`Relationship` scope; the field's own genuine data-quality noise (empty strings, bare `'0'`/`';'`, multi-value composite strings) drives further role churn (`enum`/`free_text`/`ignore`) independent of the hallucinated-relationship case. Addressed by R7 (hard-blocks Relationship promotion regardless) and by R8's existing cardinality/parseability checks for the residual enum/free_text churn. |
 | Insufficient/contradictory evidence | 4 | 2.6% | `compatibledrainassemblypartnumber` only: the 5 sample values shown to each pass are numeric-looking, but the field's own aggregate `numeric_parseable_fraction` is only 0.13 — a real conflict between a small visible sample and the true underlying distribution that different runs resolved differently (2 abstained outright, 3 did not). A legitimate case for R8/validator-driven abstention, not a defect in any single run. |
 
@@ -688,3 +688,138 @@ already discloses as a synthetic extensibility check, not a real-feed
 result. No prompt-tuning of the LLM to raise raw agreement — the 20 frozen
 artifacts are used exactly as E2b produced them, unmodified, no new LLM
 calls of any kind in this experiment.
+
+## Addendum 1 (dated, after the first held-out run and a fresh three-reviewer adversarial review, per this document's own section 1 commitment: "no rule edited after seeing a measurement result unless this document is amended with a dated note explaining why")
+
+Three independent reviewer agents, none with an implementation mandate
+and none shown this document's own conclusions in advance, converged
+strongly (raw findings preserved at
+`docs/research/artifacts/i45_e2c_adversarial_review_run1/reviewer_{A,B,C}.md`).
+All three independently confirmed one real implementation defect; all
+three independently ruled out oracle leakage; all three independently
+found the same substantive nuance about which rules do the real work.
+
+**Confirmed defect, fixed**: R3/R9's original condition
+(`e2c_canonicalizer.rs`) checked `cross_run_type_conflict` across every
+pair of raw proposals regardless of whether either side was R2's own
+plurality winner. A real plurality (e.g. 3 of 5 raw proposals agreeing
+on `FreeText`) could be silently overwritten by R3 to `Enum`/`Numeric`
+whenever an unrelated 1-Enum + 1-Numeric minority pair happened to
+coexist, discarding the genuine majority. All three reviewers
+independently verified this did not corrupt any of the 20 real frozen
+artifacts' own measured numbers (confirmed a fourth time here,
+independently, by re-running both eval binaries after the fix: every
+number is byte-identical to the pre-fix run —
+`docs/research/artifacts/i45_e2c_canonicalization_run2/` and
+`i45_e2c_serving_overhead_run2/` vs the original `_run1/` directories,
+diffed and confirmed unchanged except for measurement-inherent latency
+jitter in the serving-overhead binary). Fixed by scoping R3/R9's
+engagement to only the raw proposals that actually contest R2's own
+plurality winner (`e2c_canonicalizer.rs`'s own updated doc comment has
+the full before/after). A new regression test,
+`r3_does_not_hijack_a_plurality_winner_unrelated_to_its_own_conflict`,
+reproduces the exact confirmed scenario.
+
+**Confirmed documentation defect, corrected**: this document's own
+"Explaining the 87.60%" table (§6) claimed the Enum-vs-FreeText half of
+the "value-type ambiguity" category (`productwarranty`, `warrantylength`)
+is "resolved by R3." This is false: `cross_run_type_conflict` — the sole
+gate on R3's every engagement — only ever fires Enum/Boolean-vs-Numeric,
+structurally incapable of touching an Enum-vs-FreeText disagreement.
+Corrected in place in §6, original claim preserved and struck through,
+per rule 9.
+
+**A genuinely important, humbling finding, not a defect but a
+correction to this document's own explanatory emphasis**: a new
+diagnostic (`bin/e2c_r1_r6_attribution_diagnostic.rs`, output preserved
+at `docs/research/artifacts/i45_e2c_r1_r6_attribution_run1/`) measured
+directly, on the real frozen data, whether R3's evidence-based
+resolution ever changes an outcome from what plain R2 plurality alone
+would already give. Result: `cross_run_type_conflict` fires on exactly
+**1 of 125** (config, real-key) groups across the entire dataset
+(`automotive/thread_size`), and even there R3's resolved role is
+**identical** to plain plurality's own answer (a real 4/5 Enum
+majority). R3 — the rule this document's own §4 and §6 present most
+prominently as the mechanism that "resolves" Enum-vs-Numeric
+disagreement — is empirically inert on this specific dataset: it never
+once changes a real outcome. R4 (zero-variance override) is similarly
+vote-concordant in its own showcased case (`voltage`: raw primitive
+votes 2 `numeric_range` / 3 `none`, a plurality already picks `none`).
+
+This does **not** mean Treatment C merely reproduces Treatment B (naive
+majority vote) under a different name — role-level stability is nearly
+identical between them (B=99.68%, C=100.00%, leave-one-out), but
+full-descriptor stability is not (B=81.68%, C=100.00%), and that gap is
+real, measured, and not an artifact of R3/R4's near-zero engagement:
+
+- **R1** (primitive is a deterministic function of role, never voted)
+  provably accounts for the bulk of the primitive/full-agreement gap —
+  Treatment B votes `candidate_physical_primitive` directly and gets it
+  wrong exactly on the `bitmap_enum`/`lexical_postings` coin-flip cases
+  §6's own primitive-selection-ambiguity category names; R1 makes that
+  disagreement structurally impossible once role is stable. This is a
+  genuine, non-vote-derived, non-reducible-to-plurality mechanism.
+- **R6** (scope defaults to `Product` for a dataset with no real
+  per-row Variant identity) accounts for the rest of the full-agreement
+  gap. This is disclosed, in this document's own §4 and §6, as a
+  dataset-structural default, not an evidence-integration result — it
+  is tautologically 100% stable by construction (it never varies), not
+  an empirically resolved conflict. The distinction matters: R6 is a
+  legitimate, principled, disclosed architectural choice that correctly
+  eliminates an irreducible ambiguity (§6's own 158-pair scope pool, which
+  no vote of any kind could resolve, since the bounded inputs genuinely
+  contain zero disambiguating signal) — but its contribution to the
+  "100% full agreement" headline should be read as "a structural default
+  correctly applied," not "evidence-based conflict resolution," and this
+  document's own earlier framing did not sufficiently distinguish the two.
+- **R5** (Identifier promotion gate) and **R7** (Relationship hard-block)
+  are real, demonstrated, non-vote-derived safety mechanisms: both
+  prevented an actual unsafe-shaped promotion Treatment B's own naive
+  vote would have made on this real data — R7 blocks `color`'s spurious
+  `Relationship` hallucination (Treatment B, run with a constructed
+  3-of-5-vote share in this document's own §7 fixture 11, promotes it
+  unconditionally); R5 blocks `compatibledrainassemblypartnumber`'s
+  Identifier claim at a real uniqueness ratio of 0.4845, far below the
+  production classifier's 0.95 bar, regardless of vote count.
+- **R2** (plain plurality) does almost all of the real work at the
+  *role* level specifically — the 0.32-percentage-point role-stability
+  gap between B and C is not large. Treatment C's genuine differentiation
+  from naive voting comes from R1+R5+R6+R7 (structural/safety mechanisms
+  that do not depend on vote counting at all), not from R2/R3 being
+  meaningfully "smarter" arbitration of the same votes B already counts.
+
+**A disclosed, non-preregistered addition**: the "single-run (stricter
+self-check)" comparison (§9 of this document describes only the
+leave-one-out design; the single-run comparison was added during
+implementation, after the first leave-one-out result — 100% full
+agreement — looked too clean to trust without a harder test). This is
+disclosed here as exactly what it is: a post-freeze addition, not a
+preregistered measurement, and therefore **not** part of this
+experiment's own formal GO-gate criteria 2/3 evaluation in the same
+sense the leave-one-out numbers are. It was added and run once, before
+being reported, with no iteration on its own design after seeing its
+result (95.20%, both times it has been run, pre- and post- the R3 fix).
+It is reported here not because the protocol required it, but because
+omitting a harder test that was already run and already known would
+itself be a disclosure failure. The final verdict below treats the
+single-run reading as material evidence, explicitly not preregistered,
+weighed alongside the preregistered leave-one-out reading — not as a
+silent substitute for it either direction.
+
+**Two findings the reviewers raised as real but did not find exploited
+in this run, recorded for completeness**: (1) `pairwise_stability`
+counts two `Abstain` outcomes as agreeing on every axis, which is
+gameable in principle; measured directly (§ above diagnostic), only
+2 of 27 raw-unstable (config, key) groups stabilized via
+Abstain-Abstain rather than genuine Promoted-Promoted agreement — not
+the mechanism behind this run's headline numbers. (2) GO-gate criterion
+5's boolean does not itself consult `e2e_check_reliable`
+(`check_reliable=false` in this run, inherited unchanged from E2b's own
+same near-floor-NDCG limitation) — the decision record below treats
+criterion 5 as PASS-with-an-unreliable-check-caveat, never as an
+unqualified pass, matching how `ISSUE42_DECISION.md` already treats the
+identical inherited caveat.
+
+Full workspace `cargo fmt`/`clippy`/`test`/`build` re-run clean after
+the R3 fix — see the completion bar at the end of this checkpoint's own
+commits.

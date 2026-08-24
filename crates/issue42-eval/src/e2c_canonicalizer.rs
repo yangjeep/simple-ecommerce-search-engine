@@ -178,20 +178,47 @@ pub fn canonicalize(
         non_abstain.len()
     ));
 
-    // R3, integrated with R9: whenever a real cross-run categorical
-    // (Enum/Boolean) vs Numeric conflict exists among the raw proposals
-    // -- the exact condition `cross_run_type_conflict` (E2b's own,
-    // reused, never reimplemented) flags for at least one pair -- R3
-    // tries to resolve it from real measured evidence first. Only when
-    // R3's own two evidence conditions BOTH fail to apply (a genuinely
-    // ambiguous middle zone: parse rate between the low/high bars, or
-    // cardinality too high to safely call it a bounded Enum) does R9
-    // fire as the defense-in-depth safety net and force an abstain --
-    // R9 must run AFTER R3 gets a chance to resolve the same condition,
-    // or R3 could never fire at all (an ordering bug this checkpoint's
-    // own adversarial-fixture testing caught before any measurement ran).
-    let any_conflict = (0..runs.len())
-        .any(|i| ((i + 1)..runs.len()).any(|j| cross_run_type_conflict(&runs[i].1, &runs[j].1)));
+    // R3, integrated with R9: engages only when R2's own plurality winner
+    // (`role`, just computed) is ITSELF one side of a real cross-run
+    // categorical (Enum/Boolean) vs Numeric conflict -- i.e. only when
+    // the plurality winner is actually being contested by a Numeric (or
+    // categorical) challenger. R3 tries to resolve that contest from
+    // real measured evidence first; only when its own two evidence
+    // conditions BOTH fail to apply (parse rate in the ambiguous middle
+    // zone, or cardinality too high to safely call it a bounded Enum)
+    // does R9 fire as the defense-in-depth safety net and force an
+    // abstain.
+    //
+    // CONFIRMED DEFECT (found independently by two of this checkpoint's
+    // own fresh adversarial reviewers, reproduced before this fix): the
+    // original condition checked `cross_run_type_conflict` across EVERY
+    // pair of raw proposals, regardless of whether either side was the
+    // plurality winner -- so a 3/5 FreeText plurality with an unrelated
+    // 1 Enum + 1 Numeric minority pair would have had R3 silently
+    // overwrite `role` to Enum or Numeric, discarding the real majority
+    // entirely. `cross_run_type_conflict` itself (E2b's own, reused, not
+    // reimplemented) is unchanged; only the SCOPE of which pairs are
+    // relevant to R3/R9 is now tied to the plurality winner. Neither
+    // reviewer found this to affect the actual 20 frozen artifacts'
+    // measured numbers (verified independently by both, and re-verified
+    // here: see the regression test below and
+    // `bin/adversarial_debug.rs`'s own Q2 output, which confirms
+    // `cross_run_type_conflict` fires on exactly one (config, key) group
+    // across all 4 configurations, and R3's resolution there never
+    // differs from what plain R2 plurality alone already gave) -- but
+    // the rule as originally shipped was unsound and could have silently
+    // misclassified a real future case with high confidence rather than
+    // abstaining.
+    let role_is_categorical = matches!(role, SemanticRole::Enum | SemanticRole::Boolean);
+    let role_is_numeric = role == SemanticRole::Numeric;
+    let any_conflict = (role_is_categorical || role_is_numeric)
+        && (0..runs.len()).any(|i| {
+            ((i + 1)..runs.len()).any(|j| {
+                let (a, b) = (&runs[i].1, &runs[j].1);
+                cross_run_type_conflict(a, b)
+                    && (a.semantic_role == role || b.semantic_role == role)
+            })
+        });
     if any_conflict {
         let mut resolved = false;
         if stats.numeric_parseable_fraction < R3_LOW_PARSE_RATE
@@ -634,5 +661,46 @@ mod tests {
         let a = canonicalize(&runs, "k", &s, &[], false, false);
         let b = canonicalize(&shuffled, "k", &s, &[], false, false);
         assert_eq!(a, b, "canonicalization must be order-independent");
+    }
+
+    /// Regression test for a confirmed defect (found independently by
+    /// two of this checkpoint's own fresh adversarial reviewers): R3's
+    /// original condition fired on ANY pairwise categorical-vs-Numeric
+    /// conflict anywhere among the raw proposals, not only when the real
+    /// plurality winner was itself being contested. A real 3/5 FreeText
+    /// plurality, with an unrelated 1 Enum + 1 Numeric minority pair
+    /// coexisting, used to have R3 silently overwrite the resolved role
+    /// to Enum or Numeric based on catalog stats -- discarding the real
+    /// majority entirely and reporting a confidence of 1/5 while still
+    /// returning a `Promoted` (not `Abstain`) outcome. This must now
+    /// resolve to FreeText, the real plurality winner, untouched by R3.
+    #[test]
+    fn r3_does_not_hijack_a_plurality_winner_unrelated_to_its_own_conflict() {
+        let runs = vec![
+            (1, base(SemanticRole::FreeText, PP::LexicalPostings, 0.5)),
+            (2, base(SemanticRole::FreeText, PP::LexicalPostings, 0.5)),
+            (3, base(SemanticRole::FreeText, PP::LexicalPostings, 0.5)),
+            (4, base(SemanticRole::Enum, PP::BitmapEnum, 0.4)),
+            (5, base(SemanticRole::Numeric, PP::NumericRange, 0.4)),
+        ];
+        // Stats shaped so R3's own Enum-favoring condition (low parse
+        // rate, bounded cardinality) WOULD have fired had R3 wrongly
+        // engaged -- proving the fix, not merely a stats mismatch that
+        // happens to dodge R3's own resolution branches.
+        let s = stats(20, 500, 0.04, 0.1);
+        let outcome = canonicalize(&runs, "k", &s, &[], false, false);
+        let d = outcome
+            .promoted()
+            .expect("must promote the real plurality winner");
+        assert_eq!(
+            d.semantic_role,
+            SemanticRole::FreeText,
+            "the real 3/5 plurality winner must survive; R3 must not engage on an Enum/Numeric \
+             minority pair that isn't even the plurality winner"
+        );
+        assert_eq!(
+            d.confidence, 0.6,
+            "3/5 non-abstaining proposals agree with the real winner"
+        );
     }
 }

@@ -1,0 +1,12 @@
+ABSTAIN-STABILIZED: wands_anonymized/color
+ABSTAIN-STABILIZED: wands_anonymized/compatibledrainassemblypartnumber
+
+=== Q1: leave-one-out stabilization mechanism (raw-unstable keys, all 4 configs) ===
+stabilized via Promoted-Promoted: 25
+stabilized via Abstain-Abstain:   2
+NOT uniformly stable:              0
+
+=== Q2: does R3's evidence override ever change the role vs plain R2 plurality? ===
+(config,key) groups where cross_run_type_conflict fires at all: 1
+of those, R3 fires (any_conflict branch entered): 1
+of those, final role DIFFERS from plain-R2-plurality: 0
