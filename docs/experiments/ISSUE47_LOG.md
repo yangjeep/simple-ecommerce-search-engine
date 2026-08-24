@@ -181,20 +181,42 @@ stats-driven R1/R4-R7 rules) to reach the same final answer 5 draws
 would have -- but this is a property of *this checkpoint's own draws*
 being unusually clean, disclosed as such, not claimed to generalize.
 
-#### Results (combined, 53 keys; safety fields use the fixed `unsafe_accepted_count`)
+#### Results (combined, 53 keys; safety fields use the fixed `unsafe_accepted_count`;
+#### certified-robust fields use the post-adversarial-review-fixed semantics --
+#### see the "Adversarial review" section below for both fixes. Numbers here
+#### are the corrected, final reading, not the checkpoint's own first draft.)
 
 | Metric | A0 (n=1) | A1 (fixed-5) | A2 (adaptive C) | A3 (conservative D) |
 |---|---|---|---|---|
-| Mean depth | 1.0 | 5.0 | 3.98 | 3.98 |
+| Mean depth (per-key unit) | 1.0 | 5.0 | 3.98 | 3.98 |
 | Median / P95 depth | 1 / 1 | 5 / 5 | 3 / 5 | 3 / 5 |
-| Reduction vs fixed-5 | 80.0% | 0.0% | 20.38% | 20.38% |
-| Certified-robust rate | n/a | n/a | 88.68% | 88.68% |
+| Reduction vs fixed-5 (per-key unit) | 80.0% | 0.0% | 20.38% | 20.38% |
+| **Raw batched-call count (deployment unit)** | 1 | 5 | **5** | **5** |
+| **Reduction vs fixed-5 (deployment unit)** | 80.0% | 0.0% | **0.0%** | **0.0%** |
+| Certified-robust rate (corrected) | n/a | n/a | 50.94% | 50.94% |
 | Full-descriptor stability | n/a | 100.00% | 100.00% | 100.00% |
 | Primitive stability | n/a | 100.00% | 100.00% | 100.00% |
 | Unsafe accepted | 0 | 0 | 0 | 0 |
 | Oracle disagreements (of 47 promoted) | 3 | 3 | 3 | 3 |
 | Retrieval-significant recall | 92.11% | 92.11% | 92.11% | 92.11% |
 | Abstention rate | 11.32% | 11.32% | 11.32% | 11.32% |
+
+**The two bolded rows are the single most important, easy-to-miss
+finding in this checkpoint, per the adversarial review below**:
+`ISSUE47_PROTOCOL.md` §10 preregistered two distinct cost units *because*
+one live call returns proposals for every key in its configuration at
+once -- a straggler key still unresolved forces another full-config
+draw covering every key again, "so a real deployment using this exact
+batching shape" saves nothing until every key in the batch certifies.
+Both configurations have at least one such straggler (P95 depth = 5 in
+both), so **`raw_batched_call_count` for A2/A3 equals A1's own (5) in
+every scope measured here -- zero deployment-relevant savings**, even
+though the per-key unit shows a real 20.38% reduction. This is not a
+new finding contradicting the per-key numbers -- both were always true
+by the protocol's own design -- but the first draft of this section
+reported only the flattering per-key unit and omitted this row
+entirely, exactly the disclosure gap the adversarial review's
+methodology reviewer found and is corrected here.
 
 Disagreeing keys (all four treatments, identical): `productwarranty`,
 `heat_range` -- both already named in `ISSUE45_DECISION.md` as genuine
@@ -206,22 +228,26 @@ plus `title`, a new disagreement not seen in E2c's own precedent
 promotions in any of the three.
 
 **Per-configuration breakdown** (the aggregate above hides a real
-split): `automotive` (17 keys) reduces 37.65% (mean depth 3.12/5,
-certified-robust 100%) -- close to the theoretical ceiling this
-checkpoint's own controller design allows (§8's "majority lock"
-argument makes `n=3` of 5 the earliest possible certified depth, so
-37.65% approaches but cannot reach the mechanical maximum of 40% for a
-uniformly-unanimous set). `wands_baseline` (36 keys) reduces only
-12.22% (mean depth 4.39/5, certified-robust only 83.33% -- 6 of 36 keys
-never certify before exhausting the pool, and abstention (16.67%, all
-four treatments identically) is real WANDS data-quality noise, not
-early-stopping artifact, per the identical abstention rate across every
-depth). The real, messier WANDS data is materially harder to certify
-early than the cleaner synthetic automotive set, even though raw role
-agreement was unanimous on both -- because the robustness certificate
-also depends on value_type/scope/primitive axes and R8/R9's validator
-gates, which unanimous role agreement alone does not guarantee are
-locked.
+split, and the corrected certified-robust numbers sharpen it
+considerably): `automotive` (17 keys) reduces 37.65% per-key (mean
+depth 3.12/5), with a **corrected** certified-robust rate of 94.12% (16
+of 17 keys genuinely proven early, not merely exhausted) -- close to
+the theoretical ceiling this checkpoint's own controller design allows
+(§8's "majority lock" argument makes `n=3` of 5 the earliest possible
+certified depth). `wands_baseline` (36 keys) reduces only 12.22%
+per-key (mean depth 4.39/5), with a **corrected** certified-robust rate
+of just **30.56%** (11 of 36 keys) -- down sharply from this
+checkpoint's own first-draft figure of 83.33%, which the adversarial
+review found was inflated by a vacuous-truth bug (below) counting every
+key that merely exhausted the pool as "certified." The real,
+messier WANDS data is not just harder to reduce cost on than the
+cleaner synthetic automotive set -- for roughly seven in ten promoted
+WANDS keys, the controller never actually proves the early stop would
+have been safe; it just runs out of draws and reports whatever
+`canonicalize()` says at that point, identical to what A1 would have
+said anyway. Abstention (16.67%, all four treatments identically) is
+real WANDS data-quality noise, not an early-stopping artifact, per the
+identical abstention rate across every depth.
 
 #### Phase A GO-gate evaluation (criteria per `ISSUE47_PROTOCOL.md` §11)
 
@@ -240,9 +266,17 @@ locked.
    already carry -- not independently confirmed here, explicitly by
    inheritance. **PASS-by-inheritance, disclosed as such.**
 6. **Average per-key depth reduced by >=40% vs fixed-5** -- 20.38%
-   combined. **FAIL.** (automotive alone: 37.65%, close to this
-   controller design's own mechanical ceiling; wands_baseline alone:
-   12.22%, far below.)
+   combined under the per-key unit. **FAIL.** (automotive alone: 37.65%,
+   close to this controller design's own mechanical ceiling;
+   wands_baseline alone: 12.22%, far below.) Under the protocol's own
+   *other* preregistered cost unit (raw batched-call count, the
+   deployment-relevant one given this repo's real batching mechanism),
+   the reduction is **0%** in every scope measured -- both
+   configurations have at least one straggler key that never certifies
+   before exhausting the pool, so a real deployment issuing whole-config
+   batched draws would need the same 5 calls A1 already needs. **FAIL
+   under both cost units, more starkly under the deployment-relevant
+   one.**
 7. **Savings not achieved primarily through excessive abstention** --
    A2/A3's own abstention rate (11.32%) is *identical* to A1's own
    (11.32%) -- the modest reduction achieved is genuine early
@@ -253,7 +287,179 @@ locked.
    `e2d_controller.rs` tests). **PASS.**
 
 **Quality/safety (1,2,3,4,5,7,8) passes cleanly.** **Economics
-(criterion 6) fails** at the combined level. Per Issue #47's own text:
-"If quality passes but economics do not, record REVISE." A fresh
-adversarial review (per Issue #47's own governance, before freezing the
-Phase A controller) follows below.
+(criterion 6) fails** at the combined level, under both preregistered
+cost units. Per Issue #47's own text: "If quality passes but economics
+do not, record REVISE." A fresh adversarial review (per Issue #47's own
+governance, before freezing the Phase A controller) follows below.
+
+### Fresh adversarial review
+
+Three independent reviewer agents, no implementation mandate, no access
+to each other's output or this session's own conclusions, each given a
+different angle (controller math/algorithm; methodology and peeking
+risk; safety-critical correctness). All findings below were
+independently confirmed by this session before acting on them, not
+applied on the reviewers' word alone.
+
+**1. CONFIRMED, safety/interpretation-relevant: vacuous "certified"
+flag at max depth (controller-math reviewer).** `e2d_controller.rs`'s
+`worst_case_robust` returned `true` unconditionally whenever
+`remaining_budget == 0` -- true only in the vacuous sense that no
+composition of *zero* remaining draws can change anything, not because
+any adversarial composition was tested and survived. Concrete failing
+case: `contested_role_escalates_to_full_depth`'s own genuine 3-Enum-vs-
+2-FreeText split, which only resolves at `n=5`, was reported
+`certified_robust_at_stop = true` -- contradicting `ISSUE47_PROTOCOL.md`
+§8's own text ("Promoted but not certified-robust... disclosed
+explicitly per key... not hidden inside an aggregate pass rate").
+**Verified this affects zero decisions**: `remaining_budget == 0` occurs
+only at `n == k_max`, where `run_controller`'s own decision is *already*
+unconditionally `Stop` regardless of this function's return value (the
+`if n == k_max` branch takes priority over the `robust` check) -- so
+`n_used`, `final_outcome`, and every quality/safety GO-gate number
+(criteria 1-5, 7, 8) are byte-for-byte unaffected; only the
+`certified_robust`/`certified_robust_at_stop` *reporting* fields, and
+metrics derived from them (`certified_robust_rate_pct`), were wrong.
+Fixed (`return false` instead of `return true` on that branch); two
+existing tests (`contested_role_escalates_to_full_depth`,
+`plurality_margin_alone_does_not_certify_when_r9_conflict_risk_remains`)
+strengthened with explicit `certified_robust_at_stop` assertions that
+would have caught this. **Rerun affected measurements**: corrected
+`certified_robust_rate_pct` combined 88.68% -> **50.94%**; automotive
+100% -> 94.12%; wands_baseline 83.33% -> **30.56%** (the results table
+above is the corrected reading; the pre-fix numbers are superseded, not
+silently discarded, and are preserved in this log's own git history at
+commit `cf72f61`).
+
+**2. CONFIRMED, disclosure gap (methodology reviewer).** This
+checkpoint's own protocol (`ISSUE47_PROTOCOL.md` §10) commits to
+reporting the per-key-depth cost unit *and* the raw-batched-call-count
+unit "side by side, so neither reading is presented as the other," and
+the calibration-lane addendum honestly did report both. The held-out
+results section's own first draft dropped the raw-batched-call-count
+row entirely, reporting only the flattering per-key numbers (20.38%/
+37.65%/12.22% reduction) with no mention that the deployment-relevant
+unit shows 0% reduction in every scope. Fixed: the results table above
+now carries both rows, with an explicit callout paragraph. This is a
+reporting/disclosure fix only -- no code or measurement changed.
+
+**3. CONFIRMED, methodology reviewer's independent verification (not a
+defect, a strengthening of an existing claim).** Re-checked the "not a
+caching artifact" claim (draws genuinely independent, not duplicated)
+by diffing `evidence`/`aliases`/`confidence` text across raw draws for
+several keys directly, beyond the MD5-distinctness check this log
+already cited -- confirmed genuinely varying phrasing and confidence
+values run to run, not template reuse. Also independently re-verified,
+from git history, that `e2d_controller.rs` and `ISSUE47_PROTOCOL.md`
+were byte-identical before and after the held-out draws existed (the
+controller's own freeze commitment held); noted as a real but narrower
+gap that `e2d_adaptive_consensus_eval.rs`/`e2c_metrics.rs` (the code
+that *scores* the frozen controller's output) were not under the same
+freeze -- disclosed, not a violation, since the protocol's own §7 freeze
+language covers only "the controller's code (§8, §12)."
+
+**4. CONFIRMED, coverage gap (safety reviewer).** The
+`unsafe_accepted_count` fix's own regression tests covered only
+Identifier<->Enum mismatches, never the Identifier<->Relationship
+cross-conflation the fix's own doc comment claims to catch. Added
+`unsafe_accepted_flags_relationship_identifier_cross_conflation_both_directions`,
+verifying both directions explicitly. Also confirmed: the real held-out
+data never exercises this mismatch branch at all (both oracle-
+Relationship keys, `compatiblediningchairpartnumber`/
+`compatibledrainassemblypartnumber`, abstain rather than promote in
+every treatment) -- so the held-out "0 unsafe" result, while true, is a
+weak empirical test of the specific defect that was fixed; the new
+unit test is the real coverage for that case.
+
+**5. CONFIRMED, drift-risk cleanup (safety reviewer).**
+`e2d_adaptive_consensus_eval.rs`'s own `safety_breakdown` function
+independently re-implemented `unsafe_accepted_count`'s filter predicate
+a second time (to build the reported `unsafe_keys` list), never
+verified consistent with the count by any assertion -- exactly the
+"independently-reimplemented safety logic that could silently drift"
+pattern this repo's own conventions elsewhere avoid. Fixed: added
+`e2c_metrics::unsafe_accepted_keys`, the single shared implementation
+both `unsafe_accepted_count` (via `.len()`) and the eval binary now
+call; a new test (`unsafe_accepted_keys_returns_exactly_the_keys_the_count_counts`)
+asserts the two can never diverge.
+
+**Checked and found sound** (not defects): the unanimous-single-role-
+block worst-case search is mathematically complete for both R2's
+plurality-flip risk and R3/R9's cross-run-conflict risk (independently
+re-derived by the controller-math reviewer from the actual
+`plurality()`/tie-break code, not merely the prose claim); the
+controller never reads any proposal's own `confidence` field (traced
+through the real code paths, not just the grep test); the fixed
+`unsafe_accepted_count` is correct for the cases exercised; the "byte-
+identical before/after" regression claim for E2c's own
+`e2c_canonicalization_eval` is not just empirically true but *provably*
+guaranteed (E2c's own `is_structural` pre-filter makes the old and new
+predicates mathematically identical on that call site, since a
+structural role can never equal Identifier/Relationship); no oracle
+leakage into the controller, metrics module, or draw-generation prompt.
+
+**Two plausible, unverified concerns recorded for future work, not
+acted on now**: (a) `synthetic_role_vote` always sets `scope:
+Scope::Product` regardless of the role under test, currently harmless
+because `has_real_variant_grouping=false` for both configurations makes
+R6 ignore scope votes entirely, but a live false-certification path if
+a future dataset sets that flag `true`; (b) the "earliest certifiable
+depth is `n=3` for `K_MAX=5`" claim implicitly assumes `K_MAX` is odd
+and doesn't fully generalize to an even `K_MAX`, though this doesn't
+affect any `K_MAX=5` result reported here.
+
+Full workspace `cargo fmt`/`clippy`/`test`/`build` re-run clean after
+every fix above.
+
+### Phase A decision: REVISE
+
+Per Issue #47's own governance ("record REVISE... rather than forcing
+Phase B" when quality passes but economics does not; "if there is no
+defensible adaptive controller, STOP... rather than forcing Phase B"):
+
+**Quality/safety is defensible and cleanly established**: zero unsafe
+accepted structural classifications (criterion 1, and the specific fix
+that could have masked this was independently found and corrected by
+adversarial review, then closed with regression tests covering the
+exact case that mattered); 100% primitive/full-descriptor stability
+(criteria 2-3); identical retrieval-significant recall to the fixed-5
+reference (criterion 4); relevance inherited by construction from a
+byte-identical promoted set (criterion 5); genuine, non-abstention-
+driven savings where any exist (criterion 7); a structurally-guaranteed
+never-forces-a-vote abstention discipline (criterion 8, verified by
+tests). The controller mechanism itself -- the worst-case-robustness
+certificate -- is mathematically sound (independently re-derived by
+adversarial review) and, after the vacuous-certification fix, its own
+diagnostic reporting is now honest about when a stop is genuinely proven
+versus merely pool-exhausted.
+
+**Economics is not established**: 20.38% combined reduction under the
+per-key cost unit, well short of the preregistered 40% target, and
+**0% reduction under the protocol's own deployment-relevant
+raw-batched-call-count unit** in every scope measured, because every
+configuration has at least one straggler key. The corrected
+certified-robust numbers sharpen why: on real WANDS data, only 30.56%
+of promoted keys are ever genuinely proven safe to stop early; the rest
+reach their answer only because the pool ran out, identical to what the
+fixed-5 ensemble would have produced anyway. The controller design's own
+"majority lock" mathematics (§8) mean the theoretical best case for
+`K_MAX=5` tops out at 40% reduction even under perfect unanimous
+agreement -- so this specific `K_MAX` and stop-rule combination cannot
+reach its own preregistered target even in the best case measured here
+(automotive, at 37.65%/94.12% certified), and falls far short on the
+harder, more realistic WANDS data.
+
+**Decision: REVISE, not GO, not STOP.** The controller is defensible
+(safe, mathematically sound, honestly instrumented after this review's
+fixes) but does not deliver the preregistered adaptive-consensus
+efficiency claim on this held-out data, particularly under the
+deployment-relevant cost unit. Per Issue #47's own ordering ("only with
+a frozen defensible Phase-A controller" may Phase B proceed), this
+checkpoint treats the controller as frozen and defensible enough to
+serve as Phase B's own shared adaptive-controller mechanism (its safety
+and correctness are not in question), while carrying the economics
+caveat forward explicitly: Phase B must not claim adaptive escalation
+itself delivers the preregistered cost savings, only report what it
+actually measures. Freezing the controller's own code
+(`e2d_controller.rs`) as-is for Phase B, unmodified from this
+checkpoint's own adversarial-review-fixed state.

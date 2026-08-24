@@ -192,6 +192,21 @@ pub fn unsafe_accepted_count(
     promoted_keys_and_roles: &[(String, SemanticRole)],
     oracle_by_key: &BTreeMap<String, SemanticRole>,
 ) -> usize {
+    unsafe_accepted_keys(promoted_keys_and_roles, oracle_by_key).len()
+}
+
+/// The actual keys `unsafe_accepted_count` counts, for callers that need
+/// to report *which* keys were flagged (e.g. an adversarial-review
+/// transparency field), not merely how many. Both this function and
+/// `unsafe_accepted_count` share this one predicate -- deliberately not
+/// duplicated at any call site, per this repo's own "do not
+/// independently reimplement safety logic that could silently drift"
+/// discipline (`e2b_pipeline.rs`'s own `resolve_real_key` reuse is the
+/// precedent this follows).
+pub fn unsafe_accepted_keys(
+    promoted_keys_and_roles: &[(String, SemanticRole)],
+    oracle_by_key: &BTreeMap<String, SemanticRole>,
+) -> Vec<String> {
     promoted_keys_and_roles
         .iter()
         .filter(|(key, role)| {
@@ -200,7 +215,8 @@ pub fn unsafe_accepted_count(
                 Some(SemanticRole::Identifier) | Some(SemanticRole::Relationship)
             ) && oracle_by_key.get(key) != Some(role)
         })
-        .count()
+        .map(|(key, _)| key.clone())
+        .collect()
 }
 
 /// Oracle-labeled retrieval-significant real keys that end up `Promoted`
@@ -361,5 +377,50 @@ mod tests {
         let mut oracle = BTreeMap::new();
         oracle.insert("part_number".to_string(), SemanticRole::Identifier);
         assert_eq!(unsafe_accepted_count(&promoted, &oracle), 1);
+    }
+
+    /// **Adversarial-review-requested coverage gap, closed**: the fix's
+    /// own regression tests only exercised Identifier<->Enum mismatches;
+    /// the Identifier<->Relationship cross-conflation the fix's own doc
+    /// comment claims to catch (both are "Identifier or Relationship" in
+    /// the `matches!` guard) was never independently verified in either
+    /// direction. Both directions checked here.
+    #[test]
+    fn unsafe_accepted_flags_relationship_identifier_cross_conflation_both_directions() {
+        let mut oracle = BTreeMap::new();
+        oracle.insert("compatible_part".to_string(), SemanticRole::Relationship);
+        let promoted_as_identifier =
+            vec![("compatible_part".to_string(), SemanticRole::Identifier)];
+        assert_eq!(
+            unsafe_accepted_count(&promoted_as_identifier, &oracle),
+            1,
+            "a genuine Relationship field promoted as Identifier is still a cross-item-identity \
+             conflation risk, not a safe substitution"
+        );
+
+        let mut oracle2 = BTreeMap::new();
+        oracle2.insert("part_number".to_string(), SemanticRole::Identifier);
+        let promoted_as_relationship =
+            vec![("part_number".to_string(), SemanticRole::Relationship)];
+        assert_eq!(
+            unsafe_accepted_count(&promoted_as_relationship, &oracle2),
+            1,
+            "a genuine Identifier field promoted as Relationship is also flagged, not silently \
+             treated as an acceptable substitution between the two protected roles"
+        );
+    }
+
+    #[test]
+    fn unsafe_accepted_keys_returns_exactly_the_keys_the_count_counts() {
+        let promoted = vec![
+            ("part_number".to_string(), SemanticRole::Enum),
+            ("color".to_string(), SemanticRole::Enum),
+        ];
+        let mut oracle = BTreeMap::new();
+        oracle.insert("part_number".to_string(), SemanticRole::Identifier);
+        oracle.insert("color".to_string(), SemanticRole::Enum);
+        let keys = unsafe_accepted_keys(&promoted, &oracle);
+        assert_eq!(keys, vec!["part_number".to_string()]);
+        assert_eq!(keys.len(), unsafe_accepted_count(&promoted, &oracle));
     }
 }

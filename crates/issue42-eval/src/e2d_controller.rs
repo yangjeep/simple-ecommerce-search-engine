@@ -157,8 +157,28 @@ fn worst_case_robust(
         Some(t) => t,
         None => return false,
     };
+    // **Confirmed defect, fixed here (found by a fresh adversarial
+    // review before this checkpoint's Phase A freeze)**: this used to
+    // `return true` when `remaining_budget == 0`, on the (technically
+    // true but misleading) reasoning that no composition of zero
+    // remaining draws can change the outcome. That is a vacuous
+    // tautology, not a genuine robustness certificate -- it only ever
+    // occurs at `n == K_MAX`, where `run_controller`'s own decision is
+    // *already* unconditionally `Stop` regardless of this function's
+    // return value (see the `if n == k_max` branch there), so this
+    // change affects no controller decision, escalation depth, or final
+    // outcome anywhere -- only the `certified_robust`/
+    // `certified_robust_at_stop` *reporting* fields, which this fix
+    // corrects to mean what `ISSUE47_PROTOCOL.md` section 8 actually
+    // says: a case that only resolves because the pool ran out is
+    // "Promoted but not certified-robust," never "certified." Verified
+    // directly: `contested_role_escalates_to_full_depth`'s own genuinely
+    // contested 3-vs-2 case now correctly reports
+    // `certified_robust_at_stop == false` (it previously reported
+    // `true` via this exact vacuous path, undetected because no test
+    // asserted on the flag).
     if remaining_budget == 0 {
-        return true;
+        return false;
     }
     for &role in ALL_ROLES.iter() {
         let mut simulated = draws_so_far.to_vec();
@@ -442,6 +462,11 @@ mod tests {
             "R9 conflict risk from a hypothetical Enum vote must block early certification \
              even though plain plurality margin alone would already be locked at n=3"
         );
+        assert!(
+            !trace.certified_robust_at_stop,
+            "reaching n=K_MAX by exhausting the pool is not the same as a genuine early \
+             robustness certificate -- must not be reported as certified"
+        );
     }
 
     /// A genuinely 3-vs-2 contested role at high cardinality should not
@@ -474,6 +499,13 @@ mod tests {
         ];
         let trace = run_controller(&pool, "contested", &s, &[], false, false);
         assert_eq!(trace.n_used, 5);
+        assert!(
+            !trace.certified_robust_at_stop,
+            "a genuinely contested split that only resolves because the pool ran out is \
+             Promoted-but-not-certified, per ISSUE47_PROTOCOL.md section 8 -- this exact \
+             case previously reported certified_robust_at_stop=true via a vacuous \
+             remaining_budget==0 shortcut, undetected because nothing asserted on this field"
+        );
         let full = canonicalize(&pool, "contested", &s, &[], false, false);
         assert_eq!(
             promoted_triple(&trace.final_outcome),

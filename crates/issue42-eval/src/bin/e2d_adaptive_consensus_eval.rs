@@ -72,22 +72,13 @@ fn safety_breakdown(
     promoted_keys_and_roles: &[(String, SemanticRole)],
     oracle: &BTreeMap<String, SemanticRole>,
 ) -> SafetyBreakdown {
-    let unsafe_count =
-        issue42_eval::e2c_metrics::unsafe_accepted_count(promoted_keys_and_roles, oracle);
-    // Mirrors e2c_metrics::unsafe_accepted_count's own (fixed) definition
-    // exactly -- oracle says Identifier/Relationship AND the promoted
-    // role does not match -- so this list is never inconsistent with
-    // `unsafe_count` above.
-    let unsafe_keys: Vec<String> = promoted_keys_and_roles
-        .iter()
-        .filter(|(k, role)| {
-            matches!(
-                oracle.get(k),
-                Some(SemanticRole::Identifier) | Some(SemanticRole::Relationship)
-            ) && oracle.get(k) != Some(role)
-        })
-        .map(|(k, _)| k.clone())
-        .collect();
+    // Adversarial-review finding, fixed: this used to hand-roll a second
+    // copy of e2c_metrics::unsafe_accepted_count's own filter predicate
+    // here, risking silent drift between the count and the reported key
+    // list. Both now come from the same shared function.
+    let unsafe_keys =
+        issue42_eval::e2c_metrics::unsafe_accepted_keys(promoted_keys_and_roles, oracle);
+    let unsafe_count = unsafe_keys.len();
     let disagreeing_keys: Vec<String> = promoted_keys_and_roles
         .iter()
         .filter(|(k, role)| oracle.get(k).map(|o| o != role).unwrap_or(false))

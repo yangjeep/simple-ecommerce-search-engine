@@ -140,7 +140,7 @@
     },
     "a2": {
       "abstention_rate_pct": 11.32075471698113,
-      "certified_robust_rate_pct": 88.67924528301887,
+      "certified_robust_rate_pct": 50.943396226415096,
       "depth_mean": 3.981132075471698,
       "depth_median": 3.0,
       "depth_p95": 5.0,
@@ -213,7 +213,7 @@
     },
     "a3": {
       "abstention_rate_pct": 11.32075471698113,
-      "certified_robust_rate_pct": 88.67924528301887,
+      "certified_robust_rate_pct": 50.943396226415096,
       "depth_mean": 3.981132075471698,
       "depth_median": 3.0,
       "depth_p95": 5.0,
@@ -369,7 +369,7 @@
       },
       "a2": {
         "abstention_rate_pct": 0.0,
-        "certified_robust_rate_pct": 100.0,
+        "certified_robust_rate_pct": 94.11764705882352,
         "depth_mean": 3.1176470588235294,
         "depth_median": 3.0,
         "depth_p95": 3.0,
@@ -410,7 +410,7 @@
       },
       "a3": {
         "abstention_rate_pct": 0.0,
-        "certified_robust_rate_pct": 100.0,
+        "certified_robust_rate_pct": 94.11764705882352,
         "depth_mean": 3.1176470588235294,
         "depth_median": 3.0,
         "depth_p95": 3.0,
@@ -555,7 +555,7 @@
       },
       "a2": {
         "abstention_rate_pct": 16.666666666666664,
-        "certified_robust_rate_pct": 83.33333333333334,
+        "certified_robust_rate_pct": 30.555555555555557,
         "depth_mean": 4.388888888888889,
         "depth_median": 5.0,
         "depth_p95": 5.0,
@@ -610,7 +610,7 @@
       },
       "a3": {
         "abstention_rate_pct": 16.666666666666664,
-        "certified_robust_rate_pct": 83.33333333333334,
+        "certified_robust_rate_pct": 30.555555555555557,
         "depth_mean": 4.388888888888889,
         "depth_median": 5.0,
         "depth_p95": 5.0,
