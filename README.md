@@ -1,60 +1,129 @@
-# Commerce-Native Search Engine
+# Commerce-Native Search
 
-Experimental Rust search engine exploring a **semantic forwarding plane + learned control plane** for multi-tenant ecommerce retrieval.
+A research prototype asking one core question:
 
-This repository intentionally starts from a narrower world model than a generic document search engine. Products, variants, product types, brands, categories, prices, inventory, availability, and typed commerce attributes are first-class concepts. Known commerce semantics compile into deterministic structural retrieval; a mature lexical engine (Solr today; Havenask as a planned second anchor) handles residual/open-ended relevance; model-assisted reasoning belongs in an offline control plane that proposes and validates semantic routes before compiling them into the fast path — never in the query hot path.
+> **Can an ecommerce search engine be faster, more flexible, more accurate, and more stable at the same time?**
 
-Start here, in order:
+Not by putting a bigger model in every query. The hypothesis is that merchant-specific intelligence can be learned **offline**, compiled into deterministic commerce-aware structures, and then served through a small predictable runtime.
 
-- **[`docs/WHY.md`](docs/WHY.md)** — the real problem this project exists to test, and which hypotheses have been falsified or narrowed so far.
-- **[`docs/WHAT.md`](docs/WHAT.md)** — the evidence-backed product/system boundary, and explicit non-goals.
-- **[`docs/architecture/README.md`](docs/architecture/README.md)** — how the system actually works today (as opposed to what a future phase targets).
+In this project:
 
-## Status
+- **Faster** means less CPU/latency for the commerce workloads that can use specialized execution.
+- **More flexible** means new merchants, categories, schemas, variants, and relationships should not require new serving code.
+- **More accurate** means structural specialization must preserve or improve retrieval correctness/relevance — speed obtained by dropping good results does not count.
+- **More stable** means deterministic installed semantics and predictable serving behavior even when catalogs are messy and model proposals are stochastic.
 
-Research prototype / architecture experiment, not a deployable service. The previous C/GTrie implementation remains in git history but is not the target architecture.
+The project has evidence for each piece, but has **not yet proved all four simultaneously end to end**. That is the research program.
 
-The project has moved through several falsification rounds, each ending in a written decision document:
+```mermaid
+flowchart LR
+    A[Merchant catalog] --> B[Profile + compress]
+    B --> C[Model proposes semantics]
+    C --> D[Deterministic validation + compilation]
+    D --> E[Compiled merchant context + indexes]
 
-| Round | Question | Decision |
-|---|---|---|
-| Gates 0–7 (Issue #2) | Bootstrap: typed domain, Commerce IR, physical indexes, control plane, first benchmark | PROCEED — [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md) |
-| Round 1 (Issue #5) | Real catalog (1.2M products) + external Solr baseline + adversarial workloads | [`ROUND1_DECISION_TREE.md`](ROUND1_DECISION_TREE.md) |
-| Phase 2 (Issue #6) | Whole-engine 5–10x QPS/$ replacement thesis | **STOP** — [`PHASE2_DECISION.md`](PHASE2_DECISION.md) |
-| Phase 3 (Issue #14) | Safe fast-path admission frontier over Solr | **NARROW SUPPORT** — [`PHASE3_DECISION.md`](PHASE3_DECISION.md) |
-| Phase 4 (Issue #16) | Learned semantic implication rules | **NARROW SUPPORT** — [`PHASE4_DECISION.md`](PHASE4_DECISION.md) |
-| Phase 5 (Issue #17) | Browse/PLP as a commerce-native workload vs. a fair Solr baseline | **REVISE / NARROW BUT PUBLISHABLE** — [`PHASE5_DECISION.md`](PHASE5_DECISION.md) |
-| Phase 6A (Issue #23) | Do Phase 5's PLP breakpoints reproduce on an independent, genuinely hierarchical dataset (WANDS, substituted for the unreachable Amazon Reviews 2023)? | **PROCEED** — [`PHASE6A_DECISION.md`](PHASE6A_DECISION.md) |
-| Phase 6B (Issue #21 Phase 6) | Is Phase 6A's facet-crossover shift explained by attribute complexity alone, or does candidate-set size independently matter — via a controlled-stress WANDS scale ladder (Retailrocket/H&M/Amazon Reviews 2023/Havenask all confirmed blocked)? | **PROCEED** — [`PHASE6B_DECISION.md`](PHASE6B_DECISION.md) |
-| Phase 6C (Issue #21 Phase 6, retroactive audit after Phase 8) | Was cross-engine validation actually completed, given Solr was the only baseline through Phase 8 — live re-check of Havenask/Elasticsearch/OpenSearch/Retailrocket/H&M/Amazon Reviews 2023, plus a new raw-Apache-Lucene-direct baseline where Maven Central proved reachable, then an adversarial self-check of that baseline's own facet-scan implementation? | **PROCEED** — [`PHASE6C_DECISION.md`](PHASE6C_DECISION.md) |
-| Phase 6D (Issue #21 Phase 6, closing the facet crossover) | Can commerce-native's own architecture adopt the ordinal-based facet-counting technique P6C-E01 found closes most of Lucene's own crossover against Solr, and does the result hold across Phase 6B's own controlled-stress scale ladder? | **PROCEED** — [`PHASE6D_DECISION.md`](PHASE6D_DECISION.md) |
-| Phase 6E (Issue #21 Phase 6, repairing Phase 6C's own "genuinely blocked" verdict) | Per the user's own instruction that Solr alone is "not enough": does Elasticsearch/OpenSearch actually remain blocked, or did Phase 6C's audit stop one route short — the same Maven-library route that made P6C-E00's raw-Lucene baseline possible? | **PROCEED** — [`PHASE6E_DECISION.md`](PHASE6E_DECISION.md) |
-| Phase 7 (Issue #21 Phase 7) | Does commerce specialization reduce per-tenant fixed cost and increase safe tenant packing density while preserving isolation — terminal decision, 15 hypotheses (H1-H15), single-process, cross-process, and lexical-backend, real WANDS category partitions as tenants? | **PROCEED** — [`PHASE7_DECISION.md`](PHASE7_DECISION.md) |
-| Phase 8 (Issue #21 Phase 8) | Does Phase 7's steady-state multi-tenant isolation hold under a correlated retail-burst regime (BFCM elasticity) — first pass, partially supported in this environment (see [`PHASE8_FEASIBILITY.md`](PHASE8_FEASIBILITY.md))? | **PROCEED (first pass, two burst-amplified gaps + one cross-subsystem interaction confirmed)** — [`PHASE8_DECISION.md`](PHASE8_DECISION.md) |
+    Q[Shopper query] --> R[Commerce IR]
+    R --> P{Best execution path?}
+    P -->|structural| N[Native bitmap / range / ID execution]
+    P -->|mixed| H[Native narrowing + lexical ranking]
+    P -->|open-ended| L[Mature lexical backend]
+    N --> K[Top-K results]
+    H --> K
+    L --> K
+```
 
-**The active epic is [Issue #21](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/21)** (Phases 6–9): cross-dataset/cross-engine validation, multi-tenant SMB/mid-market economics, correlated-burst (BFCM) elasticity, and an integrated, falsifiable system. See `docs/WHY.md` for why the project reframed around this after Phases 2–5.
+## What the research has actually shown
 
-## Core questions
+| Goal | Current evidence |
+|---|---|
+| **Faster** | Structural execution can be dramatically cheaper than generic retrieval, but only in measured workload regions. Faceting also showed that the right physical algorithm matters more than language/runtime alone. |
+| **More flexible** | A dynamically discovered merchant schema can compile into the same physical operators as hand-written code without meaningful hot-path overhead in the tested case; mixed/unseen synthetic catalogs did not require vertical-specific serving branches. |
+| **More accurate** | The project rejected the original whole-engine replacement thesis because mature lexical ranking was better. The current design delegates open-ended relevance and only promotes specialized paths when correctness/relevance survives explicit gates. |
+| **More stable** | LLM proposals are useful but stochastic. Deterministic validation/canonicalization substantially reduces that instability and prevents confirmed unsafe promotions; adaptive consensus is the current research frontier. |
 
-The project is intended to measure, not assume. The original Gate-era questions (below) are largely answered — see `docs/WHY.md` for the falsified/narrowed results — and Issue #21 now asks the multi-tenant/multi-dataset/burst-elasticity versions of the same questions:
+A few representative measurements, with full caveats preserved in the decision records:
 
-- What fraction of realistic ecommerce queries can be resolved structurally without a model call in the hot path? (Phases 2–4: a real but small slice — see `docs/WHY.md`.)
-- Does that advantage hold for browse/PLP-style structural traffic, and where does it break down by cardinality? (Phase 5: yes for filter/pagination/concurrency, no for facet/large-sort past a measured breakpoint.)
-- Does the result generalize across independent datasets/verticals and against a second specialized engine (Havenask)? (Phase 6A: filter/pagination/concurrency robustly reproduce on WANDS; facet's crossover threshold shifts but is mechanistically explained. Phase 6B: that explanation substantially holds under a controlled scale ladder, with one narrower, cause-unconfirmed exception; Havenask and every other named Phase 6 dataset remain blocked from this environment. Phase 6C, a retroactive audit after Phase 8 found the "revisit before Phase 7" instruction Phase 6B itself gave had been skipped: live re-checked, Havenask/Elasticsearch/OpenSearch/Retailrocket/H&M/Amazon Reviews 2023 are all still genuinely blocked — but Maven Central is reachable, so raw Apache Lucene (the shared core under Solr/ES/OpenSearch) was benchmarked directly for the first time. First pass (P6C-E00): a naive, hand-rolled Lucene facet-scan loses to Solr's own wrapped facet API in 5 of 7 real checkpoints (up to 3.3x-4.0x). An adversarial self-check (P6C-E01) then asked whether that was a finding about Lucene itself or about one naive implementation: measured instead with Lucene's own specialized `SortedSetDocValuesFacetCounts` module, the result substantially reverses — Lucene now **beats** Solr in 5 of 7 checkpoints, trailing by a much smaller margin (1.11x-1.30x, not 3.3x-4.0x) in the remaining 2. This sharpens the facet-crossover finding into a claim about facet algorithms specifically (naive scanning vs. specialized ordinal-based counting), not serving-layer cost, and surfaces a concrete, untested candidate fix for commerce-native's own crossover. See [`PHASE6C_DECISION.md`](PHASE6C_DECISION.md). Phase 6D then built exactly that candidate fix: an ordinal/dictionary-based `facet_counts_ordinal` on `CatalogIndex` itself, correctness-gated against both the existing scan method and Solr's own live facets (21/21 exact matches). Result: it beats Solr at every one of the 7 real checkpoints, by 5.2x-69.8x with no exceptions — a substantially larger, more consistent win than Lucene's own equivalent module achieved (P6C-E01: up to 3.0x, still trailing at 2 checkpoints). The facet crossover this project measured four times over (Phase 5, 6A, 6B, P6C) was a property of naive per-candidate scanning specifically, not a ceiling on commerce-native's own architecture. Confirmed across Phase 6B's own 2x-20x controlled-stress scale ladder too (P6D-E01): the ordinal method beats Solr at all 35 checkpoint x tier combinations tested (2,002-320,780 candidates), zero exceptions — but the margin narrows, not grows, at the largest candidate counts (converging toward ~2.5x-3x rather than widening further), while its margin over commerce-native's own scan method grows sharply with scale instead. **But the technique is not a universal win (P6D-E02, an adversarial follow-up)**: extended to the dedicated `brand`/`category`/`product_type` facets, whose existing naive baselines never paid the attribute-map clone `color`'s did, the ordinal method has its own real crossover — 1.9x-5.2x *slower* than the existing scan at small candidate counts (n=2, n=13), only faster past a real threshold (2.3x-6.2x at n=121-1,103) — because it trades a fixed, dictionary-size-proportional per-call cost for per-candidate savings that shrink when there's no clone to remove. This qualifies, not contradicts, the color finding: the technique's win depends on both scale and how expensive the baseline it replaces already was. A follow-up self-audit (P6D-E03) then found that `approximate_size_bytes` — this whole campaign's own canonical memory-size metric, used across 21 files — had silently omitted every structure Phase 6D added; fixed, with a new `approximate_ordinal_facet_bytes()` accessor and correctness test, and the earlier ~172 KB analytical estimate replaced with a real measured number: 2,876,248 bytes on the real WANDS catalog (26.2% of the whole index, 66.90 bytes/product) — about 16.7x the estimate, still small relative to Phase 7's per-tenant costs but a real correction to a load-bearing metric. See [`PHASE6D_DECISION.md`](PHASE6D_DECISION.md). Phase 6E then revisited Phase 6C's own "Elasticsearch/OpenSearch genuinely blocked" verdict per the user's explicit instruction that Solr alone is "not enough": that verdict tested only the prebuilt-distribution and from-source-build routes, never the Maven-library route that made P6C-E00's own raw-Lucene baseline possible. `org.elasticsearch:elasticsearch`/`org.elasticsearch.test:framework` (8.15.0) resolve cleanly from Maven Central, and — after fixing four concrete, disclosed, one-time blockers (a Maven jar-hell conflict, JDK 21's SecurityManager opt-in requirement, two file-permission denials from ES's own test-framework security policy) — a real, embedded, single-node Elasticsearch cluster boots and serves a real benchmark against the real WANDS catalog, 3 independent runs, 24/24 correctness checks against Solr's live response matching exactly. Result: embedded ES's terms-aggregation is 1.2x-2.0x **slower** than Solr's own `facet.field` for color-facet-under-category at every one of 7 checkpoints tested — the first real Elasticsearch data point in this campaign's history, strengthening rather than complicating commerce-native's own dramatically-faster ordinal result. The same route was then attempted for OpenSearch (P6E-E01): a real embedded single-node OpenSearch 2.17.0 cluster also boots, after fixing four more distinct blockers (missing `log4j-core`, OpenSearch's own bootstrap hard-refusing to run as root — unlike ES's equivalent check, which only warned — wrong pre-8.x `xcontent` package paths, a missing `decRef()` method), plus a fifth blocker this pass did NOT fix (running as the non-root user the root-refusal required also denies the live Solr cross-check under OpenSearch's own SecurityManager network policy — correctness rests on indirect, cross-process candidate-count corroboration against P6E-E00's own already-verified counts instead, disclosed as weaker evidence than a live check). Result: OpenSearch's terms-aggregation is also 1.2x-2.25x slower than Solr's own `facet.field` at every checkpoint — the same qualitative finding as Elasticsearch's own, reproducing on the other major Lucene-based engine rather than being an ES-8.x peculiarity. Two engines unblocking via a previously-untried route prompted re-checking Havenask's own two blockers too (P6E-E02): the `docker`/`dockerd` binaries now exist and the daemon runs when launched directly — a real change from "Docker daemon absent" — but no container image can actually be pulled via any registry tested (Docker Hub, ghcr.io, an AWS public ECR mirror all block their blob/CDN storage hosts network-wide), and Havenask's own registry remains separately blocked at the connection level, unchanged. Havenask's headline verdict is unchanged — still genuinely blocked — but the reason is now more precisely characterized than before. See [`PHASE6E_DECISION.md`](PHASE6E_DECISION.md).)
-- Does commerce specialization reduce per-tenant fixed cost and increase safe tenant packing density? (Phase 7 terminal decision, 15 hypotheses: **yes for the core thesis** — per-tenant memory overhead is negligible and tracks aggregate product count cleanly to 6,500 tenants; the native in-process query path shows no material cross-tenant degradation to 2,000 tenants; pooling has a real, measured cost advantage over process-per-tenant isolation (this project's own "statistical multiplexing" thesis, confirmed rather than assumed); a full economic cost model now answers all 7 of Issue #21's named "Economic output" metrics, including a concrete "~3,500 query-capable tenants per disclosed 9GB envelope" figure. **But two real, unmitigated isolation gaps were found and are not smoothed over**: a co-located tenant's index REBUILD (this architecture's only mutation path) degrades another tenant's own p99 latency 4.00-6.70x, and sharing one Solr instance across tenants degrades a quiet tenant's own p99 latency 2.16-2.48x under ordinary query load — both reproduced across 3 runs, neither mitigated in this pass. See [`PHASE7_DECISION.md`](PHASE7_DECISION.md) for the full 15-hypothesis quick-scan table and every named limitation.)
-- Does Phase 7's steady-state multi-tenant isolation hold under a correlated retail-burst regime? (Phase 8 first pass: **mixed — yes for pure query-load bursts, no for burst combined with either of Phase 7's known real isolation gaps.** H16: a fixed group of 10 (of 55) real tenants had their traffic weight multiplied 10x mid-experiment, simulating a correlated sale/promotion event; a separate, unrelated "bystander" tenant's own p50/p99 stayed essentially flat (0.95x-1.03x) across 3 independent runs even as the burst group's own throughput grew ~10x and aggregate throughput rose ~40%. H17: but a correlated burst materially worsens Phase 7's own H14 rebuild-churn isolation gap — not just in magnitude (median 3.62x amplification across 10 runs) but in kind: an idle system's churn-driven tail-latency hit is an intermittent coincidence (~30% of measurement windows), while the same churn under burst produces a material (>=2x) degradation in effectively every measurement window (10/10 runs). H18: the same pattern recurs for Phase 7's other known gap — a correlated burst (more tenants' traffic joining a shared Solr instance) materially worsens H15's shared-Solr-contention gap too (median 1.80x amplification, tightly reproduced across all 10 runs; >=2x-degradation hit rate rises from 5/10 to 10/10 runs). H19: running H14's and H15's mechanisms SIMULTANEOUSLY (not just each under its own burst) compounds them asymmetrically — combined native-churn + shared-Solr load degrades the native tenant's own latency by 2.11x-3.37x in every one of 20 measured runs (more reliably than either mechanism alone), but does not measurably worsen the Solr-side contention beyond what Solr noise alone already causes. This is honestly scoped: only single-node infrastructure was used, since real multi-node scale-out and admission/backpressure control remain genuinely out of reach in this environment — see [`PHASE8_FEASIBILITY.md`](PHASE8_FEASIBILITY.md) for the full item-by-item feasibility assessment and [`PHASE8_DECISION.md`](PHASE8_DECISION.md) for all four results.)
-- Is the smallest coherent integrated system (native + Solr, native + Havenask) actually better than operating either backend directly for the target market? (Phase 9, not yet run.)
+- Real-catalog experiments reached **1.2M products** and a **22,458-query judged corpus**.
+- WANDS ordinal faceting beat Solr at every tested point in the 1x–20x controlled scale ladder (**2.5x–72.6x**, depending on checkpoint).
+- E2b feature discovery: **LLM + deterministic validator macro F1 0.7697 vs. 0.5366** for statistics-only.
+- E2c: true raw full-descriptor agreement was **74.96%**; deterministic canonicalization raised it to **95.20%** for a single-proposal reading and **100%** for the measured ensemble reading. The experiment still concluded **REVISE**, not GO.
+- Multi-tenant pooling looked economically promising in steady state, but rebuild churn and a shared lexical backend produced real tail-latency isolation gaps that became worse/more reliable under correlated bursts.
 
-## Scope
+## The architecture being tested
 
-See `docs/WHAT.md` for the current evidence-backed system boundary and explicit non-goals. In short: single-node, single-process, no multi-tenancy/auth/HA/distributed coordination yet, no production polish, no LLM call in the query hot path, no generic query DSL — all deliberate, and re-evaluated only when a phase's measurements justify changing them.
+The structural serving pieces are real `commerce-core` code. The general model-assisted compilation/consensus path is still experimental and is being validated before any productionization decision.
 
-## Autonomous experiment workflow
+```mermaid
+flowchart TB
+    subgraph Offline[Offline: flexibility + intelligence]
+        P1[Catalog profiling]
+        P2[Semantic problem compression]
+        P3[Model / heuristic proposals]
+        P4[Deterministic canonicalizer + validator]
+        P5[Physical compilation]
+        P1 --> P2 --> P3 --> P4 --> P5
+    end
 
-Long-running coding sessions must follow [`CLAUDE.md`](CLAUDE.md) and [`docs/EXPERIMENT_LOOP.md`](docs/EXPERIMENT_LOOP.md).
+    subgraph Serving[Serving: speed + accuracy + stability]
+        S1[Query compiler]
+        S2[Planner]
+        S3[Structural indexes]
+        S4[Lexical delegate]
+        S5[Ranking / top-K]
+        S1 --> S2
+        S2 --> S3 --> S5
+        S2 --> S4 --> S5
+    end
 
-The project advances through measured experiment gates rather than a feature roadmap. Failed and narrowed hypotheses are expected, permanent artifacts — see `docs/experiments/` for the full per-experiment logs behind every decision document above, and `docs/adr/` for architectural decisions.
+    P5 --> S3
+    P5 --> S2
+```
 
-## Reproducing results
+The boundary is deliberate: **models propose; deterministic code decides what may be installed; serving stays model-free.**
 
-Every headline number in a `PHASE*_DECISION.md` traces to raw artifacts under `docs/research/artifacts/`, generated by the experiment binaries in `crates/phase*-eval/src/bin/`. See `docs/architecture/README.md` for the crate map, and the relevant phase's experiment log (`docs/experiments/PHASE*_LOG.md`) for the exact command used to produce each result.
+## What this is not
+
+- Not a production search service.
+- Not a claim that Rust is generally faster than Lucene.
+- Not an Elasticsearch-compatible document engine or query DSL.
+- Not an attempt to rebuild mature lexical ranking from scratch.
+- No LLM call in the normal query hot path.
+- No claim that one specialized execution path should handle every query.
+- No distributed serving, sharding, HA, or Kubernetes work until the single-node thesis requires it.
+
+## What is being tested now
+
+The active control-plane experiment is **[Issue #47](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/47)**:
+
+> **How much model do we actually need once semantic compilation is deterministic?**
+
+It tests adaptive consensus first, then freezes the controller and measures a model capability/cost frontier. A separate follow-up, **[#51](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/51)**, keeps the remaining typed-ambiguity serving question independent from that experiment.
+
+## Repository map
+
+- [`crates/commerce-core/`](crates/commerce-core/) — the actual engine/domain code.
+- [`docs/README.md`](docs/README.md) — documentation map; start here for anything deeper than this page.
+- [`docs/architecture/`](docs/architecture/) — current implementation and component boundaries.
+- [`docs/decisions/`](docs/decisions/) — terminal/interim research decisions, chronologically preserved.
+- [`docs/experiments/`](docs/experiments/) — protocols and append-only experiment logs.
+- [`docs/research/`](docs/research/) — papers, archaeology, economic models, and exploratory research.
+- [`docs/adr/`](docs/adr/) — architectural decisions.
+- [`benchmarks/`](benchmarks/) + [`artifacts/`](artifacts/) — reproducibility manifests and archived outputs.
+
+## Build / test
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo build --workspace --release
+```
+
+Most real-data experiments need their documented external datasets/services; the exact setup lives with the corresponding experiment log/manifest rather than in this README.
+
+## Read next
+
+- **Why this architecture exists:** [`docs/WHY.md`](docs/WHY.md)
+- **What is product code vs. experiment code:** [`docs/WHAT.md`](docs/WHAT.md)
+- **How the current system works:** [`docs/architecture/README.md`](docs/architecture/README.md)
+- **Full evidence history:** [`docs/decisions/README.md`](docs/decisions/README.md)

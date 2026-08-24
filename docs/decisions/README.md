@@ -1,0 +1,32 @@
+# Research decisions
+
+These files are the compact verdicts for major research checkpoints. Read these when you want the conclusion; read `../experiments/` when you want the full protocol, raw-history narrative, methodology corrections and reruns.
+
+## Chronology
+
+| Checkpoint | Decision / significance |
+|---|---|
+| [`SCALE_UP_DECISION.md`](SCALE_UP_DECISION.md) | Initial typed-domain / Commerce IR / physical-index prototype: proceed to real-data falsification. |
+| [`ROUND1_DECISION_TREE.md`](ROUND1_DECISION_TREE.md) | Real ESCI + Solr evidence: **narrow the product** rather than rebuild a general search engine. |
+| [`PHASE2_DECISION.md`](PHASE2_DECISION.md) | Whole-engine replacement thesis: **STOP**. Mature lexical ranking remains delegated. |
+| [`PHASE3_DECISION.md`](PHASE3_DECISION.md) | Safe admission frontier: narrow support for selective structural traffic. |
+| [`PHASE4_DECISION.md`](PHASE4_DECISION.md) | Offline learned implication rules: useful only with strict validation/promotion gates. |
+| [`PHASE5_DECISION.md`](PHASE5_DECISION.md) | Browse/PLP operators expose real cardinality-dependent win/loss regions. |
+| [`PHASE6A_DECISION.md`](PHASE6A_DECISION.md) | WANDS cross-dataset validation. |
+| [`PHASE6B_DECISION.md`](PHASE6B_DECISION.md) | Controlled WANDS scale ladder; candidate size and attribute complexity characterized. |
+| [`PHASE6C_DECISION.md`](PHASE6C_DECISION.md) | Direct Lucene baseline corrected the naive facet-algorithm interpretation. |
+| [`PHASE6D_DECISION.md`](PHASE6D_DECISION.md) | Ordinal faceting closes the earlier color-facet crossover; also finds its own small-candidate typed-ID limit. |
+| [`PHASE6E_DECISION.md`](PHASE6E_DECISION.md) | Embedded Elasticsearch/OpenSearch baselines become runnable; Havenask remains blocked in the measured environment. |
+| [`PHASE7_DECISION.md`](PHASE7_DECISION.md) | Multi-tenant pooling economics: promising, with concrete rebuild/backend isolation gaps. |
+| [`PHASE8_DECISION.md`](PHASE8_DECISION.md) | Correlated burst tests: pure query bursts hold; known isolation gaps become more reliable/worse under burst. |
+| [`PHASE8_FEASIBILITY.md`](PHASE8_FEASIBILITY.md) | What Phase 8 could and could not validly test in the available environment. |
+| [`PHASE9_DECISION.md`](PHASE9_DECISION.md) | Integrated Phase 9 evidence and corrected query-resolution baseline. |
+| [`ISSUE38_DECISION.md`](ISSUE38_DECISION.md) | Dynamic compiled merchant schema: hot-path overhead can be removed; unseen/mixed synthetic generalization succeeds within its stated scope. |
+| [`ISSUE42_DECISION.md`](ISSUE42_DECISION.md) | R2 residual policy and R3 identifier primitive GO; R1 and model-assisted E2b remain REVISE. |
+| [`ISSUE45_DECISION.md`](ISSUE45_DECISION.md) | Deterministic semantic canonicalization substantially reduces LLM instability but remains **REVISE** under the stricter single-proposal reading. |
+
+## How to read old numbers
+
+Decision records are intentionally not rewritten to make the research look linear. When an experiment later discovered a methodology defect, the repository preserves the old result and records the correction. A later decision may therefore supersede an earlier interpretation without deleting it.
+
+For current project status, always prefer the root [`README.md`](../../README.md) and [`../architecture/README.md`](../architecture/README.md) over an old phase narrative.
