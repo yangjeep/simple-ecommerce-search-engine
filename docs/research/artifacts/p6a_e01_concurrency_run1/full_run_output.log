@@ -1,0 +1,21 @@
+loading + ingesting real WANDS catalog...
+42994 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/wands_bench)...
+  Solr reachable: numFound=42994
+
+computing real category-leaf/depth-1 group distributions...
+  real mixed workload: 25 category_leaf queries + 25 category_depth_1 queries = 50 distinct real filter requests
+
+=== P6A concurrency sweep result (4 real CPUs available -- levels >4 oversubscribe) ===
+system   workers    total_reqs throughput_rps     p50_ms     p99_ms
+native   1             9069300      3023100.0     0.0002     0.0005
+native   2            16354867      5451622.3     0.0002     0.0005
+native   4            28993851      9664617.0     0.0002     0.0006
+native   8            32625473     10875157.7     0.0002     0.0005
+solr     1                3363         1121.0     0.8318     2.4390
+solr     2                4868         1622.7     0.9787     4.2566
+solr     4                9656         3218.7     1.0868     3.7614
+solr     8               12658         4219.3     1.7536     4.4112
+
+artifacts written to dataset_cache/p6a_e01_concurrency_artifacts

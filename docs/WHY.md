@@ -150,6 +150,21 @@ system rather than a sum of microbenchmarks (Phase 9). This document will
 be updated as that evidence changes the thesis — it is a record of what is
 currently believed and why, not a fixed pitch.
 
+**First cross-dataset result (Phase 6A — PROCEED, `PHASE6A_DECISION.md`)**:
+Issue #23's named dataset (Amazon Reviews 2023) turned out to be
+unreachable from this project's network environment; WANDS (an
+independent, real, genuinely hierarchical commerce vertical) was
+substituted, with its own real trade-offs disclosed (no price field, a
+much smaller product ceiling). Phase 5's structural filter, subtree-
+browse, pagination, and concurrency advantages reproduced almost exactly
+in order of magnitude. Facet and sort reproduced the same qualitative
+breakpoint shape, but the facet crossover shifted to a substantially
+lower real candidate count — explained, not just observed, by WANDS'
+richer per-product attribute data. Nothing from Phase 5 was falsified;
+one specific number (the facet-crossover candidate count) had to be
+narrowed from "a fixed threshold" to "dependent on per-candidate
+attribute-map complexity."
+
 ## What this project is not
 
 This repository does not market itself as a universally faster search

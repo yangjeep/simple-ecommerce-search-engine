@@ -1,0 +1,32 @@
+{
+  "experiment_id": "P6A-E00",
+  "phase": "6A",
+  "issue": 23,
+  "benchmark_manifest": "benchmarks/manifests/p6a_e00_wands_plp_benchmark.yaml",
+  "git_sha": "64a207f",
+  "dataset": {
+    "name": "WANDS (Wayfair ANnotation Dataset)",
+    "source": "https://github.com/wayfair/WANDS",
+    "pinned_commit": "3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5",
+    "products": 42994
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex (_by_scan facet methods)",
+    "baseline": "Apache Solr with docValues + title_sort fair-baseline setup"
+  },
+  "repetitions": 30,
+  "warmup": 5,
+  "seed": 7,
+  "raw_results_path": "docs/research/artifacts/p6a_e00_run1/",
+  "analysis_version": "docs/experiments/PHASE6A_LOG.md#P6A-E00",
+  "decision": "PHASE6A_DECISION.md",
+  "headline_result": {
+    "filter_pagination_speedup_range": [8020, 26769],
+    "concurrency_speedup_range": [717, 2578],
+    "facet_crossover_candidates_low": 2072,
+    "facet_crossover_candidates_high": 2175,
+    "esci_facet_crossover_candidates_low": 9000,
+    "esci_facet_crossover_candidates_high": 12000,
+    "correctness_rows_matching": "41/41"
+  }
+}

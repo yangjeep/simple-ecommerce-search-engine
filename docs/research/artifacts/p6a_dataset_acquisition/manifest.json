@@ -1,0 +1,71 @@
+{
+  "phase": "6A",
+  "issue": 23,
+  "dataset": "WANDS (Wayfair ANnotation Dataset)",
+  "substitution_note": "Issue #23 named Amazon Reviews 2023 metadata as the primary dataset. It is unreachable from this environment's network (huggingface.co and all CDN subdomains, mcauleylab.ucsd.edu, and amazon-reviews-2023.github.io all return a confirmed organization-policy 403; no GitHub-LFS or GCS mirror of the raw metadata exists). WANDS was substituted with explicit user sign-off -- see PHASE6A_DECISION.md for the full blocker investigation and the trade-offs this substitution accepts.",
+  "source": {
+    "repository": "https://github.com/wayfair/WANDS",
+    "pinned_commit_sha": "3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5",
+    "commit_date": "2022-01-18T11:29:15-05:00",
+    "commit_message": "Review (#1)",
+    "license_note": "Public GitHub repository, no authentication required, no Git LFS",
+    "acquisition_script": "scripts/datasets/fetch_wands.sh",
+    "checksum_manifest": "scripts/datasets/wands_checksums.sha256"
+  },
+  "files": {
+    "product.csv": {
+      "sha256": "d993926254572e6eba96c8fd87cc549a17fb91ad3748308036eee4cf92b10ac6",
+      "bytes": 90621131,
+      "rows": 42994
+    },
+    "query.csv": {
+      "sha256": "63b61660560fecc33ec490804c7e2b81402ee3e7c31a9cbb5e03736639f68e95",
+      "bytes": 19942,
+      "rows": 480
+    },
+    "label.csv": {
+      "sha256": "c11fe81ad62f17f56f316b0ec9630ebe8fbe1393578cb0ca4f05c17253a180ef",
+      "bytes": 5736234,
+      "rows": 233448
+    }
+  },
+  "profiling": {
+    "script": "scripts/datasets/profile_wands.py",
+    "raw_output": "docs/research/artifacts/p6a_dataset_acquisition/wands_profiling_output.log",
+    "product_count": 42994,
+    "null_counts": {
+      "product_class": 2852,
+      "category_hierarchy": 1556,
+      "product_description": 6008,
+      "rating_count": 9452,
+      "average_rating": 9452,
+      "review_count": 9452
+    },
+    "product_class": {
+      "distinct_values": 860,
+      "note": "A real, curated product-type-like taxonomy, distinct from the raw category-hierarchy breadcrumb -- only 28.3% of products have their hierarchy's leaf segment exactly equal to product_class, and 11.5% match the second-to-last segment. Treated as an independent typed attribute (maps to ProductTypeId), not derived from hierarchy depth."
+    },
+    "category_hierarchy": {
+      "depth_distribution": {"0_missing": 1556, "1": 103, "2": 1720, "3": 16297, "4": 16256, "5": 6453, "6": 609},
+      "distinct_nodes_per_depth": {"1": 55, "2": 138, "3": 458, "4": 806, "5": 492, "6": 71},
+      "note": "Real, genuinely nested hierarchy (unlike ESCI, which has none). Mapped as one typed enum attribute per depth level, keyed by the full prefix path (not the bare segment name) to avoid collisions between different subtrees that happen to share a segment name at the same depth."
+    },
+    "product_features_top_keys": {
+      "overallproductweight": 0.583,
+      "overallwidth-sidetoside": 0.476,
+      "color": 0.269,
+      "producttype": 0.243,
+      "style": 0.196,
+      "primarymaterial": 0.111,
+      "material": 0.092,
+      "shape": 0.093,
+      "note": "Percentages are of the full 42,994-product corpus, not just products with any features (all products have a features string, but individual keys vary in coverage). 'color' is the strongest analog to ESCI's own color facet and is used as the primary secondary-facet workload driver."
+    },
+    "confirmed_absent_fields": {
+      "price": "Zero occurrences of any price/cost/msrp-like feature key found in product_features across the full corpus (grep-verified against the raw file, not just the parsed key counter). Price-range and price-sort workloads are NOT COMPARABLE for this dataset -- not fabricated.",
+      "brand_manufacturer": "No feature key with any meaningful coverage maps to a brand/manufacturer/store concept (the closest matches, e.g. 'brand', 'fashionbrand', 'manufacturerpreferredname', each appear on exactly 1-2 products out of 42,994). Brand-under-X and X-under-brand workloads are NOT COMPARABLE for this dataset.",
+      "parent_variant_grouping": "No column resembling a parent-ASIN or variant-group identifier exists anywhere in product.csv. True variant-scoped constraints are NOT COMPARABLE for this dataset -- each WANDS product_id maps to exactly one Product with exactly one Variant, the same degenerate mapping ESCI already used.",
+      "availability_inventory": "No stock/availability/inventory field exists. rating_count/average_rating/review_count exist (present for 78% of products) but are not used as an availability proxy -- that would be fabricating semantics the source data does not support."
+    }
+  }
+}

@@ -259,6 +259,97 @@ fn facet_counts_by_scan_matches_facet_counts_exactly() {
 }
 
 #[test]
+fn product_type_facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
+    // Phase 6A (Issue #23): `product_type`, like `brand`, has its own
+    // dedicated `product_type_bitmaps` index -- populated by every
+    // catalog since Gate 3, but never exercised with real, non-sentinel
+    // values until WANDS (ESCI always assigns `ProductTypeId(0)`; see
+    // `round1_eval::catalog`). Same structure/expected counts as the
+    // brand test above, just keyed on the sibling field.
+    use commerce_core::domain::ProductTypeId;
+    use commerce_core::fixtures::cold_start_catalog;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    let facets = index.product_type_facet_counts(&all);
+    // ProductType(1) (running shoes): nike (2 variants) + aerowalk (2) = 4.
+    // ProductType(2) (hiking boots): nike (2) + aerowalk (1) = 3.
+    assert_eq!(facets.get(&ProductTypeId(1)), Some(&4));
+    assert_eq!(facets.get(&ProductTypeId(2)), Some(&3));
+    assert!(index.facet_counts("product_type", &all).is_empty());
+
+    let waterproof_only =
+        index.indexed_candidates(&[ResolvedConstraint::Attribute(Constraint::Boolean {
+            attribute: "waterproof".to_string(),
+            value: true,
+        })]);
+    let facets = index.product_type_facet_counts(&waterproof_only);
+    // Only hiking_boots_nike/aerowalk and running_shoes_aerowalk are
+    // waterproof=true (running_shoes_nike is false).
+    assert_eq!(facets.get(&ProductTypeId(1)), Some(&2));
+    assert_eq!(facets.get(&ProductTypeId(2)), Some(&3));
+}
+
+#[test]
+fn category_facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
+    // Same dedicated-bitmap facet method for `category`. `cold_start_catalog`
+    // assigns every fixture product the same `CategoryId(1)` (no real
+    // category diversity exists in this hand-authored fixture), so this
+    // only exercises the single-bucket case directly; real, diverse
+    // category cardinality is validated against the real WANDS catalog in
+    // `phase6a-eval`, not fabricated here.
+    use commerce_core::domain::CategoryId;
+    use commerce_core::fixtures::cold_start_catalog;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    let facets = index.category_facet_counts(&all);
+    assert_eq!(facets.get(&CategoryId(1)), Some(&7));
+    assert!(index.facet_counts("category", &all).is_empty());
+}
+
+#[test]
+fn category_and_product_type_facet_counts_by_scan_match_exactly() {
+    use commerce_core::fixtures::cold_start_catalog;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.category_facet_counts(&all),
+        index.category_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.product_type_facet_counts(&all),
+        index.product_type_facet_counts_by_scan(&all, &catalog)
+    );
+
+    let waterproof_only =
+        index.indexed_candidates(&[ResolvedConstraint::Attribute(Constraint::Boolean {
+            attribute: "waterproof".to_string(),
+            value: true,
+        })]);
+    assert_eq!(
+        index.product_type_facet_counts(&waterproof_only),
+        index.product_type_facet_counts_by_scan(&waterproof_only, &catalog)
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index
+        .category_facet_counts_by_scan(&empty, &catalog)
+        .is_empty());
+    assert!(index
+        .product_type_facet_counts_by_scan(&empty, &catalog)
+        .is_empty());
+}
+
+#[test]
 fn top_k_ranking_orders_by_preference_score_deterministically() {
     let catalog = combined_catalog();
     let index = CatalogIndex::build(&catalog);

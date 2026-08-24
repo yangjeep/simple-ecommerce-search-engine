@@ -34,14 +34,23 @@ execution and analysis driven from it, not the other way around):
 - `p5e03_facet_scan_crossover.yaml` — Phase 5's facet-scan crossover
   characterization.
 
-`benchmarks/workloads/` and `benchmarks/analysis/` are intentionally
-**not** populated retroactively for Phases 0–5 for the same reason (see
-`artifacts/README.md`) — the real workload logic and analysis already
-live inside the corresponding `crates/phaseN-eval` binaries and are the
-canonical source; duplicating them here would create two versions of the
-truth. They will hold real content starting with Phase 6, when new
-datasets/engines genuinely need shared workload definitions and
-cross-engine analysis scripts.
+Phase 6A (Issue #23, `crates/phase6a-eval`) follows the same
+retroactive-manifest convention, not the "manifest-first" ideal above —
+its own benchmark binaries still generate their own workload internally,
+same as Phases 0–5:
+
+- `p6a_e00_wands_plp_benchmark.yaml` — the real WANDS PLP filter/facet/
+  sort/pagination benchmark and its facet-crossover characterization.
+- `p6a_e01_concurrency_sweep.yaml` — the WANDS concurrency sweep.
+
+`benchmarks/workloads/` and `benchmarks/analysis/` remain **not**
+populated for Phases 0–6A for the same reason (see `artifacts/README.md`)
+— the real workload logic and analysis already live inside the
+corresponding `crates/phaseN(a)-eval` binaries and are the canonical
+source; duplicating them here would create two versions of the truth.
+They will hold real content once a later phase genuinely needs shared
+workload definitions or cross-engine analysis scripts spanning more than
+one binary (e.g. a true multi-engine Phase 9 comparison).
 
 ## The traceability chain this repository commits to
 
@@ -66,16 +75,19 @@ claim (PHASE*_DECISION.md)
 
 ## Reproduction
 
-For the three worked-example manifests, full reproduction is:
+For the worked-example manifests, full reproduction is:
 
 ```bash
-cargo build --release -p phase3-eval  # or phase4-eval / phase5-eval
+cargo build --release -p phase3-eval  # or phase4-eval / phase5-eval / phase6a-eval
 ./target/release/<binary-named-in-the-manifest> [args from the manifest]
 ```
 
 This requires the real ESCI catalog (`scripts/round1/fetch_esci.sh` +
-`export_esci.py`) and, for Phase 5's manifest, a running Solr instance
-indexed per `scripts/round1/solr_index.py`. Analysis-only reproduction
-(no dataset/engine required) means reading the already-archived raw
-output directly from the `artifacts/manifests/` entry's referenced path
-under `docs/research/artifacts/`.
+`export_esci.py`) for the Phase 3–5 manifests, or the real WANDS catalog
+(`scripts/datasets/fetch_wands.sh` + `prepare_wands.py`) for the Phase 6A
+manifests, and a running Solr instance indexed per
+`scripts/round1/solr_index.py` or `scripts/datasets/solr_index_wands.py`
+respectively. Analysis-only reproduction (no dataset/engine required)
+means reading the already-archived raw output directly from the
+`artifacts/manifests/` entry's referenced path under
+`docs/research/artifacts/`.

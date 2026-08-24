@@ -1,0 +1,46 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6A-E01
+phase: 6A
+issue: 23
+decision_document: PHASE6A_DECISION.md
+claim: >
+  Native's single-thread throughput (3.02M req/s) exceeds Solr's best
+  8-worker throughput (4,219 req/s) by ~717x, growing to ~2,578x at
+  native's own 8-worker level -- reproducing Phase 5's ESCI concurrency
+  finding (~460x-1,780x) in order of magnitude on an independent dataset.
+
+git_sha: c7e53eb
+binary: crates/phase6a-eval/src/bin/p6a_e01_concurrency_sweep.rs
+build_command: cargo build --release -p phase6a-eval --bin p6a_e01_concurrency_sweep
+run_command: ./target/release/p6a_e01_concurrency_sweep
+
+dataset:
+  name: WANDS (Wayfair ANnotation Dataset)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  size: 42994 products
+
+engine:
+  native: commerce_core::index::CatalogIndex::indexed_candidates, shared via
+    Arc across OS threads (naturally Sync, no interior mutability)
+  baseline: Apache Solr, same instance as P6A-E00
+
+workload:
+  queries: 25 real category_leaf values + 25 real category_depth_1 values
+    (seeded ChaCha8Rng, seed=7), cycled round-robin per worker thread
+  concurrency_levels: [1, 2, 4, 8]
+  run_duration_per_level: 3 seconds
+  dead_code_elimination_guard: std::hint::black_box applied from the first
+    run (this workspace uses lto=true, codegen-units=1) -- Phase 5 found
+    and fixed this as an afterthought; here it was built in from the start
+
+hardware_note: this container has 4 real CPUs; levels above 4 oversubscribe
+  rather than characterize additional real parallelism
+
+raw_results: docs/research/artifacts/p6a_e01_concurrency_run1/
+  - results.csv
+  - full_run_output.log
+
+analysis: printed directly by the binary; native and Solr measured in
+  separate sweeps (never concurrently with each other), matching Phase 5's
+  isolation discipline
