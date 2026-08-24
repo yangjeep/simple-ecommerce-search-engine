@@ -1,77 +1,102 @@
 # Why this project exists
 
-Generic search engines are very good at generic search. This project started by asking whether ecommerce has enough repeated structure — products, variants, categories, identifiers, ranges, availability, facets — to justify doing some requests with much smaller deterministic data structures instead of sending everything through general lexical retrieval.
+The core research question is deliberately ambitious:
 
-The research did **not** support building “a faster Elasticsearch in Rust.” It supported a narrower system.
+> **Can an ecommerce search engine be faster, more flexible, more accurate, and more stable at the same time?**
+
+Those goals usually fight each other. Generic engines buy flexibility with generic abstractions. Highly specialized engines buy speed by narrowing what they understand. Model-heavy systems can buy semantic flexibility while introducing cost and nondeterminism. This project is testing whether ecommerce structure creates a better tradeoff.
+
+The working hypothesis is:
+
+> Learn merchant-specific semantics offline, compile them into deterministic commerce-aware structures, and keep query serving small, predictable, and free of model calls.
+
+That gives four independent bars the system has to clear:
+
+- **Faster** — lower CPU/latency on meaningful ecommerce workload classes, not benchmark tricks.
+- **More flexible** — previously unseen merchant schemas, categories, variants and relationships should compile without bespoke serving code.
+- **More accurate** — specialization must preserve or improve retrieval correctness/relevance; a fast wrong answer is a failure.
+- **More stable** — installed semantics and serving behavior should remain deterministic/predictable even when source catalogs are messy and model proposals vary.
+
+The research has not yet proved all four together. It has, however, eliminated several weaker versions of the idea and made the remaining architecture much more specific.
 
 ## The thesis that survived
 
-A commerce request often contains two different kinds of work:
+A commerce request often contains two kinds of work:
 
 1. **Structural work**: exact identifiers, category membership, variant constraints, enum filters, ranges, faceting, availability.
-2. **Open-ended relevance work**: lexical matching, ranking, spelling, vague product intent, semantic/occasion queries.
+2. **Open-ended relevance work**: lexical matching, ranking, spelling, vague intent, semantic/occasion queries.
 
-Trying to make one engine reinvent both is unnecessary. The current architecture specializes only where commerce structure measurably reduces work and delegates the rest.
+The current design specializes the first class where measurements justify it and delegates the second to a mature lexical engine. Merchant-specific semantic interpretation happens before serving rather than being rediscovered on every query.
 
 ```mermaid
 flowchart LR
-    Q[Query] --> C[Compile typed Commerce IR]
-    C --> A{Enough safe structure?}
-    A -->|yes| N[Native structural execution]
-    A -->|partly| H[Native narrowing + mature ranking]
-    A -->|no| B[Mature lexical backend]
+    C[Merchant catalog] --> O[Offline semantic compilation]
+    O --> I[Deterministic context + indexes]
+    Q[Query] --> IR[Commerce IR]
+    I --> IR
+    IR --> A{Best measured path?}
+    A -->|structural| N[Native execution]
+    A -->|mixed| H[Native narrowing + lexical ranking]
+    A -->|open-ended| B[Mature lexical backend]
 ```
 
 ## What changed the original idea
 
-### 1. General lexical search was not the differentiator
+### 1. “Replace the whole search engine” failed the accuracy/complexity test
 
-On realistic data, mature Lucene/Solr relevance and memory behavior were too strong to justify rebuilding a general search engine. The project narrowed to structural execution + planning rather than treating fallback as temporary technical debt.
+Realistic evaluation showed mature Lucene/Solr relevance and memory behavior were too strong to justify rebuilding general lexical search. The project therefore stopped treating fallback as temporary technical debt.
 
-### 2. Native wins are conditional, not universal
+This was a useful failure: **accuracy is a first-class requirement, not something speed is allowed to trade away.**
 
-Bitmap/range/facet execution can be dramatically cheaper, but operator and cardinality matter. Several phases found real crossovers. Phase 6D then showed that changing the facet algorithm to ordinal/dictionary counting can eliminate the earlier color-facet crossover across the tested WANDS scale ladder — while also finding a different small-candidate crossover for already-cheap typed-ID facets.
+### 2. Speed comes from the right physical representation, not from Rust alone
 
-The lesson is not “native always wins.” It is **measure the physical region where a specific representation wins, then plan accordingly.**
+Bitmap/range/facet execution can be dramatically cheaper, but operator and cardinality matter. Several phases found genuine crossovers. Phase 6D then showed that switching from naive scan-style faceting to ordinal/dictionary counting removed the earlier color-facet crossover across the tested WANDS scale ladder, while finding a different small-candidate limit for already-cheap typed-ID facets.
 
-### 3. Merchant schema flexibility belongs before serving
+The lesson is: **specialize only inside a measured win region.**
 
-Issue #38 tested whether dynamically discovered features require a generic runtime schema. They do not have to: the successful compiled-schema treatment used offline discovery/compilation but reached the same hot-path allocation count and physical bitmap behavior as the hand-written path in the tested case.
+### 3. Flexibility belongs in compilation, not the hot path
 
-That is the important boundary: merchants can be heterogeneous; the serving plane should not be.
+Issue #38 tested whether arbitrary merchant fields require a runtime-generic schema. The successful compiled-schema treatment showed they do not have to: offline discovery/compilation could feed the same physical bitmap operators as hand-written code without meaningful serving overhead in the tested case.
 
-### 4. LLMs are useful, but should have less authority
+That is the flexibility thesis in concrete form:
 
-Issue #42 showed LLM-assisted feature discovery materially outperforming a statistics-only baseline, while also exposing stability and external-validity gaps. Issue #45 then showed that deterministic canonicalization can absorb much of the model's raw instability.
+> merchants may be heterogeneous; the serving plane should not have to be.
 
-The architecture therefore treats the model as a **proposal engine**:
+### 4. LLM flexibility is useful only if deterministic machinery absorbs its instability
+
+Issue #42 showed actual model-assisted feature discovery beating a statistics-only floor, but raw proposal stability was insufficient and real Product/Variant/relationship external validity remained open.
+
+Issue #45 then showed deterministic canonicalization could move full-descriptor agreement from 74.96% raw to 95.20% under the stricter single-proposal reading and 100% under the measured ensemble design, with zero confirmed unsafe accepted classifications. The verdict was still REVISE because the stricter stability bars were not fully met.
+
+So the model is now treated as a **proposal engine**, not the schema authority:
 
 ```mermaid
 flowchart LR
     E[Catalog evidence] --> M[Model proposals]
     M --> V[Deterministic canonicalizer / validator]
-    V -->|safe| I[Installed compiled semantics]
-    V -->|uncertain| X[Abstain / ask again / escalate]
+    V -->|safe| I[Installed semantics]
+    V -->|uncertain| X[Ask again / escalate / abstain]
 ```
 
-The model does not directly choose physical structures or bypass safety checks, and no normal query path calls an LLM.
+The active Issue #47 tests whether this design also makes model size less load-bearing: can cheap models handle easy semantic problems while harder ones escalate selectively?
 
-## The system-level bet
+## Why this might be a useful system
 
-If this works, the durable value is not a particular model. It is:
+If the four-part thesis holds, the durable asset is not a particular model or benchmark trick. It is the combination of:
 
 - a compact commerce domain / IR;
 - deterministic profiling and semantic problem compression;
 - validated, versioned merchant context;
-- physical compilation into cheap serving structures;
-- safe admission/fallback rules;
-- accumulated evidence about when to specialize and when not to.
+- physical compilation into efficient serving structures;
+- mature fallback for workloads specialization should not own;
+- explicit safety/accuracy gates;
+- measured rules for when to specialize and when to abstain.
 
-The active Issue #47 tests the next implication: **if deterministic compilation absorbs stochasticity, can a cheap/small proposal model handle most fields and escalate only the genuinely hard semantic cases?**
+That combination is what could plausibly deliver **speed without rigidity, flexibility without hot-path intelligence, accuracy without rebuilding Lucene, and stability despite stochastic models.**
 
 ## What remains uncertain
 
-The research still has important gaps:
+Important open gaps remain:
 
 - real Product/Variant and relationship-rich external validation for learned catalog semantics;
 - typed ambiguity resolution without query-time catalog scans (#51);
@@ -79,6 +104,4 @@ The research still has important gaps:
 - mutable-state concurrency and restart durability (#11/#12);
 - broader methodology generalization across unseen verticals (#35).
 
-Those are open because the project preserves negative or incomplete evidence instead of converting promising measurements into a product claim.
-
-For the exact evidence trail, see [`decisions/README.md`](decisions/README.md). For the implementation, see [`architecture/README.md`](architecture/README.md).
+For the exact evidence trail, see [`decisions/README.md`](decisions/README.md). For implementation details, see [`architecture/README.md`](architecture/README.md).
