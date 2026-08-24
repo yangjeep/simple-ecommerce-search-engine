@@ -43,7 +43,9 @@ A few representative measurements, with the full caveats preserved in the decisi
 - E2b feature discovery: **LLM + deterministic validator macro F1 0.7697 vs. 0.5366** for statistics-only.
 - E2c: true raw full-descriptor agreement was **74.96%**; deterministic canonicalization raised it to **95.20%** for a single-proposal reading and **100%** for the measured ensemble reading. The experiment still concluded **REVISE**, not GO.
 
-## The current architecture
+## The architecture being tested
+
+The structural serving pieces are real `commerce-core` code. The general model-assisted compilation/consensus path is still experimental and is being validated before any productionization decision.
 
 ```mermaid
 flowchart TB
@@ -52,7 +54,7 @@ flowchart TB
         P2[Semantic problem compression]
         P3[Model / heuristic proposals]
         P4[Deterministic canonicalizer + validator]
-        P5[Physical compiler]
+        P5[Physical compilation]
         P1 --> P2 --> P3 --> P4 --> P5
     end
 
