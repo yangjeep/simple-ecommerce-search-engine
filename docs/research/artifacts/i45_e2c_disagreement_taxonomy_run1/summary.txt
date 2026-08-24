@@ -1,0 +1,31 @@
+Total pairs: 1250, official (role+primitive) disagreeing pairs: 155 (12.40%)
+Official agreement rate: 87.60%  <- matches 87.60%
+
+=== Category breakdown, weighted by OFFICIAL (role+primitive) disagreeing pairs ===
+  primitive_selection        101 pairs  ( 65.2% of all official disagreement)
+  value_type_ambiguity        28 pairs  ( 18.1% of all official disagreement)
+  hallucination_error         22 pairs  ( 14.2% of all official disagreement)
+  insufficient_evidence        4 pairs  (  2.6% of all official disagreement)
+  TOTAL                      155 pairs
+
+=== scope-only disagreement (role+primitive AGREE, scope alone differs) -- invisible to official metric ===
+  158 pairs across 16 keys
+    dswoodtone                           18
+    samplepartnumber                     16
+    overallwidth-sidetoside              16
+    overalldepth-fronttoback             16
+    weightcapacity                       16
+    overallproductweight                 16
+    overallheight-toptobottom            16
+    upholsterycolor                       8
+    finish                                6
+    basecolor                             6
+    compatiblediningchairpartnumber       6
+    upholsterymaterial                    5
+    color                                 5
+    framematerial                         4
+    compatibledrainassemblypartnumber     3
+    primarymaterial                       1
+
+=== ANY-field disagreement (role/type/scope/primitive) total ===
+  313 / 1250 pairs (25.04%) -- vs official 12.40%
