@@ -310,6 +310,7 @@ impl LexicalDelegate for BitmapTantivyDelegate {
                 Some(LexicalHit {
                     product: ProductId(ordinal),
                     score: score as f64,
+                    variant: None,
                 })
             })
             .collect()

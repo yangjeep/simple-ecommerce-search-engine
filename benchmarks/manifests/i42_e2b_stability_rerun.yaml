@@ -1,0 +1,148 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I42-E2b-stability-rerun
+phase: issue-42
+issue: 42
+decision_document: docs/experiments/ISSUE42_LOG.md#i42-e2b-serving-contract-closure-repeated-run-stability-re-run-gate-criterion-4
+claim: >
+  Issue #42's own E2b GO-gate criterion 4 (">=90% repeated-run agreement
+  on accepted physical primitive selection") measured 85.60% (107/125) on
+  the original 8 frozen LLM-proposal artifacts -- only 2 independent runs
+  per configuration (4 configurations x 2 runs), i.e. exactly 1 pairwise
+  comparison per configuration. ISSUE42_DECISION.md's own "What this does
+  NOT establish" section already disclosed that "only 2 runs per
+  configuration were measured; a materially larger N was out of this
+  pass's own scope" -- this manifest is that larger-N re-test.
+
+  Run count decided and documented BEFORE any new result was seen (in
+  scripts/e2b_stability_rerun_workflow.js's own committed comment, ahead
+  of launching the passes): 3 additional independent runs per
+  configuration, bringing each configuration from 2 to 5 total runs. This
+  raises the number of pairwise agreement comparisons per configuration
+  from C(2,2)=1 to C(5,2)=10 -- a 10x increase in the stability metric's
+  own sample size (125 -> 1250 total pairs across all 4 configurations).
+
+  Method: 12 new independent, blinded subagent calls (4 configurations x
+  3 new runs), each using the EXACT SAME bounded input data (real
+  occurrences/distinct_values/uniqueness_ratio/numeric_parseable_fraction/
+  mean_value_length/variant_scoped/sample_values, and for the perturbed
+  WANDS configurations the same shown key/alias names) the original 8
+  passes used -- deterministically reconstructed by
+  crates/issue42-eval/src/bin/e2b_dump_bounded_inputs.rs from the same
+  real, committed statistics issue42_eval::e2b_workload/e2b_key_mapping
+  already provide, never re-derived independently. A genuine, disclosed
+  limitation: the original 8 passes' own literal PROMPT WORDING was never
+  committed to this repository (only their frozen JSON output was) -- the
+  prompt used for these 12 new passes (scripts/e2b_stability_rerun_workflow.js's
+  own buildPrompt function) is a faithful reconstruction from the
+  descriptor schema and instructions text docs/experiments/ISSUE42_PROTOCOL.md's
+  E2b amendment 1 specifies verbatim, not a byte-identical replay of
+  whatever exact wording the original session used. Each subagent call
+  was genuinely fresh (no access to this session's conversation history,
+  any other pass's output, or the oracle mapping) -- the same
+  process-level "cannot look" blinding property the original 8 passes
+  relied on. Model/provider/settings: whatever this session's own
+  configured model serves subagent calls (not independently pinned to a
+  specific model version beyond that) -- the original 8 passes' own
+  model/provider/version was likewise never recorded in a machine-
+  readable, pinnable form in this repository, so exact model-identity
+  reproduction was not possible to verify either way; recorded here as a
+  real limitation, not glossed over.
+
+  Result: repeated-run agreement, computed by the exact preregistered
+  pairwise definition generalized to N>2 runs (every distinct pair of
+  runs within a configuration, not only "run 1 vs run 2" -- for the
+  original N=2 data this generalization is byte-identical to the
+  original definition, verified by rerunning the accuracy binary after
+  the code change and confirming byte-identical headline numbers): FINAL
+  1095/1250 (87.60%), up from 107/125 (85.60%) on the original small
+  sample -- still below the 90% bar. Per-configuration breakdown: automotive
+  156/170 (91.76%, clears the bar), wands_baseline 316/360 (87.78%),
+  wands_anonymized 311/360 (86.39%), wands_noisy 312/360 (86.67%) -- all
+  three real-WANDS-derived configurations independently and consistently
+  sit in an 86-88% band, below 90%, while the smaller synthetic
+  automotive control clears it. This is a materially more precise
+  measurement (10x the pairwise sample) pointing at a real, stable
+  population rate for real messy feed data somewhere around 86-88%, not
+  a sampling artifact of the original N=2 measurement.
+
+  Proposal instability vs deterministic-validator instability: this
+  metric compares RAW LLM proposals (role + physical primitive) run to
+  run, before any validator step -- e2b_validator::validate is a pure,
+  deterministic function of (proposal, real measured stats), so given an
+  identical proposal it always produces an identical accept/reject
+  decision. All of the measured instability is therefore proposal (LLM)
+  instability by construction; there is no validator-side stochastic
+  contribution to distinguish, since none exists.
+
+  GO-gate criterion 4, final: >=90% repeated-run agreement -- **FAIL**
+  (87.60%, materially larger sample, consistent across all 3 real-feed
+  configurations, not close enough to attribute to noise or to the
+  original small-N measurement being unlucky).
+
+git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+binary: crates/issue42-eval/src/bin/e2b_feature_discovery_eval.rs (unchanged
+  computation, widened input range -- crates/issue42-eval/src/e2b_pipeline.rs's
+  own load_all_runs now scans run indices 1 through 10, not hardcoded to
+  1..=2; the accuracy/GO-gate headline numbers -- macro F1 by baseline,
+  by configuration, end-to-end NDCG/Recall -- are unaffected: verified
+  byte-identical before and after this change)
+build_command: cargo build --release -p issue42-eval
+run_command: |
+  # 1. Dump the exact bounded inputs (already done, deterministic):
+  cargo build --release -p issue42-eval --bin e2b_dump_bounded_inputs &&
+  ./target/release/e2b_dump_bounded_inputs <output_dir>
+  # 2. Run the 12 new blinded passes (scripts/e2b_stability_rerun_workflow.js,
+  #    a Workflow-tool script -- 4 configs x 3 new runs, parallel independent
+  #    subagent calls with a JSON-schema-forced Descriptor[] output), save
+  #    each as dataset_cache/export/e2b_llm_proposals_<config>_run{3,4,5}.json
+  # 3. Re-run the existing accuracy/GO-gate binary -- it now picks up
+  #    all 5 runs per configuration automatically:
+  ./target/release/e2b_feature_discovery_eval [output_summary_json_path]
+
+dataset: same as i42_e2b_feature_discovery_eval.yaml -- WANDS's real
+  product.csv (36-key sample) and automotive's real 17-field attribute
+  set. This manifest adds no new dataset, only 12 new independent LLM
+  passes over the identical bounded inputs.
+
+engine:
+  llm_proposal_mechanism: fresh Workflow-tool subagent calls (schema-
+    forced structured JSON output matching the Descriptor schema),
+    scripts/e2b_stability_rerun_workflow.js -- each call has zero access
+    to this session's conversation history, any other pass's output, or
+    the oracle mapping (process-level blinding, not merely "instructed
+    not to look")
+  aggregation: issue42_eval::e2b_pipeline::build_baselines_2_and_3
+    (shared with the accuracy/GO-gate binary), generalized to compare
+    every pairwise combination of runs within a configuration rather
+    than only run-1-vs-run-2
+
+workload:
+  new_independent_passes: 12 (4 configurations x 3 new runs), 100%
+    succeeded (0 errors, 0 empty results)
+  total_runs_per_configuration: 5 (2 original + 3 new)
+  pairwise_comparisons_per_configuration: C(5,2)=10 (up from C(2,2)=1)
+  total_pairwise_comparisons: 1250 (up from 125)
+
+seed: none applicable to the new LLM passes themselves (each is a fresh,
+  independent model call, not seeded/deterministic by design -- that
+  independence is the entire point of a repeated-run stability metric);
+  the bounded INPUT data each pass received is itself fully
+  deterministic (see dataset above)
+
+latency_methodology: N/A -- this experiment measures classification
+  agreement, not serving latency (see i42_e2b_serving_overhead_eval.yaml
+  for the separate serving-overhead measurement)
+
+raw_results: docs/research/artifacts/i42_e2b_stability_rerun_run1/
+  - main_run1.txt / summary.json (final -- 5-runs-per-configuration
+    aggregate and per-configuration stability, alongside the unaffected
+    accuracy/GO-gate headline numbers)
+  dataset_cache/export/e2b_llm_proposals_<config>_run{3,4,5}.json -- the
+  12 new frozen subagent outputs, committed alongside the original 8
+  (never regenerated after being written, matching the original 8's own
+  preservation discipline)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE42_LOG.md's E2b-serving-contract-closure section
+  for the full write-up.

@@ -51,10 +51,14 @@ independently checked. Concretely, in this protocol:
 
 ## Phase 0 — frozen baseline
 
-The immutable baseline is the merge commit of PR #39 into
-`claude/issue-34-phase9-defect-fixes-wands` (Issue #38's own base branch).
-Its SHA is recorded in `ISSUE38_DECISION.md`'s baseline note and in every
-manifest produced from this point forward as `baseline_sha`. R1/R2/R3
+**`baseline_sha = fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6`** — the merge
+commit of PR #39 into `claude/issue-34-phase9-defect-fixes-wands` (Issue
+#38's own base branch), merged after PR #39's CI ran fully green on its
+final commit (`449c22f`, this session's second independent-review
+correction round) and no unresolved correctness/methodology issue
+remained. Recorded here and in `ISSUE38_DECISION.md`'s baseline note; every
+manifest produced from this point forward must cite this same
+`baseline_sha`, and it must not be silently changed. R1/R2/R3
 implement every treatment as new, additive code reachable only through
 explicit experimental entry points (`issue42-eval`'s own binaries) —
 `commerce_core::ir::query::compile` and `commerce_core::plan::execute_planned`
@@ -247,9 +251,9 @@ layer against the real materialized catalog, not asserted in prose:
 
 | # | query | class | intent |
 |---|---|---|---|
-| 1 | `size 34` | ambiguous, corroboration absent | matches apparel Enum size="34" AND automotive Numeric size=34.0 in this catalog (both real) |
-| 2 | `size 34 jeans` | corroborated -> apparel | "jeans" entity corroborates Enum interpretation |
-| 3 | `34 inch wiper blade` | corroborated -> automotive | "wiper blade" entity + explicit unit corroborates Numeric interpretation |
+| 1 | `size {v}` | ambiguous, corroboration absent | matches apparel Enum size="{v}" AND automotive Numeric size={v}.0 in this catalog (both real) |
+| 2 | `size {v} jeans` | corroborated -> apparel | "jeans" entity corroborates Enum interpretation |
+| 3 | `size {v} wiper blades` | corroborated -> automotive | "wiper blades" entity corroborates Numeric interpretation |
 | 4 | `under $34` | distinct existing keyword path | PriceUnderCents, must not be affected by any R1 treatment (regression guard) |
 | 5 | `over $34` | distinct existing keyword path | PriceOverCents, same guard |
 | 6 | `2015 honda civic brake pads` | number-as-year, corroborated | fitment MultiEnum match (reuses E2's fixed fitment-phrase mechanism) |
@@ -261,6 +265,48 @@ layer against the real materialized catalog, not asserted in prose:
 Single-category runs use `issue38_e2e3_eval::apparel`/`automotive`
 alone; mixed-category runs use `mixed_merchant`. Both are run for every
 query above where applicable.
+
+**Correction (found while implementing the workload, before any
+treatment ran)**: rows 1-3 as originally drafted here assumed a query
+text/value that either could never be produced by the real generators
+or did not actually exercise `compile()`'s numeric keyword branch at
+all, caught by direct source reading (`crates/commerce-core/src/ir/query.rs`)
+rather than by running anything first:
+
+- **Row 3's original text, `"34 inch wiper blade"`, does not contain
+  the literal `"size"` keyword `compile()`'s numeric branch requires**
+  (confirmed directly against `query.rs`'s `tokens[i] == "size"` check)
+  -- it would never have exercised the mechanism R1 exists to test at
+  all. Corrected to `"size {v} wiper blades"`, matching row 2's shape,
+  and using the registered `ProductType` phrase's exact plural text
+  (`compile()`'s phrase lookup is an exact, case-insensitive,
+  space-joined string match -- no stemming -- confirmed directly
+  against `query.rs`'s window-scan loop).
+- **Row 1's original claim -- a single value "34" real in both an
+  apparel Jeans Enum `size` and an automotive Wiper Blades Numeric
+  `size` -- is unachievable with the existing generators**: apparel's
+  Jeans sizes are drawn from `["30","32","34","36","38"]`
+  (`apparel.rs`), automotive's Wiper Blades `size` is
+  `rng.gen_range(16..=28)` (`automotive.rs`) -- two disjoint numeric
+  ranges that can never produce a shared value, confirmed by reading
+  both generators directly rather than assumed. `mixed_merchant`'s own
+  `size_conflict_anchors` (used by E3) independently confirms this: it
+  returns the *first* Jeans and Wiper-Blades product's own size value
+  as two separate, independently-drawn anchors, never asserting they
+  are equal, and E3's own workload queries them as two separate `"size
+  {anchor}"` queries for exactly this reason. Rows 1-3 are corrected to
+  use a small, purpose-built `issue42-eval::r1_workload` fixture (not a
+  modification of the frozen `apparel`/`automotive` generators, which
+  back the already-merged E1-E3 baseline and must not change) with a
+  deliberately-constructed overlapping value (`v = 22`, in automotive's
+  16-28 range and given directly to a hand-built Jeans-type product's
+  Enum `size`), so rows 1-3 test a case that is genuinely, verifiably
+  real rather than one that happened to look plausible in prose.
+
+This correction was made before any R1 treatment was run or measured,
+so there are no pre-correction R1 figures to retain alongside it (rule
+9 applies to a measured result changing after correction; here nothing
+had been measured yet).
 
 ### Metrics (per query class, all four treatments)
 
@@ -439,7 +485,37 @@ All three in `issue42-eval::r3_experimental`:
   same merge `CatalogIndex` already performs internally for
   `lexical_postings`) into the same Tantivy fields, tagged with the
   owning `VariantId` so a match resolves to the correct variant, not
-  merely the parent product.
+  merely the parent product. **Correction (found while designing R3's
+  treatments, before any code was written)**: `commerce_core::plan::LexicalHit`
+  (`{ product: ProductId, score: f64 }`) has no `VariantId` field at
+  all, and `commerce_core::plan::verify_and_truncate` resolves a hit's
+  variant via `product.variants.iter().find(|v| query.matches_variant(product, v))`
+  — `matches_variant` is `self.constraints.iter().all(...)`, vacuously
+  `true` when `query.constraints` is empty (exactly the case for an
+  identifier-only query like a bare `part_number` value, since
+  `commerce_core::ir::query::compile` has no dedicated keyword branch
+  for "part number" at all — confirmed directly against `query.rs`;
+  such a query's entire text becomes `residual_lexical`, routing to
+  `Punt` with zero structural constraints). So today, for exactly this
+  query shape, `verify_and_truncate` always returns a product's *first*
+  variant, regardless of which variant's text a delegate actually
+  matched — the existing `LexicalHit`/`verify_and_truncate` pipeline
+  structurally cannot carry "this specific variant is what matched"
+  information at all, not merely omits doing so for product-level-only
+  indexing (H3-A's own framing). Treatment B as originally drafted here
+  ("tagged with the owning VariantId so a match resolves to the correct
+  variant") is therefore not reachable by reusing `execute_planned`/
+  `LexicalHit` the way R1/R2's treatments reuse them: `issue42_eval::r3_experimental`
+  implements Treatment B as its own self-contained index-and-lookup path
+  (a richer, variant-aware hit type returned directly by the
+  experimental index, not routed through `LexicalDelegate`/
+  `execute_planned` at all) rather than a `LexicalDelegate` implementation
+  passed into the real `execute_planned`. This is consistent with
+  R1/R2's own experimental-boundary discipline (new, additive code,
+  `commerce_core::plan` untouched) — it is a difference in *how* B is
+  wired, not a departure from "reuse real production primitives where
+  they exist": no real production primitive for variant-resolved
+  lexical hits exists yet to reuse.
 - **C**: a dedicated `HashMap<String, SmallVec<(ProductId, VariantId)>>`
   (or equivalent exact/normalized-key structure) built directly from
   fields a deterministic classifier accepts as identifier-shaped. The
@@ -470,6 +546,52 @@ protocol's normal seed (`automotive::SEED`, the same catalog R1/E2 already
 use) plus `mixed_merchant`'s 3,000-product mixed catalog — both
 disjoint generator invocations from the calibration set above. All R3
 metrics reported below are computed only on this held-out set.
+
+**Correction (found while designing R3's fixture, before any code was
+written)**: the calibration/held-out text above assumes
+`automotive::generate_catalog` accepts a seed parameter it can be
+called with (`generate_catalog(1500)` "with `SEED.wrapping_add(1000)`").
+Confirmed by direct source reading
+(`crates/issue38-e2e3-eval/src/automotive.rs`): the real signature is
+`generate_catalog(n_products: usize) -> Vec<SynthProduct>` — no seed
+parameter at all. Internally it reseeds a fresh `ChaCha8Rng` from the
+crate's own `automotive::SEED` constant on every call. This is more
+than an inconvenient signature mismatch: since `generate_catalog(1500)`
+and `generate_catalog(3000)` both reseed from the *identical* `SEED`,
+and every product's fields are a pure function of its loop index
+(`PRODUCT_TYPES[i % PRODUCT_TYPES.len()]`, then sequential RNG draws),
+`generate_catalog(1500)`'s entire output is a byte-identical *prefix*
+of `generate_catalog(3000)`'s own first 1500 products. Calling both
+literally as originally specified here would make the "calibration"
+set a strict subset of the "held-out" set — silently violating this
+section's own disjointness requirement ("its calibration set and the
+held-out evaluation set are named explicitly and disjoint... before
+any treatment runs"), not a cosmetic issue.
+
+**Corrected split**: call `automotive::generate_catalog(4500)`
+(1500 + 3000) exactly once, and partition its own output by index
+range — products `[0, 1500)` are the calibration set, products
+`[1500, 4500)` are the held-out set (3000 products). These are
+genuinely disjoint (non-overlapping products from one deterministic
+generation), preserving the spirit of "a calibration draw distinct
+from held-out evidence" without requiring a seed parameter the frozen
+generator does not have. `mixed_merchant`'s 3,000-product mixed
+catalog (`generate_mixed_catalog(1000, 1000, 1000)`, matching E3's own
+established split, `crates/issue38-e2e3-eval/src/bin/e3_mixed_category_eval.rs`)
+is reused as-is for the held-out set's general-lexical-retrieval
+regression check only (does adding B's/C's mechanism regress ordinary
+furniture/apparel/automotive free-text queries) — never for the core
+identifier-classification metrics (Recall@1, false-match rate,
+collision/normalization/absent-identifier behavior, build time, index
+size, RSS, lookup-latency percentiles), which are computed only on the
+split-index held-out automotive set above. This scoping matters
+because `mixed_merchant`'s own automotive sub-portion
+(`automotive::generate_catalog(1000)`, indices `[0, 1000)`) overlaps
+this correction's *calibration* range (`[0, 1500)`), not its held-out
+range — reusing it only for the non-calibration-sensitive regression
+check, never for a classifier-calibration-affected metric, keeps that
+overlap from being a real disjointness violation rather than merely an
+undisclosed one.
 
 ### Workload
 
@@ -534,5 +656,221 @@ evaluation runs, never after.
 
 ### E2b amendments (dated, added before the held-out run each time)
 
-*(none yet — this section exists so any necessary refinement is
-recorded here, in one place, rather than only in a commit message)*
+**Amendment 1 (before any LLM pass or held-out run): dataset, sample,
+oracle, and "LLM proposal" mechanism.**
+
+- **Real structured external feed**: WANDS (`dataset_cache/wands/`,
+  already cached locally, already used elsewhere in this repo —
+  `phase6a-eval`/`phase9-eval`) — 42,994 real Wayfair product rows, 480
+  real shopper queries (`query.csv`), 233,448 real relevance judgments
+  (`label.csv`, Exact/Partial/Irrelevant). `product.csv`'s
+  `product_features` column is a real, messy, pipe-delimited
+  `key:value` blob with **7,961 distinct feature keys** across the
+  catalog — a genuine "unseen raw merchant feed" with real-world
+  inconsistency (missing values, mixed Boolean/free-text fields, wildly
+  varying cardinality), not a synthetic approximation of one. This
+  satisfies the issue's "at least one license-compatible real
+  structured catalog/feed with category-specific attributes" and
+  "successful evidence on at least one real structured unseen feed"
+  requirements directly.
+- **Existing synthetic catalog**: `issue38_e2e3_eval::automotive`
+  (already frozen, already used by R3), reused for its own typed
+  attribute set (`part_number`, `warranty_months`,
+  `compatible_fitment`, `lumens`, etc.) as the second input surface —
+  satisfies "existing synthetic catalogs... for exact controlled
+  ground truth."
+- **Feature-key sample, not exhaustive enumeration**: 7,961 distinct
+  keys is not a tractable "give the LLM the whole raw feed" input, and
+  exhaustively enumerating all of them would not make E2b more rigorous
+  — a smaller, deliberately diverse, real sample tests the same
+  discovery mechanism the exhaustive case would, without manufacturing
+  a false impression of completeness. **36 real WANDS feature keys**
+  were selected directly from real per-key statistics (occurrence
+  count, distinct-value count, uniqueness ratio — computed once, before
+  any oracle role was assigned, so the sample was not cherry-picked
+  after seeing what would make a flattering result), spanning every
+  category the issue's perturbation-suite text names: continuous
+  Numeric (`overallproductweight`, `overallwidth-sidetoside`,
+  `overallheight-toptobottom`, `overalldepth-fronttoback`,
+  `weightcapacity`, `estimatedtimetosetup`); Boolean yes/no
+  (`commercialwarranty`, `adultassemblyrequired`, `organic`,
+  `firerated`, `drawersincluded`, `upholstered`,
+  `installationrequired`); low/medium-cardinality Enum
+  (`style`, `dsprimaryproductstyle`, `countryoforigin`,
+  `levelofassembly`, `dswoodtone`, `primarymaterial`, `framematerial`,
+  `shape`, `pattern`); higher-but-bounded-cardinality Enum (`color`,
+  `basecolor`, `finish`, `upholsterymaterial`, `upholsterycolor`);
+  genuinely ambiguous/messy real fields (`productwarranty` — real
+  values mix `"yes"`/`"no"` with free-text warranty descriptions in the
+  same key; `fullorlimitedwarranty` — real empty-string noise values;
+  `warrantylength` — duration strings like `"5 years"`/`"lifetime"`,
+  ambiguous between Numeric-with-unit and Enum; `title` — sparse
+  (1.3% density), a real "does this duplicate `product_name`'s role"
+  trap); free-text/lexical-only (`productcare`, `piecesincluded` — real
+  fields with thousands of distinct values, no clean typed role);
+  identifier-shaped (`samplepartnumber` — real, uniqueness ratio 0.9785
+  at count 2,048, but its *name* ("sample" part number, almost
+  certainly a fabric/material-swatch reference) is a genuine trap: R3's
+  own `variant_scoped`-style statistical signal cannot see that this is
+  likely NOT what a shopper searches for, only that it looks
+  identifier-shaped); and relationship fields (`compatibledrainassemblypartnumber`,
+  `compatiblediningchairpartnumber` — real "this part is compatible
+  with a *different* product's identifier" cross-reference fields, the
+  exact "relationship semantics" category the issue names). All 36 are
+  cited with their real, measured statistics in
+  `crates/issue42-eval/src/e2b_workload.rs`'s own doc comments, not
+  merely asserted.
+- **Oracle construction**: for all 36 WANDS keys plus every
+  `automotive` attribute, a `Descriptor` was hand-authored directly from
+  the real key name, real sample values, and real per-key statistics
+  above — before any LLM proposal was generated, and never shown to any
+  LLM pass. This is the "blinded human/oracle mapping" baseline (4) and
+  the ground truth every other baseline is scored against. It lives in
+  `crates/issue42-eval/src/e2b_oracle.rs`.
+- **"LLM proposal" mechanism** (the issue's own required real,
+  non-fixture control-plane pass): per this session's own established
+  precedent (Issue #9 / P2-E09's "model-assisted canonicalization"
+  baseline — `docs/experiments/PHASE2_LOG.md`), a real Claude pass is
+  run **offline**, its raw output captured as a static, versioned JSON
+  artifact under `dataset_cache/export/e2b_llm_proposals_*.json`, and
+  all downstream Rust code (statistics-only baseline, validator,
+  metrics, GO-gate evaluation) only ever *reads* that frozen artifact —
+  no test or production code path calls a live model API, satisfying
+  CLAUDE.md's "No test may require a real model API key" rule exactly
+  as `FixtureModelProvider` already does for `commerce_core::control_plane`.
+  Concretely: each LLM pass is a **fresh Agent-tool subagent** with a
+  prompt containing *only* the bounded inputs this protocol permits
+  (column/key names — possibly perturbed per the perturbation-suite
+  amendment below — representative sample values, and parse/null/
+  density/cardinality/uniqueness statistics) and explicit instructions
+  to return descriptors per the versioned schema below; it never
+  receives this conversation's history, `e2b_oracle.rs`'s contents, or
+  any other run's output, giving genuine process-level blinding (not
+  merely "don't look," but "cannot look" — a fresh subagent has no
+  access to this session's context at all). Each of the **4
+  configurations** below (WANDS baseline/unperturbed, WANDS anonymized,
+  WANDS noisy-names, automotive unperturbed) is run **twice
+  independently** (2 separate subagent calls per configuration, same
+  prompt, 8 subagent calls total) to measure the issue's own required
+  ">=90% repeated-run agreement on accepted physical primitive
+  selection" metric directly, not assume it, and to measure
+  "degradation under each perturbation class" (the issue's own metric)
+  against the unperturbed configuration as the reference point.
+
+### E2b descriptor schema (versioned, v1)
+
+```rust
+pub struct Descriptor {
+    pub key: String,
+    pub semantic_role: SemanticRole,       // Identifier, Enum, Numeric, Boolean, FreeText, Relationship, Ignore
+    pub value_type: ValueType,             // String, Number, Boolean
+    pub scope: Scope,                      // Product, Variant, Relationship
+    pub supported_operators: Vec<Operator>,// Eq, Range, Contains, ExactLookup, ...
+    pub aliases: Vec<String>,              // query phrases a shopper might use
+    pub relationship_semantics: Option<String>, // set only when scope == Relationship
+    pub retrieval_significance: Significance,   // RetrievalSignificant, RankingOnly, Ignore
+    pub candidate_physical_primitive: PhysicalPrimitive, // BitmapEnum, NumericRange, IdentifierDictionary, LexicalPostings, None
+    pub confidence: f64,                   // 0.0-1.0
+    pub evidence: String,                  // why -- provenance, cites real stats/sample values
+    pub abstain: bool,                     // true when the pass declines to classify at all
+}
+```
+
+### E2b perturbation suite (applied to the 36-key WANDS sample only; `automotive` is used unperturbed as the synthetic control)
+
+1. **Baseline (unperturbed)**: real key names, real sample values, real
+   stats.
+2. **Anonymized columns**: every one of the 36 keys renamed to
+   `feature_NNN` (a stable, deterministic index, not the key's own
+   hash, so the mapping is reproducible) — tests whether a pass can
+   still infer semantic role from *value shape and stats alone*, with
+   zero help from the key's own name.
+3. **Noisy/misleading names**: a second renaming pass using
+   plausible-but-wrong merchant-style names (e.g. `overallproductweight`
+   -> `item_spec_7`, `samplepartnumber` -> `product_code`, deliberately
+   suggestive of the *wrong* role for the identifier-trap and
+   relationship fields specifically) — tests resistance to a
+   name-based false cue, not just the *absence* of a name cue.
+
+### E2b deterministic validator (`crates/issue42-eval/src/e2b_validator.rs`)
+
+Checks each proposed `Descriptor` against the *actually measured*
+statistics for its real key (never against the oracle — the validator
+has no access to `e2b_oracle.rs` either, mirroring `commerce_core`'s own
+"never trust the delegate for correctness" doctrine applied to the
+control plane instead of a lexical delegate):
+
+- **parseability**: for `value_type: Number`, every sampled real value
+  for this key must actually parse as a number (a proposal claiming
+  Numeric for a key whose real values are non-numeric strings is
+  rejected outright — an "unsafe accepted structural classification").
+- **type consistency**: no single key may be accepted as both
+  Enum/Boolean and Numeric simultaneously across different perturbation
+  runs without at least one being flagged `abstain` — a real
+  same-name/different-type conflict must surface as reduced confidence,
+  not silently pick one.
+- **cardinality/density/selectivity bounds**: a proposal claiming
+  `Enum` for a key whose real distinct-value count exceeds a
+  generous ceiling (500, well above WANDS's own real bounded-Enum
+  fields like `color` at 4,686 distinct — deliberately conservative, so
+  the validator does not reject a real, legitimate high-cardinality
+  Enum outright, only warns) is downgraded, not silently accepted.
+- **uniqueness/collision check for `Identifier` proposals**: reuses
+  `commerce_core::index::identifier::{compute_field_stats, IdentifierClassifier}`
+  directly (the same real, production, R3-derived mechanism, not a
+  reimplementation) — an `Identifier` proposal is only accepted if the
+  real field's own `IdentifierClassifier::accepts` would also accept it
+  independently.
+- **scope consistency**: a `Relationship` proposal must name
+  `relationship_semantics`; a non-`Relationship` proposal with a
+  non-`None` `relationship_semantics` is rejected.
+- **memory estimate**: distinct-value count x average value length,
+  reported, not gated (matching R3's own "RSS/index-size... not
+  disqualifying on its own" precedent).
+- **workload evidence**: whether any of this key's proposed `aliases`
+  appears as a real substring of any of WANDS's own 480 real shopper
+  queries (`query.csv`) — a genuine, real check, not synthetic.
+- **supported serving semantics**: every `supported_operators` entry
+  must be one this repository's own `commerce_core::domain::Constraint`/
+  `StructuralConstraint` can actually express today (an operator with
+  no real serving-side representation is flagged, not silently
+  accepted as if it were implementable).
+
+### E2b baselines (per Issue #42's own E2b section, restated for this amendment's cross-reference)
+
+1. **Statistics-only heuristics** (`crates/issue42-eval/src/e2b_statistics_baseline.rs`):
+   a deterministic Rust classifier using *only* uniqueness ratio,
+   density, cardinality, and value-shape (numeric-parseable fraction) —
+   zero access to the key's own name or any natural-language
+   understanding of sample values' *meaning* (e.g. it cannot know
+   `"modern"` means a design style; it can only see "a low-cardinality
+   string value"). This is the honest "what can pure statistics do
+   without semantic understanding" floor.
+2. **LLM proposal, no validator**: the frozen subagent output, used
+   directly — evaluation only, explicitly never a "ship this" baseline
+   (matching the issue's own text verbatim).
+3. **LLM + deterministic validator**: baseline 2's proposals run through
+   the validator above.
+4. **Blinded oracle**: `e2b_oracle.rs`'s hand-authored ground truth —
+   the comparison target every other baseline is scored against, not
+   itself "scored."
+
+### E2b metrics (added detail beyond the issue's own list)
+
+In addition to the issue's own preregistered metric list verbatim,
+end-to-end Recall@10/NDCG@10 is computed against WANDS's **real** 480
+queries and 233,448 real relevance judgments (`label.csv`) — not a
+synthetic proxy — via `commerce_core::index::rank`'s existing,
+unmodified ranking machinery, comparing native execution using each
+baseline's *accepted* structural descriptors against the oracle's own.
+
+### GO gate
+
+Verbatim from Issue #42's own E2b section (restated here only for
+convenience, not amended): zero confirmed unsafe accepted structural
+classifications; >=80% recall on retrieval-significant reference
+features; end-to-end relevance within 5% of the oracle mapping on the
+held-out set; >=90% repeated-run agreement on accepted physical
+primitive selection; <=5% serving overhead vs the hand-authored
+compiled oracle; successful evidence on at least one real structured
+unseen feed (WANDS).

@@ -112,8 +112,15 @@ fn fast_path_never_calls_the_delegate() {
     );
     let delegate = MockDelegate::new(vec![]);
 
-    let (planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::FastPath);
     assert_eq!(planned.selectivity, None);
@@ -139,10 +146,18 @@ fn hybrid_routes_when_the_structural_predicate_is_selective() {
     let delegate = MockDelegate::new(vec![LexicalHit {
         product: ProductId(0),
         score: 1.0,
+        variant: None,
     }]);
 
-    let (planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     let selectivity = planned
@@ -185,10 +200,18 @@ fn punt_routes_when_the_structural_predicate_is_not_selective() {
     let delegate = MockDelegate::new(vec![LexicalHit {
         product: ProductId(1),
         score: 1.0,
+        variant: None,
     }]);
 
-    let (planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
     let selectivity = planned.selectivity.expect(
@@ -222,8 +245,15 @@ fn punt_routes_when_there_is_no_structural_constraint_at_all() {
     let query = query_with(vec![], vec!["running", "shoes"]);
     let delegate = MockDelegate::new(vec![]);
 
-    let (planned, _hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, _hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
     assert_eq!(
@@ -248,8 +278,15 @@ fn punt_with_no_constraints_at_all_asks_the_delegate_for_exactly_k_not_the_overs
     let query = query_with(vec![], vec!["running", "shoes"]);
     let delegate = MockDelegate::new(vec![]);
 
-    let (planned, _hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, _hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::Punt);
     assert_eq!(delegate.call_count(), 1);
@@ -286,15 +323,24 @@ fn verify_and_truncate_drops_a_delegate_hit_outside_restrict_to() {
         LexicalHit {
             product: ProductId(5),
             score: 2.0,
+            variant: None,
         },
         LexicalHit {
             product: ProductId(0),
             score: 1.0,
+            variant: None,
         },
     ]);
 
-    let (planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     assert_eq!(
@@ -322,10 +368,18 @@ fn verify_and_truncate_drops_a_delegate_hit_that_fails_a_hard_constraint() {
     let delegate = MockDelegate::new(vec![LexicalHit {
         product: ProductId(1),
         score: 1.0,
+        variant: None,
     }]);
 
-    let (_planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 10, &TEST_POLICY);
+    let (_planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        10,
+        &TEST_POLICY,
+        None,
+    );
 
     assert!(
         hits.is_empty(),
@@ -344,12 +398,20 @@ fn verify_and_truncate_respects_k() {
             .map(|i| LexicalHit {
                 product: ProductId(i),
                 score: 1.0 / i as f64,
+                variant: None,
             })
             .collect(),
     );
 
-    let (_planned, hits) =
-        execute_planned(&query, &catalog, &index, Some(&delegate), 3, &TEST_POLICY);
+    let (_planned, hits) = execute_planned(
+        &query,
+        &catalog,
+        &index,
+        Some(&delegate),
+        3,
+        &TEST_POLICY,
+        None,
+    );
 
     assert_eq!(hits.len(), 3, "k must be respected after verification");
     assert_eq!(
@@ -370,8 +432,15 @@ fn no_delegate_degrades_hybrid_and_punt_to_empty_but_fast_path_still_works() {
         ))],
         vec![],
     );
-    let (planned, hits) =
-        execute_planned(&fast_path_query, &catalog, &index, None, 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &fast_path_query,
+        &catalog,
+        &index,
+        None,
+        10,
+        &TEST_POLICY,
+        None,
+    );
     assert_eq!(planned.outcome, ExecutionOutcome::FastPath);
     assert_eq!(hits.len(), 1);
 
@@ -381,7 +450,15 @@ fn no_delegate_degrades_hybrid_and_punt_to_empty_but_fast_path_still_works() {
         ))],
         vec!["waterproof"],
     );
-    let (planned, hits) = execute_planned(&hybrid_query, &catalog, &index, None, 10, &TEST_POLICY);
+    let (planned, hits) = execute_planned(
+        &hybrid_query,
+        &catalog,
+        &index,
+        None,
+        10,
+        &TEST_POLICY,
+        None,
+    );
     assert_eq!(planned.outcome, ExecutionOutcome::Hybrid);
     assert!(
         hits.is_empty(),

@@ -1,0 +1,131 @@
+=== Issue #42 E2b: actual offline LLM-assisted feature discovery ===
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+
+oracle: 53 total fields, 45 accepted as structural (Enum/Numeric/Boolean)
+
+--- Baseline results (feature-role macro F1, accepted-structural precision/recall vs oracle) ---
+Baseline 1: statistics-only: feature-role macro F1=0.5366, accepted-structural precision=0.9783 recall=1.0000 (n_accepted=46), abstention_rate=0.0000
+Baseline 2: LLM proposal, no validator: feature-role macro F1=0.7985, accepted-structural precision=0.9783 recall=1.0000 (n_accepted=46), abstention_rate=0.0000
+Baseline 3: LLM + deterministic validator: feature-role macro F1=0.7697, accepted-structural precision=0.9756 recall=0.8889 (n_accepted=41), abstention_rate=0.0943
+
+repeated-run agreement (role + primitive, every pairwise comparison of runs within a configuration, across all 4 configurations): 1095/1250 (87.60%)
+repeated-run agreement by configuration:
+  automotive: 156/170 (91.76%)
+  wands_anonymized: 311/360 (86.39%)
+  wands_baseline: 316/360 (87.78%)
+  wands_noisy: 312/360 (86.67%)
+unsafe-accepted count (accepted structural facet whose oracle role is actually Identifier/Relationship): 0
+
+feature-role macro F1 by perturbation configuration (degradation check):
+  automotive: 0.2597
+  wands_anonymized: 0.4900
+  wands_baseline: 0.6753
+  wands_noisy: 0.6573
+
+--- End-to-end Recall@10/NDCG@10 on WANDS's real queries (naive keyword-matched structural constraints; see e2b_ingest's own doc comment for this check's disclosed scope) ---
+oracle: NDCG@10=0.0100 Recall@10=0.0004 (n_queries_scored=270, mean_match_set_size=21.3)
+statistics-only: NDCG@10=0.0100 Recall@10=0.0004 (n_queries_scored=270, mean_match_set_size=21.3)
+LLM + validator: NDCG@10=0.0100 Recall@10=0.0004 (n_queries_scored=270, mean_match_set_size=21.3)
+
+--- GO gate evaluation (per Issue #42's own preregistered E2b thresholds) ---
+zero unsafe accepted structural classifications: true (0 found)
+>=80% recall on retrieval-significant reference features: 0.8684 (gate: true)
+end-to-end relevance within 5% of oracle: relative NDCG gap=0.0000 (gate: true, CHECK RELIABLE: false -- oracle scored only 270 queries at NDCG@10=0.0100; a relative gap against a near-floor oracle score is not a trustworthy signal in either direction, see this binary's own doc comment)
+>=90% repeated-run agreement on accepted physical primitive: 0.8760 (gate: false)
+real structured unseen feed evidence (WANDS): true
+=> E2b GO gate: FAIL
+
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baselines": [
+    {
+      "abstention_rate": 0.0,
+      "accepted_structural_precision": 0.9782608695652174,
+      "accepted_structural_recall": 1.0,
+      "label": "Baseline 1: statistics-only",
+      "macro_f1": 0.5366300366300366,
+      "n_accepted_structural": 46
+    },
+    {
+      "abstention_rate": 0.0,
+      "accepted_structural_precision": 0.9782608695652174,
+      "accepted_structural_recall": 1.0,
+      "label": "Baseline 2: LLM proposal, no validator",
+      "macro_f1": 0.7985185185185185,
+      "n_accepted_structural": 46
+    },
+    {
+      "abstention_rate": 0.09433962264150944,
+      "accepted_structural_precision": 0.975609756097561,
+      "accepted_structural_recall": 0.8888888888888888,
+      "label": "Baseline 3: LLM + deterministic validator",
+      "macro_f1": 0.7697215532175603,
+      "n_accepted_structural": 41
+    }
+  ],
+  "end_to_end": {
+    "check_reliable": false,
+    "llm_plus_validator": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    },
+    "oracle": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    },
+    "relative_ndcg_gap_llm_plus_validator_vs_oracle": 0.0,
+    "statistics_only": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    }
+  },
+  "experiment_id": "I42-E2b",
+  "go_gate": {
+    "go": false,
+    "real_feed_evidence": true,
+    "recall_significant_ge_80pct": 0.868421052631579,
+    "relevance_check_reliable": false,
+    "relevance_within_5pct": true,
+    "stability_ge_90pct": false,
+    "zero_unsafe_accepted": true
+  },
+  "macro_f1_by_configuration": {
+    "automotive": 0.2597402597402597,
+    "wands_anonymized": 0.4899932758726084,
+    "wands_baseline": 0.6752595775152166,
+    "wands_noisy": 0.6573402146481185
+  },
+  "repeated_run_agreement": 0.876,
+  "repeated_run_agreement_by_configuration": {
+    "automotive": {
+      "agreements": 156,
+      "rate": 0.9176470588235294,
+      "total": 170
+    },
+    "wands_anonymized": {
+      "agreements": 311,
+      "rate": 0.8638888888888889,
+      "total": 360
+    },
+    "wands_baseline": {
+      "agreements": 316,
+      "rate": 0.8777777777777778,
+      "total": 360
+    },
+    "wands_noisy": {
+      "agreements": 312,
+      "rate": 0.8666666666666667,
+      "total": 360
+    }
+  },
+  "repeated_run_agreement_denominator": 1250,
+  "repeated_run_agreement_numerator": 1095,
+  "unsafe_accepted_count": 0
+}
+summary written to docs/research/artifacts/i42_e2b_stability_rerun_run1/summary.json

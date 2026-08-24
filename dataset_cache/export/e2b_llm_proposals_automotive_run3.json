@@ -1,0 +1,352 @@
+{
+  "configuration": "automotive",
+  "run_index": 3,
+  "descriptors": [
+    {
+      "key": "amperage_output",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "100 amp alternator",
+        "high output alternator",
+        "amperage rating"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "numeric_parseable_fraction=1 with 72 distinct values over 150 occurrences (ratio 0.48) and short numeric samples ('101'..'105') indicate a continuous amperage spec typical of alternators/chargers; variant_scoped=false places it at product level.",
+      "abstain": false
+    },
+    {
+      "key": "bulb_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup",
+        "contains"
+      ],
+      "aliases": [
+        "H11 bulb",
+        "H4 headlight bulb",
+        "9005 bulb",
+        "H7 bulb"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.92,
+      "evidence": "Only 4 distinct values ('9005','H11','H4','H7') over 150 occurrences (uniqueness_ratio 0.027) with mixed alpha-numeric codes and numeric_parseable_fraction 0.26 \u2014 a classic low-cardinality automotive bulb-fitment enum, product-level (variant_scoped=false).",
+      "abstain": false
+    },
+    {
+      "key": "cold_cranking_amps",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "high CCA battery",
+        "600 cold cranking amps",
+        "cold cranking amps rating"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction=1, high uniqueness_ratio 0.87 (131 distinct of 150), samples '401'-'410' \u2014 a continuous battery-performance rating well suited to range filtering ('at least X CCA').",
+      "abstain": false
+    },
+    {
+      "key": "filter_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup",
+        "contains"
+      ],
+      "aliases": [
+        "panel air filter",
+        "cylindrical filter"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.92,
+      "evidence": "Only 2 distinct non-numeric values ('Cylindrical','Panel') across 150 occurrences, numeric_parseable_fraction 0 \u2014 clear low-cardinality shape descriptor enum.",
+      "abstain": false
+    },
+    {
+      "key": "group_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "group size 35 battery",
+        "group 24F battery",
+        "battery group size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "3 distinct values ('24F','35','65'), numeric_parseable_fraction 0.66 (partial due to alpha suffix on '24F') \u2014 matches the standardized BCI battery group-size code system, a common shopper filter.",
+      "abstain": false
+    },
+    {
+      "key": "heat_range",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "heat range 6 spark plug",
+        "colder spark plug",
+        "hotter spark plug"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.65,
+      "evidence": "5 distinct single-digit numeric values ('4'-'8'), numeric_parseable_fraction 1, mean_value_length 1 \u2014 consistent with spark plug heat range ordinal scale; low cardinality makes bitmap_enum a plausible alternate primitive.",
+      "abstain": false
+    },
+    {
+      "key": "lumens",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "1000 lumen bulb",
+        "bright headlight bulb",
+        "high lumens"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction=1, uniqueness_ratio 0.94 (141 distinct of 150), samples '1004'-'1041' \u2014 a continuous light-output measurement, name itself ('lumens') is unambiguous.",
+      "abstain": false
+    },
+    {
+      "key": "material",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup",
+        "contains"
+      ],
+      "aliases": [
+        "aluminum radiator",
+        "copper brass radiator"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "Only 2 distinct values ('Aluminum','Copper-Brass'), numeric_parseable_fraction 0, mean_value_length 9.76 \u2014 standard construction-material enum, commonly filtered by shoppers.",
+      "abstain": false
+    },
+    {
+      "key": "material_grade",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup",
+        "contains"
+      ],
+      "aliases": [
+        "ceramic brake pads",
+        "semi-metallic brake pads",
+        "organic brake pads"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "3 distinct values ('Ceramic','Organic','Semi-Metallic'), numeric_parseable_fraction 0 \u2014 matches brake-pad friction material grade taxonomy, a well-known shopper filter.",
+      "abstain": false
+    },
+    {
+      "key": "micron_rating",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "10 micron oil filter",
+        "fine filtration filter"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction=1, 31 distinct values (ratio 0.207), samples '10'-'14' consecutive integers \u2014 a filtration-fineness measurement supporting range queries.",
+      "abstain": false
+    },
+    {
+      "key": "oem_or_aftermarket",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "OEM part",
+        "aftermarket part"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "Exactly 2 distinct values ('Aftermarket','OEM') across all 1500 occurrences (uniqueness_ratio 0.0013) \u2014 present on every record, a universal binary provenance enum widely used as a shopper filter.",
+      "abstain": false
+    },
+    {
+      "key": "part_number",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.95,
+      "evidence": "1497 distinct values across 1500 occurrences (uniqueness_ratio 0.998, near 1:1), structured alphanumeric codes ('AM-1026-CB' etc.), and variant_scoped=true \u2014 a per-variant SKU identifier commonly used for exact-match lookup.",
+      "abstain": false
+    },
+    {
+      "key": "position",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "front brake pads",
+        "rear brake pads"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.88,
+      "evidence": "Only 2 distinct values ('Front','Rear') over 300 occurrences, numeric_parseable_fraction 0 \u2014 a standard fitment-position enum used to disambiguate part placement, product-scoped per variant_scoped=false.",
+      "abstain": false
+    },
+    {
+      "key": "size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "18 inch size",
+        "size 20"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.55,
+      "evidence": "numeric_parseable_fraction=1, 13 distinct consecutive integer values ('16'-'20' shown), moderate uniqueness_ratio 0.087 \u2014 a numeric dimension field, though the generic key name leaves the exact unit/product context ambiguous.",
+      "abstain": false
+    },
+    {
+      "key": "thread_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "14mm spark plug",
+        "12mm thread size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "3 distinct values ('10mm','12mm','14mm'), numeric_parseable_fraction 0 because of the embedded unit suffix \u2014 a discrete thread-size spec (e.g. spark plug fitment).",
+      "abstain": false
+    },
+    {
+      "key": "voltage",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.55,
+      "evidence": "Only 1 distinct value ('12') observed across 150 occurrences (uniqueness_ratio 0.0067) \u2014 a constant in this sample with no discriminating power for filtering, though it is numerically typed.",
+      "abstain": false
+    },
+    {
+      "key": "warranty_months",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "36 month warranty",
+        "5 year warranty",
+        "24 month warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "4 distinct numeric tiers ('12','24','36','60') across all 1500 occurrences, numeric_parseable_fraction 1, and variant_scoped=true \u2014 a per-variant warranty duration commonly filtered ('at least N months').",
+      "abstain": false
+    }
+  ]
+}

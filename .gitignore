@@ -6,7 +6,12 @@ Cargo.lock.bak
 
 # Round 1: large downloaded datasets and external baseline binaries.
 # Reproducible from docs/experiments/ROUND1_LOG.md, never committed.
-/dataset_cache/
+/dataset_cache/*
+# Issue #42 E2b exception: frozen offline-LLM-proposal JSON artifacts are
+# NOT a reproducible download -- they are the actual experimental
+# evidence (Issue #42 rule 8: preserve raw artifacts) and must be
+# committed, unlike the rest of dataset_cache/.
+!/dataset_cache/export/
 __pycache__/
 *.pyc
 

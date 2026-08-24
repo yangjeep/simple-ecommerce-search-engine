@@ -155,6 +155,15 @@ module before this fix and have not been re-audited (GitHub Issue #43,
 not silently left unmentioned). Full detail:
 `docs/experiments/ISSUE38_LOG.md`'s "Second correction round" section.
 
+**Frozen baseline**: PR #39 merged cleanly (CI green on its final
+commit, no unresolved correctness/methodology issue) into
+`claude/issue-34-phase9-defect-fixes-wands` as merge commit
+**`fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6`**. Per Issue #42's own
+governance, this SHA is the immutable E1-E3 baseline for every R1/R2/R3
+treatment comparison from this point forward
+(`docs/experiments/ISSUE42_PROTOCOL.md`'s Phase 0 section) and must not
+be silently changed.
+
 ## The E1 verdict, stated precisely
 
 **PASSES**, via B2. The naive B design's failure was real and

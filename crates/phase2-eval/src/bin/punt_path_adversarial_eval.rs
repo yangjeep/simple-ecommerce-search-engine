@@ -130,6 +130,7 @@ impl LexicalDelegate for TantivyDelegate<'_> {
                 Some(LexicalHit {
                     product,
                     score: score as f64,
+                    variant: None,
                 })
             })
             .collect()
@@ -209,6 +210,7 @@ fn main() -> tantivy::Result<()> {
         Some(&delegate),
         K,
         &policy,
+        None,
     );
     println!("first call: {} hits returned (k={K})", hits.len());
 
@@ -224,6 +226,7 @@ fn main() -> tantivy::Result<()> {
                 Some(&delegate),
                 K,
                 &policy,
+                None,
             ));
         },
         30,

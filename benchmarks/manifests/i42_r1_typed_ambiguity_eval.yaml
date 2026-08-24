@@ -1,0 +1,176 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I42-R1
+phase: issue-42
+issue: 42
+decision_document: docs/experiments/ISSUE42_LOG.md#i42-r1
+claim: >
+  Issue #42 R1: does a treatment for typed ambiguity (a numeric-shaped
+  token, e.g. "34", that both compile()'s hard-coded "size N" keyword
+  branch AND the phrase lexicon can separately resolve, to genuinely
+  different AttributeValue kinds -- Enum for apparel sizing, Numeric for
+  automotive sizing) eliminate the recall gap E3/issue #40 measured,
+  without introducing new wrong-family false positives, and at
+  acceptable serving overhead?
+
+  Four treatments, run against the real, unmodified production pipeline
+  (ir::query::compile -> plan::execute_planned) via issue42-eval's own
+  experimental boundary (r1_experimental.rs -- neither compile() nor
+  execute_planned is edited):
+
+  A (real, unmodified compile()): FAILS the GO gate on two independent
+  grounds -- for the uncorroborated ambiguous query ("size 22"), it
+  silently keeps only the Numeric interpretation as the sole hard
+  constraint (no fallback path for the Enum reading at all); and for
+  the corroborated apparel case ("size 22 jeans"), the same
+  unconditional Numeric constraint ANDs against a real ProductType(Jeans)
+  entity constraint and returns *zero* hits, since the Jeans product's
+  own `size` attribute is Enum-typed, not Numeric -- a genuine missed
+  corroborated match, confirming H1-A.
+
+  B (keep both interpretations as separate hard-constraint sub-queries,
+  OR'd via two real execute_planned calls): recovers full correctness on
+  every corroborated case (mean NDCG@10 = 1.0000) and the ambiguous case
+  correctly returns both interpretations, but introduces a real,
+  reproducible wrong-family false positive on a dedicated adversarial
+  case (see "adversarial case" below) -- confirming H1-B. FAILS the GO
+  gate.
+
+  C (demote every interpretation to a Preference::Boost, generalizing
+  P9-E05's existing demotion rule to numeric-keyword-derived constraints):
+  its own preregistered measurement scores far below the 0.95 NDCG bar
+  on corroborated queries (mean 0.3333, 0 wrong-family false positives)
+  and genuinely FAILS the GO gate on that basis. A second-correction-
+  round diagnostic (see below and docs/experiments/ISSUE42_LOG.md) found
+  the *reason* originally attributed to this ("never uses corroborating
+  context to select an interpretation") was materially incomplete: an
+  isolated variant of C that differs only in not pushing the demoted
+  token into residual_lexical (avoiding execute_planned's strict
+  residual-lexical veto, the same mechanism R2 exists to address) scores
+  a perfect 1.0000 -- identical to D -- on the same rows. Most of C's
+  measured NDCG gap vs. D on this fixture is attributable to that
+  confound, not to a difference in corroboration-awareness; see the
+  second-correction-round note for the resulting disclosed limitation.
+
+  D (like C, but selects exactly one interpretation as the hard
+  constraint when a corroborating ProductType entity is present AND the
+  real materialized catalog confirms that interpretation's attribute
+  kind is actually registered on that product type -- falling back to
+  C's demotion otherwise): achieves every correctness criterion the
+  protocol's GO gate requires -- corroborated mean NDCG@10 = 1.0000,
+  zero wrong-family false positives, correct fallback-to-demotion
+  behavior for the uncorroborated case, zero hard constraints surviving
+  either negative case -- but FAILS the <=5% latency-overhead bar,
+  consistently measuring 13.6%-17.8% overhead vs Treatment A across this
+  pass's 5 independent runs (median-of-7-trials each; 10.2%-18.0%
+  combined with an earlier batch of 5 runs before this pass's diagnostic
+  section was added -- see second-correction-round note), attributable
+  to this specific experimental implementation's O(catalog-size)
+  `constraint_kind_registered_on_product_type` scan run per query rather
+  than precomputed once at ingestion (as CatalogProfile already does for
+  other lexicon data) -- a real, disclosed implementation-cost finding,
+  not a defect in the corroboration *concept* itself.
+
+  **Second correction round (adversarial review, before this PR was
+  merged)**: a fresh reviewer with no implementation task found (1) the
+  latency-overhead ranges first published here and in
+  docs/experiments/ISSUE42_LOG.md did not match the raw run artifacts
+  cited as their source -- fixed by regenerating a fresh 5-run batch and
+  citing only numbers read directly from the committed files, and by
+  disclosing that even the corrected median-of-7 latency methodology
+  still shows real run-to-run (not just within-run) variance at this
+  catalog's few-microsecond absolute scale; (2) this manifest's own "10
+  independent runs" claim, inconsistent with every other document's "5";
+  (3) a test-count error (7, not 9, issue42-eval::r1_workload tests);
+  (4) the Treatment C causal-explanation confound described above,
+  confirmed via a new resolve_c_isolated_no_residual_push diagnostic;
+  (5) a missing unit-test branch for row1_does_not_silently_pick_one_family.
+  All five independently reproduced before being fixed. None reverses
+  the REVISE verdict or which treatment is retained. Full detail:
+  docs/experiments/ISSUE42_LOG.md's "Second correction round" section.
+
+  **Adversarial case for Treatment B** (Issue #42 rule 4: every
+  treatment needs a case capable of disproving it, not just cases it
+  happens to pass): a "Bolt Kits" product carries an unrelated attribute
+  (`thread_count`) whose value coincidentally shares the same literal
+  text ("22") as the ambiguous size value. `lexicon_alternatives`
+  returns every Attribute-typed lexicon candidate for a raw token, not
+  only ones named "size" -- so Treatment B's "keep every alternative as
+  a hard constraint" mechanism incorrectly admits this product for the
+  uncorroborated query "size 22", a genuine wrong-family/wrong-
+  interpretation false positive C/D never produce.
+
+  **Terminal verdict: REVISE.** No treatment clears every preregistered
+  GO-gate threshold. Treatment D is the closest -- it is the only one
+  that passes every correctness/wrong-family/fallback criterion -- and
+  fails solely on a measured, explicable, plausibly-fixable
+  implementation-cost dimension (an O(catalog) per-query scan this
+  specific experimental code takes, not an inherent property of
+  "corroboration" as a mechanism). Current production behavior (A) is
+  retained; D is not adopted in this pass. Full detail:
+  `docs/experiments/ISSUE42_LOG.md`'s "I42-R1" section.
+
+git_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+binary: crates/issue42-eval/src/bin/r1_typed_ambiguity_eval.rs
+build_command: cargo build --release -p issue42-eval
+run_command: |
+  ./target/release/r1_typed_ambiguity_eval [output_summary_json_path]
+
+dataset:
+  name: a small, fully hand-specified fixture (5 products, one per
+    interpretation this experiment needs) -- deliberately NOT a
+    modification of the frozen apparel/automotive generators supporting
+    the E1-E3 baseline. See ISSUE42_PROTOCOL.md's dated correction for
+    why the frozen generators cannot produce a genuinely ambiguous value
+    (apparel's real Jeans sizes and automotive's real Wiper Blades size
+    range never numerically overlap).
+  source: crates/issue42-eval/src/r1_workload.rs::build_typed_ambiguity_catalog
+  size: 5 products (Jeans/Wiper Blades/Brake Pads/Small Parts/Bolt Kits
+    product types), 1 variant each
+
+engine:
+  native: commerce_core::ir::query::compile -> commerce_core::plan::execute_planned
+    (unmodified production pipeline, called via issue42_eval::r1_experimental)
+  lexical_delegate: phase9_eval::bitmap_delegate::BitmapTantivyDelegate
+    (reused from Phase 9, not reimplemented)
+
+workload:
+  queries: 9 rows (docs/experiments/ISSUE42_PROTOCOL.md's R1 workload
+    table, rows 1-7/9/10; row 8's same-token-four-ways stress case is
+    covered by issue42-eval's own r1_workload::build() fixture and unit
+    tests, not this binary's GO-gate evaluation)
+  ground_truth: every claimed positive/negative independently re-derived
+    via issue42_eval::oracle (never a generator's own judgment map);
+    issue42_eval::regression::assert_positive called at binary startup
+    for rows 1/2/3/6 before any treatment runs
+  policy: PlannerPolicy { selectivity_threshold: 0.05, delegate_oversample: 20 }
+  min_enum_frequency: 1
+
+seed: "fully hand-specified fixture, no RNG -- deterministic by
+  construction (docs/experiments/ISSUE42_PROTOCOL.md's correction note
+  explains why an RNG-based generator was not used here)"
+
+latency_methodology: >
+  Median of 7 independent trials, each trial a 200-call std::hint::black_box-guarded
+  batch per row (same discipline as Issue #38's E1). A single-batch
+  measurement was found, before any verdict was recorded, to occasionally
+  report NEGATIVE overhead for Treatment B relative to A despite B
+  provably doing strictly more work (two real execute_planned calls, not
+  one) -- a clear sign the single-batch measurement floor had been
+  reached at this fixture's few-microsecond absolute scale. Taking the
+  median of several independent batches within one run eliminates that
+  *within-run* sign-flip, but does NOT eliminate *cross-run* (separate
+  process invocation) variance at this scale: an adversarial review
+  found this pass's first published ranges did not match the raw
+  artifacts cited as their source, and a fresh batch of 5 runs shows a
+  materially different (though overlapping) range than an earlier batch
+  of 5 -- both are disclosed in docs/experiments/ISSUE42_LOG.md's
+  "Second correction round" rather than only the more favorable one.
+
+raw_results: docs/research/artifacts/i42_r1_run1/
+  - main_run{1,2,3,4,5}.txt (5 independent full runs)
+  - summary.json / summary_run{2,3,4,5}.json (machine-readable per-run summaries)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/ISSUE42_LOG.md's "I42-R1" section for the full
+  hypothesis-by-hypothesis breakdown and the REVISE verdict.

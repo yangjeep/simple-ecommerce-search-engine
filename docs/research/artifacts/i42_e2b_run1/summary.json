@@ -1,0 +1,69 @@
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baselines": [
+    {
+      "abstention_rate": 0.0,
+      "accepted_structural_precision": 0.9782608695652174,
+      "accepted_structural_recall": 1.0,
+      "label": "Baseline 1: statistics-only",
+      "macro_f1": 0.5366300366300366,
+      "n_accepted_structural": 46
+    },
+    {
+      "abstention_rate": 0.0,
+      "accepted_structural_precision": 0.9782608695652174,
+      "accepted_structural_recall": 1.0,
+      "label": "Baseline 2: LLM proposal, no validator",
+      "macro_f1": 0.7985185185185185,
+      "n_accepted_structural": 46
+    },
+    {
+      "abstention_rate": 0.09433962264150944,
+      "accepted_structural_precision": 0.975609756097561,
+      "accepted_structural_recall": 0.8888888888888888,
+      "label": "Baseline 3: LLM + deterministic validator",
+      "macro_f1": 0.7697215532175603,
+      "n_accepted_structural": 41
+    }
+  ],
+  "end_to_end": {
+    "check_reliable": false,
+    "llm_plus_validator": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    },
+    "oracle": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    },
+    "relative_ndcg_gap_llm_plus_validator_vs_oracle": 0.0,
+    "statistics_only": {
+      "mean_match_set_size": 21.3,
+      "n_queries_scored": 270,
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    }
+  },
+  "experiment_id": "I42-E2b",
+  "go_gate": {
+    "go": false,
+    "real_feed_evidence": true,
+    "recall_significant_ge_80pct": 0.868421052631579,
+    "relevance_check_reliable": false,
+    "relevance_within_5pct": true,
+    "stability_ge_90pct": false,
+    "zero_unsafe_accepted": true
+  },
+  "macro_f1_by_configuration": {
+    "automotive": 0.2597402597402597,
+    "wands_anonymized": 0.4899932758726084,
+    "wands_baseline": 0.6752595775152166,
+    "wands_noisy": 0.6573402146481185
+  },
+  "repeated_run_agreement": 0.856,
+  "unsafe_accepted_count": 0
+}

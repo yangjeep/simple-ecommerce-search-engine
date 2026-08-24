@@ -1,0 +1,740 @@
+{
+  "configuration": "wands_baseline",
+  "run_index": 2,
+  "descriptors": [
+    {
+      "key": "overallproductweight",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "lightweight",
+        "under 50 lbs",
+        "heavy duty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.8,
+      "evidence": "numeric_parseable_fraction 0.9996 and short mean length (2.95) match decimal weight values (e.g. '.25'); 6071 distinct values over 57110 rows with low uniqueness (0.106) is typical of a continuous physical measurement shared across many SKUs/sizes. Shoppers rarely type an exact weight, so this is mainly a ranking/logistics signal rather than a primary filter.",
+      "abstain": false
+    },
+    {
+      "key": "overallwidth-sidetoside",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "narrow",
+        "60 inches wide",
+        "compact width"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction 0.9993, decimal-only samples ('.5','.66','0.1'), 2734 distinct values. Width is a well-known fit-driven search/filter dimension in furniture (e.g. 'fits a 30 inch space'), unlike weight.",
+      "abstain": false
+    },
+    {
+      "key": "overallheight-toptobottom",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "tall",
+        "short",
+        "counter height"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction 0.9999, decimal-only samples, name explicitly denotes vertical dimension; height range filters ('under 30 inches') are common for furniture that must fit under windows/shelves.",
+      "abstain": false
+    },
+    {
+      "key": "overalldepth-fronttoback",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "shallow depth",
+        "deep",
+        "small footprint"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction is a full 1.0 and all samples are pure decimals; depth is the standard third furniture dimension shoppers filter on for space fit, alongside width/height.",
+      "abstain": false
+    },
+    {
+      "key": "weightcapacity",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "holds up to 300 lbs",
+        "weight capacity",
+        "heavy duty support"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "numeric_parseable_fraction 0.9997 with decimal samples; the visible sample values (0, 0.01, 0.2...) look implausibly small for a real load rating and are likely just the lexicographically-smallest examples rather than typical values. Weight capacity ('holds up to X lbs') is a genuine real filter for chairs/shelving/step-stools.",
+      "abstain": false
+    },
+    {
+      "key": "estimatedtimetosetup",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range"
+      ],
+      "aliases": [
+        "quick assembly",
+        "under 30 minutes",
+        "no assembly time"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.7,
+      "evidence": "numeric_parseable_fraction 0.9991, low mean length (2.03) and small integer samples (0,1,10,100) consistent with minutes; assembly time is a genuine shopper concern, though the unit itself is inferred, not stated in the field.",
+      "abstain": false
+    },
+    {
+      "key": "commercialwarranty",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "commercial warranty",
+        "commercial grade"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "Exactly 2 distinct values ('no'/'yes'), numeric_parseable_fraction 0.0, uniqueness_ratio ~0 -- clearly boolean. 'Commercial' framing suggests a B2B/procurement concern more than a typical consumer filter, so treated as secondary rather than primary retrieval facet.",
+      "abstain": false
+    },
+    {
+      "key": "adultassemblyrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "assembly required",
+        "no assembly needed"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "2 distinct values, no numeric parse, self-explanatory name; 'no assembly required' is a very common real shopper filter phrase. Overlaps with installationrequired/levelofassembly/estimatedtimetosetup as one of several assembly-related fields in this feed.",
+      "abstain": false
+    },
+    {
+      "key": "organic",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "organic",
+        "organic cotton",
+        "organic material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "3 distinct values ('','no','yes') where '' is missing/unknown rather than a real third state; 'organic' is a well-known merchandising facet actively searched in home textiles.",
+      "abstain": false
+    },
+    {
+      "key": "firerated",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "fire rated",
+        "fire resistant",
+        "flame retardant"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "3 distinct values ('','no','yes') matching the same yes/no-with-missing pattern as organic/installationrequired; fire-rating matters mainly for mattresses/hospitality/code-compliance buyers, a narrower but still real audience.",
+      "abstain": false
+    },
+    {
+      "key": "drawersincluded",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "with drawers",
+        "storage drawers",
+        "dresser with drawers"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "Exactly 2 distinct values, no empty/missing sample shown, numeric_parseable_fraction 0.0; 'with drawers' is an extremely common furniture query for nightstands/dressers/console tables.",
+      "abstain": false
+    },
+    {
+      "key": "upholstered",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "upholstered",
+        "upholstered headboard",
+        "fabric covered"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "2 distinct values, clean yes/no; 'upholstered' is a standard, high-frequency furniture search term (upholstered bed/chair/headboard).",
+      "abstain": false
+    },
+    {
+      "key": "installationrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "installation required",
+        "no installation needed"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "3 distinct values ('','no','yes'); conceptually overlaps with adultassemblyrequired/levelofassembly in this feed (multiple redundant assembly-related fields), but still a plausible direct shopper filter on its own.",
+      "abstain": false
+    },
+    {
+      "key": "style",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "modern",
+        "farmhouse",
+        "traditional",
+        "mid century modern",
+        "coastal",
+        "rustic"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "70 distinct low-cardinality descriptive phrases ('american traditional','antik','asian inspired'), 0.0 numeric fraction; style is one of the primary facets in furniture merchandising/navigation.",
+      "abstain": false
+    },
+    {
+      "key": "dsprimaryproductstyle",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "boho",
+        "coastal",
+        "farmhouse",
+        "modern"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "Only 16 distinct values vs. 70 for the raw 'style' field -- the 'ds' prefix and much lower cardinality suggest an internally curated/normalized canonical style taxonomy (likely used for site navigation facets) that overlaps with, but is cleaner than, 'style'.",
+      "abstain": false
+    },
+    {
+      "key": "countryoforigin",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "made in usa",
+        "imported",
+        "made in china"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "71 distinct values that are literal country names (afghanistan, argentina, australia...), 0.0 numeric fraction; some shoppers explicitly filter 'made in USA', a known real query pattern.",
+      "abstain": false
+    },
+    {
+      "key": "levelofassembly",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "full assembly",
+        "no assembly",
+        "minimal assembly",
+        "some assembly required"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "10 distinct values mixing short tokens ('full','light') with longer phrases ('full assembly needed'), suggesting free-form variation within a small controlled vocabulary; overlaps substantially with adultassemblyrequired/installationrequired/estimatedtimetosetup as redundant assembly-related fields.",
+      "abstain": false
+    },
+    {
+      "key": "dswoodtone",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "espresso",
+        "dark wood",
+        "light wood",
+        "gray wood finish"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "Only 9 distinct values, all short wood-tone descriptors ('dark brown wood','espresso wood','light wood'); the 'ds' prefix again suggests a curated taxonomy. Sample includes a misspelling ('esptresso wood') alongside the correct spelling, showing the underlying values are merchant-entered text needing normalization. Wood tone is a common variant selector and search term.",
+      "abstain": false
+    },
+    {
+      "key": "primarymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "cotton",
+        "solid wood",
+        "rattan",
+        "porcelain",
+        "metal"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "250 distinct values, but samples show compound 'percentage + material' composition strings ('100 % medium density fiberboard','100 % water hyacinth') rather than clean single tokens, so exact-match filtering needs normalization first. Material type (wood/metal/rattan) is nonetheless a core furniture search facet, hence contains is included alongside eq.",
+      "abstain": false
+    },
+    {
+      "key": "framematerial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "wood frame",
+        "metal frame",
+        "aluminum frame",
+        "solid wood construction"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "77 distinct short material tokens ('acacia wood','acrylic','aluminium','aluminum'); both British and American spellings of aluminum appear as separate raw values, showing the enum needs synonym-folding. Frame construction material is a real durability-driven search facet.",
+      "abstain": false
+    },
+    {
+      "key": "shape",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "round",
+        "oval",
+        "rectangular",
+        "abstract shape"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "99 distinct values mixing plain geometric terms with decor-specific shape descriptors ('amphora','arabesque'), consistent with a home-goods catalog spanning tables/rugs/mirrors as well as vases/decor where 'shape' means something different per item type. Shape (round/oval/rectangular) is a common filter specifically for tables, rugs and mirrors.",
+      "abstain": false
+    },
+    {
+      "key": "pattern",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "floral",
+        "geometric pattern",
+        "striped",
+        "solid color"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "93 distinct descriptive values; one literal sample is the bracketed placeholder '[ doesnotapply ]', a feed-template sentinel that leaked into the data as a real value instead of being blanked -- a data-quality quirk worth normalizing away. Pattern (floral/geometric/striped) is a real search facet for rugs, textiles and upholstery.",
+      "abstain": false
+    },
+    {
+      "key": "color",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "blue",
+        "gray",
+        "black",
+        "white",
+        "taupe"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.55,
+      "evidence": "Color is normally one of the highest-value shopper search facets, but this field's own samples are unusually dirty: a bare '0', a lone ';', and a bracketed cross-reference placeholder '[ tied to : color ]' (suggesting some rows literally point back at another color attribute instead of holding a value), plus multi-item composites ('2 taupe , 2 teal , 2 white') for set/bundle listings. Distinct-value count (4686) is also far higher than the more curated-looking 'basecolor' (1613), implying 'color' is the noisier, less-normalized of the two color fields.",
+      "abstain": false
+    },
+    {
+      "key": "basecolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "brass",
+        "walnut",
+        "gold",
+        "black",
+        "chrome"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.65,
+      "evidence": "Sample values ('acacia','acrylic','aged brass') are actually material/finish names rather than basic hues -- common in furniture/hardware where 'color' is conventionally named after the material or plating (brass, walnut, espresso). Distinct count (1613) and uniqueness ratio (0.198) are unusually high for a simple color enum, consistent with fine-grained finish-as-color naming; overlaps with 'finish' (shared sample values like 'acrylic'/'aged brass').",
+      "abstain": false
+    },
+    {
+      "key": "finish",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "brushed nickel",
+        "matte black",
+        "chrome",
+        "espresso finish"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "Samples ('acrylic','aged ash','aged brass') overlap heavily with basecolor's samples, indicating real redundancy between the two fields in this feed; a stray numeric '0' value also appears despite numeric_parseable_fraction being near zero. Finish (brushed nickel, matte black) is nonetheless a genuine hardware/furniture search facet.",
+      "abstain": false
+    },
+    {
+      "key": "upholsterymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains",
+        "eq"
+      ],
+      "aliases": [
+        "velvet",
+        "leather",
+        "linen",
+        "polyester upholstery"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.7,
+      "evidence": "Samples include long multi-component composition strings ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame') rather than single clean tokens, so exact bitmap matching would misfire without normalization -- keyword/contains search over the compound text is safer. Fabric type (velvet/leather/linen) is nonetheless a heavily-searched furniture attribute.",
+      "abstain": false
+    },
+    {
+      "key": "upholsterycolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "espresso upholstery",
+        "two-tone brown",
+        "latte"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "High uniqueness ratio (0.298) combined with a sample value that looks like a raw internal fabric code repeated with a separator ('0354-92 ; 0354-92') indicates the field mixes shopper-readable color descriptions ('2-tone brown','2-tone latte') with unnormalized internal SKU/fabric codes -- lowering confidence that every value is directly shopper-searchable without cleanup.",
+      "abstain": false
+    },
+    {
+      "key": "productwarranty",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "1 year warranty",
+        "lifetime warranty",
+        "limited warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.45,
+      "evidence": "Reported distinct_values is only 7, yet the visible samples are highly heterogeneous -- from short tokens ('90 days','lifetime') to a full run-on sentence containing an embedded support URL ('...for customer support please go to https ://blazinwheelssupport.com/') -- which is hard to reconcile with just 7 distinct values and casts doubt on the reliability of the stats for this field. Also overlaps semantically with fullorlimitedwarranty and warrantylength. Given the visible free-text contamination, this is safer modeled as lexically searched text than as a clean filterable enum.",
+      "abstain": false
+    },
+    {
+      "key": "fullorlimitedwarranty",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "full warranty",
+        "limited warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "12 distinct values, mostly short and clean ('full','limited','full warranty') with at least one longer phrase ('1 year limited warranty') bleeding in from adjacent warranty fields; overlaps with productwarranty and warrantylength -- three separate warranty-related columns describing overlapping concepts (type vs. duration vs. free-text coverage).",
+      "abstain": false
+    },
+    {
+      "key": "warrantylength",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "1 year warranty",
+        "5 year warranty",
+        "lifetime warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.55,
+      "evidence": "112 distinct values ranging from a bare number ('1') to short phrases ('1 year') to full sentences ('1 year from the date of purchase.'), so despite the name implying a simple duration, the raw data is not cleanly structured; numeric_parseable_fraction is only 0.0003 even though many values start with a digit, meaning the number is usually attached to text rather than standalone. Overlaps with productwarranty/fullorlimitedwarranty.",
+      "abstain": false
+    },
+    {
+      "key": "title",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "vintage map print",
+        "wall art",
+        "floral print"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.65,
+      "evidence": "Very high uniqueness ratio (0.903) and long descriptive multi-word samples ('a pelican and other birds near a pool the floating feather 1680') read like individual artwork/print titles rather than a generic product-name field. Occurrences (546) is far lower than almost every other field in this feed, suggesting 'title' is populated only for a narrow subset of products (e.g. wall art/prints) rather than being a universal product-name column -- a coverage anomaly worth flagging.",
+      "abstain": false
+    },
+    {
+      "key": "productcare",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "machine washable",
+        "spot clean only",
+        "easy to clean"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.7,
+      "evidence": "3500 distinct values with a high mean length (50.76 chars) and full-sentence instructional samples (quoted cleaning directions); unstructured care-instruction text, occasionally searched via keywords like 'machine washable' but mostly informational rather than a primary shopper filter.",
+      "abstain": false
+    },
+    {
+      "key": "piecesincluded",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "comes with",
+        "set of",
+        "what's included"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.6,
+      "evidence": "Long comma-separated, parenthetical-quantity descriptions ('( 1 ) stand mixer , ( 1 ) 6 quart bowl , ... splash guard , pouring shield') rather than a clean list of item IDs; numeric_parseable_fraction of 0.1118 suggests a minority of rows are just a bare piece count. Shoppers do sometimes care what's bundled, giving this some retrieval value via keyword search, but it is not a clean facet.",
+      "abstain": false
+    },
+    {
+      "key": "samplepartnumber",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.55,
+      "evidence": "uniqueness_ratio 0.9785 (near one-to-one with occurrences) is a classic identifier signature, but the name ('sample' + 'part number') strongly suggests an internal reference -- either the part number of the physical sample unit used for photography/QA, or possibly a separately-orderable fabric/material swatch -- rather than a value any shopper would know or type. One sample value ('# ref !') closely resembles a leaked spreadsheet '#REF!' error, reinforcing an internal/pipeline origin. Genuinely ambiguous which internal meaning applies, but either way it reads as not meant for shopper search.",
+      "abstain": false
+    },
+    {
+      "key": "compatibledrainassemblypartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": "the manufacturer part number of a compatible drain assembly component (e.g. for a sink or tub) that fits this product -- it identifies a separate, related part rather than describing this product itself.",
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.75,
+      "evidence": "Name explicitly says 'compatible drain assembly part number', naming a different component than the product row it lives on; occurrences is only 161 (a narrow plumbing-fixture subset of the catalog), and numeric_parseable_fraction of 0.1304 with mixed alphanumeric samples ('140780','1795') is consistent with manufacturer part codes. Useful mainly for exact-code compatibility lookup rather than descriptive search.",
+      "abstain": false
+    },
+    {
+      "key": "compatiblediningchairpartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": "the part/model number of a compatible dining chair product meant to pair with this item (e.g. a dining table) -- a reference to a separate related product, not an attribute of this product itself.",
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.75,
+      "evidence": "uniqueness_ratio of exactly 1.0 with occurrences==distinct_values (71==71) confirms every populated value is unique, the signature of an identifier rather than a descriptive attribute; the name explicitly references a different product type (dining chair) than whatever product this row describes. One sample ('01-0619-884-01/01-0619-885-01') bundles two slash-separated codes, suggesting a compound reference to more than one compatible chair/finish.",
+      "abstain": false
+    }
+  ]
+}

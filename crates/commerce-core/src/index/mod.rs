@@ -6,6 +6,7 @@
 //! so they narrow-then-verify against the reduced candidate set instead of
 //! ever being silently skipped or approximated — see [`CatalogIndex::execute`].
 
+mod identifier;
 mod rank;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -18,6 +19,10 @@ use crate::domain::{
 };
 use crate::ir::{CommerceQuery, ResolvedConstraint, StructuralConstraint};
 
+pub use identifier::{
+    compute_field_stats, FieldStats, IdentifierClassifier, IdentifierDictionary,
+    MIN_IDENTIFIER_SAMPLE_SIZE, MIN_UNIQUENESS_RATIO,
+};
 pub use rank::RankedHit;
 
 type Ordinal = u32;
@@ -77,6 +82,16 @@ pub struct CatalogIndex {
     product_type_column: Vec<u32>,
 
     lexical_postings: HashMap<String, RoaringBitmap>,
+
+    // Issue #42 R3 (`docs/experiments/ISSUE42_LOG.md#i42-r3`,
+    // `docs/adr/0013-identifier-serving-primitive.md`): one
+    // `IdentifierDictionary` per catalog field `IdentifierClassifier`
+    // accepts, built once alongside every other index structure. A `Vec`,
+    // not a `HashMap` keyed by field name: the number of accepted fields
+    // is expected to be tiny (R3's own held-out catalog accepted exactly
+    // one of 18 candidate fields), so a linear scan in `identifier_lookup`
+    // costs nothing measurable and needs no extra hashing machinery.
+    identifier_dictionaries: Vec<(String, IdentifierDictionary)>,
 }
 
 /// Split text into lowercased alphanumeric tokens. Public so callers that
@@ -190,6 +205,22 @@ impl CatalogIndex {
             }
             idx.enum_columns.insert(attribute, column);
         }
+
+        // Issue #42 R3 (`docs/experiments/ISSUE42_LOG.md#i42-r3`,
+        // `docs/adr/0013-identifier-serving-primitive.md`): a second,
+        // independent O(products x variants) scan over `catalog` --
+        // disclosed as a real, small added build cost, not hidden (see the
+        // ADR's Consequences section) -- to measure per-field statistics
+        // and build a dictionary for every field the calibrated classifier
+        // accepts.
+        for stats in identifier::compute_field_stats(catalog).values() {
+            if IdentifierClassifier::accepts(stats) {
+                let dictionary = IdentifierDictionary::build(catalog, &stats.field);
+                idx.identifier_dictionaries
+                    .push((stats.field.clone(), dictionary));
+            }
+        }
+
         idx
     }
 
@@ -274,6 +305,30 @@ impl CatalogIndex {
     pub fn lookup_product<'c>(&self, catalog: &'c Catalog, id: ProductId) -> Option<&'c Product> {
         let &p_idx = self.product_location.get(&id)?;
         Some(&catalog.products[p_idx])
+    }
+
+    /// Issue #42 R3 (`docs/experiments/ISSUE42_LOG.md#i42-r3`,
+    /// `docs/adr/0013-identifier-serving-primitive.md`): exact identifier
+    /// lookup across every field `IdentifierClassifier` accepted at build
+    /// time. Returns the UNIONED, DEDUPLICATED set of `(ProductId,
+    /// VariantId)` pairs any accepted dictionary maps `token` to -- a real
+    /// collision (two variants sharing one identifier value, possibly
+    /// across two different accepted fields) surfaces every match, never
+    /// silently arbitrated to one. Empty when `token` matches no accepted
+    /// field's dictionary at all, including when this catalog has no
+    /// accepted fields whatsoever.
+    pub fn identifier_lookup(&self, token: &str) -> Vec<(ProductId, VariantId)> {
+        let mut hits: BTreeSet<(ProductId, VariantId)> = BTreeSet::new();
+        for (_, dictionary) in &self.identifier_dictionaries {
+            hits.extend(dictionary.lookup(token));
+        }
+        hits.into_iter().collect()
+    }
+
+    /// How many catalog fields `IdentifierClassifier` accepted (and
+    /// therefore have a dictionary built for them) at build time.
+    pub fn identifier_field_count(&self) -> usize {
+        self.identifier_dictionaries.len()
     }
 
     /// The bitmap ordinal assigned to `variant_id` at build time, if it
@@ -902,4 +957,121 @@ fn numeric_range(sorted: &[(f64, Ordinal)], op: NumericOp, value: f64) -> Roarin
         NumericOp::Gte => &sorted[lo..],
     };
     slice.iter().map(|&(_, ord)| ord).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::identifier;
+    use super::*;
+    use crate::domain::{attributes, AttributeValue, BrandId, CategoryId, Inventory, Price};
+
+    /// Builds a catalog of `n` single-variant products, each carrying a
+    /// distinct, variant-scoped value for `field` -- shaped exactly like a
+    /// real identifier field (uniqueness_ratio == 1.0, variant_scoped ==
+    /// true) regardless of `n`, so the only thing distinguishing an
+    /// "accept" fixture from a "reject" one below is occurrence count.
+    fn identifier_shaped_catalog(n: usize, field: &'static str) -> Catalog {
+        let products = (0..n)
+            .map(|i| Product {
+                id: ProductId(i as u64),
+                product_type: ProductTypeId(1),
+                brand: BrandId(1),
+                category: CategoryId(1),
+                title: format!("Product {i}"),
+                attributes: attributes([]),
+                variants: vec![Variant {
+                    id: VariantId(1000 + i as u64),
+                    attributes: attributes([(field, AttributeValue::Text(format!("ID-{i:06}")))]),
+                    price: Price::usd(1_000),
+                    inventory: Inventory::in_stock(1),
+                }],
+            })
+            .collect();
+        Catalog { products }
+    }
+
+    /// Issue #42 R3 (`docs/experiments/ISSUE42_LOG.md#i42-r3`,
+    /// `docs/adr/0013-identifier-serving-primitive.md`): a catalog with
+    /// well over `MIN_IDENTIFIER_SAMPLE_SIZE` occurrences of a real
+    /// variant-scoped, high-uniqueness field must have `CatalogIndex::build`
+    /// actually populate `identifier_dictionaries` for it, and
+    /// `identifier_lookup` must resolve an exact query to the right
+    /// `(ProductId, VariantId)`.
+    #[test]
+    fn catalog_index_build_populates_an_identifier_dictionary_for_an_accepted_field() {
+        let n = identifier::MIN_IDENTIFIER_SAMPLE_SIZE + 50;
+        let catalog = identifier_shaped_catalog(n, "serial_number");
+        let index = CatalogIndex::build(&catalog);
+
+        assert_eq!(
+            index.identifier_field_count(),
+            1,
+            "exactly one field (serial_number) is present in this fixture, and it clears every \
+             IdentifierClassifier gate"
+        );
+
+        let target = &catalog.products[7];
+        let Some(AttributeValue::Text(value)) = target.variants[0].attributes.get("serial_number")
+        else {
+            panic!("expected Text");
+        };
+        let hits = index.identifier_lookup(value);
+        assert_eq!(
+            hits,
+            vec![(target.id, target.variants[0].id)],
+            "an exact identifier query must resolve to exactly the one (product, variant) pair \
+             that carries it"
+        );
+    }
+
+    /// **Negative case, added as a production-integration safeguard beyond
+    /// R3's own experimental scope** (`docs/adr/0013-identifier-serving-primitive.md`):
+    /// a small catalog (well under `MIN_IDENTIFIER_SAMPLE_SIZE` occurrences)
+    /// with an otherwise identifier-shaped field (uniqueness_ratio == 1.0,
+    /// variant_scoped == true -- exactly what a real identifier looks like)
+    /// must NOT produce an accepted identifier dictionary. RED before
+    /// GREEN: with `IdentifierClassifier::accepts` checking only
+    /// `uniqueness_ratio >= MIN_UNIQUENESS_RATIO && variant_scoped` (R3's
+    /// own held-out-validated condition, pre-safeguard), this field would
+    /// have spuriously cleared both gates purely because `n` occurrences,
+    /// all distinct by construction, always measure uniqueness_ratio ==
+    /// 1.0 regardless of how small `n` is -- confirmed by the two
+    /// `assert!`s below, which hold independently of the safeguard. Only
+    /// the added `total_occurrences >= MIN_IDENTIFIER_SAMPLE_SIZE` gate
+    /// makes the final `accepts`/`identifier_field_count` assertions pass.
+    #[test]
+    fn a_small_catalog_never_spuriously_accepts_an_identifier_shaped_field() {
+        let n = 8;
+        assert!(
+            n < identifier::MIN_IDENTIFIER_SAMPLE_SIZE,
+            "this test's premise is a sample size well under the safeguard's own cutoff"
+        );
+        let catalog = identifier_shaped_catalog(n, "serial_number");
+
+        let stats = identifier::compute_field_stats(&catalog);
+        let field_stats = stats.get("serial_number").unwrap();
+        assert!(
+            field_stats.uniqueness_ratio >= identifier::MIN_UNIQUENESS_RATIO,
+            "premise: this field looks identifier-like on uniqueness ratio alone (a small, \
+             all-distinct sample), got {:.4}",
+            field_stats.uniqueness_ratio
+        );
+        assert!(
+            field_stats.variant_scoped,
+            "premise: this field is variant-scoped, exactly like a real identifier"
+        );
+
+        assert!(
+            !IdentifierClassifier::accepts(field_stats),
+            "MIN_IDENTIFIER_SAMPLE_SIZE must reject a field this sparsely sampled even though \
+             uniqueness ratio and variant scope alone would accept it"
+        );
+        let index = CatalogIndex::build(&catalog);
+        assert_eq!(
+            index.identifier_field_count(),
+            0,
+            "a catalog this small must never produce an accepted identifier dictionary for a \
+             field this sparsely sampled"
+        );
+    }
 }

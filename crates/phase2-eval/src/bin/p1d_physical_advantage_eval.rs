@@ -380,6 +380,7 @@ impl TantivyDelegate<'_> {
                 Some(LexicalHit {
                     product,
                     score: score as f64,
+                    variant: None,
                 })
             })
             .collect();
@@ -673,6 +674,7 @@ fn main() -> tantivy::Result<()> {
                 Some(&delegate),
                 K,
                 &planner_policy,
+                None,
             );
             *outcome_counts
                 .entry(match planned.outcome {
@@ -811,6 +813,7 @@ fn main() -> tantivy::Result<()> {
                     Some(&delegate),
                     K,
                     &planner_policy,
+                    None,
                 );
                 let _ = delegate.search_with_count(std::slice::from_ref(text), None, K);
                 if solr_available {
@@ -835,6 +838,7 @@ fn main() -> tantivy::Result<()> {
                         Some(&delegate),
                         K,
                         &planner_policy,
+                        None,
                     );
                 }
                 Method::TantivyStandalone => {

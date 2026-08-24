@@ -306,6 +306,7 @@ fn main() {
             Some(&delegate),
             K,
             &policy,
+            None,
         );
         let (solr_q, solr_fq) = wands_solr_query_for(
             &q.text,
@@ -344,6 +345,7 @@ fn main() {
             Some(&delegate),
             K,
             &policy,
+            None,
         );
         let native_latency_ms = t0.elapsed().as_secs_f64() * 1000.0;
         let outcome_label = match planned.outcome {

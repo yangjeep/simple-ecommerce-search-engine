@@ -193,6 +193,7 @@ fn main() {
             Some(&delegate as &dyn LexicalDelegate),
             K,
             &policy,
+            None,
         );
     }
 
@@ -249,6 +250,7 @@ fn main() {
             Some(&delegate as &dyn LexicalDelegate),
             K,
             &policy,
+            None,
         );
         latencies_ms.push(t0.elapsed().as_secs_f64() * 1000.0);
 
