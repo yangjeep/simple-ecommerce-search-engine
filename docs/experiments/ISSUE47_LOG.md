@@ -541,11 +541,15 @@ promoted role for all 53 keys, same stability, same recall, same
 abstention -- at meaningfully lower per-call token cost (a same-family,
 smaller/cheaper model than opus). B4 (haiku alone) reaches 98.11%
 agreement with the opus reference (52 of 53 keys identical) at only
-59.5% of B1's own total token cost (97,803 vs. 164,528) -- a real, if
-imperfect, Pareto point: cheaper and only one field's worth of
-disagreement, on the single messiest field in the whole sample. Neither
-B3 nor B4 ever pays for a second tier; the cascade's own failure is
-specific to *cascading*, not to using a cheaper tier at all.
+59.5% of B1's own total token cost (97,803 vs. 164,528) -- cheaper, and
+only one field's worth of disagreement out of 53. **That one field is
+not a random unimportant miss, though**: it is `color`, the oracle's
+own highest-confidence retrieval-significant structural/attribute field
+(§ below has the full evidence) -- so B4's own result reads as a
+real-but-imperfect direction worth the caveat below, not a clean
+Pareto win on its own. Neither B3 nor B4 ever pays for a second tier;
+the cascade's own failure is specific to *cascading*, not to using a
+cheaper tier at all.
 
 #### Phase B GO-gate evaluation (criteria per `ISSUE47_PROTOCOL.md` §B6)
 
@@ -553,29 +557,83 @@ specific to *cascading*, not to using a cheaper tier at all.
    **PASS.**
 2. **Compiled primitive agreement within 1pp of B2** -- by cross-tier
    reading (does tier X's own compiled primitive match B2's, per key):
-   B3 100.00% (0pp gap, **PASS**); B5 100.00% (0pp gap, **PASS**, by
-   escalation construction); **B4 98.11% (1.89pp gap, FAIL** -- just
-   outside the 1pp bar, driven entirely by the single `color` mismatch).
+   B3 100.00% (0pp gap, **PASS**); B5 100.00% (0pp gap, **PASS** by
+   escalation construction on this half); **B4 98.11% (1.89pp gap,
+   FAIL** -- just outside the 1pp bar, driven entirely by the single
+   `color` mismatch). Criterion 2's own text is conjunctive ("within 1pp
+   of B2 **and above the absolute stability floor**" -- Phase A's own
+   99% primitive-agreement bar). Checked separately (own within-tier
+   5-rotation stability, the same reading Phase A used): B3 100.00%,
+   B4 100.00% -- both clear the floor even where they fail the cross-tier
+   half -- but **B5 (the cascade) is 98.87%, 0.13pp under the 99% floor**
+   -- a second, independent FAIL for the cascade this checkpoint's own
+   first draft never checked (found by this section's own adversarial
+   review, below).
 3. **Full canonical descriptor agreement within 1pp of B2** -- same
-   single-key mismatch, same reading: B3/B5 **PASS** (0pp gap), **B4
-   FAIL** (1.89pp gap).
+   single-key mismatch, same two readings: B3/B5 **PASS** cross-tier
+   (0pp gap), **B4 FAIL** (1.89pp gap); own-stability floor (98%): B3/B4
+   clear it (100.00%), **B5 fails it too** (98.87% < 99%, using the same
+   primitive-agreement number since the one B5 instability is a
+   primitive-level flip -- see the adversarial review below for the
+   exact mechanism).
 4. **Retrieval-significant recall within 3pp of B2** -- identical
    92.11% in every treatment (0pp gap in every case, since the one
    `color` disagreement is a role/primitive mismatch, not an
    abstention -- `color` is still promoted, still counted, in all four
-   treatments). **PASS** for all of B3/B4/B5.
+   treatments). **PASS** for all of B3/B4/B5 -- but see the adversarial
+   review below on why this presence-only metric cannot see the actual
+   capability loss the `color` mismatch causes.
 5. **No material relevance regression** -- B3 inherits B2's own result
-   by construction (byte-identical promoted set). B4/B5 differ from B2
-   on exactly one field (`color`); not independently recomputed here,
-   disclosed as a single-field caveat rather than assumed negligible.
-   **PASS-by-inheritance for B3; PASS-with-a-named-caveat for B4/B5.**
+   by construction (byte-identical promoted set): **PASS-by-inheritance**.
+   B4/B5 differ from B2 on exactly one field, `color` -- **not a random
+   unimportant field**: independently checked against every confidence
+   value in `e2b_oracle.rs` (not just the reviewer's own characterization) --
+   it is the oracle's own highest-confidence (`0.9`) `RetrievalSignificant`
+   **structural/attribute** entry in the 53-key sample, second overall
+   only to `part_number`'s `1.0` (a categorically different kind of
+   field -- an exact-lookup identifier, not a descriptive attribute).
+   `e2b_oracle.rs`'s own annotation calls `color` "the single most
+   obvious real shopper query term in this sample." The reviewer's own
+   draft
+   cited "43 of 480 (~9%)" real queries containing "an explicit color
+   term"; independently reproduced directly against
+   `dataset_cache/wands/query.csv` before trusting it (per this repo's
+   own "do not trust the experiment author" discipline, applied to a
+   reviewer's own claim as much as to this session's own) -- the literal
+   substring `"color"`/`"colour"` appears in only 2 of 480 queries, not
+   43; matching real color **names** as whole words instead (`black`,
+   `navy`, `turquoise`, `rose gold`, etc. -- a 23-word list) gives **42
+   of 480 (8.75%)**, close to but not exactly the reviewer's own figure,
+   confirmed here as the number this log actually relies on: 42 real
+   shopper queries, not 43, and via color-name matching, not the literal
+   word "color." `retrieval_significant_recall` only checks whether a
+   key is
+   *promoted*, not whether its role/primitive is correct, so it cannot
+   see this: haiku's `free_text`/`LexicalPostings` compiles to
+   substring/contains matching, not the oracle's `enum`/`BitmapEnum`
+   exact-match faceting -- a real, likely material capability loss on a
+   field roughly one in eleven real queries touches, not a negligible
+   footnote. **FAIL-with-evidence for B4/B5**, corrected from this
+   checkpoint's own first-draft "PASS-with-a-named-caveat," which
+   assumed negligibility instead of bounding it.
 6. **Total LLM cost falls by >=50% vs. B1, or a clear Pareto advantage**
    -- B4 alone: 40.5% reduction (97,803 vs. 164,528 tokens), short of
-   the 50% bar but a real, disclosed Pareto candidate (cheaper, one-field
-   quality cost). **B5 (the cascade): FAILS outright -- costs 59% MORE
-   than B1, not less.** B3 was not measured as a fresh cost (reused from
-   Phase A) but is priced at sonnet-5's own per-call rate, materially
-   below opus-5's.
+   the 50% bar; combined with criterion 5's corrected FAIL above, this is
+   **not** the clean Pareto candidate this checkpoint's own first draft
+   described (cheaper, yes, but the one quality cost is on the sample's
+   single most retrieval-important field). **B5 (the cascade): FAILS
+   outright** under this repo's own established whole-batch cost
+   convention (`ISSUE47_PROTOCOL.md` section 10's own "raw batched-call
+   count" reading, unchanged since Phase A) -- 262,331 vs. 164,528
+   tokens, 159% of B1's own cost, because both tiers' full 10-call pools
+   are drawn regardless of which specific keys escalate. Disclosed
+   nuance (found by this section's own adversarial review): if a
+   hypothetical deployment could draw the strong tier *only* for the
+   49.81% of keys that actually escalate rather than the whole
+   configuration batch, a rough proportional estimate gives ~109% of
+   B1's cost instead of 159% -- the *direction* (cascade costs more, not
+   less) is unchanged either way, but 159% is the number this repo's own
+   batching reality actually supports, not a pessimistic upper bound.
 7. **Strong-model escalation explicit and low enough that cheap-first is
    not cosmetic** -- 49.81% overall, 51.58% among retrieval-significant
    problems. **FAIL** -- this is not low; cheap-first resolves barely
@@ -586,57 +644,135 @@ specific to *cascading*, not to using a cheaper tier at all.
    A; no qualifying dataset was acquired this checkpoint). This alone
    already precludes an overall GO regardless of B1-B7.
 
-### Phase B decision: REVISE (cascade specifically; single-tier
-### substitution shows real promise)
+### Fresh adversarial review of Phase B
 
-**The cascade (B5) does not work as hoped and should not be adopted in
-its current form**: it fails criteria 6 and 7 clearly and, on real
-measured tokens, costs more than simply always using the strong model.
-This is a genuine, disclosed negative result about *cascading*
-specifically under this strict, safety-preserving escalation trigger --
-not a claim that model capability is unimportant (criterion 7's own
-FAIL, and the near-53% retrieval-significant escalation rate, are
-exactly the opposite of that claim).
+Two independent reviewer agents, no implementation mandate, no access to
+each other's output or this session's own conclusions, one focused on
+the cascade's own implementation correctness, one on the statistics and
+GO-gate interpretation. All findings below independently confirmed by
+this session before acting on them.
 
-**Single-tier substitution (never cascading) is the more informative
-result**: B3 (mid-tier, sonnet-5) matches the strong reference exactly
-at lower cost -- on this held-out data, the strong tier was not needed
-at all. B4 (small-tier, haiku-4.5) comes close (98.11% agreement, one
-messy-field miss) at meaningfully lower cost, just short of the
-preregistered 50% economic bar and just outside the 1pp quality bars
-(criteria 2/3) -- a REVISE-not-GO result specifically for B4, not a
-clean pass, but a materially more promising direction than the cascade.
+**1. CONFIRMED, corrects an omitted GO-gate check.** Criterion 2's own
+text is conjunctive (cross-tier agreement *and* an absolute stability
+floor); this checkpoint's own first draft evaluated only the cross-tier
+half. Checked: B5's own within-tier (5-rotation) stability is 98.87%,
+under the 99% floor Phase A's own criteria used -- a second, independent
+FAIL for the cascade beyond the already-clear economic ones. The
+mechanism: B5's escalation decision is itself computed per-rotation (a
+key can certify from the cheap tier on one draw ordering and escalate on
+another), so the cascade's *own* final answer is very slightly less
+stable across draw orderings than any single tier's own answer -- a
+real, small, previously unmeasured cost of cascading specifically, not
+a defect in any tier's own controller.
 
-**Answering Issue #47's own central question directly**: on this
-held-out set, once semantic compilation is deterministic, the strong
-model was not required at all for the mid tier to match it exactly: the
-proposal-model capability that mattered was whichever tier's *raw
-role-level consistency* was high enough for the frozen controller to
-certify quickly (Phase A's own finding: certification requires real
-majority agreement, not mere plausibility). The small tier came close
-but not close enough to clear this checkpoint's own preregistered bars
-on a single genuinely ambiguous field. The *cascade* strategy
-specifically -- attempting to get the small tier's cost with the strong
-tier's safety net -- does not deliver that combination here: because the
-frozen, adversarially-reviewed certification trigger is deliberately
-strict (by design, to avoid a false-certification safety hole), it
-escalates about half of everything, and half-price-then-full-price is
-more expensive than full-price alone.
+**2. CONFIRMED, corrects an unsupported "not material" inference.** The
+first draft's characterization of the sole B4/B5 disagreement (`color`)
+as merely "the single messiest field" understated a more important
+fact: it is also the oracle's own highest-confidence retrieval-significant
+*structural/attribute* field (second overall only to an identifier
+field, a categorically different kind of entry -- verified directly
+against every confidence value in `e2b_oracle.rs`, not merely the
+reviewer's own claim), and the recall metric used for criterion 4
+structurally cannot
+detect the capability loss a role/primitive misclassification causes
+(it only checks presence in the promoted set). A cheap, concrete bound
+was available and not computed in the first draft; independently
+reproduced (not merely copied from the reviewer's own draft figure) at
+42 of 480 real WANDS queries (8.75%) matching a real color name as a
+whole word. Criteria 5 and 6 are corrected above to reflect this -- B4
+is a cheaper-but-real-quality-cost result, not a clean near-Pareto
+point, on the specific evidence
+available.
+
+**3. CONFIRMED, no implementation defect, one disclosed cost-accounting
+nuance.** Independently traced every rotation-index use in the cascade
+path (`b5_rotations`, `b5_depths`) by hand -- `b4_rotations[i]` (cheap)
+and `b2_rotations[i]` (escalation target) are paired at the same index
+throughout, no copy-paste or off-by-index mixing found. Independently
+re-verified the escalation-rate arithmetic (132/265 = 49.8113%, 98/190 =
+51.5789%, matching the reported figures exactly) and the token-manifest
+sums (164,528 / 97,803 / 262,331, all matching
+`e2d_phase_b_draw_cost_manifest.json` digit-for-digit). B3's own numbers
+were confirmed to come from `run_controller` called fresh on the raw
+sonnet draw files with the current, Phase-A-fixed controller code, not
+a stale cached Phase A result. The one disclosed nuance: the 159%-of-B1
+cost figure assumes this repo's own established whole-batch draw
+mechanism (every key in a configuration is drawn together, so the whole
+tier's own cost is paid once any key in it escalates); a hypothetical
+per-key-selective draw mechanism (which this repo's tooling does not
+actually support) would give a smaller, still-negative ~109% figure --
+folded into criterion 6 above.
+
+**4. CONFIRMED, a fair characterization check.** The alternative
+"within-tier stability" reading of criteria 2/3 would have made B4 look
+*better* (100%/100%, a clean pass) than the cross-tier reading this
+checkpoint chose (98.11%, a fail) -- direct evidence the chosen reading
+was not selected to flatter the treatment this checkpoint's own prose
+went on to call "promising." The cross-tier reading is also the
+textually correct one (criteria 2/3 explicitly name B2 as the reference
+point). This checkpoint's own earlier "an interpretive choice, not
+certainty" hedge overstated the real ambiguity, which is confined to
+the dropped absolute-floor half of criterion 2 (now added above), not
+to whether cross-tier comparison is the right frame at all.
+
+**5. Noted, addressed by reordering below.** The first draft's own
+decision section led with the cascade's failure but closed by
+emphasizing B3/B4 as "the more promising direction" -- a fair
+description of the *relative* comparison, but one that could read as
+softening what is, against Phase B's own preregistered criteria, an
+unambiguous, multi-criterion FAIL (6, 7, and now 2/3's floor clause) for
+the treatment that was actually the centerpiece Issue #47 asked to test
+("the cheap→strong cascade... report exactly how often the strong model
+is needed"). The decision below leads with that finding first.
+
+### Phase B decision: REVISE
+
+**The centerpiece finding, stated first and plainly**: the cascade (B5)
+-- cheap-tier-first, escalate-to-strong-only-when-needed -- does not
+work. It fails criteria 2 (own-stability floor), 5 (corrected), 6, and 7
+against this checkpoint's own preregistered bars, and on real measured
+tokens costs 159% of simply always using the strong model, because the
+escalation trigger fires on very close to half of all semantic problems
+(49.81% overall, 51.58% of retrieval-significant ones specifically) --
+not a rare exception cheap-first was designed to catch, but close to a
+coin flip. This is exactly what Issue #47's own governance warned a
+cascade might do ("do not claim small models are enough if the cascade
+secretly sends the hard cases to the strong model") -- measured
+directly here, not assumed: **the strong model is needed for roughly
+half of this held-out catalog, slightly more of its retrieval-significant
+half, and cascading does not recover cheap-tier-level cost once that is
+true.**
+
+**A secondary, more promising but still not clean, finding**: committing
+to a *single* cheaper tier (never cascading between tiers within one
+catalog) fares better than cascading. B3 (sonnet-5 alone) matches B2
+(opus-5 alone) exactly -- every one of 53 keys, identical role/primitive/
+scope/stability/recall -- at materially lower cost; on this held-out
+set, the strong tier added nothing measurable over the mid tier. B4
+(haiku-4.5 alone) is close but, on the corrected reading above, not a
+clean Pareto point: 98.11% agreement at 59.5% of B1's cost sounds
+favorable until the one disagreement is examined -- it is the sample's
+highest-confidence retrieval-significant structural/attribute field,
+with a real,
+plausible capability loss (losing exact-match color faceting) the
+recall metric cannot see. This is a REVISE-not-GO result for B4
+specifically, with a real, quantified reason for caution, not merely a
+missed threshold.
 
 **Decision: REVISE.** Overall GO is precluded by criterion 8 (external
 validity NOT ESTABLISHED) regardless of B1-B7. Among B1-B7: quality/
-safety is clean everywhere (criterion 1, and criterion 4 for all
-tiers); the cascade (B5) fails economically and on escalation-rate
-grounds specifically; single-tier substitution (B3, B4) is the
-direction with real promise, with B3 already meeting every bar and B4
-falling just short on both the quality-agreement and cost-reduction
-bars. Recommended next step if this thread continues: measure B4-style
-single-tier substitution (never cascading) against a materially larger
-or more diverse held-out set before trusting a 52/53 sample, and treat
-the cascade's own negative result as settled rather than re-attempting
-a looser escalation trigger merely to manufacture a lower escalation
-rate (which Issue #47's own governance explicitly forbids: "do not
-weaken thresholds... to manufacture a GO").
-
-A fresh adversarial review of Phase B follows below, before the overall
-E2d GO/REVISE/STOP decision.
+safety is clean on the criteria that measure it most directly (1, and
+4's own narrow presence-only reading); the cascade (B5) fails on
+economics, escalation rate, and now its own stability floor -- three
+independent, preregistered criteria, not merely a single missed bar;
+single-tier substitution (B3 cleanly, B4 with a real, evidenced quality
+caveat) is the more informative direction, but B4 does not itself clear
+this checkpoint's own bars either. Recommended next step if this thread
+continues: do not re-attempt the cascade with a loosened escalation
+trigger merely to manufacture a lower escalation rate (forbidden by
+Issue #47's own governance); if single-tier substitution is pursued
+further, measure it against a materially larger or more diverse held-out
+set before trusting a 52/53-key sample where the entire quality
+question turns on a single field, and prioritize measuring exactly
+which semantic-problem classes (not just which fields happen to appear
+in one 53-key sample) systematically need the strong tier.
