@@ -414,6 +414,154 @@ canonicalization (checked by grep: no controller function may import or
 reference `e2b_oracle`, matching `ISSUE45_PROTOCOL.md`'s own identical
 check).
 
+## Phase B Addendum (dated, preregistered after Phase A's own freeze and
+REVISE decision, before any Phase B held-out draw exists)
+
+Per Issue #47's own ordering ("Only with a frozen defensible Phase-A
+controller, preregister and run Phase B"): Phase A's controller
+(`e2d_controller.rs`) is frozen, adversarially reviewed, and fixed
+(`docs/experiments/ISSUE47_LOG.md`'s own Phase A decision) — safe and
+mathematically sound, though its own preregistered efficiency target
+(criterion 6) was not met. Per that same decision, Phase B proceeds
+using this exact frozen controller, unmodified, carrying the economics
+caveat forward: Phase B measures capability/cost frontier effects, not a
+renewed claim that adaptive escalation itself is cheap.
+
+### B0. What this is testing
+
+Once the compiler/controller is deterministic and frozen (Phase A),
+how much *proposal-model capability* is actually needed for the same
+installed semantics? Phase A's own held-out run already used
+`claude-sonnet-5` as its single frozen proposal model. Phase B varies
+*only* the proposal model across three real, materially different
+capability/cost tiers in the same model family — never the
+canonicalizer, never the controller, never the prompt beyond mechanical
+provider formatting (unchanged from `ISSUE47_PROTOCOL.md` section 4).
+
+### B1. Model tiers (frozen before any draw)
+
+Three tiers, same family, different capability/cost points, each
+identified by exact model ID (Issue #47's own "prefer same-family
+models with known parameter counts if making an actual model-size
+claim... otherwise report a capability/cost frontier, not fictional
+parameter-size conclusions" — real parameter counts for these models are
+not published, so this reports a **capability/cost frontier by tier**,
+not a parameter-count claim):
+
+- **Small/cheap**: `claude-haiku-4-5-20251001`
+- **Mid**: `claude-sonnet-5` (same model Phase A already used — its own
+  held-out draws are reused verbatim for this tier, §B3 below, zero new
+  calls)
+- **Strong/reference**: `claude-opus-5`
+
+Mechanism, prompt, bounded-input contract, schema, configurations
+(`wands_baseline`, `automotive`), and K_MAX=5 are all unchanged from
+Phase A (sections 2-6) — only the `model` parameter passed to `agent()`
+varies by tier. No model-specific prompt tuning of any kind.
+
+### B2. New draws needed
+
+- `claude-opus-5`: 5 fresh draws × `wands_baseline` + 5 × `automotive`
+  = 10 new calls (serves B1 and B2 both — same pool, two different
+  consumption patterns, no redraw between them).
+- `claude-haiku-4-5-20251001`: 5 fresh draws × `wands_baseline` + 5 ×
+  `automotive` = 10 new calls (serves B4 and B5's own cheap tier).
+- `claude-sonnet-5`: **zero new calls** — B3 reuses Phase A's own
+  10 frozen held-out draws (`dataset_cache/export/e2d_llm_proposals_*.json`)
+  verbatim, since B3 ("mid-tier + frozen adaptive controller") is, by
+  construction, identical to Phase A's own A2 treatment on the same
+  data. Reported under both names for cross-reference, not recomputed
+  twice.
+
+Total: 20 new live proposal calls for Phase B, all generated fresh,
+never previously seen, frozen unmodified to
+`dataset_cache/export/e2d_llm_proposals_{opus,haiku}_{wands_baseline,automotive}_run{1..5}.json`
+before any Phase B measurement is computed from them.
+
+### B3. Treatments (mapped to Issue #47's own B1-B5)
+
+| Treatment | Proposal model | Controller | New draws |
+|---|---|---|---|
+| B1 | opus-5 | none (fixed-5 ensemble, `canonicalize(all 5)`, matching A1's own design) | opus pool (§B2) |
+| B2 | opus-5 | frozen adaptive (`run_controller`, Treatment C) | same opus pool |
+| B3 | sonnet-5 | frozen adaptive (`run_controller`, Treatment C) | **Phase A's own A2 results, reused verbatim** |
+| B4 | haiku-4.5 | frozen adaptive (`run_controller`, Treatment C) | haiku pool (§B2) |
+| B5 | cascade: haiku-4.5 first, escalate to opus-5 | frozen adaptive at each tier (§B4 below) | both pools, no new draws |
+
+Per Issue #47's own text ("The strong model does not judge the smaller
+model directly and cannot bypass the compiler"): at no point does any
+tier's raw proposal text, or any model, ever see another tier's
+proposals or judge them — every tier's proposals are canonicalized by
+the same frozen, deterministic R1-R11 rules only.
+
+### B4. Cascade design (B5), frozen before any draw
+
+Per real key: run the frozen controller (`run_controller`, Treatment C,
+unmodified) over the haiku-tier pool, up to its own K_MAX=5. If the
+result is `Promoted` **and** `certified_robust_at_stop == true` (a
+genuine early-or-full-depth robustness proof from the cheap tier alone
+— not merely "the cheap pool ran out," per Phase A's own corrected
+understanding of that flag), the cascade **accepts the cheap-tier
+result**, no escalation. Otherwise — `Abstain` at any depth, or
+`Promoted` but never certified even at full cheap-tier depth — the
+cascade **escalates**: discards the cheap-tier proposals entirely (never
+mixed with strong-tier proposals in one `canonicalize()` call, so
+"how much the strong model itself contributed" stays unambiguous, and
+because a real deployment would ask a stronger model afresh rather than
+reconcile mixed-capability raw text) and runs the identical frozen
+controller over the opus-tier pool instead, up to its own K_MAX=5,
+delivering whatever that produces (`Promoted`-certified,
+`Promoted`-uncertified, or `Abstain`) as the cascade's final result.
+
+This is a deliberately strict escalation trigger — a key that resolves
+at cheap-tier full depth (n=5) *without* a genuine certificate still
+escalates — chosen specifically because Issue #47 warns against a
+cascade that "secretly sends the hard cases to the strong model" while
+appearing cheap: the trigger is `certified_robust_at_stop`, the same
+flag Phase A's own adversarial review just spent real effort making
+honest, not a looser "did it produce *any* Promoted answer" test that
+would under-report escalation.
+
+### B5. Metrics and cost accounting (per Issue #47's own "preventing a
+fake cascade win" list, verbatim)
+
+Reported separately, per configuration and combined: quality on
+problems resolved without escalation vs. on escalated problems;
+percentage of all semantic problems escalated; percentage of
+retrieval-significant problems escalated; strong-model (opus) share of
+total tokens/cost across the cascade; final abstention rate. Tokens per
+live call measured the same way as Phase A (`budget.spent()` deltas
+around each `agent()` call in the orchestrating Workflow script).
+
+### B6. Phase B GO gate (verbatim from Issue #47)
+
+1. Zero confirmed unsafe accepted structural classifications.
+2. Compiled primitive agreement within 1pp of the strong (opus)
+   adaptive reference (B2) and above the absolute stability floor.
+3. Full canonical descriptor agreement within 1pp of B2.
+4. Retrieval-significant recall no more than 3pp below B2.
+5. No material relevance regression on reliable checks.
+6. Total LLM cost/catalog falls by >=50% vs. strong fixed-5 (B1), or
+   otherwise demonstrates a clear Pareto economic advantage.
+7. Strong-model escalation is explicit and low enough that cheap-first
+   is not cosmetic.
+8. An overall GO requires qualifying real Product/Variant/relationship
+   evidence (per this document's own "NOT ESTABLISHED" disclosure above
+   — criterion 8 is therefore not achievable for an overall GO in this
+   checkpoint regardless of B1-B7's own results, disclosed up front,
+   not discovered after the fact).
+
+### B7. Falsification (restated from Issue #47, unchanged)
+
+Record REVISE or STOP if: smaller models omit or systematically
+misunderstand load-bearing semantics; the cascade escalates most
+important fields to the strong model; savings come from abstaining on
+difficult important features; a strong model becomes an unconstrained
+judge (it never is, by construction, §B3); deterministic rules are
+edited per model (they are not — the controller and canonicalizer are
+byte-identical across every tier); oracle information leaks into
+escalation/canonicalization (same grep-based check as Phase A).
+
 ## Addendum 1 (dated, before any held-out draw exists — calibration-lane
 sanity check per section 7)
 
