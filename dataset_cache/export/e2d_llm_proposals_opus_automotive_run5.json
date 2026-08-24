@@ -1,0 +1,371 @@
+{
+  "configuration": "automotive",
+  "run_index": 5,
+  "descriptors": [
+    {
+      "key": "amperage_output",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "amps",
+        "amperage",
+        "amp output",
+        "high output alternator"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.82,
+      "evidence": "numeric_parseable_fraction=1.0 with 72 distinct over 150 occurrences (uniqueness 0.48) and contiguous samples 101-105: a wide, dense numeric domain suited to range filtering, not enum membership.",
+      "abstain": false
+    },
+    {
+      "key": "bulb_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "H11",
+        "H7",
+        "H4",
+        "9005",
+        "bulb size",
+        "bulb type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.84,
+      "evidence": "Only 4 distinct values over 150 occurrences (uniqueness 0.027); samples 9005/H11/H4/H7 are fixed codes and numeric_parseable_fraction=0.26 shows the domain is not numeric, so values are opaque tokens in a tiny closed set.",
+      "abstain": false
+    },
+    {
+      "key": "cold_cranking_amps",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "CCA",
+        "cold cranking amps",
+        "cranking amps",
+        "at least 600 CCA"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction=1.0 and 131 distinct of 150 occurrences (uniqueness 0.873) with samples 401-410: near-continuous numeric measure whose useful predicate is a threshold/range.",
+      "abstain": false
+    },
+    {
+      "key": "filter_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "panel filter",
+        "cylindrical filter",
+        "filter type",
+        "filter shape"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.86,
+      "evidence": "Exactly 2 distinct values (Cylindrical, Panel) over 150 occurrences, uniqueness 0.013, numeric_parseable_fraction=0: a binary closed vocabulary that partitions the set cleanly.",
+      "abstain": false
+    },
+    {
+      "key": "group_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "group 35",
+        "group 65",
+        "group size",
+        "battery group"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.78,
+      "evidence": "3 distinct values (uniqueness 0.02) and numeric_parseable_fraction=0.66 with sample '24F' mixed among '35'/'65': partially non-numeric codes, so it is a small token domain rather than a numeric measure.",
+      "abstain": false
+    },
+    {
+      "key": "heat_range",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "heat range",
+        "colder plug",
+        "hotter plug"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "numeric_parseable_fraction=1.0 with mean_value_length=1 and only 5 distinct contiguous integers 4-8 (uniqueness 0.033): ordinal numeric semantics, but an enum-sized domain that a small ordered bitmap set can serve including ranges.",
+      "abstain": false
+    },
+    {
+      "key": "lumens",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "lumens",
+        "brightness",
+        "brighter",
+        "brightest headlights"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.86,
+      "evidence": "numeric_parseable_fraction=1.0 and 141 distinct of 150 (uniqueness 0.94) with 4-digit samples 1004-1041: an effectively continuous magnitude, queried as 'more than X'.",
+      "abstain": false
+    },
+    {
+      "key": "material",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "aluminum",
+        "copper brass",
+        "material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "2 distinct values (Aluminum, Copper-Brass) over 150 occurrences, uniqueness 0.013, numeric_parseable_fraction=0: binary closed vocabulary.",
+      "abstain": false
+    },
+    {
+      "key": "material_grade",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "ceramic",
+        "semi-metallic",
+        "organic",
+        "pad material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "3 distinct values (Ceramic, Organic, Semi-Metallic) over 150 occurrences, uniqueness 0.02, numeric_parseable_fraction=0: a small non-numeric closed vocabulary shoppers name directly.",
+      "abstain": false
+    },
+    {
+      "key": "micron_rating",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "micron rating",
+        "microns",
+        "filtration rating"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.72,
+      "evidence": "numeric_parseable_fraction=1.0 with 31 distinct values (uniqueness 0.207) and contiguous samples 10-14: too many distinct levels for an enum, and the measure is ordinal so thresholds apply.",
+      "abstain": false
+    },
+    {
+      "key": "oem_or_aftermarket",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "OEM",
+        "aftermarket",
+        "genuine",
+        "original equipment"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "2 distinct values over 1500 occurrences (uniqueness 0.0013) and numeric_parseable_fraction=0: a catalog-wide binary partition present on every item, the ideal bitmap split.",
+      "abstain": false
+    },
+    {
+      "key": "part_number",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "exact_lookup",
+        "eq"
+      ],
+      "aliases": [
+        "part number",
+        "part #",
+        "MPN",
+        "AM-1026-CB"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.92,
+      "evidence": "1497 distinct of 1500 occurrences (uniqueness 0.998) with variant_scoped=true and structured non-numeric samples like 'AM-1026-CB': a near-unique per-variant key, only useful for exact lookup.",
+      "abstain": false
+    },
+    {
+      "key": "position",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "front",
+        "rear",
+        "front brakes",
+        "rear rotors"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.84,
+      "evidence": "2 distinct values (Front, Rear) over 300 occurrences, uniqueness 0.0067, numeric_parseable_fraction=0: binary fitment token that shoppers state explicitly.",
+      "abstain": false
+    },
+    {
+      "key": "size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "18 inch",
+        "size",
+        "inches"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "numeric_parseable_fraction=1.0 with mean_value_length=2 and 13 distinct values (uniqueness 0.087) over contiguous samples 16-20: ordinal numeric, but a small enough discrete domain that per-value bitmaps cover both equality and ranges. Unit of measure is not stated in the given data.",
+      "abstain": false
+    },
+    {
+      "key": "thread_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "14mm",
+        "12mm",
+        "thread size",
+        "thread"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.76,
+      "evidence": "3 distinct values with uniqueness 0.02 and numeric_parseable_fraction=0 because values carry the 'mm' suffix ('10mm','12mm','14mm'): stored as a tiny token domain, matched by equality.",
+      "abstain": false
+    },
+    {
+      "key": "voltage",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "12 volt",
+        "voltage",
+        "volts"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.8,
+      "evidence": "distinct_values=1 ('12') across all 150 occurrences: zero selectivity, so no index on it can ever narrow a candidate set even though the value parses numerically.",
+      "abstain": false
+    },
+    {
+      "key": "warranty_months",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "warranty",
+        "3 year warranty",
+        "longer warranty",
+        "months warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.62,
+      "evidence": "numeric_parseable_fraction=1.0 with only 4 distinct values (12/24/36/60, uniqueness 0.0027) over 1500 occurrences and variant_scoped=true: ordinal numeric with a tiny discrete domain, so ordered per-value bitmaps serve '>= N' as a union.",
+      "abstain": false
+    }
+  ]
+}

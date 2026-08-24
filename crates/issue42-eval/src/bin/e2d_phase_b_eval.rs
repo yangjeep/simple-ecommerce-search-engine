@@ -416,13 +416,22 @@ fn main() {
         }
         agg
     };
+    // Cost-accounting fix (self-caught before this checkpoint reported
+    // any number): when the cascade escalates, a real deployment has
+    // ALREADY spent the cheap tier's own draws before deciding to
+    // escalate -- the true total cost is haiku's own consumed depth
+    // PLUS opus's own consumed depth, never opus's depth alone. Reporting
+    // only the final tier's own depth would understate escalated-key
+    // cost and manufacture exactly the "fake cascade win" Issue #47
+    // warns against.
     let b5_depths: Vec<u32> = all_results
         .iter()
         .map(|r| {
+            let haiku_depth = r.b4_rotations[0].n_used;
             if r.b5_rotations[0].1 {
-                r.b2_rotations[0].n_used
+                haiku_depth + r.b2_rotations[0].n_used
             } else {
-                r.b4_rotations[0].n_used
+                haiku_depth
             }
         })
         .collect();
