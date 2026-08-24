@@ -4,7 +4,18 @@
 
 This repository is an experimental Rust implementation of **commerce-native hybrid retrieval**.
 
-The current thesis is intentionally narrow:
+The core research question is:
+
+> **Can an ecommerce search engine be faster, more flexible, more accurate, and more stable at the same time?**
+
+Interpret those goals concretely:
+
+- **faster** — materially lower CPU/latency on meaningful ecommerce workload classes;
+- **more flexible** — unseen merchant schemas/verticals should not require bespoke serving code;
+- **more accurate** — specialization must preserve or improve correctness/relevance;
+- **more stable** — deterministic installed semantics and predictable serving despite messy catalogs and stochastic model proposals.
+
+The current architectural hypothesis is intentionally narrow:
 
 - use deterministic, typed commerce structures where they measurably reduce work;
 - delegate open-ended lexical retrieval/ranking to a mature backend rather than rebuilding a general search engine;
