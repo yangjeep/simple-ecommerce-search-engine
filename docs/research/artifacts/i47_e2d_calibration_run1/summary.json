@@ -1,0 +1,126 @@
+{
+  "baseline_sha": "20db66a0016176b3c16c1566c4e0796584f5e243",
+  "combined": {
+    "a0": {
+      "abstention_rate_pct": 0.0,
+      "depth_mean": 1.0,
+      "label": "A0_single",
+      "n_keys": 17,
+      "n_promoted": 17,
+      "oracle_disagreements_among_promoted": 1,
+      "raw_batched_call_count": 1,
+      "reduction_vs_fixed5_pct": 80.0
+    },
+    "a1": {
+      "abstention_rate_pct": 0.0,
+      "depth_mean": 5.0,
+      "full_stability_pct": 100.0,
+      "label": "A1_fixed5",
+      "n_keys": 17,
+      "n_promoted": 17,
+      "oracle_disagreements_among_promoted": 1,
+      "primitive_stability_pct": 100.0,
+      "raw_batched_call_count": 5,
+      "reduction_vs_fixed5_pct": 0.0,
+      "role_stability_pct": 100.0
+    },
+    "a2": {
+      "abstention_rate_pct": 0.0,
+      "certified_robust_rate_pct": 100.0,
+      "depth_mean": 3.176470588235294,
+      "depth_median": 3.0,
+      "depth_p95": 4.0,
+      "full_stability_pct": 100.0,
+      "label": "A2_adaptive_C",
+      "n_keys": 17,
+      "n_promoted": 17,
+      "oracle_disagreements_among_promoted": 1,
+      "primitive_stability_pct": 100.0,
+      "raw_batched_call_count": 5,
+      "reduction_vs_fixed5_pct": 36.47058823529412,
+      "role_stability_pct": 100.0
+    },
+    "a3": {
+      "abstention_rate_pct": 0.0,
+      "certified_robust_rate_pct": 100.0,
+      "depth_mean": 3.176470588235294,
+      "depth_median": 3.0,
+      "depth_p95": 4.0,
+      "full_stability_pct": 100.0,
+      "label": "A3_conservative_D",
+      "n_keys": 17,
+      "n_promoted": 17,
+      "oracle_disagreements_among_promoted": 1,
+      "primitive_stability_pct": 100.0,
+      "raw_batched_call_count": 5,
+      "reduction_vs_fixed5_pct": 36.47058823529412,
+      "role_stability_pct": 100.0
+    }
+  },
+  "configs": [
+    "automotive"
+  ],
+  "experiment_id": "I47-E2d-phase-a-adaptive-consensus",
+  "mode": "calibration",
+  "n_total_keys": 17,
+  "per_config": {
+    "automotive": {
+      "a0": {
+        "abstention_rate_pct": 0.0,
+        "depth_mean": 1.0,
+        "label": "A0_single",
+        "n_keys": 17,
+        "n_promoted": 17,
+        "oracle_disagreements_among_promoted": 1,
+        "raw_batched_call_count": 1,
+        "reduction_vs_fixed5_pct": 80.0
+      },
+      "a1": {
+        "abstention_rate_pct": 0.0,
+        "depth_mean": 5.0,
+        "full_stability_pct": 100.0,
+        "label": "A1_fixed5",
+        "n_keys": 17,
+        "n_promoted": 17,
+        "oracle_disagreements_among_promoted": 1,
+        "primitive_stability_pct": 100.0,
+        "raw_batched_call_count": 5,
+        "reduction_vs_fixed5_pct": 0.0,
+        "role_stability_pct": 100.0
+      },
+      "a2": {
+        "abstention_rate_pct": 0.0,
+        "certified_robust_rate_pct": 100.0,
+        "depth_mean": 3.176470588235294,
+        "depth_median": 3.0,
+        "depth_p95": 4.0,
+        "full_stability_pct": 100.0,
+        "label": "A2_adaptive_C",
+        "n_keys": 17,
+        "n_promoted": 17,
+        "oracle_disagreements_among_promoted": 1,
+        "primitive_stability_pct": 100.0,
+        "raw_batched_call_count": 5,
+        "reduction_vs_fixed5_pct": 36.47058823529412,
+        "role_stability_pct": 100.0
+      },
+      "a3": {
+        "abstention_rate_pct": 0.0,
+        "certified_robust_rate_pct": 100.0,
+        "depth_mean": 3.176470588235294,
+        "depth_median": 3.0,
+        "depth_p95": 4.0,
+        "full_stability_pct": 100.0,
+        "label": "A3_conservative_D",
+        "n_keys": 17,
+        "n_promoted": 17,
+        "oracle_disagreements_among_promoted": 1,
+        "primitive_stability_pct": 100.0,
+        "raw_batched_call_count": 5,
+        "reduction_vs_fixed5_pct": 36.47058823529412,
+        "role_stability_pct": 100.0
+      },
+      "n_keys_evaluated": 17
+    }
+  }
+}
