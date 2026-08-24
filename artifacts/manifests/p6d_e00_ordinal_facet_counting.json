@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P6D-E00",
+  "phase": "6D",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6d_e00_ordinal_facet_counting.yaml",
+  "git_sha": "3088f36b01ba95b97070fe1525698b387c2159fc",
+  "dataset": {
+    "name": "real WANDS catalog (42,994 products), same 7 category_depth_1 checkpoints as P6A-E00/P6B-E00/P6C-E00/P6C-E01"
+  },
+  "engine_config": {
+    "native_scan": "commerce_core::index::CatalogIndex::facet_counts_by_scan (existing), re-run fresh same session",
+    "native_ordinal": "commerce_core::index::CatalogIndex::facet_counts_ordinal (new, Issue #21 Phase 6D)",
+    "solr": "Apache Solr 9.10.1, wands_bench core, re-queried same session, reused for both native comparisons"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6d_e00_ordinal_facet_run1/",
+  "analysis_version": "docs/experiments/PHASE6D_LOG.md#P6D-E00",
+  "decision": "PHASE6D_DECISION.md",
+  "headline_result": {
+    "correctness_gate": "unit test: exact BTreeMap match vs facet_counts_by_scan across full/filtered/empty/never-indexed inputs; real-data: 21/21 exact top-50-facet matches against the live Solr wands_bench core across 3 runs, 0 mismatches",
+    "ordinal_vs_solr_7_of_7_checkpoints": "faster at every checkpoint, 5.2x-69.8x, no exceptions",
+    "ordinal_vs_native_scan_7_of_7_checkpoints": "faster at every checkpoint, 23.5x-89.3x",
+    "finding": "the facet crossover this project has repeatedly measured (Phase 5, 6A, 6B, P6C-E00) was a property of naive per-candidate scanning specifically (a full attribute-map clone per candidate), not an inherent ceiling on commerce-native's own architecture; given a comparably specialized ordinal/dictionary-based counting strategy, commerce-native substantially exceeds both Solr and Lucene's own margin over Solr (P6C-E01: up to 3.0x, still trailing at 2 checkpoints)",
+    "named_limitation": "only color facet tested (not product_class or others); only WANDS 1x scale (not the Phase 6B scale ladder); memory cost of new dictionary/column structures estimated, not measured; MultiEnum attributes not supported by the ordinal path; no real query-serving path wired to prefer this method yet"
+  }
+}

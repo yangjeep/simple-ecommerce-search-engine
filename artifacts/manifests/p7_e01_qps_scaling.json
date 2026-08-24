@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P7-E01",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e01_qps_scaling.yaml",
+  "git_sha": "6a95ac9",
+  "dataset": {
+    "name": "WANDS, category_depth_1 tenant partitions",
+    "quiet_tenant": "Rugs"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, independent per tenant"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e01_qps_scaling_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E01",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h4_status": "CONFIRMED, robust across 3 independent runs",
+    "quiet_throughput_rps_range": [694.0, 816.2],
+    "quiet_p99_ms_range": [1.71, 2.16],
+    "breadth_levels_tested": [1, 4, 9, 24, 54],
+    "first_draft_claim": "~19.8x throughput increase N=1 to N=55 under uniform-random tenant selection",
+    "first_draft_status": "withdrawn -- self-caught workload-mix artifact, not a real tenant-count effect"
+  }
+}

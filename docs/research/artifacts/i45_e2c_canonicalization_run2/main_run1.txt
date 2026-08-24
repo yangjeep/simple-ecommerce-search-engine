@@ -1,0 +1,166 @@
+=== Issue #45 E2c: canonicalization stability/safety/recall/abstention ===
+baseline_sha (PR #44 head this checkpoint builds on): d965b7444e1ae563707af987da1a55b98d939135
+  automotive: 5 runs loaded
+  wands_anonymized: 5 runs loaded
+  wands_baseline: 5 runs loaded
+  wands_noisy: 5 runs loaded
+
+=== Stability (leave-one-out canonicalization, C(5,2)=10 pairs/config, matching E2b's own pairwise design) ===
+raw (Treatment A, extended beyond E2b's own role+primitive-only metric): role=97.20% type=99.68% scope=83.04% primitive=89.12% full=74.96% (1250 pairs)
+C_canonicalizer, SINGLE-RUN comparison (stricter self-check: each raw run canonicalized alone, N=1, so only R1/R4/R5/R6/R7/R8 can act -- no cross-run voting or evidence arbitration): role=95.20% type=97.12% scope=97.12% primitive=95.20% full=95.20% (1250 pairs)
+B_majority_vote: role=99.68% type=99.68% scope=85.92% primitive=92.80% full=81.68% (1250 pairs)
+    automotive: primitive=96.47% full=96.47% (170 pairs)
+    wands_anonymized: primitive=90.56% full=81.94% (360 pairs)
+    wands_baseline: primitive=91.11% full=77.78% (360 pairs)
+    wands_noisy: primitive=95.00% full=78.33% (360 pairs)
+C_canonicalizer: role=100.00% type=100.00% scope=100.00% primitive=100.00% full=100.00% (1250 pairs)
+    automotive: primitive=100.00% full=100.00% (170 pairs)
+    wands_anonymized: primitive=100.00% full=100.00% (360 pairs)
+    wands_baseline: primitive=100.00% full=100.00% (360 pairs)
+    wands_noisy: primitive=100.00% full=100.00% (360 pairs)
+D_conservative: role=100.00% type=100.00% scope=100.00% primitive=100.00% full=100.00% (1250 pairs)
+    automotive: primitive=100.00% full=100.00% (170 pairs)
+    wands_anonymized: primitive=100.00% full=100.00% (360 pairs)
+    wands_baseline: primitive=100.00% full=100.00% (360 pairs)
+    wands_noisy: primitive=100.00% full=100.00% (360 pairs)
+
+=== Safety/recall/abstention (full canonicalization, CANONICAL_CONFIGS = wands_baseline + automotive, matching E2b's own headline-map precedent) ===
+B_majority_vote: 46/53 real keys promoted to a structural role
+C_canonicalizer: 42/53 real keys promoted to a structural role
+D_conservative: 42/53 real keys promoted to a structural role
+B_majority_vote: unsafe_accepted=0 recall=97.37% abstention_rate=13.21%
+C_canonicalizer: unsafe_accepted=0 recall=89.47% abstention_rate=20.75%
+D_conservative: unsafe_accepted=0 recall=89.47% abstention_rate=20.75%
+
+=== Single-run worst-case safety (CANONICAL_CONFIGS, Treatment C) ===
+worst-case unsafe_accepted across every individual single-run canonicalization: 0
+
+=== Unstable -> stable conversion and stable-but-wrong rate (Treatment C, CANONICAL_CONFIGS) ===
+  stable-but-wrong: productwarranty -- canonicalizer=Enum oracle=Some(FreeText)
+  stable-but-wrong: heat_range -- canonicalizer=Numeric oracle=Some(Enum)
+11/11 raw-unstable real keys became canonically stable under Treatment C (100.00%); 2/11 of those are stable-but-wrong vs oracle (18.18%)
+
+=== Relevance (criterion 5): naive end-to-end NDCG@10/Recall@10, oracle vs Treatment C, byte-for-byte the same check E2b's own closure pass used ===
+oracle: NDCG@10=0.0100 Recall@10=0.0004 n_scored=270 | Treatment C: NDCG@10=0.0100 Recall@10=0.0004 n_scored=270 | relative_ndcg_gap=0.0000 check_reliable=false (E2b's own disclosed near-floor-NDCG caveat carried forward unchanged) => c5(relevance within 5%)=true
+
+=== GO gate (criteria 1-5, 7 -- criterion 6 measured separately by e2c_serving_overhead_eval) ===
+  C_canonicalizer: c1(zero_unsafe)=true c2(primitive>=99%)=true (100.00%) c3(full>=98%)=true (100.00%) c4(recall within 5pp of E2b's 86.84%)=true (89.47%) c5(relevance within 5%)=true (gap=0.00%)
+  D_conservative: c1(zero_unsafe)=true c2(primitive>=99%)=true (100.00%) c3(full>=98%)=true (100.00%) c4(recall within 5pp of E2b's 86.84%)=true (89.47%) c5(relevance within 5%)=true (gap=0.00%)
+
+Note: criterion 7 (order-independence) is verified structurally by e2c_canonicalizer::tests::canonicalization_output_does_not_depend_on_run_order, not re-derived numerically here.
+
+=== Single-run (stricter) GO-gate reading, Treatment C ===
+  c1(zero_unsafe, worst-case)=true (0 found) c2(primitive>=99%)=false (95.20%) c3(full>=98%)=false (95.20%)
+  (c4/c5 not independently recomputed for the single-run design -- they are recall/relevance metrics defined against a promoted SET, which the single-run design does not produce one consistent version of; see docs/experiments/ISSUE45_PROTOCOL.md's own disclosed scope)
+
+{
+  "baseline_sha": "d965b7444e1ae563707af987da1a55b98d939135",
+  "c_single_run_stability_stricter_self_check": {
+    "full_pct": 95.19999999999999,
+    "primitive_pct": 95.19999999999999,
+    "role_pct": 95.19999999999999,
+    "scope_pct": 97.11999999999999,
+    "total_pairs": 1250,
+    "type_pct": 97.11999999999999
+  },
+  "experiment_id": "I45-E2c-canonicalization",
+  "go_gate": {
+    "C": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "D": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "go_gate_single_run_stricter_reading": {
+    "c1_zero_unsafe_worst_case": true,
+    "c2_primitive_ge_99pct": false,
+    "c3_full_ge_98pct": false,
+    "full_pct": 95.19999999999999,
+    "primitive_pct": 95.19999999999999,
+    "single_run_worst_case_unsafe_count": 0
+  },
+  "raw_stability_extended": {
+    "full_pct": 74.96000000000001,
+    "primitive_pct": 89.12,
+    "role_pct": 97.2,
+    "scope_pct": 83.04,
+    "total_pairs": 1250,
+    "type_pct": 99.68
+  },
+  "relevance_criterion_5": {
+    "check_reliable": false,
+    "oracle_n_scored": 270,
+    "oracle_ndcg10": 0.009995636366187282,
+    "oracle_recall10": 0.00039009560645701245,
+    "relative_ndcg_gap": 0.0,
+    "treatment_c_n_scored": 270,
+    "treatment_c_ndcg10": 0.009995636366187282,
+    "treatment_c_recall10": 0.00039009560645701245,
+    "within_5pct": true
+  },
+  "treatments": [
+    {
+      "abstention_rate_pct": 13.207547169811317,
+      "label": "B_majority_vote",
+      "n_promoted": 46,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 97.36842105263158,
+      "stability": {
+        "full_pct": 81.67999999999999,
+        "primitive_pct": 92.80000000000001,
+        "role_pct": 99.68,
+        "scope_pct": 85.92,
+        "total_pairs": 1250,
+        "type_pct": 99.68
+      },
+      "unsafe_accepted_count": 0
+    },
+    {
+      "abstention_rate_pct": 20.75471698113207,
+      "label": "C_canonicalizer",
+      "n_promoted": 42,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 89.47368421052632,
+      "stability": {
+        "full_pct": 100.0,
+        "primitive_pct": 100.0,
+        "role_pct": 100.0,
+        "scope_pct": 100.0,
+        "total_pairs": 1250,
+        "type_pct": 100.0
+      },
+      "unsafe_accepted_count": 0
+    },
+    {
+      "abstention_rate_pct": 20.75471698113207,
+      "label": "D_conservative",
+      "n_promoted": 42,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 89.47368421052632,
+      "stability": {
+        "full_pct": 100.0,
+        "primitive_pct": 100.0,
+        "role_pct": 100.0,
+        "scope_pct": 100.0,
+        "total_pairs": 1250,
+        "type_pct": 100.0
+      },
+      "unsafe_accepted_count": 0
+    }
+  ],
+  "unstable_to_stable_conversion": {
+    "now_stable_under_c": 11,
+    "raw_unstable_keys": 11,
+    "stable_but_wrong_under_c": 2
+  }
+}
+summary written to docs/research/artifacts/i45_e2c_canonicalization_run2/summary.json

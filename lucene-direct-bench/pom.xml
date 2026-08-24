@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Phase 6C (Issue #21 Phase 6, extending 6A/6B): raw Apache Lucene
+  direct baseline, not Solr. See the module README for why this
+  exists: every prior cross-engine comparison in this project (Phase
+  2 through 6B) measured commerce-native against Solr, never against
+  Lucene itself with Solr's HTTP/schema/faceting-wrapper layer
+  stripped away. This isolates "generic engine core retrieval cost"
+  from "Solr's own orchestration overhead" for the first time.
+
+  This is a standalone Java/Maven module, not a Rust crate, because
+  Lucene is an embedded library with no HTTP interface (unlike Solr,
+  which every other cross-engine binary in this repo reaches via
+  ureq/HTTP) and no mature, widely-used Rust binding exists. This
+  mirrors how Solr itself is invoked (a separate process reached via
+  its own protocol) rather than embedded in commerce-native.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.commercenative</groupId>
+  <artifactId>lucene-direct-bench</artifactId>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <lucene.version>9.11.1</lucene.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-analysis-common</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-facet</artifactId>
+      <version>${lucene.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>lucene-direct-bench</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>org.commercenative.lucenedirect.WandsLuceneBench</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>single</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

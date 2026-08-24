@@ -1,0 +1,4 @@
+n_tenants,quiet_total_requests,quiet_throughput_rps,quiet_p50_ms,quiet_p99_ms,rps_ratio_vs_n55,p99_ratio_vs_n55,slo_pass,noisy_total_requests,rss_kb
+55,3011,752.75,1.2858,2.7552,1.000,1.000,true,21874,249912
+2000,2973,743.25,1.3082,1.8689,0.987,0.678,true,17601,5612572
+3500,3057,764.25,1.2718,1.8121,1.015,0.658,true,17787,9636828

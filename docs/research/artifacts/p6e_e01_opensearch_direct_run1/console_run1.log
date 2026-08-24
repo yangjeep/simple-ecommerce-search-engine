@@ -1,0 +1,119 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+WARNING: A terminally deprecated method in java.lang.System has been called
+WARNING: System::setSecurityManager has been called by org.opensearch.bootstrap.BootstrapForTesting (file:/tmp/opensearch-nonroot/repo/org/opensearch/test/framework/2.17.0/framework-2.17.0.jar)
+WARNING: Please consider reporting this to the maintainers of org.opensearch.bootstrap.BootstrapForTesting
+WARNING: System::setSecurityManager will be removed in a future release
+Aug 21, 2026 11:53:25 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[2026-08-21T18:53:25,919][INFO ][o.o.n.Node               ] [testWandsBenchmark] version[2.17.0], pid[19205], build[unknown/8586481dc99b1740ca3c7c966aee15ad0fc7b412/2024-09-13T01:04:14.707418737Z], OS[Linux/6.18.44-fc-v21/amd64], JVM[Ubuntu/OpenJDK 64-Bit Server VM/21.0.10/21.0.10+7-Ubuntu-124.04]
+[2026-08-21T18:53:25,928][INFO ][o.o.n.Node               ] [testWandsBenchmark] JVM home [/usr/lib/jvm/java-21-openjdk-amd64]
+[2026-08-21T18:53:25,932][DEPRECATION][o.o.d.n.Node             ] [testWandsBenchmark] no-jdk distributions that do not bundle a JDK are deprecated and will be removed in a future release
+[2026-08-21T18:53:25,932][INFO ][o.o.n.Node               ] [testWandsBenchmark] JVM arguments [-Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12, -Djavax.net.ssl.trustStorePassword=changeit, -Djavax.net.ssl.trustStoreType=PKCS12, -Dhttps.proxyHost=127.0.0.1, -Dhttps.proxyPort=46455, -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local, -Djdk.http.auth.tunneling.disabledSchemes=, -Djdk.http.auth.proxying.disabledSchemes=, -Djava.security.manager=allow, -Xmx2g]
+[2026-08-21T18:53:25,941][INFO ][o.o.p.PluginsService     ] [testWandsBenchmark] no modules loaded
+[2026-08-21T18:53:25,942][INFO ][o.o.p.PluginsService     ] [testWandsBenchmark] loaded plugin [org.opensearch.script.MockScriptService$TestPlugin]
+[2026-08-21T18:53:25,943][INFO ][o.o.p.PluginsService     ] [testWandsBenchmark] loaded plugin [org.opensearch.test.MockHttpTransport$TestPlugin]
+[2026-08-21T18:53:25,943][INFO ][o.o.p.PluginsService     ] [testWandsBenchmark] loaded plugin [org.opensearch.test.telemetry.MockTelemetryPlugin]
+[2026-08-21T18:53:25,943][INFO ][o.o.p.PluginsService     ] [testWandsBenchmark] loaded plugin [org.opensearch.transport.nio.MockNioTransportPlugin]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Ogs 21, 2026 6:53:26 GD org.apache.lucene.store.MemorySegmentIndexInputProvider <init>
+INFO: Using MemorySegmentIndexInput and native madvise support with Java 21 or later; to disable start with -Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false
+[2026-08-21T18:53:26,034][INFO ][o.o.e.NodeEnvironment    ] [testWandsBenchmark] using [1] data paths, mounts [[/ (/dev/vda)]], net usable_space [15.1gb], net total_space [251.9gb], types [ext4]
+[2026-08-21T18:53:26,034][INFO ][o.o.e.NodeEnvironment    ] [testWandsBenchmark] heap size [2gb], compressed ordinary object pointers [true]
+[2026-08-21T18:53:26,072][INFO ][o.o.n.Node               ] [testWandsBenchmark] node name [node_s_0], node ID [9cY0Wc7ARKKAPGhlTu4Iuw], cluster name [single-node-cluster-TEST_WORKER_VM=[--not-gradle--]-CLUSTER_SEED=[-5042239875957007452]-HASH=[7BDD1FA6CFF]], roles [ingest, remote_cluster_client, data, cluster_manager]
+[2026-08-21T18:53:26,099][INFO ][o.o.e.ExtensionsManager  ] [testWandsBenchmark] ExtensionsManager initialized
+[2026-08-21T18:53:27,188][INFO ][o.o.d.DiscoveryModule    ] [testWandsBenchmark] using discovery type [zen] and seed hosts providers [settings]
+[2026-08-21T18:53:27,446][WARN ][o.o.g.DanglingIndicesState] [testWandsBenchmark] gateway.auto_import_dangling_indices is disabled, dangling indices will not be automatically detected or imported and must be managed manually
+[2026-08-21T18:53:27,643][INFO ][o.o.n.Node               ] [testWandsBenchmark] initialized
+[2026-08-21T18:53:27,643][INFO ][o.o.n.Node               ] [testWandsBenchmark] starting ...
+[2026-08-21T18:53:27,670][INFO ][o.o.t.TransportService   ] [testWandsBenchmark] publish_address {127.0.0.1:10300}, bound_addresses {127.0.0.1:10300}
+[2026-08-21T18:53:27,672][INFO ][o.o.t.TransportService   ] [testWandsBenchmark] Remote clusters initialized successfully.
+[2026-08-21T18:53:27,825][INFO ][o.o.c.c.Coordinator      ] [testWandsBenchmark] setting initial configuration to VotingConfiguration{9cY0Wc7ARKKAPGhlTu4Iuw}
+[2026-08-21T18:53:28,005][INFO ][o.o.c.s.MasterService    ] [node_s_0] Tasks batched with key: org.opensearch.cluster.coordination.JoinHelper and count: 3, term: 1, version: 1, delta: cluster-manager node changed {previous [], current [{node_s_0}{9cY0Wc7ARKKAPGhlTu4Iuw}{tSDfq8yZR3aOBm7MzQ1Amg}{127.0.0.1}{127.0.0.1:10300}{dimr}{shard_indexing_pressure_enabled=true}]}
+[2026-08-21T18:53:28,036][INFO ][o.o.c.c.CoordinationState] [node_s_0] cluster UUID set to [17C_PT46RnOXK0sc_9yehQ]
+[2026-08-21T18:53:28,062][INFO ][o.o.c.s.ClusterApplierService] [node_s_0] cluster-manager node changed {previous [], current [{node_s_0}{9cY0Wc7ARKKAPGhlTu4Iuw}{tSDfq8yZR3aOBm7MzQ1Amg}{127.0.0.1}{127.0.0.1:10300}{dimr}{shard_indexing_pressure_enabled=true}]}, term: 1, version: 1, reason: Publication{term=1, version=1}
+[2026-08-21T18:53:28,072][INFO ][o.o.n.Node               ] [testWandsBenchmark] started
+[2026-08-21T18:53:28,078][INFO ][o.o.d.PeerFinder         ] [node_s_0] setting findPeersInterval to [1s] as node commission status = [true] for local node [{node_s_0}{9cY0Wc7ARKKAPGhlTu4Iuw}{tSDfq8yZR3aOBm7MzQ1Amg}{127.0.0.1}{127.0.0.1:10300}{dimr}{shard_indexing_pressure_enabled=true}]
+[2026-08-21T18:53:28,081][WARN ][o.o.c.r.a.AllocationService] [node_s_0] Falling back to single shard assignment since batch mode disable or multiple custom allocators set
+[2026-08-21T18:53:28,086][WARN ][o.o.c.r.a.AllocationService] [node_s_0] Falling back to single shard assignment since batch mode disable or multiple custom allocators set
+[2026-08-21T18:53:28,094][INFO ][o.o.g.GatewayService     ] [node_s_0] recovered [0] indices into cluster_state
+[2026-08-21T18:53:28,112][INFO ][o.o.p.PluginsService     ] [node_s_0] PluginService:onIndexModule index:[q-uQ9oB_TyydfFdJknojZw/KDp8vV8xTgy94ywuB0UdBQ]
+[2026-08-21T18:53:28,207][INFO ][o.o.c.m.MetadataIndexTemplateService] [node_s_0] adding template [one_shard_index_template] for index patterns [*]
+[2026-08-21T18:53:28,240][INFO ][o.o.p.PluginsService     ] [node_s_0] PluginService:onIndexModule index:[foU59HQjSXSQkIwK6dgLvw/juP3p8nbQ-SYTR2iFrZz0w]
+[2026-08-21T18:53:28,243][INFO ][o.o.c.m.MetadataIndexTemplateService] [node_s_0] adding template [random-soft-deletes-template] for index patterns [*]
+[2026-08-21T18:53:28,264][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] before test
+[2026-08-21T18:53:28,267][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] === P6E-E01: embedded OpenSearch direct baseline (Issue #21 Phase 6E) ===
+[2026-08-21T18:53:28,267][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] catalog=/tmp/opensearch-nonroot/wands_catalog.jsonl solr_base_url=http://localhost:8983/solr/wands_bench
+[2026-08-21T18:53:28,761][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] loaded 42994 real WANDS products
+[2026-08-21T18:53:28,768][DEPRECATION][o.o.d.c.m.MetadataCreateIndexService] [node_s_0] index [wands_bench_opensearch] matches multiple legacy templates [one_shard_index_template, random-soft-deletes-template], composable templates will only match a single template
+[2026-08-21T18:53:28,774][INFO ][o.o.p.PluginsService     ] [node_s_0] PluginService:onIndexModule index:[wands_bench_opensearch/ApRDpGFNSbS2QHNLdkC71A]
+[2026-08-21T18:53:28,779][INFO ][o.o.c.m.MetadataCreateIndexService] [node_s_0] [wands_bench_opensearch] creating index, cause [api], templates [random-soft-deletes-template, one_shard_index_template], shards [1]/[0]
+[2026-08-21T18:53:28,784][WARN ][o.o.c.r.a.AllocationService] [node_s_0] Falling back to single shard assignment since batch mode disable or multiple custom allocators set
+[2026-08-21T18:53:28,815][INFO ][o.o.p.PluginsService     ] [node_s_0] PluginService:onIndexModule index:[wands_bench_opensearch/ApRDpGFNSbS2QHNLdkC71A]
+[2026-08-21T18:53:29,014][INFO ][o.o.c.r.a.AllocationService] [node_s_0] Cluster health status changed from [YELLOW] to [GREEN] (reason: [shards started [[wands_bench_opensearch][0]]]).
+[2026-08-21T18:53:29,050][WARN ][o.o.c.r.a.AllocationService] [node_s_0] Falling back to single shard assignment since batch mode disable or multiple custom allocators set
+[2026-08-21T18:53:29,063][INFO ][o.o.p.PluginsService     ] [node_s_0] PluginService:onIndexModule index:[wands_bench_opensearch/ApRDpGFNSbS2QHNLdkC71A]
+[2026-08-21T18:53:29,092][INFO ][o.o.c.m.MetadataMappingService] [node_s_0] [wands_bench_opensearch/ApRDpGFNSbS2QHNLdkC71A] create_mapping
+[2026-08-21T18:53:37,311][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] index built in 8190.4ms
+[2026-08-21T18:53:37,471][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Rugs": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:37,473][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Rugs                 candidates=2002     p50=1.7596ms mean=1.8369ms solr_count=n/a match=n/a
+[2026-08-21T18:53:37,610][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Rugs                 candidates=2002     p50=2.0321ms mean=2.0746ms solr_count=n/a match=n/a
+[2026-08-21T18:53:37,716][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Rugs                 candidates=2002     p50=1.9737ms mean=2.2914ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,526][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Rugs                 candidates=2002     p50=20.6301ms mean=21.6535ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,635][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Rugs                 candidates=2002     p50=2.4002ms mean=2.5017ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,747][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Rugs                 candidates=2002     p50=2.6521ms mean=2.8804ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,789][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Storage & Organization": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:38,790][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Storage & Organization candidates=2175     p50=0.9357ms mean=0.9591ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,855][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Storage & Organization candidates=2175     p50=1.3573ms mean=1.4910ms solr_count=n/a match=n/a
+[2026-08-21T18:53:38,919][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Storage & Organization candidates=2175     p50=1.3811ms mean=1.6709ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,286][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Storage & Organization candidates=2175     p50=10.1460ms mean=10.3525ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,358][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Storage & Organization candidates=2175     p50=1.7526ms mean=1.9327ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,444][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Storage & Organization candidates=2175     p50=2.2105ms mean=2.4587ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,487][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Lighting": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:39,488][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Lighting             candidates=2072     p50=0.8773ms mean=1.1578ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,531][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Lighting             candidates=2072     p50=1.0404ms mean=1.0493ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,583][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Lighting             candidates=2072     p50=1.2846ms mean=1.3973ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,913][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Lighting             candidates=2072     p50=7.7690ms mean=9.6969ms solr_count=n/a match=n/a
+[2026-08-21T18:53:39,977][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Lighting             candidates=2072     p50=1.5763ms mean=1.7465ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,042][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Lighting             candidates=2072     p50=1.6883ms mean=1.7934ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,075][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Outdoor": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:40,076][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Outdoor              candidates=3394     p50=0.7319ms mean=0.7514ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,127][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Outdoor              candidates=3394     p50=1.2524ms mean=1.2819ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,182][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Outdoor              candidates=3394     p50=1.3821ms mean=1.4004ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,485][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Outdoor              candidates=3394     p50=8.1744ms mean=8.4816ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,541][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Outdoor              candidates=3394     p50=1.5319ms mean=1.5785ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,610][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Outdoor              candidates=3394     p50=1.7890ms mean=1.9302ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,634][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Décor & Pillows": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:40,635][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Décor & Pillows      candidates=4612     p50=0.6188ms mean=0.6266ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,679][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Décor & Pillows      candidates=4612     p50=0.9095ms mean=1.1948ms solr_count=n/a match=n/a
+[2026-08-21T18:53:40,771][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Décor & Pillows      candidates=4612     p50=2.1453ms mean=2.3646ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,145][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Décor & Pillows      candidates=4612     p50=8.8706ms mean=10.9861ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,204][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Décor & Pillows      candidates=4612     p50=1.4572ms mean=1.5821ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,286][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Décor & Pillows      candidates=4612     p50=2.0451ms mean=2.2828ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,318][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Home Improvement": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:41,319][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Home Improvement     candidates=4686     p50=0.6985ms mean=0.7481ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,359][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Home Improvement     candidates=4686     p50=0.8540ms mean=0.9059ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,422][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Home Improvement     candidates=4686     p50=1.3563ms mean=1.6919ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,673][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Home Improvement     candidates=4686     p50=6.6223ms mean=6.7710ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,730][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Home Improvement     candidates=4686     p50=1.4427ms mean=1.6152ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,806][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Home Improvement     candidates=4686     p50=1.7976ms mean=2.0630ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,833][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=category_depth_1:"Furniture": java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:41,833][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   filter_only                      Furniture            candidates=16039    p50=0.5401ms mean=0.6235ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,871][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   product_class_facet_under_category Furniture            candidates=16039    p50=0.9168ms mean=0.9110ms solr_count=n/a match=n/a
+[2026-08-21T18:53:41,932][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   color_facet_under_category       Furniture            candidates=16039    p50=1.5299ms mean=1.5713ms solr_count=n/a match=n/a
+[2026-08-21T18:53:42,155][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_title_asc                   Furniture            candidates=16039    p50=6.0609ms mean=6.3858ms solr_count=n/a match=n/a
+[2026-08-21T18:53:42,237][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   sort_rating_desc                 Furniture            candidates=16039    p50=1.3129ms mean=2.5062ms solr_count=n/a match=n/a
+[2026-08-21T18:53:42,421][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   deep_pagination                  Furniture            candidates=16039    p50=4.2131ms mean=5.2174ms solr_count=n/a match=n/a
+[2026-08-21T18:53:42,467][WARN ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] Solr cross-check failed for fq=average_rating:[4.0 TO *]: java.security.AccessControlException: access denied ("java.net.SocketPermission" "localhost:8983" "connect,resolve")
+[2026-08-21T18:53:42,468][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark]   numeric_range_rating             whole_catalog        candidates=31967    p50=0.6030ms mean=0.6453ms solr_count=n/a match=n/a
+[2026-08-21T18:53:42,470][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] artifacts written to /tmp/p6e_e01_opensearch_direct_run1
+[2026-08-21T18:53:42,477][INFO ][o.c.o.WandsOpenSearchBenchTest] [testWandsBenchmark] after test
+[2026-08-21T18:53:42,488][INFO ][o.o.c.m.MetadataDeleteIndexService] [node_s_0] [wands_bench_opensearch/ApRDpGFNSbS2QHNLdkC71A] deleting index
+[2026-08-21T18:53:42,490][WARN ][o.o.c.r.a.AllocationService] [node_s_0] Falling back to single shard assignment since batch mode disable or multiple custom allocators set
+[2026-08-21T18:53:42,547][INFO ][o.o.n.Node               ] [suite] stopping ...
+[2026-08-21T18:53:42,569][INFO ][o.o.n.Node               ] [suite] stopped
+[2026-08-21T18:53:42,569][INFO ][o.o.n.Node               ] [suite] closing ...
+[2026-08-21T18:53:42,581][INFO ][o.o.n.Node               ] [suite] closed

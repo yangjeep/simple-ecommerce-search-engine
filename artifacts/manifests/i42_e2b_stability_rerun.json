@@ -1,0 +1,31 @@
+{
+  "experiment_id": "I42-E2b-stability-rerun",
+  "phase": "issue-42",
+  "issue": 42,
+  "benchmark_manifest": "benchmarks/manifests/i42_e2b_stability_rerun.yaml",
+  "git_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "run_count_decision": "3 additional independent runs per configuration (2 -> 5 total), decided and committed in scripts/e2b_stability_rerun_workflow.js BEFORE any new result was seen. C(5,2)=10 pairwise comparisons per configuration, up from C(2,2)=1 -- a 10x increase in sample size.",
+  "repetitions": "12 new independent blinded subagent calls (4 configurations x 3 new runs each); 12/12 succeeded, 0 errors, 0 empty results",
+  "raw_results_path": "docs/research/artifacts/i42_e2b_stability_rerun_run1/, dataset_cache/export/e2b_llm_proposals_<config>_run{3,4,5}.json",
+  "analysis_version": "docs/experiments/ISSUE42_LOG.md#i42-e2b-serving-contract-closure-repeated-run-stability-re-run-gate-criterion-4",
+  "decision": "docs/experiments/ISSUE42_LOG.md#i42-e2b-serving-contract-closure-repeated-run-stability-re-run-gate-criterion-4",
+  "headline_result": {
+    "aggregate": "1095/1250 (87.60%), up from 107/125 (85.60%) on the original 2-runs-per-configuration sample -- still below the 90% preregistered bar",
+    "by_configuration": {
+      "automotive": "156/170 (91.76%) -- clears the 90% bar",
+      "wands_baseline": "316/360 (87.78%)",
+      "wands_anonymized": "311/360 (86.39%)",
+      "wands_noisy": "312/360 (86.67%)"
+    },
+    "interpretation": "All three real-WANDS-derived configurations independently and consistently sit in an 86-88% band, below 90%, while the smaller synthetic automotive control clears it. A materially more precise (10x larger pairwise sample) measurement pointing at a real, stable population rate for real messy feed data around 86-88%, not a sampling artifact of the original small-N measurement.",
+    "proposal_vs_validator_instability": "100% of the measured instability is proposal (LLM) instability by construction -- e2b_validator::validate is a pure deterministic function of (proposal, real measured stats); an identical proposal always produces an identical accept/reject decision, so there is no validator-side stochastic contribution to separately measure.",
+    "accuracy_headline_numbers_unaffected": "Baseline 1/2/3 macro F1 (0.5366/0.7985/0.7697), accepted-structural precision/recall, abstention rates, macro F1 by configuration, and end-to-end NDCG/Recall are all byte-identical to the original 2-run measurement -- verified directly, not merely argued -- since build_baselines_2_and_3's headline accepted-descriptor maps use first-run-wins semantics over runs in push order (run 1 always first), which additional runs cannot disturb.",
+    "go_gate_criterion_4_final": "FAIL (87.60% vs >=90% required, on a materially larger and internally consistent sample)"
+  },
+  "disclosed_limitations": [
+    "The original 8 passes' own literal prompt wording was never committed to this repository (only their frozen JSON output was) -- the 12 new passes' prompt is a faithful reconstruction from the protocol's own descriptor schema and instructions text, not a byte-identical replay. The bounded INPUT DATA itself (statistics, sample values, shown key names) is, by contrast, fully deterministic and was reproduced exactly.",
+    "Model/provider/version for the 12 new passes is whatever this session's configured model serves subagent calls; the original 8 passes' own model/provider/version was likewise never recorded in a machine-readable, pinnable form in this repository, so exact model-identity reproduction could not be verified as matched or mismatched either way."
+  ],
+  "note": "This closes Issue #42's own E2b serving-contract-closure pass item 3. Combined with the serving-overhead measurement (i42_e2b_serving_overhead_eval) and the WANDS-qualification audit, this is one of the inputs to the corrected final E2b GO-gate verdict in ISSUE42_DECISION.md."
+}

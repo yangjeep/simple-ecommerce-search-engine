@@ -1,0 +1,33 @@
+=== P9-E04: isolated ranking-quality (H1) + execution-speed (H3) comparison, identical candidate set ===
+warmup pass (both engines, restricted-query path, discarded)...
+structural_routed queries seen: 150, evaluated (candidate set <= 5000): 136, skipped (candidate set too large): 2
+candidate-set size: median=6, max=42994
+
+=== H1: ranking quality, identical candidate set (n=136) ===
+native NDCG@10=0.1521  solr-restricted NDCG@10=0.1537
+relative gap (native vs solr, same candidates): -1.05%
+=== H1 FALSIFIED: native's ranking signal is NOT materially worse on the identical candidate set -- the end-to-end gap must come predominantly from retrieval/coverage differences, not ranking ===
+
+=== H1 follow-on diagnostic: candidate-set relevant-document recall (prompted by H1's own result) ===
+mean fraction of a query's real judged-relevant documents present ANYWHERE in native's structural candidate set, before any ranking (n=136): 0.0841
+queries where the candidate set contains 100% of judged-relevant documents: 0/136
+split by grade -- Exact recall (n=103): 0.1152   Partial recall (n=134): 0.0803
+
+=== aggregate test (not anecdotal): does a real entity constraint (ProductType/Category) predict higher Exact recall than an attribute-only (e.g. incidental color) constraint? ===
+queries with a ProductType/Category constraint (n=11): mean Exact recall = 0.4757
+queries with only attribute-level constraints, no entity (n=92): mean Exact recall = 0.0721
+
+=== qualitative examples: low-Exact-recall queries, resolved constraint, missed Exact products' real category ===
+query="smart coffee table" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"coffee\" })"] missed_exact_examples=["16679: product_class=Some(\"Coffee & Cocktail Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / Coffee Tables\")", "20054: product_class=Some(\"Coffee & Cocktail Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / Coffee Tables\")", "25973: product_class=Some(\"Coffee & Cocktail Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / Coffee Tables\")"]
+query="turquoise pillows" exact_recall=0.11 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"turquoise\" })"] missed_exact_examples=["11690: product_class=Some(\"Accent Pillows\"), category_leaf=Some(\"Décor & Pillows / Decorative Pillows & Blankets / Throw Pillows\")", "12386: product_class=Some(\"Bedding Accessories\"), category_leaf=None", "12436: product_class=Some(\"Accent Pillows\"), category_leaf=Some(\"Décor & Pillows / Decorative Pillows & Blankets / Throw Pillows\")"]
+query="acrylic clear chair" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"clear\" })"] missed_exact_examples=["10287: product_class=Some(\"Dining Chairs\"), category_leaf=Some(\"Furniture / Kitchen & Dining Furniture / Dining Tables & Seating / Kitchen & Dining Chairs\")", "14488: product_class=Some(\"Dining Chairs\"), category_leaf=Some(\"Furniture / Kitchen & Dining Furniture / Dining Tables & Seating / Kitchen & Dining Chairs / Side Kitchen & Dining Chairs\")", "1452: product_class=Some(\"Stackable Chairs\"), category_leaf=Some(\"School Furniture and Supplies / School Furniture / School Chairs & Seating / Stackable Chairs\")"]
+query="coffee table fire pit" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"coffee\" })"] missed_exact_examples=["12301: product_class=Some(\"Outdoor Fireplaces\"), category_leaf=Some(\"Outdoor / Outdoor Heating / Fire Pits / Propane Fire Pits\")", "1311: product_class=None, category_leaf=None", "1312: product_class=None, category_leaf=None"]
+query="chrome bathroom 4 light vanity light" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"chrome\" })"] missed_exact_examples=["10259: product_class=Some(\"Vanity Lighting\"), category_leaf=Some(\"Lighting / Wall Lights / Bathroom Vanity Lighting\")", "13446: product_class=Some(\"Vanities\"), category_leaf=Some(\"Home Improvement / Bathroom Remodel & Bathroom Fixtures / Bathroom Vanities / All Bathroom Vanities\")", "13687: product_class=Some(\"Vanity Lighting\"), category_leaf=Some(\"Lighting / Wall Lights / Bathroom Vanity Lighting\")"]
+query="living curtains pearl" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"pearl\" })"] missed_exact_examples=["27990: product_class=Some(\"Curtains & Drapes\"), category_leaf=Some(\"Décor & Pillows / Window Treatments / Curtains & Drapes / 90 Inch Curtains & Drapes\")"]
+
+=== Exact recall itself is low: native's structural constraint is missing even same-category ground truth -- a real native matching defect, not just a scope-mismatch artifact ===
+
+=== H3: execution speed, identical candidate set and semantic scope (n=136) ===
+native mean latency=1.5658ms  solr-restricted mean latency=1.2353ms
+latency ratio (solr / native): 0.79x
+=== H3 FALSIFIED: native's speed advantage does not clear the >=2x bar once candidate set is held identical ===

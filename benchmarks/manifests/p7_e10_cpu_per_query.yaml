@@ -1,0 +1,61 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E10
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Issue #21 explicitly names "CPU/query and CPU/tenant" as required
+  Phase 7 measurements; every prior Phase 7 experiment measured
+  wall-clock only. Reusing H6/H7/H8/H9's exact 3 real tenant sizes
+  (Water Filter Pitchers 1 product, Faux Plants and Trees 5 products,
+  Furniture 16,039 products), CPU time was measured single-threaded
+  with no concurrent noisy load (process-wide /proc/self/stat
+  accounting would otherwise be contaminated). A CPU/wall ratio of
+  0.997-1.002 in every measurement validated the CPU-time reading
+  method. H13 (linear CPU scaling with product count) is FALSIFIED:
+  from 1 to 5 products (5.0x), CPU/query grows only 2.74x (sub-linear,
+  a fixed per-query overhead dominates at tiny sizes); from 5 to
+  16,039 products (3,207.8x), CPU/query grows 9,694.6x (super-linear).
+  Furniture's actual measured cost (10,534.77 us/query, mean of 3
+  runs) is 3.81x higher than a straight-line extrapolation from the
+  two small tenants would predict. Unlike memory (H1/H5's clean linear
+  scaling), CPU cost per query does NOT scale linearly across this
+  size range -- a capacity model using aggregate product count alone
+  would underestimate the largest real tenant's true CPU cost. See
+  docs/experiments/PHASE7_LOG.md for the full H13 hypothesis and
+  result.
+
+git_sha: aca8cf0
+binary: crates/phase7-eval/src/bin/p7_e10_cpu_per_query.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e10_cpu_per_query
+run_command: ./target/release/p7_e10_cpu_per_query dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS 3 real tenants (Water Filter Pitchers 1 product, Faux
+    Plants and Trees 5 products, Furniture 16,039 products -- the same
+    3 sizes H6/H7/H8/H9 already used)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, single-threaded, one
+    tenant at a time, no concurrent load; CPU time read directly from
+    /proc/self/stat (utime+stime, standard 100Hz USER_HZ assumed, no
+    new crate dependency)
+
+workload:
+  selection: fixed 4-second wall-clock window per tenant (after a
+    500ms warm-up), counting iterations of facet_scan_once and reading
+    the CPU-time delta over that same window
+  repetitions: 3 independent external process runs
+
+seed: "n/a (deterministic real-data, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e10_cpu_per_query_run1/
+  - results_run{1,2,3}.csv
+  - console_run{1,2,3}.log
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H13 hypothesis, the
+  CPU/wall sanity check, and the corrected non-linear-scaling
+  interpretation.

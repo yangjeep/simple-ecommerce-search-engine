@@ -1,0 +1,17 @@
+[package]
+name = "phase7-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Phase 7 (Issue #21 Phase 7) experiments: multi-tenant SMB/mid-market serving economics -- tenant packing density, fixed-cost amortization, and cross-tenant isolation, using real WANDS category partitions as the tenant model."
+
+[dependencies]
+bench-harness = { path = "../bench-harness" }
+commerce-core = { path = "../commerce-core" }
+phase6a-eval = { path = "../phase6a-eval" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.8"
+rand_chacha = "0.3"
+ureq = { version = "2", features = ["json"] }

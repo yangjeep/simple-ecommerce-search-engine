@@ -1,0 +1,3 @@
+condition,p50_ms,p99_ms,n,ratio_vs_baseline_p50,ratio_vs_baseline_p99,churns_completed,churns_per_sec
+baseline,1.3456,1.9251,500,1.0,1.0,,
+under_churn,1.5752,7.7016,500,1.1706,4.0006,5,1.00

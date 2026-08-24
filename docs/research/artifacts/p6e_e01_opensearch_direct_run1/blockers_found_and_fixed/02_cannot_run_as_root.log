@@ -1,0 +1,42 @@
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.553 s <<< FAILURE! -- in org.commercenative.opensearchdirect.ProbeTest
+[ERROR] org.commercenative.opensearchdirect.ProbeTest -- Time elapsed: 0.543 s <<< ERROR!
+java.lang.RuntimeException: can not run opensearch as root
+	at org.opensearch.bootstrap.Bootstrap.initializeNatives(Bootstrap.java:124)
+	at org.opensearch.bootstrap.BootstrapForTesting.<clinit>(BootstrapForTesting.java:108)
+	at org.opensearch.test.OpenSearchTestCase.<clinit>(OpenSearchTestCase.java:285)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:536)
+	at java.base/java.lang.Class.forName(Class.java:515)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$2.run(RandomizedRunner.java:623)
+
+[ERROR] Errors:
+[ERROR]   ProbeTest>OpenSearchTestCase.<clinit>:285 ? Runtime can not run opensearch as root
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0
+
+Cause: this whole session's container runs every shell command as root
+(confirmed via `whoami`/`id`; Solr itself needed `bin/solr start --force`
+for the same reason). OpenSearch's own bootstrap (Bootstrap.
+initializeNatives) explicitly checks whether it is running as root and
+refuses if so -- a genuine safety check present in OpenSearch's own
+code, not a JVM/environment restriction. Elasticsearch's equivalent
+check (P6E-E00) did NOT hard-fail under the identical root+no-native-
+access condition -- it logged "Cannot check if running as root because
+native access is not available" and continued, meaning the same
+underlying condition (native access library unavailable in this
+container, e.g. no zstd native lib) is handled differently by the two
+forks: ES treats "can't determine" as non-fatal, OpenSearch treats it as
+fatal. This is a real, disclosed divergence between the two forks'
+bootstrap code, not an inconsistency in this project's own testing.
+
+Fixed by running the OpenSearch benchmark as a genuine non-root user
+(the container's existing `ubuntu` uid=1000 account) rather than as
+root -- an isolated copy of the module plus a separate Maven local
+repository under /tmp (both chowned to ubuntu) were used, since /root
+itself is mode 700 and unreadable by any other user, so ubuntu cannot
+share the root-owned ~/.m2 cache. No source-code or policy changes were
+needed once running as a real non-root user; installing the actual
+native zstd library and re-testing as root was considered and rejected
+as a workaround, since it would only convert this "can't determine, so
+refuse" error into a definitive "is root, refusing" error -- the
+underlying incompatibility (OpenSearch refuses to run its own bootstrap
+as root, full stop) would remain.

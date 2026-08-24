@@ -1,0 +1,5 @@
+=== Issue #38 E1: isolated RSS for path a ===
+RSS before catalog load: 2508 KB
+RSS after catalog load:  161952 KB (catalog fixed cost, shared by every path)
+RSS after building a: 194712 KB
+path a's own structure cost (delta from post-load): 32760 KB

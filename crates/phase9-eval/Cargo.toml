@@ -1,0 +1,18 @@
+[package]
+name = "phase9-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Phase 9 (Issue #34) evidence closure: fix Phase 2's two disclosed defects (FastPath's missing ranking signal, Hybrid's TermSetQuery delegate restriction) and re-run the physical-advantage-by-query-class + traffic-weighted-economics measurement on WANDS against a fresh Solr baseline."
+
+[dependencies]
+bench-harness = { path = "../bench-harness" }
+commerce-core = { path = "../commerce-core" }
+round1-eval = { path = "../round1-eval" }
+phase6a-eval = { path = "../phase6a-eval" }
+tantivy = "0.22"
+roaring = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }

@@ -1,0 +1,77 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E09
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Directly answers Issue #21's "tenants per fixed hardware envelope at
+  target SLO" economic-output metric. H5/P7-E02's own 6,500-tenant
+  memory ceiling measures an INDEX-ONLY configuration (raw Catalog
+  dropped after each tenant's index is built); a query-capable
+  deployment needs both Catalog and CatalogIndex resident per tenant, a
+  materially higher real footprint. A first-draft binary reused
+  P7-E08's eager build-all-then-check pattern and was OOM-killed at
+  n=6500 by this container's real cgroup memory limit
+  (14,327,726,080 bytes = 13.34 GiB, read directly from
+  /sys/fs/cgroup/memory/.../memory.limit_in_bytes -- materially lower
+  than the ~15GB host-level free -h figure this project's prior
+  safety caps had implicitly assumed). Fixed by rebuilding
+  incrementally (one tenant's Catalog+CatalogIndex at a time,
+  mirroring H5/P7-E02's own proven-safe pattern), checking real RSS
+  every 250 tenants during construction. The corrected binary safely
+  reached exactly n=3500 in all 3 runs under a disclosed 9GB
+  self-imposed safety cap. A second self-caught issue: the very first
+  in-process latency checkpoint (n=55) showed unstable p99 across runs
+  (a cold-start artifact), while p50 stayed tight -- p50 is used as
+  the primary metric. p50 ratio at n=3500 vs n=55: 0.989-1.019 across
+  all 3 runs (essentially flat); throughput ratio: 0.951-1.035 (also
+  flat) -- both far inside the pre-registered pass bar. H12 CONFIRMED:
+  ~3,500 query-capable tenants is the real, empirically-reached answer
+  for this container's disclosed 9GB envelope -- materially lower than
+  H5's own 6,500-tenant (index-only) figure. See
+  docs/experiments/PHASE7_LOG.md for the full H12 hypothesis and
+  result.
+
+git_sha: cc9e638
+binary: crates/phase7-eval/src/bin/p7_e09_slo_tenant_envelope.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e09_slo_tenant_envelope
+run_command: ./target/release/p7_e09_slo_tenant_envelope dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS real 55-tenant category_depth_1 population, replicated
+    incrementally (one tenant's Catalog+CatalogIndex at a time) with
+    synthetic per-copy tenant names ("Rugs-copy0" held as the fixed
+    quiet tenant)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  disclosure: >
+    Controlled-stress replication of TENANT COUNT (same methodology and
+    disclosure as P7-E02/H5 and P7-E08/H11) -- explicitly not a claim
+    about organic tenant growth.
+
+engine:
+  native: commerce_core::index::CatalogIndex, one fixed quiet tenant
+    queried continuously by a dedicated loop while 3 noisy worker
+    threads round-robin through every other replicated tenant, at
+    latency checkpoints n=55/2000/(safely-reached ceiling), built
+    incrementally up to a 9GB self-process-RSS safety cap (chosen with
+    real margin under this container's actual 13.34 GiB cgroup hard
+    limit, discovered directly via this experiment)
+
+workload:
+  selection: quiet tenant's own facet-scan query (same operation as
+    P7-E01/P7-E08), measured for a fixed 4-second window at each
+    latency checkpoint; noisy threads continuously round-robin all
+    other tenants' facet-scans for the same window
+  repetitions: 3 independent external process runs
+
+seed: "n/a (deterministic real-data replication, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/
+  - results_run{1,2,3}.csv
+  - console_run{1,2,3}.log
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H12 hypothesis, both
+  self-caught issues (the OOM bug and the n=55 p99 cold-start
+  instability), and the corrected result.

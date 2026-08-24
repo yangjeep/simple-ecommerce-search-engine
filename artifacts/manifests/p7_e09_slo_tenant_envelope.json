@@ -1,0 +1,31 @@
+{
+  "experiment_id": "P7-E09",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e09_slo_tenant_envelope.yaml",
+  "git_sha": "cc9e638",
+  "dataset": {
+    "name": "WANDS real 55 tenants, incrementally controlled-stress replicated up to a real safety-capped ceiling; quiet tenant: Rugs-copy0"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, 1 quiet tenant + 3 noisy round-robin worker threads, incremental build with RSS checks every 250 tenants, 9GB self-process RSS safety cap"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e09_slo_tenant_envelope_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E09",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h12_status": "CONFIRMED in all 3 runs -- ~3,500 query-capable tenants safely reached under a disclosed 9GB envelope, latency SLO holds",
+    "safely_reached_tenant_count": 3500,
+    "p50_ratio_n3500_vs_n55_range": [0.989, 1.019],
+    "throughput_ratio_n3500_vs_n55_range": [0.951, 1.035],
+    "pass_bar": "throughput drop <20%, latency growth <2x",
+    "real_cgroup_memory_limit_bytes": 14327726080,
+    "self_imposed_safety_cap_gb": 9,
+    "self_caught_issues": [
+      "first-draft eager build-then-check pattern OOM-killed at n=6500 by the real 13.34 GiB cgroup limit; fixed via incremental build with RSS checks during construction",
+      "n=55 baseline checkpoint's p99 was an unstable cold-start artifact (1.777/4.104/2.755 ms across runs) while p50 stayed tight (1.290/1.289/1.286 ms); p50 used as primary metric"
+    ],
+    "distinction_clarified": "H5's 6,500-tenant memory ceiling is index-only (no resident Catalog); H12's query-capable ceiling (both Catalog+CatalogIndex resident) is materially lower at ~3,500 tenants for the same disclosed envelope"
+  }
+}

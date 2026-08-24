@@ -1,0 +1,16 @@
+[ERROR] org/apache/logging/log4j/core/Layout
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project opensearch-direct-bench:
+[ERROR]
+[ERROR] Please refer to /home/user/phase6f-worktree/opensearch-direct-bench/target/surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] There was an error in the forked process
+[ERROR] org/apache/logging/log4j/core/Layout
+[ERROR] org.apache.maven.surefire.booter.SurefireBooterForkException: There was an error in the forked process
+[ERROR] org/apache/logging/log4j/core/Layout
+
+Cause (confirmed via `mvn dependency:tree`): OpenSearch's own POM brings
+org.apache.logging.log4j:log4j-api and log4j-jul as transitive
+dependencies, but NOT log4j-core (the actual logging implementation) --
+unlike Elasticsearch's equivalent bundle, which does. Fixed by adding
+log4j-core:2.21.0 (matching the resolved log4j-api version) explicitly
+to opensearch-direct-bench/pom.xml.

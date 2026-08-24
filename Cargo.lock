@@ -600,6 +600,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "issue38-e2e3-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "phase9-eval",
+ "rand",
+ "rand_chacha",
+ "serde_json",
+]
+
+[[package]]
+name = "issue38-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "phase6a-eval",
+ "roaring",
+ "round1-eval",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
+name = "issue42-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "issue38-e2e3-eval",
+ "phase9-eval",
+ "rand",
+ "rand_chacha",
+ "serde",
+ "serde_json",
+ "tantivy",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -884,6 +924,35 @@ dependencies = [
  "rand_chacha",
  "serde",
  "serde_json",
+ "ureq",
+]
+
+[[package]]
+name = "phase7-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "phase6a-eval",
+ "rand",
+ "rand_chacha",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
+name = "phase9-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "commerce-core",
+ "phase6a-eval",
+ "roaring",
+ "round1-eval",
+ "serde",
+ "serde_json",
+ "tantivy",
  "ureq",
 ]
 

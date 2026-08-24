@@ -1,0 +1,9 @@
+=== P7-E08: extending H4's QPS-vs-breadth finding to controlled-stress-replicated tenant counts ===
+(quiet tenant = 'Rugs-copy0', held fixed; n = total replicated tenant count including it; safety cap 6144 MB)
+  n=55    quiet_throughput_rps=    757.0 quiet_p50_ms=  1.2905 quiet_p99_ms=  1.8582 rps_ratio_vs_n55=  1.00 noisy_total_requests=21979        rss_kb=248724
+  n=200   quiet_throughput_rps=    760.2 quiet_p50_ms=  1.2720 quiet_p99_ms=  1.9088 rps_ratio_vs_n55=  1.00 noisy_total_requests=17208        rss_kb=696376
+  n=500   quiet_throughput_rps=    777.8 quiet_p50_ms=  1.2654 quiet_p99_ms=  1.6562 rps_ratio_vs_n55=  1.03 noisy_total_requests=16515        rss_kb=1544824
+  n=1000  quiet_throughput_rps=    719.5 quiet_p50_ms=  1.3076 quiet_p99_ms=  2.1200 rps_ratio_vs_n55=  0.95 noisy_total_requests=16540        rss_kb=2920204
+  n=2000  quiet_throughput_rps=    712.8 quiet_p50_ms=  1.3719 quiet_p99_ms=  1.9920 rps_ratio_vs_n55=  0.94 noisy_total_requests=17112        rss_kb=5612948
+
+artifacts written to docs/research/artifacts/p7_e08_extended_breadth_run1

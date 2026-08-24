@@ -1,0 +1,181 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< org.commercenative:es-direct-bench >-----------------
+[INFO] Building es-direct-bench 1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ es-direct-bench ---
+[INFO] skip non existing resourceDirectory /home/user/phase6e-worktree/es-direct-bench/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ es-direct-bench ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ es-direct-bench ---
+[INFO] skip non existing resourceDirectory /home/user/phase6e-worktree/es-direct-bench/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ es-direct-bench ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ es-direct-bench ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junit4.JUnit4Provider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46455 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+[INFO] Running org.commercenative.esdirect.WandsEsBenchTest
+[2026-08-21T23:35:21,549][WARN ][o.e.n.NativeAccess       ] [[SUITE-WandsEsBenchTest-seed#[5240459B32BBC05C]]] Unable to load native provider. Native methods will be disabled.
+java.lang.UnsatisfiedLinkError: no zstd in java.library.path: /usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib
+	at java.lang.ClassLoader.loadLibrary(ClassLoader.java:2458) ~[?:?]
+	at java.lang.Runtime.loadLibrary0(Runtime.java:916) ~[?:?]
+	at java.lang.System.loadLibrary(System.java:2063) ~[?:?]
+	at org.elasticsearch.nativeaccess.jdk.JdkZstdLibrary.<clinit>(JdkZstdLibrary.java:27) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.lib.NativeLibraryProvider.getLibrary(NativeLibraryProvider.java:58) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.AbstractNativeAccess.<init>(AbstractNativeAccess.java:29) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.PosixNativeAccess.<init>(PosixNativeAccess.java:28) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.LinuxNativeAccess.<init>(LinuxNativeAccess.java:19) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.NativeAccessHolder.<clinit>(NativeAccessHolder.java:28) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.nativeaccess.NativeAccess.instance(NativeAccess.java:22) ~[elasticsearch-native-8.15.0.jar:8.15.0]
+	at org.elasticsearch.bootstrap.Elasticsearch.initializeNatives(Elasticsearch.java:285) ~[elasticsearch-8.15.0.jar:8.15.0]
+	at org.elasticsearch.bootstrap.BootstrapForTesting.<clinit>(BootstrapForTesting.java:93) ~[framework-8.15.0.jar:8.15.0]
+	at org.elasticsearch.test.ESTestCase.<clinit>(ESTestCase.java:318) ~[framework-8.15.0.jar:8.15.0]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:536) ~[?:?]
+	at java.lang.Class.forName(Class.java:515) ~[?:?]
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$2.run(RandomizedRunner.java:631) ~[randomizedtesting-runner-2.8.0.jar:?]
+[2026-08-21T23:35:21,559][WARN ][o.e.n.NativeAccess       ] [[SUITE-WandsEsBenchTest-seed#[5240459B32BBC05C]]] Cannot check if running as root because native access is not available
+Aug 21, 2026 11:35:22 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[2026-08-21T20:35:22,503][INFO ][o.e.n.Node               ] [testWandsBenchmark] version[8.15.0], pid[26215], build[unknown/1a77947f34deddb41af25e6f0ddb8e830159c179/2024-08-05T10:05:34.233336849Z], OS[Linux/6.18.44-fc-v21/amd64], JVM[Ubuntu/OpenJDK 64-Bit Server VM/21.0.10/21.0.10+7-Ubuntu-124.04]
+[2026-08-21T20:35:22,506][INFO ][o.e.n.Node               ] [testWandsBenchmark] JVM home [/usr/lib/jvm/java-21-openjdk-amd64], using bundled JDK [false]
+[2026-08-21T20:35:22,506][INFO ][o.e.n.Node               ] [testWandsBenchmark] JVM arguments [-Djavax.net.ssl.trustStore=/root/.ccr/java-truststore.p12, -Djavax.net.ssl.trustStorePassword=changeit, -Djavax.net.ssl.trustStoreType=PKCS12, -Dhttps.proxyHost=127.0.0.1, -Dhttps.proxyPort=46455, -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local, -Djdk.http.auth.tunneling.disabledSchemes=, -Djdk.http.auth.proxying.disabledSchemes=, -Djava.security.manager=allow, -Xmx2g]
+[2026-08-21T20:35:22,507][INFO ][o.e.n.Node               ] [testWandsBenchmark] Default Locale [en_US_#Latn]
+[2026-08-21T20:35:22,512][WARN ][o.e.d.n.Node             ] [testWandsBenchmark] data_stream.dataset="deprecation.elasticsearch" data_stream.namespace="default" data_stream.type="logs" elasticsearch.event.category="settings" event.code="shared-data-path" message="setting [path.shared_data] is deprecated and will be removed in a future release"
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Aug 21, 2026 8:35:22 PM org.apache.lucene.store.MemorySegmentIndexInputProvider <init>
+INFO: Using MemorySegmentIndexInput and native madvise support with Java 21 or later; to disable start with -Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false
+[2026-08-21T20:35:22,841][INFO ][o.e.e.NodeEnvironment    ] [testWandsBenchmark] using [1] data paths, mounts [[/ (/dev/vda)]], net usable_space [15.2gb], net total_space [251.9gb], types [ext4]
+[2026-08-21T20:35:22,841][INFO ][o.e.e.NodeEnvironment    ] [testWandsBenchmark] heap size [2gb], compressed ordinary object pointers [true]
+[2026-08-21T20:35:22,848][INFO ][o.e.n.Node               ] [testWandsBenchmark] node name [node_s_0], node ID [l1VrosFmRKCq-1gscUorHg], cluster name [single-node-cluster-TEST_WORKER_VM=[--not-gradle--]-CLUSTER_SEED=[8636232648422770726]-HASH=[6C18E7E8684]], roles [master, data_warm, data_content, transform, data_hot, ml, data_frozen, ingest, data_cold, data, remote_cluster_client]
+[2026-08-21T20:35:23,374][INFO ][o.e.i.r.RecoverySettings ] [testWandsBenchmark] using rate limit [40mb] with [default=40mb, read=0b, write=0b, max=0b]
+[2026-08-21T20:35:23,473][INFO ][o.e.f.FeatureService     ] [testWandsBenchmark] Registered local node features [desired_node.version_deprecated, features_supported, file_settings, geoip.downloader.database.configuration, health.extended_repository_indicator, knn_retriever_supported, mapper.index_sorting_on_nested, mapper.keyword_dimension_ignore_above, mapper.pass_through_priority, mapper.range.null_values_off_by_one_fix, mapper.source.synthetic_source_fallback, mapper.track_ignored_source, mapper.vectors.bit_vectors, mapper.vectors.int4_quantization, rest.capabilities_action, retrievers_supported, script.hamming, search.vectors.k_param_supported, standard_retriever_supported, stats.include_disk_thresholds, unified_highlighter_matched_fields]
+[2026-08-21T20:35:23,641][INFO ][i.n.u.i.PlatformDependent] [testWandsBenchmark] Your platform does not provide complete low-level API for accessing direct buffers reliably. Unless explicitly requested, heap buffer will always be preferred to avoid potential system instability.
+[2026-08-21T20:35:23,679][INFO ][o.e.t.n.NettyAllocator   ] [testWandsBenchmark] creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=256kb, suggested_max_allocation_size=256kb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=1mb}]
+[2026-08-21T20:35:23,724][INFO ][o.e.d.DiscoveryModule    ] [testWandsBenchmark] using discovery type [multi-node] and seed hosts providers [settings]
+[2026-08-21T20:35:24,223][INFO ][o.e.n.Node               ] [testWandsBenchmark] initialized
+[2026-08-21T20:35:24,223][INFO ][o.e.n.Node               ] [testWandsBenchmark] starting ...
+[2026-08-21T20:35:24,296][INFO ][o.e.t.TransportService   ] [testWandsBenchmark] publish_address {127.0.0.1:13301}, bound_addresses {127.0.0.1:13301}
+[2026-08-21T20:35:24,777][INFO ][o.e.c.c.ClusterBootstrapService] [testWandsBenchmark] this node has not joined a bootstrapped cluster yet; [cluster.initial_master_nodes] is set to [node_s_0]
+[2026-08-21T20:35:24,783][INFO ][o.e.c.c.Coordinator      ] [testWandsBenchmark] setting initial configuration to VotingConfiguration{l1VrosFmRKCq-1gscUorHg}
+[2026-08-21T20:35:24,942][INFO ][o.e.c.s.MasterService    ] [node_s_0] elected-as-master ([1] nodes joined in term 1)[_FINISH_ELECTION_, {node_s_0}{l1VrosFmRKCq-1gscUorHg}{Xgj2d_HvQJGMTwhDUbZdVg}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000} completing election], term: 1, version: 1, delta: master node changed {previous [], current [{node_s_0}{l1VrosFmRKCq-1gscUorHg}{Xgj2d_HvQJGMTwhDUbZdVg}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}]}
+[2026-08-21T20:35:24,961][INFO ][o.e.c.c.CoordinationState] [node_s_0] cluster UUID set to [C9S9y4WyTq-jQpH_Kfh4CQ]
+[2026-08-21T20:35:24,976][INFO ][o.e.c.s.ClusterApplierService] [node_s_0] master node changed {previous [], current [{node_s_0}{l1VrosFmRKCq-1gscUorHg}{Xgj2d_HvQJGMTwhDUbZdVg}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}]}, term: 1, version: 1, reason: Publication{term=1, version=1}
+[2026-08-21T20:35:25,002][INFO ][o.e.c.c.NodeJoinExecutor ] [node_s_0] node-join: [{node_s_0}{l1VrosFmRKCq-1gscUorHg}{Xgj2d_HvQJGMTwhDUbZdVg}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}] with reason [completing election]
+[2026-08-21T20:35:25,010][INFO ][o.e.n.Node               ] [testWandsBenchmark] started {node_s_0}{l1VrosFmRKCq-1gscUorHg}{Xgj2d_HvQJGMTwhDUbZdVg}{node_s_0}{127.0.0.1}{127.0.0.1:13301}{cdfhilmrstw}{8.15.0}{7000099-8512000}
+[2026-08-21T20:35:25,020][INFO ][o.e.g.GatewayService     ] [node_s_0] recovered [0] indices into cluster_state
+[2026-08-21T20:35:25,043][INFO ][o.e.h.n.s.HealthNodeTaskExecutor] [node_s_0] Node [{node_s_0}{l1VrosFmRKCq-1gscUorHg}] is selected as the current health node.
+[2026-08-21T20:35:25,140][INFO ][o.e.c.m.MetadataIndexTemplateService] [node_s_0] adding template [one_shard_index_template] for index patterns [*]
+[2026-08-21T20:35:25,159][INFO ][o.e.c.m.MetadataIndexTemplateService] [node_s_0] adding template [random-soft-deletes-template] for index patterns [*]
+[2026-08-21T20:35:25,173][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] before test
+[2026-08-21T20:35:25,175][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] === P6E-E00: embedded Elasticsearch direct baseline (Issue #21 Phase 6E) ===
+[2026-08-21T20:35:25,175][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] catalog=../dataset_cache/wands/catalog.jsonl solr_base_url=http://localhost:8983/solr/wands_bench
+[2026-08-21T20:35:25,181][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] after test
+[2026-08-21T20:35:25,184][INFO ][o.c.e.WandsEsBenchTest   ] [testWandsBenchmark] --> waiting for all free_context tasks to complete within a reasonable time
+REPRODUCE WITH: ./gradlew 'null' --tests "org.commercenative.esdirect.WandsEsBenchTest.testWandsBenchmark" -Dtests.seed=5240459B32BBC05C -Dtests.locale=en-Latn-US -Dtests.timezone=America/Argentina/Salta -Druntime.java=21
+[2026-08-21T20:35:25,207][INFO ][o.e.n.Node               ] [suite] stopping ...
+[2026-08-21T20:35:25,227][INFO ][o.e.n.Node               ] [suite] stopped
+[2026-08-21T20:35:25,227][INFO ][o.e.n.Node               ] [suite] closing ...
+[2026-08-21T20:35:25,242][INFO ][o.e.n.Node               ] [suite] closed
+NOTE: leaving temporary files on disk at: /tmp/org.commercenative.esdirect.WandsEsBenchTest_5240459B32BBC05C-001
+NOTE: test params are: codec=Asserting(Lucene99): {type=Lucene99}, docValues:{}, maxPointsInLeafNode=1985, maxMBSortInHeap=6.281407274631661, sim=Asserting(RandomSimilarity(queryNorm=false): {}), locale=en-Latn-US, timezone=America/Argentina/Salta
+NOTE: Linux 6.18.44-fc-v21 amd64/Ubuntu 21.0.10 (64-bit)/cpus=4,threads=2,free=53882328,total=83886080
+NOTE: All tests run in this JVM: [WandsEsBenchTest]
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 4.226 s <<< FAILURE! -- in org.commercenative.esdirect.WandsEsBenchTest
+[ERROR] org.commercenative.esdirect.WandsEsBenchTest.testWandsBenchmark -- Time elapsed: 2.813 s <<< ERROR!
+java.security.AccessControlException: access denied ("java.io.FilePermission" "../dataset_cache/wands/catalog.jsonl" "read")
+	at __randomizedtesting.SeedInfo.seed([5240459B32BBC05C:CC42279211F1564]:0)
+	at java.base/java.security.AccessControlContext.checkPermission(AccessControlContext.java:488)
+	at java.base/java.security.AccessController.checkPermission(AccessController.java:1071)
+	at java.base/java.lang.SecurityManager.checkPermission(SecurityManager.java:411)
+	at java.base/java.lang.SecurityManager.checkRead(SecurityManager.java:742)
+	at java.base/sun.nio.fs.UnixChannelFactory.open(UnixChannelFactory.java:246)
+	at java.base/sun.nio.fs.UnixChannelFactory.newFileChannel(UnixChannelFactory.java:133)
+	at java.base/sun.nio.fs.UnixChannelFactory.newFileChannel(UnixChannelFactory.java:146)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:259)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.spi.FileSystemProvider.newInputStream(FileSystemProvider.java:420)
+	at java.base/java.nio.file.Files.newInputStream(Files.java:160)
+	at java.base/java.nio.file.Files.newBufferedReader(Files.java:2910)
+	at org.commercenative.esdirect.WandsEsBenchTest.loadCatalog(WandsEsBenchTest.java:273)
+	at org.commercenative.esdirect.WandsEsBenchTest.testWandsBenchmark(WandsEsBenchTest.java:88)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner.invoke(RandomizedRunner.java:1758)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$8.evaluate(RandomizedRunner.java:946)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$9.evaluate(RandomizedRunner.java:982)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$10.evaluate(RandomizedRunner.java:996)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at org.apache.lucene.tests.util.TestRuleSetupTeardownChained$1.evaluate(TestRuleSetupTeardownChained.java:48)
+	at org.apache.lucene.tests.util.AbstractBeforeAfterRule$1.evaluate(AbstractBeforeAfterRule.java:43)
+	at org.apache.lucene.tests.util.TestRuleThreadAndTestName$1.evaluate(TestRuleThreadAndTestName.java:45)
+	at org.apache.lucene.tests.util.TestRuleIgnoreAfterMaxFailures$1.evaluate(TestRuleIgnoreAfterMaxFailures.java:60)
+	at org.apache.lucene.tests.util.TestRuleMarkFailure$1.evaluate(TestRuleMarkFailure.java:44)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at com.carrotsearch.randomizedtesting.ThreadLeakControl$StatementRunner.run(ThreadLeakControl.java:390)
+	at com.carrotsearch.randomizedtesting.ThreadLeakControl.forkTimeoutingTask(ThreadLeakControl.java:843)
+	at com.carrotsearch.randomizedtesting.ThreadLeakControl$3.evaluate(ThreadLeakControl.java:490)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner.runSingleTest(RandomizedRunner.java:955)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$5.evaluate(RandomizedRunner.java:840)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$6.evaluate(RandomizedRunner.java:891)
+	at com.carrotsearch.randomizedtesting.RandomizedRunner$7.evaluate(RandomizedRunner.java:902)
+	at org.apache.lucene.tests.util.AbstractBeforeAfterRule$1.evaluate(AbstractBeforeAfterRule.java:43)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at org.apache.lucene.tests.util.TestRuleStoreClassName$1.evaluate(TestRuleStoreClassName.java:38)
+	at com.carrotsearch.randomizedtesting.rules.NoShadowingOrOverridesOnMethodsRule$1.evaluate(NoShadowingOrOverridesOnMethodsRule.java:40)
+	at com.carrotsearch.randomizedtesting.rules.NoShadowingOrOverridesOnMethodsRule$1.evaluate(NoShadowingOrOverridesOnMethodsRule.java:40)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at org.apache.lucene.tests.util.TestRuleAssertionsRequired$1.evaluate(TestRuleAssertionsRequired.java:53)
+	at org.apache.lucene.tests.util.AbstractBeforeAfterRule$1.evaluate(AbstractBeforeAfterRule.java:43)
+	at org.apache.lucene.tests.util.TestRuleMarkFailure$1.evaluate(TestRuleMarkFailure.java:44)
+	at org.apache.lucene.tests.util.TestRuleIgnoreAfterMaxFailures$1.evaluate(TestRuleIgnoreAfterMaxFailures.java:60)
+	at org.apache.lucene.tests.util.TestRuleIgnoreTestSuites$1.evaluate(TestRuleIgnoreTestSuites.java:47)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at com.carrotsearch.randomizedtesting.rules.StatementAdapter.evaluate(StatementAdapter.java:36)
+	at com.carrotsearch.randomizedtesting.ThreadLeakControl$StatementRunner.run(ThreadLeakControl.java:390)
+	at com.carrotsearch.randomizedtesting.ThreadLeakControl.lambda$forkTimeoutingTask$0(ThreadLeakControl.java:850)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   WandsEsBenchTest.testWandsBenchmark:88->loadCatalog:273 ? AccessControl access denied ("java.io.FilePermission" "../dataset_cache/wands/catalog.jsonl" "read")
+[INFO] 
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.546 s
+[INFO] Finished at: 2026-08-21T23:35:25Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project es-direct-bench: 
+[ERROR] 
+[ERROR] Please refer to /home/user/phase6e-worktree/es-direct-bench/target/surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

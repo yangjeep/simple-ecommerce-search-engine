@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P7-E02",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e02_packing_ceiling.yaml",
+  "git_sha": "3f53fd4",
+  "dataset": {
+    "name": "WANDS real 55-tenant population, controlled-stress replicated by tenant count"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, incremental build up to a 6GB safety cap"
+  },
+  "repetitions": 2,
+  "raw_results_path": "docs/research/artifacts/p7_e02_packing_ceiling_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E02",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h5_status": "CONFIRMED, reproduced across 2 independent runs",
+    "max_tenants_reached": 6500,
+    "max_products_reached": 4929348,
+    "kb_per_product_range": [1.260, 1.265],
+    "kb_per_product_spread_pct": 0.4,
+    "stop_reason": "self-imposed 6GB RSS safety cap, not a discovered ceiling"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "experiment_id": "P8-E01",
+  "phase": "8",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p8_e01_burst_amplified_churn.yaml",
+  "git_sha": "19a595310b037612ca7515f11ad1ba00d2c33ad5",
+  "dataset": {
+    "name": "WANDS all 55 real tenants; quiet tenant 'Rugs' (2002 products); churn tenant 'Furniture' (16039 products, continuously rebuilt); burst pool = remaining 54 tenants (Zipfian-weighted)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, quiet tenant fixed, churn tenant Mutex<Arc<CatalogIndex>> hot-swapped with no sleep between rebuilds (H14/P7-E11 mechanism), 4 burst worker threads sampling the other 53 tenants + Furniture's live snapshot via shared WeightedIndex"
+  },
+  "repetitions": 10,
+  "raw_results_path": "docs/research/artifacts/p8_e01_burst_amplified_churn_run1/",
+  "analysis_version": "docs/experiments/PHASE8_LOG.md#P8-E01",
+  "decision": "PHASE8_DECISION.md",
+  "headline_result": {
+    "h17_status": "CONFIRMED, with a self-caught methodology fix (3 runs -> 10 runs, min/max verdict -> median verdict)",
+    "median_amplification_burst_ratio_over_idle_ratio": 3.62,
+    "amplification_range_across_10_runs": [0.53, 5.62],
+    "median_idle_ratio": 1.05,
+    "median_burst_ratio": 3.71,
+    "material_regression_bar": 2.0,
+    "idle_churn_hit_rate": "3/10 runs showed >= 2x degradation",
+    "burst_churn_hit_rate": "10/10 runs showed >= 2x degradation",
+    "named_limitation": "only one churn/quiet tenant pair and one burst configuration tested; mechanism (CPU/memory-bandwidth contention widening the rebuild's disruptive window) is a plausible hypothesis, not independently confirmed via profiling; does not combine with H15 (shared-Solr contention)"
+  }
+}

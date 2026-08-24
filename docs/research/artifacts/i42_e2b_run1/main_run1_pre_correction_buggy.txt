@@ -1,0 +1,94 @@
+=== Issue #42 E2b: actual offline LLM-assisted feature discovery ===
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+
+oracle: 53 total fields, 45 accepted as structural (Enum/Numeric/Boolean)
+
+--- Baseline results (feature-role macro F1, accepted-structural precision/recall vs oracle) ---
+Baseline 1: statistics-only: feature-role macro F1=0.5366, accepted-structural precision=0.9783 recall=1.0000 (n_accepted=46), abstention_rate=0.0000
+Baseline 2: LLM proposal, no validator: feature-role macro F1=0.6050, accepted-structural precision=0.9778 recall=0.9778 (n_accepted=45), abstention_rate=0.0189
+Baseline 3: LLM + deterministic validator: feature-role macro F1=0.6269, accepted-structural precision=0.9756 recall=0.8889 (n_accepted=41), abstention_rate=0.1321
+
+repeated-run agreement (role + primitive, run1 vs run2, across all 4 configurations): 107/125 (85.60%)
+unsafe-accepted count (validator Reject findings, across all runs): 29
+
+feature-role macro F1 by perturbation configuration (degradation check):
+  automotive: 0.2597
+  wands_anonymized: 0.4900
+  wands_baseline: 0.6753
+  wands_noisy: 0.6573
+
+--- End-to-end Recall@10/NDCG@10 on WANDS's real queries (naive keyword-matched structural constraints; see e2b_ingest's own doc comment for this check's disclosed scope) ---
+oracle: NDCG@10=0.0100 Recall@10=0.0004
+statistics-only: NDCG@10=0.0100 Recall@10=0.0004
+LLM + validator: NDCG@10=0.0000 Recall@10=0.0000
+
+--- GO gate evaluation (per Issue #42's own preregistered E2b thresholds) ---
+zero unsafe accepted structural classifications: false (29 found)
+>=80% recall on retrieval-significant reference features: 1.0000 (gate: true)
+end-to-end relevance within 5% of oracle: relative NDCG gap=1.0000 (gate: false)
+>=90% repeated-run agreement on accepted physical primitive: 0.8560 (gate: false)
+real structured unseen feed evidence (WANDS): true
+=> E2b GO gate: FAIL
+
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "baselines": [
+    {
+      "abstention_rate": 0.0,
+      "accepted_structural_precision": 0.9782608695652174,
+      "accepted_structural_recall": 1.0,
+      "label": "Baseline 1: statistics-only",
+      "macro_f1": 0.5366300366300366,
+      "n_accepted_structural": 46
+    },
+    {
+      "abstention_rate": 0.018867924528301886,
+      "accepted_structural_precision": 0.9777777777777777,
+      "accepted_structural_recall": 0.9777777777777777,
+      "label": "Baseline 2: LLM proposal, no validator",
+      "macro_f1": 0.6050102580714826,
+      "n_accepted_structural": 45
+    },
+    {
+      "abstention_rate": 0.1320754716981132,
+      "accepted_structural_precision": 0.975609756097561,
+      "accepted_structural_recall": 0.8888888888888888,
+      "label": "Baseline 3: LLM + deterministic validator",
+      "macro_f1": 0.6268644103604174,
+      "n_accepted_structural": 41
+    }
+  ],
+  "end_to_end": {
+    "llm_plus_validator": {
+      "ndcg": 0.0,
+      "recall": 0.0
+    },
+    "oracle": {
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    },
+    "relative_ndcg_gap_llm_plus_validator_vs_oracle": 1.0,
+    "statistics_only": {
+      "ndcg": 0.009995636366187282,
+      "recall": 0.00039009560645701245
+    }
+  },
+  "experiment_id": "I42-E2b",
+  "go_gate": {
+    "go": false,
+    "real_feed_evidence": true,
+    "recall_significant_ge_80pct": 1.0,
+    "relevance_within_5pct": false,
+    "stability_ge_90pct": false,
+    "zero_unsafe_accepted": false
+  },
+  "macro_f1_by_configuration": {
+    "automotive": 0.2597402597402597,
+    "wands_anonymized": 0.4899932758726084,
+    "wands_baseline": 0.6752595775152166,
+    "wands_noisy": 0.6573402146481185
+  },
+  "repeated_run_agreement": 0.856,
+  "unsafe_accepted_count": 29
+}
+summary written to /tmp/claude-0/-home-user-simple-ecommerce-search-engine/42c216bb-068c-521f-bf1b-8df9ff5387ed/scratchpad/e2b_summary.json

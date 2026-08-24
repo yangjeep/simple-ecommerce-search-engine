@@ -137,7 +137,65 @@ fn single_valued_slot(c: &ResolvedConstraint) -> Option<SingleValuedSlot> {
     }
 }
 
-fn apply_candidates(result: &mut CommerceQuery, phrase: &str, candidates: &[Candidate]) {
+/// Phase 9 (Issue #34) defect fix, `docs/experiments/PHASE9_LOG.md` /
+/// `PHASE9_DECISION.md`: converts a lexicon-derived hard `Constraint`
+/// (never reached for the `size`/`under`/`over` keyword parses, which
+/// push directly into `CommerceQuery::constraints` and never call
+/// `apply_candidates` at all) into the additive ranking signal it becomes
+/// once demoted by `compile`'s end-of-scan reconciliation pass, for
+/// exactly the `Constraint` variants `cold_start::profile::compile_lexicon`
+/// ever proposes via the open phrase-lexicon lookup (`Enum`,
+/// `MultiEnumContains`, `Boolean`). `Numeric`/`Text` are handled
+/// defensively (stringifying the value) rather than panicking, since
+/// nothing in the domain model forbids a hand-authored test lexicon from
+/// proposing them this way even though production code never does.
+fn attribute_constraint_to_preference(c: &Constraint) -> Preference {
+    let (attribute, value) = match c {
+        Constraint::Enum { attribute, value }
+        | Constraint::MultiEnumContains { attribute, value } => (attribute.clone(), value.clone()),
+        Constraint::Boolean { attribute, value } => (attribute.clone(), value.to_string()),
+        Constraint::Numeric {
+            attribute, value, ..
+        } => (attribute.clone(), value.to_string()),
+        Constraint::Text {
+            attribute,
+            contains,
+        } => (attribute.clone(), contains.clone()),
+    };
+    // Weight 0.5 matches this compiler's existing convention for a soft,
+    // non-decisive signal (`fixtures::shoe_lexicon`'s hand-curated
+    // "cushioned"/"breathable" `Preference::Boost`s use the same value) --
+    // this constraint was resolved with full (1.0) confidence in its own
+    // *value*, but demoted specifically because nothing in the query
+    // corroborates that value as the shopper's actual filtering intent.
+    Preference::Boost {
+        attribute,
+        value,
+        weight: 0.5,
+    }
+}
+
+/// Whether `c` identifies a real commerce entity (as opposed to a price
+/// bound, which comes from a separate deterministic keyword parse and
+/// establishes nothing about whether an attribute-word collision is real).
+fn is_entity_constraint(c: &ResolvedConstraint) -> bool {
+    matches!(
+        c,
+        ResolvedConstraint::Structural(
+            StructuralConstraint::Brand(_)
+                | StructuralConstraint::BrandAny(_)
+                | StructuralConstraint::ProductType(_)
+                | StructuralConstraint::Category(_)
+        )
+    )
+}
+
+fn apply_candidates(
+    result: &mut CommerceQuery,
+    phrase: &str,
+    candidates: &[Candidate],
+    lexicon_attribute_matches: &mut Vec<(Constraint, String)>,
+) {
     if let [only] = candidates {
         match &only.resolved {
             ResolvedTerm::Constraint(c) => {
@@ -166,6 +224,14 @@ fn apply_candidates(result: &mut CommerceQuery, phrase: &str, candidates: &[Cand
                 if conflicts {
                     result.residual_lexical.push(phrase.to_string());
                 } else {
+                    // Phase 9 (Issue #34): remember every lexicon-derived
+                    // *attribute* constraint (never a real entity match --
+                    // those are trustworthy the moment they resolve) so
+                    // `compile`'s end-of-scan pass can demote it if no
+                    // entity ever corroborates it anywhere in the query.
+                    if let ResolvedConstraint::Attribute(inner) = c {
+                        lexicon_attribute_matches.push((inner.clone(), phrase.to_string()));
+                    }
                     result.constraints.push(c.clone());
                 }
             }
@@ -203,6 +269,13 @@ pub fn compile(text: &str, lexicon: &SemanticLexicon) -> CommerceQuery {
     let tokens: Vec<String> = text.split_whitespace().map(str::to_lowercase).collect();
     let mut result = CommerceQuery::default();
     let max_window = lexicon.max_phrase_words().max(1);
+    // Phase 9 (Issue #34) defect fix: every hard `Constraint` resolved via
+    // the open phrase-lexicon lookup below (as opposed to the `size`/
+    // `under`/`over` keyword parses a few lines down, which push directly
+    // into `result.constraints` and never touch this list), tracked so the
+    // end-of-scan reconciliation pass can demote it if the query never
+    // resolves a real entity anywhere.
+    let mut lexicon_attribute_matches: Vec<(Constraint, String)> = Vec::new();
     let mut i = 0;
     while i < tokens.len() {
         if tokens[i] == "size" {
@@ -271,7 +344,12 @@ pub fn compile(text: &str, lexicon: &SemanticLexicon) -> CommerceQuery {
         for window in (1..=window_cap).rev() {
             let phrase = tokens[i..i + window].join(" ");
             if let Some(candidates) = lexicon.resolve(&phrase) {
-                apply_candidates(&mut result, &phrase, candidates);
+                apply_candidates(
+                    &mut result,
+                    &phrase,
+                    candidates,
+                    &mut lexicon_attribute_matches,
+                );
                 i += window;
                 matched = true;
                 break;
@@ -289,5 +367,33 @@ pub fn compile(text: &str, lexicon: &SemanticLexicon) -> CommerceQuery {
         result.residual_lexical.push(tokens[i].clone());
         i += 1;
     }
+
+    // Phase 9 (Issue #34) defect fix, applied once at the end of the scan
+    // rather than per-token: a lexicon-derived attribute constraint is
+    // trustworthy as a hard filter only when corroborated by a real entity
+    // constraint somewhere in the *whole* query. Without one, every such
+    // constraint is demoted to an additive `Preference::Boost` and its
+    // phrase kept searchable, instead of silently excluding nearly every
+    // relevant product on a confident but coincidental word match (see
+    // this module's `attribute_constraint_to_preference`/
+    // `is_entity_constraint` doc comments, and
+    // `docs/experiments/PHASE9_LOG.md` P9-E03/P9-E04 for the real-data
+    // evidence this rule was derived from).
+    let has_entity_constraint = result.constraints.iter().any(is_entity_constraint);
+    if !has_entity_constraint {
+        for (inner, phrase) in lexicon_attribute_matches {
+            let target = ResolvedConstraint::Attribute(inner.clone());
+            if let Some(pos) = result.constraints.iter().position(|c| *c == target) {
+                result.constraints.remove(pos);
+                result
+                    .preferences
+                    .push(attribute_constraint_to_preference(&inner));
+                if !result.residual_lexical.contains(&phrase) {
+                    result.residual_lexical.push(phrase);
+                }
+            }
+        }
+    }
+
     result
 }

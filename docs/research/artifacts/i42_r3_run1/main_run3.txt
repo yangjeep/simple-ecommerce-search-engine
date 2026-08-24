@@ -1,0 +1,257 @@
+=== Issue #42 R3: identifier serving primitive ===
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+
+--- calibration field statistics (calibration set only; MIN_UNIQUENESS_RATIO is frozen from this, not re-tuned below) ---
+amperage_output: uniqueness_ratio=0.4800 mean_entropy_bits=1.3225 occurrences=150 distinct=72 => REJECTS
+bulb_type: uniqueness_ratio=0.0267 mean_entropy_bits=1.1044 occurrences=150 distinct=4 => REJECTS
+cold_cranking_amps: uniqueness_ratio=0.8733 mean_entropy_bits=1.4144 occurrences=150 distinct=131 => REJECTS
+filter_type: uniqueness_ratio=0.0133 mean_entropy_bits=2.6676 occurrences=150 distinct=2 => REJECTS
+group_size: uniqueness_ratio=0.0200 mean_entropy_bits=1.1989 occurrences=150 distinct=3 => REJECTS
+heat_range: uniqueness_ratio=0.0333 mean_entropy_bits=-0.0000 occurrences=150 distinct=5 => REJECTS
+lumens: uniqueness_ratio=0.9400 mean_entropy_bits=1.6398 occurrences=150 distinct=141 => REJECTS
+material: uniqueness_ratio=0.0133 mean_entropy_bits=2.7574 occurrences=150 distinct=2 => REJECTS
+material_grade: uniqueness_ratio=0.0200 mean_entropy_bits=2.9483 occurrences=150 distinct=3 => REJECTS
+micron_rating: uniqueness_ratio=0.2067 mean_entropy_bits=0.9133 occurrences=150 distinct=31 => REJECTS
+oem_or_aftermarket: uniqueness_ratio=0.0013 mean_entropy_bits=2.5020 occurrences=1500 distinct=2 => REJECTS
+part_number: uniqueness_ratio=0.9980 mean_entropy_bits=2.9146 occurrences=1500 distinct=1497 => ACCEPTS
+position: uniqueness_ratio=0.0067 mean_entropy_bits=2.1610 occurrences=300 distinct=2 => REJECTS
+product_fingerprint: uniqueness_ratio=0.0007 mean_entropy_bits=3.8431 occurrences=1500 distinct=1 => REJECTS
+size: uniqueness_ratio=0.0867 mean_entropy_bits=0.9000 occurrences=150 distinct=13 => REJECTS
+sku_code: uniqueness_ratio=0.0020 mean_entropy_bits=-0.0000 occurrences=1500 distinct=3 => REJECTS
+thread_size: uniqueness_ratio=0.0200 mean_entropy_bits=1.5000 occurrences=150 distinct=3 => REJECTS
+voltage: uniqueness_ratio=0.0067 mean_entropy_bits=1.0000 occurrences=150 distinct=1 => REJECTS
+warranty_months: uniqueness_ratio=0.0027 mean_entropy_bits=1.0000 occurrences=1500 distinct=4 => REJECTS
+
+--- held-out field statistics + classifier decisions (frozen cutoff applied, never re-tuned here) ---
+amperage_output: uniqueness_ratio=0.2600 mean_entropy_bits=1.3039 occurrences=300 distinct=78 => ABSTAINS
+bulb_type: uniqueness_ratio=0.0133 mean_entropy_bits=1.0852 occurrences=300 distinct=4 => ABSTAINS
+cold_cranking_amps: uniqueness_ratio=0.6967 mean_entropy_bits=1.4149 occurrences=300 distinct=209 => ABSTAINS
+cross_reference_code: uniqueness_ratio=0.5000 mean_entropy_bits=3.0958 occurrences=2 distinct=1 => ABSTAINS
+filter_type: uniqueness_ratio=0.0067 mean_entropy_bits=2.6676 occurrences=300 distinct=2 => ABSTAINS
+group_size: uniqueness_ratio=0.0100 mean_entropy_bits=1.1950 occurrences=300 distinct=3 => ABSTAINS
+heat_range: uniqueness_ratio=0.0167 mean_entropy_bits=-0.0000 occurrences=300 distinct=5 => ABSTAINS
+lumens: uniqueness_ratio=0.8867 mean_entropy_bits=1.6695 occurrences=300 distinct=266 => ABSTAINS
+material: uniqueness_ratio=0.0067 mean_entropy_bits=2.7964 occurrences=300 distinct=2 => ABSTAINS
+material_grade: uniqueness_ratio=0.0100 mean_entropy_bits=2.9397 occurrences=300 distinct=3 => ABSTAINS
+micron_rating: uniqueness_ratio=0.1033 mean_entropy_bits=0.9233 occurrences=300 distinct=31 => ABSTAINS
+oem_or_aftermarket: uniqueness_ratio=0.0007 mean_entropy_bits=2.5029 occurrences=3000 distinct=2 => ABSTAINS
+part_number: uniqueness_ratio=0.9960 mean_entropy_bits=2.9067 occurrences=3006 distinct=2994 => ACCEPTS
+position: uniqueness_ratio=0.0033 mean_entropy_bits=2.1497 occurrences=600 distinct=2 => ABSTAINS
+size: uniqueness_ratio=0.0433 mean_entropy_bits=0.9200 occurrences=300 distinct=13 => ABSTAINS
+thread_size: uniqueness_ratio=0.0100 mean_entropy_bits=1.5000 occurrences=300 distinct=3 => ABSTAINS
+voltage: uniqueness_ratio=0.0033 mean_entropy_bits=1.0000 occurrences=300 distinct=1 => ABSTAINS
+warranty_months: uniqueness_ratio=0.0013 mean_entropy_bits=1.0000 occurrences=3000 distinct=4 => ABSTAINS
+
+Note: cross_reference_code has only 2 occurrences in this fixture, both deliberately sharing one value (the 'legitimate cross-reference' scenario) -- statistically indistinguishable from a low-cardinality field at this sample size, so the classifier ABSTAINS on it (Some(FieldStats { field: "cross_reference_code", total_occurrences: 2, distinct_normalized_values: 1, uniqueness_ratio: 0.5, mean_entropy_bits: 3.0957952550009344, format_consistency: 1.0, variant_scoped: true })). This is the GO gate's own required behavior working as intended: a field the classifier abstains on falls back to Treatment B, not silently mis-classified as identifier-shaped.
+
+--- build cost ---
+Treatment B (VariantTextIndex): build_time=18.381ms index_size_bytes=129315 rss_delta_kb=5824
+Treatment C (IdentifierDictionary on part_number): build_time=2.315ms entry_count=2994 rss_delta_kb=4
+
+--- incremental update cost (one new variant, not a full rebuild) ---
+Treatment B: 104.8030ms (build was 18.381ms)
+Treatment C: 0.0018ms (build was 2.315ms)
+
+--- variants-per-product scaling curve (build cost, incremental-update cost; 200 products per level) ---
+variants_per_product=1 (total_variants=200): build B=8.276ms C=0.119ms; incremental B=104.9966ms C=0.0014ms
+variants_per_product=3 (total_variants=600): build B=12.817ms C=0.203ms; incremental B=4.2585ms C=0.0009ms
+variants_per_product=7 (total_variants=1400): build B=6.161ms C=0.393ms; incremental B=107.3666ms C=0.0024ms
+variants_per_product=15 (total_variants=3000): build B=7.342ms C=0.802ms; incremental B=104.7668ms C=0.0015ms
+note: this curve is measured and reported for protocol completeness; the GO gate below still gates on the single held-out-catalog build/incremental numbers above, matching the preregistered gate text -- it does not re-gate on every scaling level
+excluded 22 of 2994 candidates as members of a natural, real collision group (measured separately by the dedicated collision case below)
+
+--- Recall@1 / false-match rate over 2972 un-mutated, genuinely-unique held-out positive queries (natural collisions excluded, measured separately below) ---
+Treatment A: recall@1=0/2972 (0.00%) false_match=0/2972 (0.00%)
+Treatment B: recall@1=2972/2972 (100.00%) false_match=0/2972 (0.00%)
+Treatment C: recall@1=2972/2972 (100.00%) false_match=0/2972 (0.00%)
+
+--- corner-case workload ---
+collision ("NA-6736-OF"): B_set={(ProductId(0), VariantId(0)), (ProductId(1), VariantId(1000))} C_set={(ProductId(0), VariantId(0)), (ProductId(1), VariantId(1000))}
+absent identifier (ProductId(2),VariantId(2000)): no attribute at all, confirmed by r3_workload's own test
+cross-reference fallback-to-B ("XREF-77-ALT"): B_set={(ProductId(3), VariantId(3000)), (ProductId(4), VariantId(4000))}
+near-miss (Treatment C): hits=[] expect_empty=true => PASS
+prefix (Treatment C, must reject): hits=[] expect_empty=true => PASS
+prefix (Treatment B, measured not gated): query="AM-7611-" hits=[IdentifierHit { product: ProductId(5), variant: VariantId(5000) }] -- a general-purpose text index matching here (rather than rejecting) is exactly H3-B's own predicted weakness, not a bug in this experiment
+many-variant stress (7 variants): all individually resolvable => PASS
+
+--- lookup latency (P50/P95/P99, median of 7 batched trials) ---
+  Treatment A: n=7 mean=11.3250us sd=0.0618us | p10=11.2534 p25=11.2788 p50=11.3062 p75=11.3786 p90=11.3899 p95=11.3961 p99=11.4010 | min=11.2515 max=11.4023us
+  Treatment B: n=7 mean=7.2666us sd=0.0731us | p10=7.1680 p25=7.2219 p50=7.2916 p75=7.3097 p90=7.3358 p95=7.3435 p99=7.3498 | min=7.1601 max=7.3513us
+  Treatment C: n=7 mean=0.0754us sd=0.0006us | p10=0.0748 p25=0.0750 p50=0.0753 p75=0.0757 p90=0.0761 p95=0.0763 p99=0.0765 | min=0.0746 max=0.0766us
+
+--- general (non-identifier) lexical retrieval regression check ---
+  "Sofas": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+  "Jeans": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+  "Brake Pads": 10 hits (real commerce_core::index::CatalogIndex::execute_ranked, unmodified)
+confirmed: 3 identical, real production hit counts across two calls; held_out_mixed's Catalog object is never touched by Treatments B/C's own indices (built over a completely different Catalog, held_out.catalog) -- there is no shared state for building/querying B/C to have affected in the first place
+
+--- GO gate evaluation ---
+Treatment C: recall@1=1.0000 (require >=0.99), false_match=0.0000 (require ==0), corner-case violations=[] (require empty)
+Treatment C build/update cost vs B: build 2.315ms vs 18.381ms (LOWER), incremental 0.0018ms vs 104.8030ms (LOWER)
+abstained fields (measured, not a gate failure): ["amperage_output", "bulb_type", "cold_cranking_amps", "cross_reference_code", "filter_type", "group_size", "heat_range", "lumens", "material", "material_grade", "micron_rating", "oem_or_aftermarket", "position", "size", "thread_size", "voltage", "warranty_months"]
+=> Treatment C GO gate: PASS
+
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "build_time_ms": {
+    "B": 18.381294999999998,
+    "C": 2.3153370000000004
+  },
+  "calibration_stats": {
+    "amperage_output": {
+      "mean_entropy_bits": 1.322523056180558,
+      "uniqueness_ratio": 0.48
+    },
+    "bulb_type": {
+      "mean_entropy_bits": 1.1043993613370724,
+      "uniqueness_ratio": 0.02666666666666667
+    },
+    "cold_cranking_amps": {
+      "mean_entropy_bits": 1.414396084049683,
+      "uniqueness_ratio": 0.8733333333333333
+    },
+    "filter_type": {
+      "mean_entropy_bits": 2.6675887597380945,
+      "uniqueness_ratio": 0.013333333333333334
+    },
+    "group_size": {
+      "mean_entropy_bits": 1.1988872502451942,
+      "uniqueness_ratio": 0.02
+    },
+    "heat_range": {
+      "mean_entropy_bits": -0.0,
+      "uniqueness_ratio": 0.03333333333333333
+    },
+    "lumens": {
+      "mean_entropy_bits": 1.6398412848364052,
+      "uniqueness_ratio": 0.94
+    },
+    "material": {
+      "mean_entropy_bits": 2.7573835003173057,
+      "uniqueness_ratio": 0.013333333333333334
+    },
+    "material_grade": {
+      "mean_entropy_bits": 2.948326724675639,
+      "uniqueness_ratio": 0.02
+    },
+    "micron_rating": {
+      "mean_entropy_bits": 0.9133333333333333,
+      "uniqueness_ratio": 0.20666666666666667
+    },
+    "oem_or_aftermarket": {
+      "mean_entropy_bits": 2.5019825557196254,
+      "uniqueness_ratio": 0.0013333333333333333
+    },
+    "part_number": {
+      "mean_entropy_bits": 2.914606663197873,
+      "uniqueness_ratio": 0.998
+    },
+    "position": {
+      "mean_entropy_bits": 2.1609640474436778,
+      "uniqueness_ratio": 0.006666666666666667
+    },
+    "product_fingerprint": {
+      "mean_entropy_bits": 3.8431390622296484,
+      "uniqueness_ratio": 0.0006666666666666666
+    },
+    "size": {
+      "mean_entropy_bits": 0.9,
+      "uniqueness_ratio": 0.08666666666666667
+    },
+    "sku_code": {
+      "mean_entropy_bits": -0.0,
+      "uniqueness_ratio": 0.002
+    },
+    "thread_size": {
+      "mean_entropy_bits": 1.5,
+      "uniqueness_ratio": 0.02
+    },
+    "voltage": {
+      "mean_entropy_bits": 1.0,
+      "uniqueness_ratio": 0.006666666666666667
+    },
+    "warranty_months": {
+      "mean_entropy_bits": 1.0,
+      "uniqueness_ratio": 0.0026666666666666666
+    }
+  },
+  "dictionary_entry_count_c": 2995,
+  "experiment_id": "I42-R3",
+  "false_match": {
+    "A": 0,
+    "B": 0,
+    "C": 0
+  },
+  "go_gate_pass": true,
+  "held_out_sample_size": 2972,
+  "incremental_update_ms": {
+    "B": 104.80300600000001,
+    "C": 0.001838
+  },
+  "index_size_bytes_b": 129315,
+  "recall_at_1": {
+    "A": 0,
+    "B": 2972,
+    "C": 2972
+  },
+  "rss_delta_kb": {
+    "B": 5824,
+    "C": 4
+  },
+  "variants_per_product_scaling_curve": [
+    {
+      "build_time_ms": {
+        "B": 8.276465,
+        "C": 0.11934099999999999
+      },
+      "incremental_update_ms": {
+        "B": 104.99658000000001,
+        "C": 0.0014219999999999999
+      },
+      "products": 200,
+      "total_variants": 200,
+      "variants_per_product": 1
+    },
+    {
+      "build_time_ms": {
+        "B": 12.817340999999999,
+        "C": 0.203271
+      },
+      "incremental_update_ms": {
+        "B": 4.258484,
+        "C": 0.000941
+      },
+      "products": 200,
+      "total_variants": 600,
+      "variants_per_product": 3
+    },
+    {
+      "build_time_ms": {
+        "B": 6.1606380000000005,
+        "C": 0.393439
+      },
+      "incremental_update_ms": {
+        "B": 107.36664999999999,
+        "C": 0.002389
+      },
+      "products": 200,
+      "total_variants": 1400,
+      "variants_per_product": 7
+    },
+    {
+      "build_time_ms": {
+        "B": 7.342322,
+        "C": 0.8024049999999999
+      },
+      "incremental_update_ms": {
+        "B": 104.766818,
+        "C": 0.00152
+      },
+      "products": 200,
+      "total_variants": 3000,
+      "variants_per_product": 15
+    }
+  ],
+  "violations": []
+}
+summary written to docs/research/artifacts/i42_r3_run1/summary_run3.json

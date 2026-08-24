@@ -293,6 +293,184 @@ pub const REPRESENTATIVE_QUERY_SET: &[&str] = &[
     "trail running shoes size 10",
 ];
 
+/// Issue #42 R2 (`docs/experiments/ISSUE42_LOG.md#i42-r2`) residual-lexical-
+/// policy fixture, used by `plan`'s own regression tests
+/// (`docs/adr/0012-residual-lexical-policy.md`). Ported directly from the
+/// already-validated `issue42-eval::r2_workload::build()` fixture shape —
+/// not a dependency, since `commerce-core` cannot depend on an eval crate.
+///
+/// Two real product types under test (Sofas, Boots) plus two decoy types
+/// (Coffee Tables, Bookshelves) whose titles alone give the benign
+/// marketing word "furniture" a real, catalog-observable presence under
+/// two *other* product types — the cross-type-breadth signal
+/// [`crate::plan::ResidualPolicy`] needs to classify it
+/// [`crate::plan::ResidualClass::Preferred`]. "velvet" appears in exactly
+/// one Sofas product's title and nowhere else — observed under only one
+/// product type, below the cross-type-breadth threshold, so it classifies
+/// [`crate::plan::ResidualClass::Required`] regardless of which product
+/// type a query names (the genuinely disqualifying, adversarial case).
+/// Every product shares one brand ("Acme"), so a `Brand` constraint alone
+/// matches the whole catalog (unselective — routes `Punt`, not `Hybrid`)
+/// without ever corroborating a `ProductType`. 50 filler products pad the
+/// catalog so Sofas/Boots' own selectivity clears `plan::plan`'s
+/// `Hybrid`-routing threshold (`<= 0.05`) with real margin — with only the
+/// 6 hand-authored products, Sofas/Boots' 2-product share (33%) would stay
+/// far above that threshold and every row would route to `Punt` instead
+/// (see `issue42-eval::r2_workload`'s own doc comment for the full
+/// Punt-vs-Hybrid routing trap this fixture is built to avoid).
+pub struct ResidualPolicyCatalog {
+    pub catalog: Catalog,
+    pub product_types: Vec<ProductType>,
+    pub brands: Vec<Brand>,
+    pub categories: Vec<Category>,
+    pub sofas: ProductTypeId,
+    pub boots: ProductTypeId,
+}
+
+pub fn residual_policy_catalog() -> ResidualPolicyCatalog {
+    const SOFAS: u32 = 1;
+    const BOOTS: u32 = 2;
+    const COFFEE_TABLES: u32 = 3;
+    const BOOKSHELVES: u32 = 4;
+
+    let product_types = vec![
+        ProductType {
+            id: ProductTypeId(SOFAS),
+            name: "Sofas".to_string(),
+        },
+        ProductType {
+            id: ProductTypeId(BOOTS),
+            name: "Boots".to_string(),
+        },
+        ProductType {
+            id: ProductTypeId(COFFEE_TABLES),
+            name: "Coffee Tables".to_string(),
+        },
+        ProductType {
+            id: ProductTypeId(BOOKSHELVES),
+            name: "Bookshelves".to_string(),
+        },
+    ];
+    let brands = vec![Brand {
+        id: BrandId(1),
+        name: "Acme".to_string(),
+    }];
+    let categories = vec![Category {
+        id: CategoryId(1),
+        name: "Homeware".to_string(),
+    }];
+
+    let make = |id: u64,
+                product_type: u32,
+                title: &str,
+                product_attrs: Vec<(&'static str, AttributeValue)>,
+                variant_id: u64|
+     -> Product {
+        Product {
+            id: ProductId(id),
+            product_type: ProductTypeId(product_type),
+            brand: BrandId(1),
+            category: CategoryId(1),
+            title: title.to_string(),
+            attributes: attributes(product_attrs),
+            variants: vec![Variant {
+                id: VariantId(variant_id),
+                attributes: attributes([]),
+                price: Price::usd(2999),
+                inventory: Inventory::in_stock(5),
+            }],
+        }
+    };
+
+    // Sofas: real Enum color/material values, deliberately NOT used as
+    // residual-policy test words (they auto-resolve to hard constraints,
+    // exactly what a compound-constraint regression test needs). P2's
+    // title contains "velvet", which appears nowhere else in this fixture
+    // -- the adversarial, single-type-exclusive signal. Second correction
+    // round (a fresh adversarial review of this production merge): the
+    // original version of this fixture gave every product `attributes([])`,
+    // so `commerce_core::ir::compile` could never produce a *compound*
+    // `ProductType(Sofas) AND Enum(color=...)` constraint from it at all --
+    // exactly the shape Issue #42 R2's own second correction round needed
+    // to catch a real false positive in `ResidualPolicy::classify` (see
+    // `docs/experiments/ISSUE42_LOG.md#i42-r2`). P1/P2 now carry the same
+    // real `color`/`material` values `issue42-eval::r2_workload::build()`
+    // uses, so `commerce-core`'s own test suite can reproduce that exact
+    // scenario directly (see `plan::tests::execute_planned_does_not_recover_the_wrong_variant_for_a_compound_constraint_query`),
+    // not merely rely on `classify`'s signature no longer accepting a
+    // `ProductTypeId` parameter as a structural guarantee against a
+    // *different* future regression in the same area.
+    let p1 = make(
+        1,
+        SOFAS,
+        "Blue Leather Sofa",
+        vec![
+            ("color", AttributeValue::Enum("Blue".to_string())),
+            ("material", AttributeValue::Enum("Leather".to_string())),
+        ],
+        10,
+    );
+    let p2 = make(
+        2,
+        SOFAS,
+        "Purple Velvet Sofa",
+        vec![("color", AttributeValue::Enum("Purple".to_string()))],
+        20,
+    );
+    let p3 = make(3, BOOTS, "Rugged Hiking Boots", vec![], 30);
+    let p4 = make(4, BOOTS, "Steel Toe Work Boots", vec![], 40);
+
+    // Coffee Tables and Bookshelves exist solely to give "furniture" a
+    // real, catalog-observable, cross-type (but never Sofas/Boots) title
+    // presence.
+    let p5 = make(
+        5,
+        COFFEE_TABLES,
+        "Oak Coffee Table - Fine Furniture Piece",
+        vec![],
+        50,
+    );
+    let p6 = make(
+        6,
+        BOOKSHELVES,
+        "Walnut Bookshelf - Solid Furniture Design",
+        vec![],
+        60,
+    );
+
+    // Filler: pads Sofas/Boots' own selectivity below plan::plan's
+    // Hybrid-routing threshold; plain, distinct titles unrelated to any
+    // test word.
+    let filler: Vec<Product> = (0..50)
+        .map(|i| {
+            let product_type = if i % 2 == 0 {
+                COFFEE_TABLES
+            } else {
+                BOOKSHELVES
+            };
+            make(
+                100 + i,
+                product_type,
+                &format!("Assorted Home Good {i}"),
+                vec![],
+                1000 + i,
+            )
+        })
+        .collect();
+
+    let mut products = vec![p1, p2, p3, p4, p5, p6];
+    products.extend(filler);
+
+    ResidualPolicyCatalog {
+        catalog: Catalog { products },
+        product_types,
+        brands,
+        categories,
+        sofas: ProductTypeId(SOFAS),
+        boots: ProductTypeId(BOOTS),
+    }
+}
+
 /// A second brand and product type, used only by [`cold_start_catalog`] to
 /// give Gate 6's profiler more than one brand/product-type to derive.
 pub fn aerowalk_brand() -> Brand {

@@ -1,0 +1,529 @@
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "bundles": {
+    "llm_plus_validator": {
+      "build_ms": 1580.00597,
+      "identifier_field_count": 0,
+      "index_size_bytes": 6362192,
+      "label": "llm_plus_validator",
+      "n_products": 42994
+    },
+    "oracle": {
+      "build_ms": 1792.767775,
+      "identifier_field_count": 0,
+      "index_size_bytes": 7955852,
+      "label": "oracle",
+      "n_products": 42994
+    }
+  },
+  "experiment_id": "I42-E2b-serving-overhead",
+  "go_gate_criterion_5": "PASS",
+  "serving_overhead": {
+    "execute_ranked_top10": {
+      "below_timer_floor": true,
+      "gate_result": "INCONCLUSIVE",
+      "gate_result_p95": "PASS",
+      "gate_result_p99": "PASS",
+      "oracle_p50_ms": 0.0002547125,
+      "oracle_p95_ms": 0.061896849499999976,
+      "oracle_p99_ms": 0.6734341271499996,
+      "overhead_pct_p50": 0.5516022967070734,
+      "overhead_pct_p95": -4.167094966602438,
+      "overhead_pct_p99": -2.647659508355822,
+      "validated_p50_ms": 0.0002561175,
+      "validated_p95_ms": 0.05931754899999999,
+      "validated_p99_ms": 0.6556038844499996
+    },
+    "indexed_candidates": {
+      "below_timer_floor": true,
+      "candidate_set_mismatches": 0,
+      "gate_result": "INCONCLUSIVE",
+      "n_queries": 68,
+      "oracle_p50_ms": 0.000140605,
+      "oracle_p95_ms": 0.0003898144999999997,
+      "oracle_p99_ms": 0.00063182915,
+      "overhead_pct_p50": 0.2720386899470184,
+      "validated_p50_ms": 0.0001409875,
+      "validated_p95_ms": 0.0004115072499999999,
+      "validated_p99_ms": 0.0005821500499999994
+    },
+    "per_query_indexed_candidates": [
+      {
+        "oracle_candidate_set_size": 2,
+        "oracle_p50_ms": 0.0001208525,
+        "query": "Enum(basecolor=\"acacia\")",
+        "validated_candidate_set_size": 2,
+        "validated_p50_ms": 0.00011894
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00023728250000000002,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(color=\"0\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0002354325
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002382575,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(countryoforigin=\"afghanistan\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0002373125
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0005884099999999999,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(dsprimaryproductstyle=\"boho\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0005747575
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002503875,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(dswoodtone=\"dark brown wood\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00024366999999999998
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002337725,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(finish=\"0\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0002433225
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00024479250000000003,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(framematerial=\"acacia wood\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.000249765
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00024302000000000001,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(fullorlimitedwarranty=\"1 year limited warranty\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00025378
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002422575,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(levelofassembly=\"full\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00023481749999999997
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.000242825,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(pattern=\"[ doesnotapply ]\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00024843749999999996
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002617575,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(primarymaterial=\"100 % cotton\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00026253500000000005
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002572,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(shape=\"abstract\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.000253145
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00026014250000000005,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(style=\"american traditional\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00026122
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0001852625,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(upholsterycolor=\"0354-92 ; 0354-92\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00018519499999999998
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002569,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(upholsterymaterial=\"10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0002555375
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0002357575,
+        "query": "Enum(basecolor=\"acacia\") AND Enum(warrantylength=\"1\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0002477425
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00007685,
+        "query": "Enum(basecolor=\"acorn\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00007661500000000001
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000127715,
+        "query": "Enum(basecolor=\"acrylic\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001206525
+      },
+      {
+        "oracle_candidate_set_size": 5,
+        "oracle_p50_ms": 0.0001181175,
+        "query": "Enum(color=\"0\")",
+        "validated_candidate_set_size": 5,
+        "validated_p50_ms": 0.00011542
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.000239935,
+        "query": "Enum(color=\"0\") AND Enum(countryoforigin=\"afghanistan\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00023776749999999996
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0005464025,
+        "query": "Enum(color=\"0\") AND Enum(dsprimaryproductstyle=\"boho\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.0005371075
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00027536,
+        "query": "Enum(color=\"0\") AND Enum(dswoodtone=\"dark brown wood\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.000263345
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00022876500000000002,
+        "query": "Enum(color=\"0\") AND Enum(finish=\"0\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00022672
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00023689000000000002,
+        "query": "Enum(color=\"0\") AND Enum(framematerial=\"acacia wood\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00023506
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.00012418500000000002,
+        "query": "Enum(color=\"2 taupe , 2 teal , 2 white\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.000123605
+      },
+      {
+        "oracle_candidate_set_size": 2,
+        "oracle_p50_ms": 0.0001252375,
+        "query": "Enum(color=\";\")",
+        "validated_candidate_set_size": 2,
+        "validated_p50_ms": 0.00011714499999999999
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001298375,
+        "query": "Enum(countryoforigin=\"afghanistan\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001248825
+      },
+      {
+        "oracle_candidate_set_size": 2,
+        "oracle_p50_ms": 0.0001235075,
+        "query": "Enum(countryoforigin=\"argentina\")",
+        "validated_candidate_set_size": 2,
+        "validated_p50_ms": 0.00012373
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001231925,
+        "query": "Enum(countryoforigin=\"australia\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.000123505
+      },
+      {
+        "oracle_candidate_set_size": 832,
+        "oracle_p50_ms": 0.0001961925,
+        "query": "Enum(dsprimaryproductstyle=\"boho\")",
+        "validated_candidate_set_size": 832,
+        "validated_p50_ms": 0.00020002
+      },
+      {
+        "oracle_candidate_set_size": 1024,
+        "oracle_p50_ms": 0.00016432749999999998,
+        "query": "Enum(dsprimaryproductstyle=\"coastal\")",
+        "validated_candidate_set_size": 1024,
+        "validated_p50_ms": 0.00017010000000000001
+      },
+      {
+        "oracle_candidate_set_size": 12,
+        "oracle_p50_ms": 0.00013563000000000003,
+        "query": "Enum(dsprimaryproductstyle=\"country\")",
+        "validated_candidate_set_size": 12,
+        "validated_p50_ms": 0.00012779000000000002
+      },
+      {
+        "oracle_candidate_set_size": 6,
+        "oracle_p50_ms": 0.0001366275,
+        "query": "Enum(dswoodtone=\"dark brown wood\")",
+        "validated_candidate_set_size": 6,
+        "validated_p50_ms": 0.00012596500000000002
+      },
+      {
+        "oracle_candidate_set_size": 1969,
+        "oracle_p50_ms": 0.00021819499999999997,
+        "query": "Enum(dswoodtone=\"espresso wood\")",
+        "validated_candidate_set_size": 1969,
+        "validated_p50_ms": 0.00020477750000000002
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00015189750000000002,
+        "query": "Enum(dswoodtone=\"esptresso wood\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.000150675
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001366675,
+        "query": "Enum(finish=\"0\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.00013044750000000001
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001176475,
+        "query": "Enum(finish=\"acrylic\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.00011914749999999998
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.000077795,
+        "query": "Enum(finish=\"aged ash\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.000079825
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.00012515,
+        "query": "Enum(framematerial=\"acacia wood\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001252475
+      },
+      {
+        "oracle_candidate_set_size": 4,
+        "oracle_p50_ms": 0.00012103999999999999,
+        "query": "Enum(framematerial=\"acrylic\")",
+        "validated_candidate_set_size": 4,
+        "validated_p50_ms": 0.00013448999999999997
+      },
+      {
+        "oracle_candidate_set_size": 16,
+        "oracle_p50_ms": 0.00012640999999999998,
+        "query": "Enum(framematerial=\"aluminium\")",
+        "validated_candidate_set_size": 16,
+        "validated_p50_ms": 0.00012722999999999999
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000127405,
+        "query": "Enum(fullorlimitedwarranty=\"1 year limited warranty\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001297625
+      },
+      {
+        "oracle_candidate_set_size": 3,
+        "oracle_p50_ms": 0.00012805,
+        "query": "Enum(fullorlimitedwarranty=\"full warranty\")",
+        "validated_candidate_set_size": 3,
+        "validated_p50_ms": 0.00012938750000000002
+      },
+      {
+        "oracle_candidate_set_size": 1347,
+        "oracle_p50_ms": 0.00021087249999999998,
+        "query": "Enum(fullorlimitedwarranty=\"full\")",
+        "validated_candidate_set_size": 1347,
+        "validated_p50_ms": 0.0002047075
+      },
+      {
+        "oracle_candidate_set_size": 7331,
+        "oracle_p50_ms": 0.0002762,
+        "query": "Enum(levelofassembly=\"full assembly needed\")",
+        "validated_candidate_set_size": 7331,
+        "validated_p50_ms": 0.00025351
+      },
+      {
+        "oracle_candidate_set_size": 8,
+        "oracle_p50_ms": 0.0001317575,
+        "query": "Enum(levelofassembly=\"full assembly\")",
+        "validated_candidate_set_size": 8,
+        "validated_p50_ms": 0.0001257675
+      },
+      {
+        "oracle_candidate_set_size": 3,
+        "oracle_p50_ms": 0.0001199975,
+        "query": "Enum(levelofassembly=\"full\")",
+        "validated_candidate_set_size": 3,
+        "validated_p50_ms": 0.0001199175
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000122465,
+        "query": "Enum(pattern=\"[ doesnotapply ]\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001228975
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000126225,
+        "query": "Enum(pattern=\"abstract cubism\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.00012417
+      },
+      {
+        "oracle_candidate_set_size": 310,
+        "oracle_p50_ms": 0.0001251475,
+        "query": "Enum(pattern=\"abstract\")",
+        "validated_candidate_set_size": 310,
+        "validated_p50_ms": 0.000126625
+      },
+      {
+        "oracle_candidate_set_size": 32,
+        "oracle_p50_ms": 0.00012491249999999998,
+        "query": "Enum(primarymaterial=\"100 % cotton\")",
+        "validated_candidate_set_size": 32,
+        "validated_p50_ms": 0.00012470500000000002
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001324625,
+        "query": "Enum(primarymaterial=\"100 % fine porcelain\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.000137775
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000143195,
+        "query": "Enum(primarymaterial=\"100 % medium density fiberboard\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001436525
+      },
+      {
+        "oracle_candidate_set_size": 18,
+        "oracle_p50_ms": 0.000118775,
+        "query": "Enum(shape=\"abstract\")",
+        "validated_candidate_set_size": 18,
+        "validated_p50_ms": 0.0001190125
+      },
+      {
+        "oracle_candidate_set_size": 7,
+        "oracle_p50_ms": 0.00012244249999999999,
+        "query": "Enum(shape=\"abstract/novelty\")",
+        "validated_candidate_set_size": 7,
+        "validated_p50_ms": 0.00012288499999999999
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001193075,
+        "query": "Enum(shape=\"amphora\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001189025
+      },
+      {
+        "oracle_candidate_set_size": 18,
+        "oracle_p50_ms": 0.00012545999999999998,
+        "query": "Enum(style=\"american traditional\")",
+        "validated_candidate_set_size": 18,
+        "validated_p50_ms": 0.00012599
+      },
+      {
+        "oracle_candidate_set_size": 3,
+        "oracle_p50_ms": 0.000117415,
+        "query": "Enum(style=\"animal\")",
+        "validated_candidate_set_size": 3,
+        "validated_p50_ms": 0.00011785499999999999
+      },
+      {
+        "oracle_candidate_set_size": 36,
+        "oracle_p50_ms": 0.0001207925,
+        "query": "Enum(style=\"antik\")",
+        "validated_candidate_set_size": 36,
+        "validated_p50_ms": 0.0001211
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.0000816375,
+        "query": "Enum(upholsterycolor=\"0354-92 ; 0354-92\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00008237500000000001
+      },
+      {
+        "oracle_candidate_set_size": 0,
+        "oracle_p50_ms": 0.00008397,
+        "query": "Enum(upholsterycolor=\"2 tone espresso\")",
+        "validated_candidate_set_size": 0,
+        "validated_p50_ms": 0.00008968499999999999
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001232275,
+        "query": "Enum(upholsterycolor=\"2-tone brown\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.000124745
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.000154525,
+        "query": "Enum(upholsterymaterial=\"10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.00015496
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.00013015500000000002,
+        "query": "Enum(upholsterymaterial=\"10 % polyester fiber\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.00013117
+      },
+      {
+        "oracle_candidate_set_size": 91,
+        "oracle_p50_ms": 0.00013159750000000002,
+        "query": "Enum(upholsterymaterial=\"100 % cotton\")",
+        "validated_candidate_set_size": 91,
+        "validated_p50_ms": 0.0001295875
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.00012908750000000001,
+        "query": "Enum(warrantylength=\"1 year from the date of purchase.\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001274375
+      },
+      {
+        "oracle_candidate_set_size": 8834,
+        "oracle_p50_ms": 0.000231065,
+        "query": "Enum(warrantylength=\"1 year\")",
+        "validated_candidate_set_size": 8834,
+        "validated_p50_ms": 0.0002319825
+      },
+      {
+        "oracle_candidate_set_size": 1,
+        "oracle_p50_ms": 0.0001197675,
+        "query": "Enum(warrantylength=\"1\")",
+        "validated_candidate_set_size": 1,
+        "validated_p50_ms": 0.0001216225
+      }
+    ]
+  }
+}

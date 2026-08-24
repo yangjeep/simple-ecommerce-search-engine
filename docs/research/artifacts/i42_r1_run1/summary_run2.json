@@ -1,0 +1,23 @@
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "corroborated_ndcg_mean": {
+    "A": 0.6666666666666666,
+    "B": 1.0,
+    "C": 0.3333333333333333,
+    "D": 1.0
+  },
+  "experiment_id": "I42-R1",
+  "latency_ms_per_call": {
+    "A": 0.056029815,
+    "B": 0.056657650000000004,
+    "C": 0.08259719500000001,
+    "D": 0.06475747500000001
+  },
+  "negative_violations": [],
+  "row1_violations": [
+    "A"
+  ],
+  "wrong_family_false_positives": {
+    "B": 1
+  }
+}

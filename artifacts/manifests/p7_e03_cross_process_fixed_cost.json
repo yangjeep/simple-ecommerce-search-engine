@@ -1,0 +1,28 @@
+{
+  "experiment_id": "P7-E03",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e03_cross_process_fixed_cost.yaml",
+  "git_sha": "31517fa",
+  "dataset": {
+    "name": "WANDS real tenants (largest/middle/smallest category_depth_1)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, in short-lived spawned child OS processes"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e03_cross_process_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E03",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h6_status": "CONFIRMED, reproduced across 3 independent runs",
+    "bare_process_baseline_kb_range": [2144.4, 2151.6],
+    "furniture_16039_products_marginal_kb": 50964,
+    "smallest_tenants_marginal_kb_range": [164, 220],
+    "baseline_equals_pooled_products_worth": 1700,
+    "self_caught_bugs": [
+      "materialized all 55 tenants before selecting one",
+      "parsed the entire shared catalog file regardless of requested tenant"
+    ]
+  }
+}

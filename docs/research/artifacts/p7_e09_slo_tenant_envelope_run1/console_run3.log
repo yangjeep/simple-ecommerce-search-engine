@@ -1,0 +1,27 @@
+=== P7-E09: tenants per fixed hardware envelope at target SLO (H12) ===
+(quiet tenant = 'Rugs-copy0', held fixed; envelope = 9216 MB self-process RSS safety cap, chosen with real margin under this container's actual 13.34 GiB cgroup hard limit)
+  [checkpoint] n=55    quiet_throughput_rps=    752.8 quiet_p50_ms=  1.2858 quiet_p99_ms=  2.7552 noisy_total_requests=21874        rss_kb=249912
+  building... n=250    rss_kb=845088
+  building... n=500    rss_kb=1544704
+  building... n=750    rss_kb=2186360
+  building... n=1000   rss_kb=2919896
+  building... n=1250   rss_kb=3527580
+  building... n=1500   rss_kb=4268572
+  building... n=1750   rss_kb=4868716
+  [checkpoint] n=2000  quiet_throughput_rps=    743.2 quiet_p50_ms=  1.3082 quiet_p99_ms=  1.8689 noisy_total_requests=17601        rss_kb=5612572
+  building... n=2000   rss_kb=5612572
+  building... n=2250   rss_kb=6209820
+  building... n=2500   rss_kb=6953960
+  building... n=2750   rss_kb=7550912
+  building... n=3000   rss_kb=8295220
+  building... n=3250   rss_kb=8994792
+  building... n=3500   rss_kb=9636404
+  SAFETY CAP REACHED at n=3500 (9410 MB > 9216 MB) -- stopping build here, not extrapolating further
+  [final reached ceiling] n=3500  quiet_throughput_rps=    764.2 quiet_p50_ms=  1.2718 quiet_p99_ms=  1.8121 noisy_total_requests=17787        rss_kb=9636828
+
+final: 3500 tenants built (stopped early: RSS safety cap)
+  n=55    rps_ratio_vs_n55=  1.00 p99_ratio_vs_n55=  1.00 slo_pass=true
+  n=2000  rps_ratio_vs_n55=  0.99 p99_ratio_vs_n55=  0.68 slo_pass=true
+  n=3500  rps_ratio_vs_n55=  1.02 p99_ratio_vs_n55=  0.66 slo_pass=true
+
+artifacts written to docs/research/artifacts/p7_e09_slo_tenant_envelope_run1

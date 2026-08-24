@@ -1,0 +1,32 @@
+{
+  "experiment_id": "P9-E04",
+  "phase": "9",
+  "issue": 34,
+  "benchmark_manifest": "benchmarks/manifests/p9_e04_isolated_ranking_and_execution.yaml",
+  "git_sha": "e6bd550",
+  "dataset": {
+    "name": "real WANDS catalog + queries + judgments (structural_routed subset)",
+    "structural_routed_queries": 150,
+    "evaluated": 136,
+    "skipped_candidate_set_too_large": 2
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex::{indexed_candidates, execute_ranked}",
+    "baseline": "fresh Apache Solr 9.10.1, restricted via {!terms f=id} POST to the identical candidate set"
+  },
+  "repetitions": "6 independent full runs (latency); NDCG/recall figures deterministic and identical across all runs",
+  "seed": "n/a (deterministic real-data selection, no sampling)",
+  "raw_results_path": "docs/research/artifacts/p9_e04_isolated_ranking_run1/",
+  "analysis_version": "docs/experiments/PHASE9_LOG.md#p9-e04",
+  "decision": "PHASE9_DECISION.md",
+  "headline_result": {
+    "H1_ranking_quality": "FALSIFIED -- native NDCG@10=0.1521 vs Solr-restricted 0.1537, -1.05% relative (noise-level)",
+    "H3_execution_speed_controlled": "FALSIFIED -- latency ratio 0.71x-1.14x across 6 warmed runs, well under the >=2x bar",
+    "candidate_set_relevant_recall_mean": 0.0841,
+    "candidate_set_exact_recall_mean": 0.1152,
+    "candidate_set_partial_recall_mean": 0.0803,
+    "exact_recall_with_entity_constraint": "0.4757 (n=11)",
+    "exact_recall_attribute_only_no_entity": "0.0721 (n=92)",
+    "localized_root_cause": "compile_lexicon resolution-priority gap: queries frequently resolve to a coincidental attribute-level match (e.g. color=coffee in 'coffee table') instead of a real ProductType/Category entity, because the entity vocabulary (e.g. 'Coffee & Cocktail Tables') rarely matches literal shopper phrasing verbatim"
+  }
+}

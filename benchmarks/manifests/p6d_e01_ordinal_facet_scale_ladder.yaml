@@ -1,0 +1,68 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6D-E01
+phase: 6D
+issue: 21
+decision_document: PHASE6D_DECISION.md
+claim: >
+  P6D-E00 measured the ordinal-based facet counter only at WANDS'
+  natural 1x scale, named explicitly as an unresolved risk. Extended
+  Phase 6B's own controlled-stress scale ladder (2x/5x/10x/20x
+  replication, already-built catalogs and matching Solr cores) with the
+  same facet_counts_ordinal measurement added to P6D-E00. Result: the
+  ordinal method beats Solr at every one of 35 checkpoint x tier
+  combinations (7 checkpoints x 5 tiers, 2,002-320,780 candidates),
+  zero exceptions, margins 2.5x-72.6x. But the margin is NOT
+  scale-invariant: it narrows (not grows) at the largest candidate
+  counts, converging toward roughly 2.5x-3x rather than an
+  ever-widening advantage -- e.g. at Furniture (the largest checkpoint):
+  5.2x at 1x, 4.4x at 2x, 3.4x at 5x, 2.5x at 10x and 20x. By contrast,
+  the ordinal method's margin over commerce-native's own existing scan
+  method GROWS sharply with scale (20.6x-99.6x at 1x up to
+  118.2x-327.0x at 10x/20x) -- mechanistically consistent with the scan
+  method's per-candidate BTreeMap-clone cost getting relatively worse
+  at scale while both other methods scale closer to linearly. All 85
+  correctness-check rows (17 x 5 tiers) and all 35 top-50-facet checks
+  passed with zero mismatches. See docs/experiments/PHASE6D_LOG.md for
+  the full hypothesis and result.
+
+git_sha: 7f41ad27f407dfdefa3beb02a1795f13e7d231f4
+binary: crates/phase6a-eval/src/bin/p6b_e00_scale_ladder.rs (extended with facet_counts_ordinal)
+build_command: cargo build --release -p phase6a-eval --bin p6b_e00_scale_ladder
+run_command: |
+  ./target/release/p6b_e00_scale_ladder dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench 1x <csv_out>
+  ./target/release/p6b_e00_scale_ladder dataset_cache/wands_scale/catalog_2x.jsonl http://localhost:8983/solr/wands_bench_2x 2x <csv_out>
+  ./target/release/p6b_e00_scale_ladder dataset_cache/wands_scale/catalog_5x.jsonl http://localhost:8983/solr/wands_bench_5x 5x <csv_out>
+  ./target/release/p6b_e00_scale_ladder dataset_cache/wands_scale/catalog_10x.jsonl http://localhost:8983/solr/wands_bench_10x 10x <csv_out>
+  ./target/release/p6b_e00_scale_ladder dataset_cache/wands_scale/catalog_20x.jsonl http://localhost:8983/solr/wands_bench_20x 20x <csv_out>
+
+dataset:
+  name: real WANDS catalog (42,994 products, 1x) plus Phase 6B's own
+    controlled-stress replication ladder (2x/5x/10x/20x, up to 859,880
+    products), same 7 category_depth_1 checkpoints as every prior
+    P6A/P6B/P6C/P6D measurement
+  source: https://github.com/wayfair/WANDS (1x); scripts/datasets/replicate_wands_scale.py (2x-20x)
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native_scan: commerce_core::index::CatalogIndex::facet_counts_by_scan (existing, Phase 5)
+  native_ordinal: commerce_core::index::CatalogIndex::facet_counts_ordinal (new, P6D-E00)
+  solr: Apache Solr 9.10.1, wands_bench / wands_bench_2x / wands_bench_5x /
+    wands_bench_10x / wands_bench_20x cores (Phase 6B's own, already built)
+
+workload:
+  selection: color facet-count under category_depth_1 filter (7
+    checkpoints x 5 tiers = 35 combinations), same operation class every
+    prior P6A/P6B/P6C/P6D measurement used
+  repetitions: WARMUP=5, REPS=30 per operation; one run per tier
+    (matching p6b_e00_scale_ladder's own established one-run-per-tier,
+    append-to-CSV convention -- not the 3-repeated-full-binary
+    convention other P6A/P6C/P6D-E00 measurements used)
+
+seed: "not applicable -- deterministic real-data queries, no RNG"
+
+raw_results: docs/research/artifacts/p6d_e01_scale_ladder_run1/
+  - console_1x.log, console_2x.log, console_5x.log, console_10x.log, console_20x.log
+  - results.csv (combined, all 5 tiers)
+
+analysis: printed directly by the Rust binary; see
+  docs/experiments/PHASE6D_LOG.md for the full hypothesis and result.

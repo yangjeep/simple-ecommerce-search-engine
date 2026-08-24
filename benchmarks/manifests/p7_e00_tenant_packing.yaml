@@ -1,0 +1,58 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E00
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  First multi-tenant packing-density measurement: per-tenant memory
+  overhead is negligible in this single-process architecture (total
+  memory cost tracks aggregate product count, not tenant count),
+  confirmed via a deterministic size instrument and a reversed-build-
+  order control after adversarial review falsified a first-draft
+  "~27-590 KB per-tenant fixed cost" estimate as a build-order/allocator
+  artifact. One tenant's heavy concurrent load does not cause material
+  p99 regression for another tenant sharing the same process, robust
+  across 3 independent runs.
+
+git_sha: 61cf382
+binary: crates/phase7-eval/src/bin/p7_e00_tenant_packing.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e00_tenant_packing
+run_command: ./target/release/p7_e00_tenant_packing dataset_cache/wands/catalog.jsonl [forward|reversed]
+
+dataset:
+  name: WANDS (Wayfair ANnotation Dataset), partitioned by category_depth_1 into tenants
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  tenant_model: each of 55 real distinct category_depth_1 values is one
+    independent tenant's full catalog, a realistic SMB single-category
+    specialty-retailer pattern; real long-tail size distribution
+    (1 to 16,039 products), not fabricated
+
+engine:
+  native: commerce_core::index::CatalogIndex, one independent instance
+    per tenant (independently-interned CategoryId/ProductTypeId/BrandId
+    spaces per tenant, fixed after adversarial review found tenants were
+    originally sharing one canonicalized ID space)
+  baseline: none (this experiment is single-system; no external engine
+    comparison in this pass)
+
+workload:
+  H1: incremental per-tenant CatalogIndex::build, RSS + approximate_size_bytes
+    snapshotted at N in {1,5,10,25,55}, both forward (largest-first) and
+    reversed (smallest-first) build order, 3 independent process runs each
+  H2: quiet tenant (Rugs) facet-scan latency alone vs. under 3 threads of
+    concurrent load against either a different tenant (cross-tenant) or
+    its own data (same-tenant control), 3 independent process runs
+
+seed: "n/a (deterministic real-data partition, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e00_tenant_packing_run1/
+  - h1_forward_run{1,2,3}.csv, h1_reversed_run{1,2,3}.csv
+  - h2_isolation.csv
+  - forward_run{1,2,3}.log, reversed_run{1,2,3}.log
+
+analysis: printed directly by the binary per run; first-draft H1 finding
+  (a claimed small per-tenant fixed cost) was adversarially reviewed,
+  found unsupported, and falsified by a reversed-build-order control --
+  see docs/experiments/PHASE7_LOG.md for the full self-correction, not
+  just the corrected headline.

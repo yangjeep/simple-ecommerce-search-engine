@@ -1,0 +1,57 @@
+=== Issue #38 E1: hard-coded (A) vs compiled-schema (B) vs runtime-generic (C) vs Solr (D) ===
+environment check: perf/cycles/branch-misses/cache-misses NOT measured (no `perf` binary, perf_event_paranoid unreadable in this container) -- allocations + RSS + latency + index size measured instead
+
+catalog: 42994 products, 860 product types
+workload: 40 product_type queries, stratified by real selectivity (max count=1316, min count=1)
+
+building path A (hard-coded CatalogIndex)...
+  A built: 5490631 allocations, 161718354 bytes, approx index size for product_type bitmaps not separable from A's other structures -- see approximate_size_bytes below for A's *total* index
+building path B (CompiledEnumIndex, offline-compiled schema)...
+  B built: 132319 allocations, 4517654 bytes
+building path B2 (CompiledOrdinalIndex, redesigned compiled schema)...
+  B2 built: 89325 allocations, 3952670 bytes
+building path C (GenericStore, runtime-generic)...
+  C built: 300973 allocations, 56510218 bytes
+
+=== index/structure size ===
+A (CatalogIndex, ALL structures, not just product_type): 10984302 bytes
+B (CompiledEnumIndex, product_type only): 818031 bytes
+B2 (CompiledOrdinalIndex, product_type only): 807699 bytes
+C (GenericStore, product_type only): 1901061 bytes
+
+warmup pass (all 5 paths, discarded)...
+
+hit-count cross-check across all 40 workload queries: 0 mismatches (must be 0 for this comparison to be trustworthy)
+
+  A (hard-coded): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0002 | min=0.0001 max=0.0005ms
+  B (compiled schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0002 p95=0.0002 p99=0.0003 | min=0.0001 max=0.0006ms
+  B2 (compiled ordinal schema): n=1200 mean=0.0001ms sd=0.0000ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0001 p90=0.0001 p95=0.0001 p99=0.0002 | min=0.0001 max=0.0005ms
+  C (runtime-generic): n=1200 mean=0.6363ms sd=0.0435ms | p10=0.5955 p25=0.6079 p50=0.6253 p75=0.6546 p90=0.6845 p95=0.7069 p99=0.8016 | min=0.5717 max=0.9899ms
+  D (Solr): n=1200 mean=0.6092ms sd=0.1168ms | p10=0.4825 p25=0.5335 p50=0.5985 p75=0.6766 p90=0.7444 p95=0.7945 p99=0.8851 | min=0.3486 max=2.3407ms
+
+A (hard-coded): single-threaded QPS (within the timed loop) = 11067809.3
+B (compiled schema): single-threaded QPS (within the timed loop) = 6834403.0
+B2 (compiled ordinal schema): single-threaded QPS (within the timed loop) = 11571171.2
+C (runtime-generic): single-threaded QPS (within the timed loop) = 1571.7
+D (Solr): single-threaded QPS (within the timed loop) = 1641.4
+
+=== allocations (per index build, not per query -- see below for per-query) ===
+A: 5490631 allocs, 161718354 bytes
+B: 132319 allocs, 4517654 bytes
+B2: 89325 allocs, 3952670 bytes
+C: 300973 allocs, 56510218 bytes
+
+=== per-query allocations (one representative median-selectivity query: "tile trims") ===
+A: 2 allocs, 42 bytes
+B: 4 allocs, 64 bytes
+B2: 2 allocs, 42 bytes
+C: 3 allocs, 202 bytes
+
+=== E1 falsification gate: compiled-schema vs A serving overhead ===
+A p50=0.0001ms  B p50=0.0001ms  B overhead=+63.03%  (target: <=5%)
+A p50=0.0001ms  B2 p50=0.0001ms  B2 overhead=-6.37%  (target: <=5%)
+=== E1 GATE (B, naive tuple-keyed compiled schema): DOES NOT PASS -- localizing overhead below ===
+=== E1 GATE (B2, ordinal/dictionary-redesigned compiled schema): PASSES -- the naive B design's overhead was implementation-specific, not fundamental ===
+
+=== context: C (runtime-generic) and D (Solr) vs A ===
+C/A ratio: 7452.48x   D/A ratio: 7133.25x

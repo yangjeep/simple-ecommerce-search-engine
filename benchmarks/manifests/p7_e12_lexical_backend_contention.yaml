@@ -1,0 +1,71 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E12
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Issue #21's last remaining required-experiments item:
+  "lexical-backend contention." Feasibility was verified directly
+  (Solr 9.10.1 already installed in this container with 5 real
+  WANDS-derived cores from Phase 6A/6B's scale-ladder work) rather than
+  assumed out of scope. Reuses H2/P7-E00's exact quiet/noisy-tenant
+  methodology, issuing real HTTP queries to Solr instead of in-process
+  facet_scan_once: wands_bench (42,994 docs) is the quiet tenant,
+  wands_bench_20x (859,880 docs) is the noisy tenant. A first-draft
+  binary (no warm-up) gave an ambiguous, borderline result (p99 ratio
+  1.32x/2.04x/2.13x across 3 runs) traced to a JVM/connection-pool
+  cold-start artifact inflating run 1's baseline p99 (8.98ms vs.
+  3.5-3.9ms in runs 2-3). Fixed with a 500ms warm-up phase (matching
+  P7-E09/P7-E10's precedent). Corrected result (3 runs): p50 ratio
+  1.22-1.43x (mild, inside the pass bar); p99 ratio 2.16-2.48x
+  (material, clearing the 2x threshold in EVERY run) -- H15 is
+  genuinely FALSIFIED, Phase 7's third distinct isolation-gap finding
+  alongside H14: a shared Solr instance is NOT safely isolated under
+  noisy-neighbor query load in this design. See
+  docs/experiments/PHASE7_LOG.md for the full H15 hypothesis and
+  result.
+
+git_sha: 516a513
+binary: crates/phase7-eval/src/bin/p7_e12_lexical_backend_contention.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e12_lexical_backend_contention
+run_command: >-
+  (prerequisite: Solr must already be running -- from the Solr install
+  directory, `bin/solr start -p 8983 --force`)
+  ./target/release/p7_e12_lexical_backend_contention
+  http://localhost:8983/solr
+
+dataset:
+  name: WANDS Solr cores from Phase 6A/6B's scale ladder -- wands_bench
+    (quiet tenant, 42,994 real docs) and wands_bench_20x (noisy tenant,
+    859,880 docs, a controlled-stress-replicated scale-ladder rung)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  disclosure: >
+    wands_bench_20x is Phase 6B's own controlled-stress catalog-size
+    replication (not a claim about organic catalog growth), reused
+    here unchanged as a real, already-built, larger Solr core to
+    generate genuine noisy load against.
+
+engine:
+  native: Apache Solr 9.10.1, one shared JVM instance, 2 cores
+    (wands_bench, wands_bench_20x); quiet tenant queried by the main
+    thread (500 reps baseline, then under load), 3 noisy worker
+    threads issuing the same query type against the noisy core
+
+workload:
+  selection: q=*:*&rows=24 page-browse query (matches Phase 6A's own
+    PAGE_SIZE=24 convention), 500 reps baseline then 500 reps (or 5s,
+    whichever first) under cross-tenant load, after a 500ms warm-up
+  repetitions: 3 independent external process runs
+
+seed: "n/a (deterministic real-data, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e12_lexical_backend_contention_run1/
+  - results_run{1,2,3}.csv
+  - console_run{1,2,3}.log
+  - results_run{1,2,3}_no_warmup_superseded.csv / console_run{1,2,3}_no_warmup_superseded.log
+    (first-draft, withdrawn statistic, preserved not deleted)
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H15 hypothesis, the
+  self-caught cold-start problem, and the corrected result.

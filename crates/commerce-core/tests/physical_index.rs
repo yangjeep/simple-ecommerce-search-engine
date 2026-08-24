@@ -259,6 +259,49 @@ fn facet_counts_by_scan_matches_facet_counts_exactly() {
 }
 
 #[test]
+fn facet_counts_ordinal_matches_facet_counts_by_scan_exactly() {
+    // Issue #21 Phase 6D: `facet_counts_ordinal` is a dictionary/ordinal-
+    // encoded alternative to `facet_counts_by_scan`, motivated by P6C-E01
+    // (docs/experiments/PHASE6C_LOG.md) finding that Lucene's own
+    // ordinal-based facet module beats a naive per-candidate scan. Before
+    // trusting any latency comparison, it must agree byte-for-byte with
+    // `facet_counts_by_scan` on every input, including the empty-candidate
+    // edge case -- same discipline as the scan-vs-map test above.
+    use commerce_core::fixtures::cold_start_catalog;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.facet_counts_ordinal(&all, "color"),
+        index.facet_counts_by_scan(&all, &catalog, "color")
+    );
+
+    let waterproof_only =
+        index.indexed_candidates(&[ResolvedConstraint::Attribute(Constraint::Boolean {
+            attribute: "waterproof".to_string(),
+            value: true,
+        })]);
+    assert_eq!(
+        index.facet_counts_ordinal(&waterproof_only, "color"),
+        index.facet_counts_by_scan(&waterproof_only, &catalog, "color")
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index.facet_counts_ordinal(&empty, "color").is_empty());
+
+    // An attribute never indexed as a single-valued Enum at all (e.g. a
+    // typo, or brand -- which lives in its own dedicated bitmap index, not
+    // `enum_columns`) must return empty, not panic.
+    assert!(index.facet_counts_ordinal(&all, "brand").is_empty());
+    assert!(index
+        .facet_counts_ordinal(&all, "not_a_real_attribute")
+        .is_empty());
+}
+
+#[test]
 fn product_type_facet_counts_reflect_the_candidate_set_not_the_whole_catalog() {
     // Phase 6A (Issue #23): `product_type`, like `brand`, has its own
     // dedicated `product_type_bitmaps` index -- populated by every
@@ -347,6 +390,56 @@ fn category_and_product_type_facet_counts_by_scan_match_exactly() {
     assert!(index
         .product_type_facet_counts_by_scan(&empty, &catalog)
         .is_empty());
+}
+
+#[test]
+fn brand_category_product_type_facet_counts_ordinal_match_scan_exactly() {
+    // Issue #21 Phase 6D (P6D-E02): ordinal-based counterparts to the
+    // brand/category/product_type `_by_scan` methods. Same correctness
+    // discipline as `facet_counts_ordinal_matches_facet_counts_by_scan_exactly`
+    // above -- exact match required before any timing claim is trusted.
+    use commerce_core::domain::BrandId;
+    use commerce_core::fixtures::cold_start_catalog;
+    use commerce_core::ir::StructuralConstraint;
+    use roaring::RoaringBitmap;
+
+    let catalog = cold_start_catalog();
+    let index = CatalogIndex::build(&catalog);
+
+    let all = index.indexed_candidates(&[]);
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&all),
+        index.brand_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.category_facet_counts_ordinal(&all),
+        index.category_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.product_type_facet_counts_ordinal(&all),
+        index.product_type_facet_counts_by_scan(&all, &catalog)
+    );
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&all).get(&BrandId(1)),
+        Some(&4)
+    );
+
+    let running_shoes_only = index.indexed_candidates(&[ResolvedConstraint::Structural(
+        StructuralConstraint::ProductType(commerce_core::domain::ProductTypeId(1)),
+    )]);
+    assert_eq!(
+        index.brand_facet_counts_ordinal(&running_shoes_only),
+        index.brand_facet_counts_by_scan(&running_shoes_only, &catalog)
+    );
+    assert_eq!(
+        index.category_facet_counts_ordinal(&running_shoes_only),
+        index.category_facet_counts_by_scan(&running_shoes_only, &catalog)
+    );
+
+    let empty = RoaringBitmap::new();
+    assert!(index.brand_facet_counts_ordinal(&empty).is_empty());
+    assert!(index.category_facet_counts_ordinal(&empty).is_empty());
+    assert!(index.product_type_facet_counts_ordinal(&empty).is_empty());
 }
 
 #[test]
@@ -477,5 +570,27 @@ fn approximate_size_grows_with_more_indexed_data() {
     assert!(
         large.approximate_size_bytes() > small.approximate_size_bytes(),
         "indexing more products/variants should not shrink the reported size"
+    );
+}
+
+#[test]
+fn approximate_ordinal_facet_bytes_is_accounted_for_within_approximate_size_bytes() {
+    // P6D-E03: approximate_size_bytes() silently omitted every Phase 6D
+    // ordinal/dictionary facet structure until this fix. Guard that
+    // regression directly: the ordinal-facet contribution must be nonzero
+    // (these fixtures index brand/category/product_type on every product)
+    // and must never exceed the whole-index total it is a component of.
+    let small = CatalogIndex::build(&variant_safety_catalog());
+    let large = CatalogIndex::build(&combined_catalog());
+
+    assert!(
+        small.approximate_ordinal_facet_bytes() > 0,
+        "typed-ID dictionaries/columns should be nonzero once brand/category/product_type are indexed"
+    );
+    assert!(small.approximate_ordinal_facet_bytes() <= small.approximate_size_bytes());
+    assert!(large.approximate_ordinal_facet_bytes() <= large.approximate_size_bytes());
+    assert!(
+        large.approximate_ordinal_facet_bytes() >= small.approximate_ordinal_facet_bytes(),
+        "indexing more products/variants should not shrink the ordinal-facet byte count"
     );
 }

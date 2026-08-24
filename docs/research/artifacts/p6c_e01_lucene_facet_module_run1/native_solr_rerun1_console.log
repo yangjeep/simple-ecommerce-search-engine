@@ -1,0 +1,71 @@
+loading + ingesting real WANDS catalog...
+42994 real products ingested
+building commerce_core structural index...
+checking Solr (http://localhost:8983/solr/wands_bench)...
+  Solr reachable: numFound=42994
+
+computing real category-leaf and per-depth group-size distributions...
+  1623 distinct real leaf categories, 458 distinct real depth-3 subtrees
+
+selected real leaf-category groups (category render workload):
+  CategoryId(1110) (Appliances / Washers & Dryers / Washing Machines / All Washing Machines / Front Load Washing Machines): 2 products [tiny (2-10)]
+  CategoryId(991) (Home Improvement / Bathroom Remodel & Bathroom Fixtures / Bathroom Vanities / Vanity Tops / Single Vanity Tops): 13 products [small (11-100)]
+  CategoryId(194) (Storage & Organization / Storage Containers & Drawers / All Storage Containers): 121 products [medium (101-1,000)]
+  CategoryId(37) (Furniture / Living Room Furniture / Chairs & Seating / Accent Chairs): 1103 products [large (1,001-10,000)]
+selected real depth-3 subtree groups (hierarchy/subtree-browse workload):
+  "Furniture / Bedroom Furniture / Bedroom Sets": 6 products [tiny (2-10)]
+  "Décor & Pillows / Flowers & Plants / Faux Plants": 25 products [small (11-100)]
+  "Baby & Kids / Nursery Bedding / Crib Bedding Sets": 132 products [medium (101-1,000)]
+  "Furniture / Kitchen & Dining Furniture / Bar Furniture": 1063 products [large (1,001-10,000)]
+
+running depth-1 crossover-characterization sweep (color facet under filter):
+
+=== P6A-E00 result ===
+request class                              group            key                          bucket                  n_count    s_count   match  n_mean_ms  s_mean_ms    speedup
+category_render_filter_first_page          category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0001     4.0226   27173.90
+color_facet_under_category_filter          category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0017     2.9540    1711.15
+product_class_facet_under_category_filter  category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0001     2.1758   15515.21
+style_facet_under_category_filter          category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0010     2.5480    2655.77
+sort_title_under_category_filter           category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0003     3.1170    9446.46
+sort_rating_desc_under_category_filter     category_leaf    Appliances / Washers & Dryer tiny (2-10)                   2          2    true     0.0003     2.3835    7227.77
+category_render_filter_first_page          category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0001     3.6281   40871.96
+color_facet_under_category_filter          category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0097     1.8621     191.04
+product_class_facet_under_category_filter  category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0004     2.4058    6689.00
+style_facet_under_category_filter          category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0130     1.9103     147.45
+sort_title_under_category_filter           category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0037     3.7181    1005.92
+sort_rating_desc_under_category_filter     category_leaf    Home Improvement / Bathroom  small (11-100)               13         13    true     0.0022     2.9995    1359.05
+category_render_filter_first_page          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0001     3.6546   41062.76
+color_facet_under_category_filter          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0750     1.9403      25.86
+product_class_facet_under_category_filter  category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0030     1.8871     618.84
+style_facet_under_category_filter          category_leaf    Storage & Organization / Sto medium (101-1,000)          121        121    true     0.0734     1.7716      24.13
+sort_title_under_category_filter           category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0116     3.4028     294.13
+sort_rating_desc_under_category_filter     category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0172     3.2356     187.73
+deep_pagination_under_category_filter      category_leaf    Storage & Organization / Sto medium (101-1,000)           24         24    true     0.0001     3.0590   32798.80
+category_render_filter_first_page          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.0001     2.9956   22294.16
+color_facet_under_category_filter          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.7220     1.4523       2.01
+product_class_facet_under_category_filter  category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.0360     2.0059      55.65
+style_facet_under_category_filter          category_leaf    Furniture / Living Room Furn large (1,001-10,000)       1103       1103    true     0.6576     1.6245       2.47
+sort_title_under_category_filter           category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.0936     2.6673      28.49
+sort_rating_desc_under_category_filter     category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.3031     3.1604      10.43
+deep_pagination_under_category_filter      category_leaf    Furniture / Living Room Furn large (1,001-10,000)         24         24    true     0.0001     3.6805   28275.30
+subtree_browse_depth3_filter_first_page    category_depth_3 Furniture / Bedroom Furnitur tiny (2-10)                   6          6    true     0.0001     1.8506   13524.21
+mixed_color_facet_under_subtree_depth3     category_depth_3 Furniture / Bedroom Furnitur tiny (2-10)                   6          6    true     0.0023     1.4541     624.27
+subtree_browse_depth3_filter_first_page    category_depth_3 Décor & Pillows / Flowers &  small (11-100)               25         25    true     0.0001     3.8569   26802.48
+mixed_color_facet_under_subtree_depth3     category_depth_3 Décor & Pillows / Flowers &  small (11-100)               25         25    true     0.0077     1.4235     184.89
+subtree_browse_depth3_filter_first_page    category_depth_3 Baby & Kids / Nursery Beddin medium (101-1,000)          132        132    true     0.0001     2.7584   18756.11
+mixed_color_facet_under_subtree_depth3     category_depth_3 Baby & Kids / Nursery Beddin medium (101-1,000)          132        132    true     0.0709     1.7472      24.63
+subtree_browse_depth3_filter_first_page    category_depth_3 Furniture / Kitchen & Dining large (1,001-10,000)       1063       1063    true     0.0003     3.1482   10379.70
+mixed_color_facet_under_subtree_depth3     category_depth_3 Furniture / Kitchen & Dining large (1,001-10,000)       1063       1063    true     1.1202     1.9577       1.75
+color_facet_under_depth1_crossover_sweep   category_depth_1 Rugs                         large (1,001-10,000)       2002       2002    true     1.2240     1.6671       1.36
+color_facet_under_depth1_crossover_sweep   category_depth_1 Storage & Organization       large (1,001-10,000)       2175       2175    true     1.6984     1.5241       0.90
+color_facet_under_depth1_crossover_sweep   category_depth_1 Lighting                     large (1,001-10,000)       2072       2072    true     1.4558     1.8685       1.28
+color_facet_under_depth1_crossover_sweep   category_depth_1 Outdoor                      large (1,001-10,000)       3394       3394    true     2.9082     1.5882       0.55
+color_facet_under_depth1_crossover_sweep   category_depth_1 Décor & Pillows              large (1,001-10,000)       4612       4612    true     5.1163     1.5542       0.30
+color_facet_under_depth1_crossover_sweep   category_depth_1 Home Improvement             large (1,001-10,000)       4686       4686    true     4.6394     1.5852       0.34
+color_facet_under_depth1_crossover_sweep   category_depth_1 Furniture                    huge (>10,000)            16039      16039    true    19.0401     1.5854       0.08
+
+correctness: 41/41 rows had matching native/Solr counts -- SEE MISMATCHES BELOW
+  FACET MISMATCH product_class_under_category=Storage & Organization / Storage Containers & Drawers / All Storage Containers: native={"": 6, "Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3} solr={"Boxes, Bins, Baskets, & Buckets": 112, "Boxes, Bins, Baskets, & Buckets|Shoe Storage": 3}
+  FACET MISMATCH product_class_under_category=Furniture / Living Room Furniture / Chairs & Seating / Accent Chairs: native={"": 81, "Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1} solr={"Accent Chairs": 967, "Accent Chairs|Dining Chairs": 1, "Accent Chairs|Dining Chairs|Office Chairs": 1, "Accent Chairs|Office Chairs": 7, "Patio Lounge Chairs": 1, "Reception Seating Chairs|Accent Chairs": 23, "Teen Desk Chairs|Accent Chairs|Office Chairs": 1, "Teen Lounge Furniture|Accent Chairs": 20, "Teen Lounge Furniture|Futons": 1}
+
+artifacts written to dataset_cache/p6a_e00_artifacts

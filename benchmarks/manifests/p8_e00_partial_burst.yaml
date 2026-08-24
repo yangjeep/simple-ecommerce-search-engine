@@ -1,0 +1,58 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P8-E00
+phase: 8
+issue: 21
+decision_document: PHASE8_DECISION.md
+claim: >
+  Issue #21's Phase 8 Regime B (partially correlated promotion): a
+  correlated demand burst affecting a subset of tenants does not
+  measurably degrade other, non-bursting tenants' own query latency --
+  extending H2/H4/H10/H11's steady-state isolation findings (Phase 7)
+  to a correlated-burst regime. Reuses H10/P7-E07's exact Zipfian-
+  weighted, all-55-real-tenant methodology across two sequential
+  phases per run: STEADY (plain Zipfian baseline) then BURST (the 10
+  lowest-weight/longest-tail tenants have their weight multiplied
+  10x, simulating a correlated sale/promotion event), tracking a
+  fixed "bystander" tenant (rank 10, outside the burst group)
+  throughout. Sanity check: the burst group's own throughput grew
+  9.80-10.58x across 3 runs, matching the intended 10x multiplier.
+  Bystander p99 ratio (burst/steady): 0.95x-1.03x -- essentially flat,
+  no material degradation in any of 3 independent runs. H16 CONFIRMED.
+  See docs/experiments/PHASE8_LOG.md for the full H16 hypothesis and
+  result.
+
+git_sha: f2c683adcf53c5cd43a13808e437ce6b8d1dd19e
+binary: crates/phase7-eval/src/bin/p8_e00_partial_burst.rs
+build_command: cargo build --release -p phase7-eval --bin p8_e00_partial_burst
+run_command: ./target/release/p8_e00_partial_burst dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS all 55 real tenants (Zipfian-weighted stream, same
+    tenant model as Phase 7); burst group = 10 lowest-weight tenants
+    (ranks 46-55); bystander = "Baby & Kids" (rank 10)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, all 55 real tenants
+    in-process, 4 worker threads each independently sampling from a
+    shared rand::distributions::WeightedIndex (weight ~ 1/rank),
+    deterministic per-thread ChaCha8Rng seed (identical across phases
+    within a run, and across the 3 repeats)
+
+workload:
+  selection: 4 threads continuously sample and query tenants via the
+    shared weight distribution; latency tracked only for the fixed
+    bystander tenant; two sequential 60s phases per run (steady, then
+    burst with the group's weight multiplied 10x)
+  repetitions: 3 independent in-process runs (built into the binary),
+    60 seconds per phase, 120 seconds per run, 360 seconds total
+
+seed: "deterministic: ChaCha8Rng::seed_from_u64(2000 + run*100 + worker_id), identical across steady/burst phases within a run"
+
+raw_results: docs/research/artifacts/p8_e00_partial_burst_run1/
+  - results.csv (all 3 runs, both phases)
+  - console.log
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE8_LOG.md for the full H16 hypothesis and result.

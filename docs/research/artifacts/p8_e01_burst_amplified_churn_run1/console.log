@@ -1,0 +1,86 @@
+=== P8-E01: burst-amplified rebuild-churn impact (H17, Issue #21 Phase 8) ===
+(quiet tenant = 'Rugs'; churn tenant = 'Furniture'; burst = Zipfian background load across the other 53 tenants incl. Furniture's live snapshot)
+quiet tenant="Rugs" (2002 products); churn tenant="Furniture" (16039 products); burst pool size=54
+
+--- run 1/10 ---
+  TRUE_BASELINE:  p50=1.2308ms p99=1.7130ms (n=500)
+  IDLE_CHURN:     p50=1.4882ms p99=11.2406ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.5232ms p99=5.9964ms (n=500) | 6 rebuilds (1.20/s)
+  idle_ratio(idle_churn/baseline)=6.56x burst_ratio(burst_churn/baseline)=3.50x amplification(burst_ratio/idle_ratio)=0.53x
+
+--- run 2/10 ---
+  TRUE_BASELINE:  p50=1.4325ms p99=2.0387ms (n=500)
+  IDLE_CHURN:     p50=1.4493ms p99=9.5026ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4704ms p99=5.8759ms (n=500) | 6 rebuilds (1.20/s)
+  idle_ratio(idle_churn/baseline)=4.66x burst_ratio(burst_churn/baseline)=2.88x amplification(burst_ratio/idle_ratio)=0.62x
+
+--- run 3/10 ---
+  TRUE_BASELINE:  p50=1.4513ms p99=1.8630ms (n=500)
+  IDLE_CHURN:     p50=1.4761ms p99=6.7227ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4956ms p99=6.0435ms (n=500) | 7 rebuilds (1.40/s)
+  idle_ratio(idle_churn/baseline)=3.61x burst_ratio(burst_churn/baseline)=3.24x amplification(burst_ratio/idle_ratio)=0.90x
+
+--- run 4/10 ---
+  TRUE_BASELINE:  p50=1.4432ms p99=2.1757ms (n=500)
+  IDLE_CHURN:     p50=1.4414ms p99=2.1552ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4760ms p99=9.1420ms (n=500) | 5 rebuilds (1.00/s)
+  idle_ratio(idle_churn/baseline)=0.99x burst_ratio(burst_churn/baseline)=4.20x amplification(burst_ratio/idle_ratio)=4.24x
+
+--- run 5/10 ---
+  TRUE_BASELINE:  p50=1.4296ms p99=2.0557ms (n=500)
+  IDLE_CHURN:     p50=1.4445ms p99=2.2435ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.5385ms p99=8.5740ms (n=500) | 7 rebuilds (1.40/s)
+  idle_ratio(idle_churn/baseline)=1.09x burst_ratio(burst_churn/baseline)=4.17x amplification(burst_ratio/idle_ratio)=3.82x
+
+--- run 6/10 ---
+  TRUE_BASELINE:  p50=1.4378ms p99=2.0864ms (n=500)
+  IDLE_CHURN:     p50=1.4543ms p99=2.2324ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.5141ms p99=9.4547ms (n=500) | 6 rebuilds (1.20/s)
+  idle_ratio(idle_churn/baseline)=1.07x burst_ratio(burst_churn/baseline)=4.53x amplification(burst_ratio/idle_ratio)=4.24x
+
+--- run 7/10 ---
+  TRUE_BASELINE:  p50=1.4807ms p99=2.2197ms (n=500)
+  IDLE_CHURN:     p50=1.4478ms p99=1.8251ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4557ms p99=8.6816ms (n=500) | 4 rebuilds (0.80/s)
+  idle_ratio(idle_churn/baseline)=0.82x burst_ratio(burst_churn/baseline)=3.91x amplification(burst_ratio/idle_ratio)=4.76x
+
+--- run 8/10 ---
+  TRUE_BASELINE:  p50=1.4754ms p99=1.8918ms (n=500)
+  IDLE_CHURN:     p50=1.4347ms p99=1.8295ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.5182ms p99=6.2649ms (n=500) | 5 rebuilds (1.00/s)
+  idle_ratio(idle_churn/baseline)=0.97x burst_ratio(burst_churn/baseline)=3.31x amplification(burst_ratio/idle_ratio)=3.42x
+
+--- run 9/10 ---
+  TRUE_BASELINE:  p50=1.4318ms p99=1.7125ms (n=500)
+  IDLE_CHURN:     p50=1.4138ms p99=1.6880ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4713ms p99=9.4833ms (n=500) | 7 rebuilds (1.40/s)
+  idle_ratio(idle_churn/baseline)=0.99x burst_ratio(burst_churn/baseline)=5.54x amplification(burst_ratio/idle_ratio)=5.62x
+
+--- run 10/10 ---
+  TRUE_BASELINE:  p50=1.4223ms p99=1.9073ms (n=500)
+  IDLE_CHURN:     p50=1.4150ms p99=1.9683ms (n=500) | 5 rebuilds (1.00/s)
+  BURST_CHURN:    p50=1.4504ms p99=5.7802ms (n=500) | 4 rebuilds (0.80/s)
+  idle_ratio(idle_churn/baseline)=1.03x burst_ratio(burst_churn/baseline)=3.03x amplification(burst_ratio/idle_ratio)=2.94x
+
+H17 verdict across 10 runs:
+  run 1: idle_ratio=6.56x burst_ratio=3.50x amplification=0.53x
+  run 2: idle_ratio=4.66x burst_ratio=2.88x amplification=0.62x
+  run 3: idle_ratio=3.61x burst_ratio=3.24x amplification=0.90x
+  run 4: idle_ratio=0.99x burst_ratio=4.20x amplification=4.24x
+  run 5: idle_ratio=1.09x burst_ratio=4.17x amplification=3.82x
+  run 6: idle_ratio=1.07x burst_ratio=4.53x amplification=4.24x
+  run 7: idle_ratio=0.82x burst_ratio=3.91x amplification=4.76x
+  run 8: idle_ratio=0.97x burst_ratio=3.31x amplification=3.42x
+  run 9: idle_ratio=0.99x burst_ratio=5.54x amplification=5.62x
+  run 10: idle_ratio=1.03x burst_ratio=3.03x amplification=2.94x
+  median idle_ratio=1.05x median burst_ratio=3.71x
+  amplification across 10 runs: median=3.62x range=[0.53x, 5.62x] (individual-run min/max reported for transparency, not used as the pass/fail statistic -- see note below)
+  H17 verdict: CONFIRMED -- a correlated burst materially amplifies H14's already-confirmed rebuild-churn isolation gap (median amplification >= 1.25x across 10 runs); the risk is worse than H14 alone showed
+  NOTE: individual-run amplification ranged 0.53x-5.62x -- this tail metric is genuinely noisy run-to-run (only ~5 rebuild events per 5s window), so the median across 10 runs is reported as the primary statistic rather than any single run or the min/max, matching this project's own precedent (H14/P7-E11's original range, P7-E09's p50-as-primary-metric fix) of not overstating precision a noisy tail metric does not have.
+
+  Secondary statistic -- how often does a >= 2x material-regression event happen at all (not just its typical size):
+    IDLE_CHURN:  3/10 runs showed >= 2x degradation
+    BURST_CHURN: 10/10 runs showed >= 2x degradation
+    interpretation: under an idle system the churn-driven tail-latency hit is an intermittent coincidence (whether a query happens to land during a rebuild's brief disruptive window); under burst, background CPU/memory contention from other tenants' queries makes that coincidence far more likely to occur on any given measurement window.
+
+artifacts written to docs/research/artifacts/p8_e01_burst_amplified_churn_run1

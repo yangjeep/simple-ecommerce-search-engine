@@ -1,0 +1,15 @@
+[package]
+name = "issue38-e2e3-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #38 E2/E3: deterministic synthetic catalogs for a previously-unseen commerce vertical (E2, automotive parts with fitment relationships) and a mixed-category merchant (E3, furniture + apparel + automotive in one catalog with shared ambiguous fields, sparse attributes, noisy titles, and cross-category queries), measuring coverage, correctness, candidate-set size, latency, fallback rate, failure taxonomy, and schema-management assumptions."
+
+[dependencies]
+bench-harness = { path = "../bench-harness" }
+commerce-core = { path = "../commerce-core" }
+phase9-eval = { path = "../phase9-eval" }
+serde_json = "1"
+rand = "0.8"
+rand_chacha = "0.3"

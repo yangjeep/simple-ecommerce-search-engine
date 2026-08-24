@@ -1,0 +1,84 @@
+=== P6E-E02: live re-verification of Havenask's two Phase 6B/6C blockers ===
+
+--- docker/dockerd binary presence ---
+$ which bazel bazelisk
+(no output -- neither found)
+$ which docker dockerd
+/usr/bin/docker
+/usr/bin/dockerd
+$ docker version
+Client: Docker Engine - Community
+ Version: 29.3.1
+Server:
+failed to connect to the docker API at unix:///var/run/docker.sock; check if
+the path is correct and if the daemon is running: dial unix
+/var/run/docker.sock: connect: no such file or directory
+$ systemctl status docker
+System has not been booted with systemd as init system (PID 1). Can't operate.
+Failed to connect to bus: Host is down
+
+--- manually starting dockerd (no systemd) ---
+$ nohup dockerd > /tmp/dockerd.log 2>&1 &
+[dockerd log shows containerd booting, "Daemon has completed initialization",
+"API listen on /var/run/docker.sock"]
+$ docker info
+Server:
+ Containers: 0
+ Images: 0
+ Server Version: 29.3.1
+ Storage Driver: overlayfs
+[daemon fully functional -- a real change from Phase 6B/6C's "Docker
+daemon absent" finding]
+
+--- attempting real image pulls across multiple registries ---
+$ docker run --rm hello-world
+Pulling from library/hello-world
+failed to copy: httpReadSeeker: failed open: failed to do request:
+Get "https://production.cloudfront.docker.com/registry-v2/.../data?...": Forbidden
+
+$ docker pull ghcr.io/homebrew/core/hello:2.12.1
+Pulling from homebrew/core/hello
+failed to copy: httpReadSeeker: failed open: failed to do request:
+Get "https://pkg-containers.githubusercontent.com/ghcr1/blobs/sha256:...": Forbidden
+
+$ docker pull public.ecr.aws/docker/library/hello-world:latest
+Pulling from docker/library/hello-world
+failed to copy: httpReadSeeker: failed open: failed to do request:
+Get "https://d2glxqk2uabbnd.cloudfront.net/v2/...": Forbidden
+
+--- registry API reachability (metadata/auth layer only) ---
+$ curl -o /dev/null -w "HTTP:%{http_code}\n" https://ghcr.io/v2/
+HTTP:401   (normal: auth required, host itself reachable)
+$ curl -o /dev/null -w "HTTP:%{http_code}\n" https://registry-1.docker.io/v2/
+HTTP:401   (normal: auth required, host itself reachable)
+
+--- Havenask's own registry (unchanged from Phase 6B/6C) ---
+$ curl -o /dev/null -w "HTTP:%{http_code}\n" https://registry.cn-hangzhou.aliyuncs.com/v2/
+curl: (56) CONNECT tunnel failed, response 403
+HTTP:000   (blocked at the connection/proxy level, not just auth)
+$ curl -o /dev/null -w "HTTP:%{http_code}\n" https://quay.io/v2/
+curl: (56) CONNECT tunnel failed, response 403
+HTTP:000   (also blocked at the connection level -- not every registry
+            gets even the metadata-API-level access ghcr.io/Docker Hub do)
+
+--- searching for a Havenask mirror on Docker Hub ---
+$ for repo in havenask/havenask alibaba/havenask havenask/ha3 havenask/suez; do
+    curl https://hub.docker.com/v2/repositories/$repo/
+  done
+{"message":"object not found","errinfo":{}}   (x4, no mirror found under
+                                                any plausible name)
+
+--- cleanup ---
+$ pkill -f dockerd
+$ ps aux | grep -iE "docker|containerd" | grep -v grep
+(no output -- confirmed fully stopped, no lingering processes)
+
+=== Conclusion ===
+Docker daemon itself: now functional (real change from "absent").
+Container image pulls: blocked network-wide across every registry
+tested (Docker Hub, ghcr.io, AWS public ECR mirror) -- blob/CDN storage
+hosts specifically, not registry API hosts.
+Havenask's own registry: still blocked at the connection level,
+unchanged from Phase 6B/6C.
+Net effect on Havenask's availability: UNCHANGED -- still genuinely
+blocked, now for a more precisely characterized reason.

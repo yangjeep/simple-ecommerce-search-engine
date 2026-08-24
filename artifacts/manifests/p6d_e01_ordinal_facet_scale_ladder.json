@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P6D-E01",
+  "phase": "6D",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6d_e01_ordinal_facet_scale_ladder.yaml",
+  "git_sha": "7f41ad27f407dfdefa3beb02a1795f13e7d231f4",
+  "dataset": {
+    "name": "real WANDS catalog (1x) + Phase 6B's own controlled-stress replication ladder (2x/5x/10x/20x, up to 859,880 products), same 7 category_depth_1 checkpoints"
+  },
+  "engine_config": {
+    "native_scan": "commerce_core::index::CatalogIndex::facet_counts_by_scan (existing)",
+    "native_ordinal": "commerce_core::index::CatalogIndex::facet_counts_ordinal (P6D-E00)",
+    "solr": "Apache Solr 9.10.1, wands_bench + wands_bench_2x/_5x/_10x/_20x cores (Phase 6B's own)"
+  },
+  "repetitions": 1,
+  "raw_results_path": "docs/research/artifacts/p6d_e01_scale_ladder_run1/",
+  "analysis_version": "docs/experiments/PHASE6D_LOG.md#P6D-E01",
+  "decision": "PHASE6D_DECISION.md",
+  "headline_result": {
+    "correctness_gate": "85/85 count-match checks (17 rows x 5 tiers) and 35/35 top-50-facet exact matches against live Solr cores, zero mismatches",
+    "ordinal_vs_solr_35_of_35_checkpoint_tier_combinations": "faster at every combination across the whole 1x-20x range (2,002-320,780 candidates), 2.5x-72.6x, zero exceptions",
+    "ordinal_vs_native_scan": "20.6x-327.0x faster, margin GROWS with scale",
+    "finding": "the ordinal method's advantage over Solr holds across the entire tested scale range but is NOT scale-invariant -- it narrows (not grows) at the largest candidate counts, converging toward roughly 2.5x-3x rather than an ever-widening advantage; the mirror-image trend (margin over the scan method growing sharply with scale) is mechanistically consistent with the scan method's per-candidate BTreeMap-clone cost getting relatively worse at scale",
+    "named_limitation": "single-run-per-tier (not 3-repeated-full-binary); only color facet tested; scale ladder holds facet cardinality fixed by design (Phase 6B's own disclosed choice), so organic (not just candidate-count) growth beyond 320,780 candidates is untested"
+  }
+}

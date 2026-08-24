@@ -25,16 +25,42 @@ and would violate `CLAUDE.md`'s "do not rewrite history" rule and Issue
 #21's own archive discipline ("never silently edit historical experiment
 conclusions"). They stay exactly where they are.
 
-`artifacts/manifests/` currently holds five **worked-example** records —
+`artifacts/manifests/` currently holds ten **worked-example** records —
 written after the fact, alongside their matching `benchmarks/manifests/`
-entries — for Phase 3/4/5's and Phase 6A's actual headline promoted
-results:
+entries — for Phase 3/4/5/6A/6B/7's actual headline promoted results:
 
 - `p3e16_finegrained_frontier.json`
 - `p4e01_implication_propose_replay_promote.json`
 - `p5e03_facet_scan_crossover.json`
 - `p6a_e00_wands_plp_benchmark.json`
 - `p6a_e01_concurrency_sweep.json`
+- `p6b_e00_scale_ladder.json`
+- `p7_e00_tenant_packing.json`
+- `p7_e01_qps_scaling.json`
+- `p7_e02_packing_ceiling.json`
+- `p7_e03_cross_process_fixed_cost.json`
+- `p7_e04_long_running_overhead.json`
+- `p7_e05_extended_duration_overhead.json`
+- `p7_e06_cold_tenant_overhead.json`
+- `p7_e07_realistic_demand_mix.json`
+- `p7_e08_extended_breadth_qps.json`
+- `p7_e09_slo_tenant_envelope.json`
+- `p7_e10_cpu_per_query.json`
+- `p7_e11_high_churn_impact.json`
+- `p7_e12_lexical_backend_contention.json`
+- `p8_e00_partial_burst.json`
+- `p8_e01_burst_amplified_churn.json`
+- `p8_e02_burst_amplified_solr_contention.json`
+- `p8_e03_combined_churn_solr_interaction.json`
+- `p6c_e00_lucene_direct.json`
+- `p6c_e01_lucene_facet_module.json`
+- `p6d_e00_ordinal_facet_counting.json`
+- `p6d_e01_ordinal_facet_scale_ladder.json`
+- `p6d_e02_typed_facet_ordinal.json`
+- `p6d_e03_ordinal_facet_memory.json`
+- `p6e_e00_embedded_elasticsearch.json`
+- `p6e_e01_embedded_opensearch.json`
+- `p6e_e02_havenask_docker_recheck.json`
 
 Each points at its real `docs/research/artifacts/pXeNN_run1/` (or
 `p6a_e0N_*_run1/`) location rather than duplicating the data.

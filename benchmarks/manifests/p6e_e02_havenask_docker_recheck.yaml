@@ -1,0 +1,56 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6E-E02
+phase: 6E
+issue: 21
+decision_document: PHASE6E_DECISION.md
+claim: >
+  Not a benchmark -- a live re-verification of Havenask's own two
+  independent Phase 6B/6C blockers, prompted by P6E-E00/E01 unblocking
+  two of Havenask's sibling engines via a previously-untried route.
+  Finding: the `docker`/`dockerd` binaries now exist in this container
+  and the daemon starts successfully when launched directly (a real
+  change from "Docker daemon absent"), but no container image can be
+  pulled via any registry tested -- Docker Hub, ghcr.io, and an AWS
+  public ECR mirror all have reachable registry/auth APIs but return
+  403 Forbidden from their actual blob/CDN storage hosts, a general
+  network-policy restriction on container-image data specifically, not
+  registry-specific. Havenask's own registry
+  (registry.cn-hangzhou.aliyuncs.com) remains additionally blocked at
+  the connection level, unchanged from Phase 6B/6C. No Havenask mirror
+  found on Docker Hub under plausible names. Net result: Havenask
+  remains genuinely blocked -- the headline verdict is unchanged -- but
+  the reason is now more precisely characterized than "Docker daemon
+  absent." See docs/experiments/PHASE6E_LOG.md for the full account.
+
+git_sha: 20885d270cff471366e8833113a36a2d50536ca2
+binary: N/A -- this is a live environment probe (docker/dockerd, curl),
+  not a code change or a new benchmark binary
+build_command: N/A
+run_command: |
+  nohup dockerd > /tmp/dockerd.log 2>&1 &
+  docker info
+  docker run --rm hello-world   # and equivalents against ghcr.io, AWS public ECR
+  curl -o /dev/null -w "HTTP:%{http_code}\n" https://registry.cn-hangzhou.aliyuncs.com/v2/
+  pkill -f dockerd   # cleanup -- do not leave the daemon running
+test_command: N/A
+
+dataset:
+  name: N/A -- no dataset involved, this is an environment/network probe
+
+engine:
+  docker: 29.3.1 (client+daemon), manually started (no systemd in this container)
+  registries_tested: Docker Hub, ghcr.io, AWS public ECR mirror,
+    registry.cn-hangzhou.aliyuncs.com (Havenask's own), quay.io
+
+workload:
+  selection: N/A -- reachability/functionality probe, not a timed workload
+  repetitions: 1 (deterministic given a fixed network policy; not a
+    timing measurement subject to run-to-run noise)
+
+seed: "N/A"
+
+raw_results: docs/research/artifacts/p6e_e02_havenask_docker_recheck_run1/
+  - investigation.log (every command run and its exact output)
+
+analysis: summarized directly in docs/experiments/PHASE6E_LOG.md#P6E-E02
+  and PHASE6E_DECISION.md.

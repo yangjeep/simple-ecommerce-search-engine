@@ -1,0 +1,62 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6D-E03
+phase: 6D
+issue: 21
+decision_document: PHASE6D_DECISION.md
+claim: >
+  This project's own adversarial-review loop rule applied to its own
+  prior commits, not a new external baseline: CatalogIndex::
+  approximate_size_bytes -- the memory-size metric this whole research
+  campaign has used since Phase 2, referenced across 21 files including
+  SCALE_UP_DECISION.md and PHASE7_DECISION.md -- silently omitted every
+  structure P6D-E00/E02 added (enum_dictionary/enum_value_ordinal/
+  enum_columns and the three typed-ID dictionary/reverse-map/column
+  groups). Fixed by extracting the accounting into a private
+  ordinal_facet_bytes() helper, folding it into approximate_size_bytes,
+  and exposing it standalone via a new approximate_ordinal_facet_bytes()
+  method. Correctness-gated by a new unit test (nonzero once
+  brand/category/product_type are indexed; never exceeds the
+  whole-index total; does not shrink as more data is indexed). Measured
+  on the real WANDS catalog: 2,876,248 bytes for the Phase 6D
+  ordinal-facet structures, 26.2% of the whole index's 10,984,302
+  measured bytes, 66.90 bytes/product -- about 16.7x the earlier
+  ~172 KB analytical estimate named as an unresolved risk in
+  PHASE6D_DECISION.md (items 3-4) and the P6D-E02 "does not claim"
+  paragraph. Still a flat byte-size approximation, not a dedicated
+  RSS/allocator-level benchmark (Phase 7's own established methodology)
+  -- that remains a named next step. See docs/experiments/PHASE6D_LOG.md
+  for the full hypothesis and result.
+
+git_sha: 98a23f2029f4219ae8fc93e16a157914232b16b9
+binary: crates/commerce-core/src/index/mod.rs (approximate_size_bytes,
+  approximate_ordinal_facet_bytes, ordinal_facet_bytes),
+  crates/phase6a-eval/src/bin/p6a_e00_wands_vs_native_eval.rs
+  (measurement print added this experiment)
+build_command: cargo build --release -p phase6a-eval --bin p6a_e00_wands_vs_native_eval
+run_command: ./target/release/p6a_e00_wands_vs_native_eval dataset_cache/wands/catalog.jsonl http://localhost:8983/solr/wands_bench
+test_command: cargo test -p commerce-core --all-features
+
+dataset:
+  name: real WANDS catalog (42,994 products), same ingestion/index-build
+    path P6D-E00/E01/E02 all used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  metric_under_test: commerce_core::index::CatalogIndex::approximate_size_bytes
+    (fixed) and approximate_ordinal_facet_bytes (new, this experiment)
+
+workload:
+  selection: single index build over the real, full WANDS catalog at
+    natural 1x scale; no sweep -- this experiment measures a
+    memory-accounting metric, not a latency distribution
+  repetitions: 1 (deterministic given a fixed catalog and index-build
+    code path; not a timing measurement subject to run-to-run noise)
+
+seed: "N/A -- deterministic index build over a fixed, pinned catalog"
+
+raw_results: docs/research/artifacts/p6d_e03_ordinal_facet_memory_run1/
+  - console_run1.log
+
+analysis: printed directly by the Rust binary; see
+  docs/experiments/PHASE6D_LOG.md for the full hypothesis and result.

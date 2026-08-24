@@ -1,0 +1,17 @@
+=== P7-E00: tenant packing density (order=forward) ===
+loading real WANDS catalog and partitioning by category_depth_1...
+55 real distinct category_depth_1 tenants available (order=forward)
+  N=1   cumulative_products=16039   marginal_rss_kb=12932     rss_kb/tenant=  12932.0 cumulative_index_bytes=3242510    index_bytes/tenant=3242510.0 build_ms=   249.5
+  N=5   cumulative_products=30906   marginal_rss_kb=30440     rss_kb/tenant=   6088.0 cumulative_index_bytes=6839510    index_bytes/tenant=1367902.0 build_ms=   468.9
+  N=10  cumulative_products=39664   marginal_rss_kb=44248     rss_kb/tenant=   4424.8 cumulative_index_bytes=9125788    index_bytes/tenant= 912578.8 build_ms=   589.3
+  N=25  cumulative_products=41378   marginal_rss_kb=51064     rss_kb/tenant=   2042.6 cumulative_index_bytes=9791194    index_bytes/tenant= 391647.8 build_ms=   616.0
+  N=55  cumulative_products=41438   marginal_rss_kb=51896     rss_kb/tenant=    943.6 cumulative_index_bytes=9843378    index_bytes/tenant= 178970.5 build_ms=   617.6
+
+H2 isolation check: loaded tenant="Furniture" (16039 products), quiet tenant="Rugs" (2002 products)
+  quiet alone (run 1):                  p50=1.6241ms p99=2.0055ms (n=500)
+  quiet + 3 threads hammering LOADED tenant (cross-tenant): p50=1.7129ms p99=2.6804ms (n=500) -- p99 ratio=1.34x
+  quiet alone (run 2):                  p50=1.6989ms p99=2.3067ms (n=500)
+  quiet + 3 threads hammering QUIET's OWN tenant (same-tenant control): p50=1.9355ms p99=2.6788ms (n=500) -- p99 ratio=1.16x
+  H2 verdict: cross-tenant p99 ratio=1.34x vs same-tenant-control p99 ratio=1.16x -- cross-tenant degradation is NOT materially worse than same-tenant contention -- consistent with generic CPU/memory contention, not a tenant-separation-specific effect
+
+artifacts written to docs/research/artifacts/p7_e00_tenant_packing_run1

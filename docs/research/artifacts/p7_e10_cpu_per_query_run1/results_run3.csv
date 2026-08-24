@@ -1,0 +1,4 @@
+tenant,products,iterations,cpu_seconds_total,wall_seconds_total,cpu_us_per_query,wall_us_per_query,cpu_wall_ratio
+Water Filter Pitchers,1,10039210,4.0000,4.0001,0.398,0.398,1.0000
+Faux Plants and Trees,5,3467391,4.0000,4.0000,1.154,1.154,1.0000
+Furniture,16039,379,4.0100,4.0022,10580.475,10559.776,1.0020

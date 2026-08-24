@@ -1,0 +1,3 @@
+condition,p50_ms,p99_ms,n,ratio_vs_baseline_p50,ratio_vs_baseline_p99
+baseline,3.9813,8.9830,500,1.0,1.0
+cross_tenant,5.1714,11.8799,500,1.2989,1.3225

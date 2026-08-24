@@ -1,0 +1,74 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P9-E02
+phase: 9
+issue: 34
+decision_document: PHASE9_DECISION.md
+claim: >
+  Re-runs Phase 2's P1-D/P1-E-style physical-advantage-by-query-class +
+  traffic-weighted-economics measurement on the real WANDS catalog
+  (genuine Category/ProductType structural entities, unlike ESCI's
+  single-entity Brand-only catalog), with both disclosed Phase 2 defects
+  fixed (P9-E00's FastPath ranking signal, P9-E01's bitmap-based Hybrid
+  delegate), against a fresh, same-run, same-environment Solr baseline.
+  Result: REVISE. The traffic-weighted overall number (native NDCG@10
+  0.4951 vs Solr 0.4740, +4.46% relative) is misleading if read as a
+  structural-retrieval win -- a routing-split breakdown shows it is driven
+  entirely by Punt-routed traffic (330/480 queries, 68.75% -- embedded
+  Tantivy vs remote Solr on plain text, not a structural-retrieval
+  comparison at all). On the traffic that actually exercises commerce_core's
+  structural execution (FastPath+Hybrid, 150/480, 31.25%), native NDCG@10
+  (0.1192-0.1194 across repeated runs) trails Solr's (0.1505) by a stable
+  ~-20.7% to -20.8% relative gap -- clearing only the latency bar (2.25x-
+  2.90x across runs, >=2x), not the relevance bar. Phase 2's STOP-leaning
+  relevance finding replicates on WANDS's genuine multi-entity structural
+  data, not just ESCI's single-entity catalog -- a real, disclosed negative
+  result, not smoothed into the favorable-looking overall aggregate.
+
+git_sha: bf0f19a
+binary: crates/phase9-eval/src/bin/p9_e02_wands_physical_advantage.rs
+build_command: cargo build --release -p phase9-eval --bin p9_e02_wands_physical_advantage
+run_command: ./target/release/p9_e02_wands_physical_advantage [solr_base_url]
+
+dataset:
+  name: real WANDS catalog + queries + judgments
+  source: https://github.com/wayfair/WANDS
+  size: 42,994 products, 1,623 categories, 860 product types, 480 queries,
+    233,448 judgments (Exact/Partial/Irrelevant 3-way scale)
+  substitution_note: >
+    WANDS has no real price data (confirmed: product.csv has no price
+    column; phase6a_eval::catalog::build_catalog uses Price::usd(0) for
+    every product) -- range_plus_structural does not populate here for a
+    real reason (no data), not fabricated.
+
+engine:
+  native: commerce_core::plan::execute_planned (real FastPath/Hybrid/Punt
+    routing), CatalogIndex built from the real ingested WANDS catalog,
+    lexicon via commerce_core::cold_start::{CatalogProfile, compile_lexicon}
+    (min_enum_frequency=1, no threshold sweep this pass), Hybrid delegate
+    = phase9_eval::bitmap_delegate::BitmapTantivyDelegate (P9-E01)
+  baseline: fresh, same-run Apache Solr 9.10.1 (wands_bench core,
+    re-indexed fresh via scripts/datasets/solr_index_wands.py immediately
+    before this run), edismax over title+description, fq built from the
+    same compiled structural constraints via case-insensitive regex
+
+workload:
+  queries: all 480 real WANDS queries, all with real judgments (0 skipped)
+  k: 10
+  warmup: one full 480-query pass against both engines, discarded, before
+    the measured pass (this project's own P2-E16 precedent: an unwarmed
+    Solr latency measurement was previously found broken by exactly this
+    omission)
+  repetitions: 3 independent full runs for the record (plus 3 more during
+    development/diagnosis)
+  routing_distribution: FastPath=15, Hybrid=135, Punt=330 (stable across
+    all runs)
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p9_e02_wands_physical_advantage_run1/
+  - run1.txt, run2.txt, run3.txt
+
+analysis: printed directly by the binary per run; see PHASE9_DECISION.md
+  and docs/experiments/PHASE9_LOG.md P9-E02 for the full hypothesis,
+  pre-registered decision criteria, routing-split methodology correction,
+  and result.

@@ -1,0 +1,49 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E01
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  A fixed tenant's ("Rugs") own query throughput and p99 latency do not
+  degrade as the breadth of other, distinct, concurrently-touched
+  tenants grows from 1 to 54 (WANDS' real category ceiling) at fixed
+  4-worker concurrency (H4, confirmed across 3 independent runs; 694-816
+  rps and 1.71-2.16ms p99 across all 15 measurements, no monotonic
+  trend). A first-draft design (uniform-random tenant selection across
+  all N tenants) showed an apparent ~19.8x throughput increase from N=1
+  to N=55, self-caught before promotion as a workload-mix artifact
+  (uniform selection over WANDS' long-tail population shifts most load
+  onto progressively cheaper near-empty tenants as N grows) rather than
+  a real tenant-count effect, and was withdrawn in favor of the
+  corrected, fixed-tenant design above.
+
+git_sha: 6a95ac9
+binary: crates/phase7-eval/src/bin/p7_e01_qps_scaling.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e01_qps_scaling
+run_command: ./target/release/p7_e01_qps_scaling dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS, partitioned by category_depth_1 (reuses phase7-eval's tenant model)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+  quiet_tenant: Rugs (2,002 products, matching Phase 6A/6B/P7-E00's own checkpoint)
+
+engine:
+  native: commerce_core::index::CatalogIndex, one independent instance
+    per tenant (Rugs held fixed; 1..54 other tenants round-robin-hammered
+    by the remaining 3 workers)
+
+workload:
+  selection: quiet tenant's own facet-scan query held completely fixed;
+    breadth of concurrently-hammered OTHER tenants varied in {1,4,9,24,54}
+  repetitions: 3 independent process runs
+
+seed: "n/a (deterministic real-data partition + round-robin, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e01_qps_scaling_run1/
+  - results_run{1,2,3}.csv
+
+analysis: printed directly by the binary per run; first-draft design
+  (uniform-random tenant selection) found to conflate tenant count with
+  workload-mix drift, self-caught and corrected before any external
+  review was needed -- see docs/experiments/PHASE7_LOG.md.

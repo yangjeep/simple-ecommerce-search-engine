@@ -1,0 +1,70 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P9-E01
+phase: 9
+issue: 34
+decision_document: docs/experiments/PHASE9_LOG.md
+claim: >
+  PHASE2_DECISION.md's disclosed defect #2: the reference TantivyDelegate
+  implementations used throughout Phase 2 restrict Hybrid's candidate set
+  via a fresh per-query Lucene TermSetQuery over up to ~60K terms, which
+  P2-E17's adversarial review found undermines Hybrid's own
+  narrow-first-is-cheap cost advantage. This experiment replaces that
+  mechanism with a bitmap-based restriction (a FAST u64 product_ordinal
+  field checked via RoaringBitmap::contains per candidate doc, no
+  per-query term-set/FST construction) and measures both mechanisms
+  head-to-head on the identical index/query/restrict_to set (60,000
+  candidates, matching P2-E17's reported worst case). Result: CONFIRMED,
+  bitmap-restrict is ~11.6-12.1x faster (mean latency) across 6 repeated
+  runs (3 during development + 3 for the record), well above the
+  pre-registered >=2x bar, returning the identical top-10 document set in
+  every run. A secondary, disclosed finding: the TermSetQuery/BooleanQuery
+  arm's own score is inflated by a constant +1.0 per hit (Tantivy's
+  default boolean combiner sums all Must clauses' scores, and
+  TermSetQuery's AutomatonWeight scores every match as a flat 1.0) --
+  unrelated to text relevance, not reproduced by the bitmap-restrict
+  replacement (proven by a dedicated unit test), and not required to match
+  by this experiment's own correctness criterion (document set, not raw
+  score). See docs/experiments/PHASE9_LOG.md P9-E01 for full detail.
+
+git_sha: 62b3af7
+binary: crates/phase9-eval/src/bin/p9_e01_bitmap_vs_termset_delegate.rs
+build_command: cargo build --release -p phase9-eval --bin p9_e01_bitmap_vs_termset_delegate
+run_command: ./target/release/p9_e01_bitmap_vs_termset_delegate
+
+dataset:
+  name: synthetic, deliberately scoped (not a real-catalog claim)
+  size: 500,000 documents, 20-word cyclic vocabulary titles
+  substitution_note: >
+    isolates the delegate-restriction mechanism's construction+execution
+    cost in isolation from any real catalog's vocabulary/relevance
+    distribution -- a fair, like-for-like microbenchmark of exactly the
+    two code paths PHASE2_DECISION.md named, not a relevance or economics
+    claim. The real WANDS-catalog physical-advantage-by-query-class re-run
+    (P9-E02) is where this mechanism gets exercised against real queries
+    end-to-end.
+
+engine:
+  native: phase9_eval::bitmap_delegate::BitmapTantivyDelegate (this
+    experiment's new mechanism)
+  baseline: tantivy::query::TermSetQuery + BooleanQuery, reproducing
+    crates/phase2-eval/src/bin/p1d_physical_advantage_eval.rs's reference
+    TantivyDelegate restriction pattern exactly
+
+workload:
+  query: "wood table" (free text, real matching candidates in the
+    synthetic vocabulary)
+  restrict_to_size: 60000 (matching PHASE2_DECISION.md P2-E17's reported
+    "up to ~60K terms for structural_plus_lexical_residual" worst case)
+  limit: 10 (top-K)
+  repetitions: 30 measured reps per arm per run (bench-harness
+    measured_repeat, 3-rep warmup), 6 total runs across development +
+    record-keeping
+
+seed: "n/a (deterministic synthetic title generation, no sampling)"
+
+raw_results: docs/research/artifacts/p9_e01_bitmap_vs_termset_run1/
+  - run1.txt, run2.txt, run3.txt
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE9_LOG.md P9-E01 for the full hypothesis,
+  pre-registered decision criteria, and result.

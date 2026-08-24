@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P7-E12",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e12_lexical_backend_contention.yaml",
+  "git_sha": "516a513",
+  "dataset": {
+    "name": "WANDS Solr cores from Phase 6A/6B: wands_bench (quiet, 42994 docs), wands_bench_20x (noisy, 859880 docs)"
+  },
+  "engine_config": {
+    "native": "Apache Solr 9.10.1, one shared JVM, 2 cores, quiet tenant queried while 3 noisy threads hammer the other core"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e12_lexical_backend_contention_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E12",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h15_status": "FALSIFIED, reproduced cleanly across 3 runs -- a genuine material effect, unlike H2's null result for pure query load in the native path",
+    "p50_ratio_range": [1.22, 1.43],
+    "p99_ratio_range": [2.16, 2.48],
+    "pass_bar": "p99 growth <2x (same bar as H2/H4/H11/H12/H14)",
+    "self_caught_issue": "first-draft (no warm-up) baseline p99 was unstable across runs (1.32x/2.04x/2.13x ratio) due to a JVM/connection-pool cold-start artifact inflating run 1's baseline reading (8.98ms vs 3.5-3.9ms in runs 2-3); fixed with a 500ms warm-up phase",
+    "disclosed_unconfirmed_mechanism": "Solr's own thread pool, JVM GC, and shared Lucene segment-merge/cache resources are genuinely shared across cores in one JVM -- not profiled or confirmed",
+    "named_limitation": "only 2 cores, one query type, one noisy-worker count tested; default out-of-the-box Solr configuration, no per-core resource isolation attempted"
+  }
+}

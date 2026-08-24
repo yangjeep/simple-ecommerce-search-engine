@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P7-E08",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e08_extended_breadth_qps.yaml",
+  "git_sha": "ba998b3",
+  "dataset": {
+    "name": "WANDS real 55 tenants, controlled-stress replicated to 55/200/500/1000/2000 total tenants; quiet tenant: Rugs-copy0"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, 1 quiet tenant + 3 noisy round-robin worker threads, 4s per breadth level, 6GB self-process RSS safety cap"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e08_extended_breadth_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E08",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h11_status": "CONFIRMED in all 3 runs -- H4's breadth-independence finding extends cleanly to 2,000 tenants (36x WANDS' real ceiling)",
+    "throughput_ratio_n2000_vs_n55_range": [0.905, 0.942],
+    "p99_ratio_n2000_vs_n55_range": [1.055, 1.085],
+    "pass_bar": "throughput drop <20%, p99 growth <2x",
+    "rss_at_n2000_mb": 5481.4,
+    "safety_cap_mb": 6144,
+    "named_limitation": "small, consistent throughput dip / p99 uptick at n=2000 in every run, coinciding with RSS reaching ~91% of the safety cap; memory-pressure contribution disclosed as unconfirmed, does not change the verdict"
+  }
+}

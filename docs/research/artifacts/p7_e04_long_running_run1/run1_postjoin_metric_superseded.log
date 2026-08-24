@@ -1,0 +1,18 @@
+=== P7-E04: long-running resident-process overhead ===
+RUN_DURATION=20s, WORKER_THREADS=4, sampling every 5s
+
+spawning 3 idle-resident bare processes (no tenant data, 4 parked worker threads, 20s window)...
+    idle child 0: t0=2136 KB  samples: t5s=2380KB t10s=2380KB t15s=2380KB t20s=2380KB  final=2508 KB
+    idle child 1: t0=2188 KB  samples: t5s=2368KB t10s=2368KB t15s=2368KB t20s=2368KB  final=2496 KB
+    idle child 2: t0=2188 KB  samples: t5s=2432KB t10s=2432KB t15s=2432KB t20s=2432KB  final=2560 KB
+  idle-resident: t0_mean=2170.7 KB steady_state_mean=2521.3 KB growth=350.7 KB (n=3)
+
+spawning active-resident single-tenant processes (largest/mid/smallest, 20s of sustained real query serving each)...
+  tenant="Furniture" products=16039   t0_rss_kb=2188     with_tenant_rss_kb=53152    steady_state_rss_kb=52680    growth_kb=-472     total_queries_served=5998  samples: t5s=53988KB t10s=54016KB t15s=54048KB t20s=54056KB
+  tenant="Faux Plants and Trees" products=5       t0_rss_kb=2184     with_tenant_rss_kb=2360     steady_state_rss_kb=2684     growth_kb=324      total_queries_served=80921440  samples: t5s=2556KB t10s=2556KB t15s=2556KB t20s=2556KB
+  tenant="Water Filter Pitchers" products=1       t0_rss_kb=2244     with_tenant_rss_kb=2400     steady_state_rss_kb=2724     growth_kb=324      total_queries_served=197938764  samples: t5s=2592KB t10s=2596KB t15s=2596KB t20s=2596KB
+
+H7 comparison: idle-resident growth=350.7 KB (16.2% of t0), max active-resident tenant growth=324 KB
+  H7 verdict: CONFIRMED -- steady-state RSS after sustained residency is materially higher than H6's immediate snapshot; a genuinely long-running service costs more than the short-lived-process floor
+
+artifacts written to docs/research/artifacts/p7_e04_long_running_run1

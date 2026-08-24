@@ -1,0 +1,58 @@
+operation,checkpoint,candidates,lucene_p50_ms,lucene_mean_ms,solr_count,count_match
+filter_only,Rugs,2002,0.1497,0.1566,2002,true
+product_class_facet_under_category,Rugs,2002,2.1710,2.2383,,n/a
+color_facet_under_category,Rugs,2002,1.6152,1.6183,,n/a
+product_class_facet_module_under_category,Rugs,2002,1.2196,1.2109,,n/a
+color_facet_module_under_category,Rugs,2002,1.1253,1.2182,,n/a
+sort_title_asc,Rugs,2002,1.3018,1.3113,,n/a
+sort_rating_desc,Rugs,2002,0.3412,0.4599,,n/a
+deep_pagination,Rugs,2002,1.7066,1.8672,,n/a
+filter_only,Storage & Organization,2175,0.0363,0.0449,2175,true
+product_class_facet_under_category,Storage & Organization,2175,2.8925,3.0259,,n/a
+color_facet_under_category,Storage & Organization,2175,0.9976,1.0209,,n/a
+product_class_facet_module_under_category,Storage & Organization,2175,1.0123,1.0470,,n/a
+color_facet_module_under_category,Storage & Organization,2175,0.8309,0.8338,,n/a
+sort_title_asc,Storage & Organization,2175,0.8299,0.8264,,n/a
+sort_rating_desc,Storage & Organization,2175,0.1574,0.1624,,n/a
+deep_pagination,Storage & Organization,2175,1.1794,1.3690,,n/a
+filter_only,Lighting,2072,0.0198,0.0291,2072,true
+product_class_facet_under_category,Lighting,2072,2.0923,2.1723,,n/a
+color_facet_under_category,Lighting,2072,0.2204,0.2368,,n/a
+product_class_facet_module_under_category,Lighting,2072,0.3985,0.4322,,n/a
+color_facet_module_under_category,Lighting,2072,0.4392,0.4465,,n/a
+sort_title_asc,Lighting,2072,0.6603,0.6710,,n/a
+sort_rating_desc,Lighting,2072,0.1141,0.1317,,n/a
+deep_pagination,Lighting,2072,0.9060,0.9367,,n/a
+filter_only,Outdoor,3394,0.0145,0.0176,3394,true
+product_class_facet_under_category,Outdoor,3394,3.0729,3.1730,,n/a
+color_facet_under_category,Outdoor,3394,1.9092,1.9454,,n/a
+product_class_facet_module_under_category,Outdoor,3394,0.6083,0.6428,,n/a
+color_facet_module_under_category,Outdoor,3394,0.8778,0.8993,,n/a
+sort_title_asc,Outdoor,3394,0.7166,0.7197,,n/a
+sort_rating_desc,Outdoor,3394,0.1634,0.1814,,n/a
+deep_pagination,Outdoor,3394,1.2867,1.3044,,n/a
+filter_only,Décor & Pillows,4612,0.0143,0.0189,4612,true
+product_class_facet_under_category,Décor & Pillows,4612,3.4550,3.5270,,n/a
+color_facet_under_category,Décor & Pillows,4612,4.2528,4.3721,,n/a
+product_class_facet_module_under_category,Décor & Pillows,4612,0.6470,0.6632,,n/a
+color_facet_module_under_category,Décor & Pillows,4612,1.6503,1.7606,,n/a
+sort_title_asc,Décor & Pillows,4612,0.8432,0.8437,,n/a
+sort_rating_desc,Décor & Pillows,4612,0.1844,0.1925,,n/a
+deep_pagination,Décor & Pillows,4612,1.3095,1.3222,,n/a
+filter_only,Home Improvement,4686,0.0149,0.0214,4686,true
+product_class_facet_under_category,Home Improvement,4686,3.0566,3.1096,,n/a
+color_facet_under_category,Home Improvement,4686,1.9175,1.9208,,n/a
+product_class_facet_module_under_category,Home Improvement,4686,0.6707,0.6929,,n/a
+color_facet_module_under_category,Home Improvement,4686,0.9941,1.0431,,n/a
+sort_title_asc,Home Improvement,4686,0.7076,0.7152,,n/a
+sort_rating_desc,Home Improvement,4686,0.2001,0.2133,,n/a
+deep_pagination,Home Improvement,4686,1.4429,1.4266,,n/a
+filter_only,Furniture,16039,0.0119,0.0131,16039,true
+product_class_facet_under_category,Furniture,16039,19.5505,20.3879,,n/a
+color_facet_under_category,Furniture,16039,5.5175,5.5903,,n/a
+product_class_facet_module_under_category,Furniture,16039,1.4660,1.5003,,n/a
+color_facet_module_under_category,Furniture,16039,2.0090,2.0210,,n/a
+sort_title_asc,Furniture,16039,1.0657,1.0952,,n/a
+sort_rating_desc,Furniture,16039,0.4746,0.4796,,n/a
+deep_pagination,Furniture,16039,3.3959,3.6743,,n/a
+numeric_range_rating,whole_catalog,31967,0.1503,0.1644,31967,true

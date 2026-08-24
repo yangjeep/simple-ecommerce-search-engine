@@ -1,0 +1,664 @@
+{
+  "configuration": "wands_anonymized",
+  "run_index": 2,
+  "descriptors": [
+    {
+      "key": "feature_0",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.3,
+      "evidence": "Only 2 distinct values ('no'/'yes'), mean_value_length 2.76 chars, 25258 occurrences -- a clean 2-state boolean flag. But 6 other fields (3,7,12,15,17,31) share this exact yes/no shape with no other distinguishing signal, so which specific yes/no attribute this is (assembly-required, adjustable, outdoor-safe, etc.) cannot be determined from values alone.",
+      "abstain": true
+    },
+    {
+      "key": "feature_1",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "acacia",
+        "aged brass",
+        "acrylic"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.5,
+      "evidence": "1613 distinct short values (mean 8.15 chars) mixing wood species (acacia), materials (acrylic) and metal finishes (aged brass) -- a broad color/finish swatch attribute typical of furniture catalogs; high cardinality fits combinatorial color+finish naming. Near-identical vocabulary to feature_11 (also has 'acrylic', 'aged brass'), so whether this is specifically Color vs Finish is not certain.",
+      "abstain": false
+    },
+    {
+      "key": "feature_2",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [],
+      "aliases": [],
+      "relationship_semantics": "The value appears derived from or scoped to another attribute -- the literal sample '[ tied to : color ]' is a system-generated marker indicating this field's real content depends on the product's color variant (e.g. a per-color pack/quantity breakdown, consistent with the sample '2 taupe , 2 teal , 2 white').",
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.4,
+      "evidence": "Sample values are heterogeneous and partly junk ('0', ';', ''), but one literal sample is the bracketed tag '[ tied to : color ]', an explicit cross-reference to another attribute (color), and another reads as a set composition broken out per color option. distinct_values=4686 over occurrences=26295 (uniqueness_ratio 0.178) fits a semi-structured derived field rather than a clean shopper-facing attribute.",
+      "abstain": false
+    },
+    {
+      "key": "feature_3",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.3,
+      "evidence": "2 distinct values ('no'/'yes'), 30534 occurrences -- the highest occurrence count among the 7 sibling boolean fields (0,3,7,12,15,17,31), suggesting a near-universal furniture attribute, but occurrence rank alone is too weak a signal to name the specific concept (assembly-required is a plausible guess given ubiquity, but so are several others).",
+      "abstain": true
+    },
+    {
+      "key": "feature_4",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.8,
+      "evidence": "uniqueness_ratio=1.0 (distinct_values==occurrences==71): every value is unique. Sample values are heterogeneous alphanumeric codes ('120767wht', '1wf54a0jsv', '01-0619-884-01/01-0619-885-01') typical of manufacturer part numbers / model numbers / secondary SKUs. Low occurrence count (71) implies this identifier is populated only for a narrow subset of variants.",
+      "abstain": false
+    },
+    {
+      "key": "feature_5",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.15,
+      "evidence": "Contradictory signal: the 5 shown sample values ('1','140780','1795','2','330') all look purely numeric, yet numeric_parseable_fraction is only 0.1304, implying most of the 78 distinct values (not shown) are non-numeric strings. Combined with low occurrence count (161) and mid uniqueness_ratio (0.4845), the evidence does not support a confident call on what this field is.",
+      "abstain": true
+    },
+    {
+      "key": "feature_6",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "71 distinct single-word lowercase values that are literal country names ('afghanistan','argentina','australia','bahrain','bangladesh') -- unambiguously a Country of Origin field. Very low uniqueness_ratio (0.0021) and high occurrence (34034) fit a near-universal compliance attribute; shoppers rarely filter furniture by arbitrary country name so it is more of a ranking/compliance signal than a search term.",
+      "abstain": false
+    },
+    {
+      "key": "feature_7",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.3,
+      "evidence": "2 distinct values ('no'/'yes'), 8696 occurrences -- same exact shape as feature_0/3/12/15/17/31. No distinguishing textual signal exists to say which boolean furniture attribute this represents.",
+      "abstain": true
+    },
+    {
+      "key": "feature_8",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "boho",
+        "coastal",
+        "country",
+        "farmhouse"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "16 distinct values including 'boho','coastal','country','country / farmhouse' -- textbook furniture Style facet vocabulary. Style is one of the most heavily used shopper filters/queries in furniture search.",
+      "abstain": false
+    },
+    {
+      "key": "feature_9",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "espresso wood",
+        "dark brown wood",
+        "gray wood",
+        "light wood"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.65,
+      "evidence": "Only 9 distinct values, all of the form '&lt;tone&gt; wood' ('dark brown wood','espresso wood','gray wood','light wood'), including a typo 'esptresso wood' preserved as its own distinct value -- consistent with a small normalized color-family bucket, coarser than the 1000+-value color/finish fields feature_1/feature_11.",
+      "abstain": false
+    },
+    {
+      "key": "feature_10",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.4,
+      "evidence": "numeric_parseable_fraction=0.9991, mean_value_length only 2.03 chars, 83 distinct values with samples '0','1','10','100' (string-sorted) -- a small-integer numeric field, plausibly a count such as number of pieces/drawers/shelves. The exact quantity being counted cannot be confirmed without a name.",
+      "abstain": false
+    },
+    {
+      "key": "feature_11",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "aged brass",
+        "aged ash",
+        "acrylic"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.45,
+      "evidence": "1294 distinct values sharing exact vocabulary with feature_1 ('acrylic','aged brass' appear in both), similar low numeric_parseable_fraction and comparable mean length (9.68 vs 8.15 chars). Very likely a sibling material/finish/color attribute (e.g. Finish vs feature_1's Color), but the two are genuinely difficult to tell apart from values alone.",
+      "abstain": false
+    },
+    {
+      "key": "feature_12",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.25,
+      "evidence": "3 distinct values ('','no','yes'), 7541 occurrences -- a tri-state (unknown/no/yes) boolean-like flag, same ambiguous shape as feature_15 and feature_17. The blank state adds extra uncertainty (unset vs. a real third category) on top of not knowing which concept it flags.",
+      "abstain": true
+    },
+    {
+      "key": "feature_13",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "acacia wood",
+        "acrylic",
+        "aluminum",
+        "aluminium"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "77 distinct values that are pure material terms ('acacia wood','acrylic','aluminium','aluminum') without color/finish qualifiers -- both British and American spellings of aluminum appear as separate distinct values, a realistic messy-data signature of a raw Material field. Material is a common shopper filter.",
+      "abstain": false
+    },
+    {
+      "key": "feature_14",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "full warranty",
+        "limited warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "12 distinct short values: '','1 year limited warranty','full','full warranty','limited' -- a Warranty Coverage Type facet, distinct from the messier free-form warranty text in feature_26/feature_34.",
+      "abstain": false
+    },
+    {
+      "key": "feature_15",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.25,
+      "evidence": "3 distinct values ('','no','yes'), 12555 occurrences -- same tri-state shape as feature_12/feature_17; no textual signal distinguishes which concept this flags.",
+      "abstain": true
+    },
+    {
+      "key": "feature_16",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "no assembly required",
+        "some assembly required",
+        "full assembly required"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "10 distinct values with longer mean length (15.74 chars): '','full','full assembly','full assembly needed','light' -- a classic Assembly Required facet. Assembly requirement is one of the most heavily used furniture search filters.",
+      "abstain": false
+    },
+    {
+      "key": "feature_17",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.25,
+      "evidence": "3 distinct values ('','no','yes'), 7459 occurrences (the lowest occurrence count among the tri-state group) -- same ambiguous shape as feature_12/feature_15, no way to name the specific concept from values alone.",
+      "abstain": true
+    },
+    {
+      "key": "feature_18",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.45,
+      "evidence": "numeric_parseable_fraction=1.0, 2006 distinct values that are all clean eighth-inch-style decimal fractions ('.2','.375','.5','.625','.75') -- suggests a fine-grained physical spec measured in fractional inches, e.g. material/leg thickness or diameter, rather than a whole-unit dimension like overall height.",
+      "abstain": false
+    },
+    {
+      "key": "feature_19",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.25,
+      "evidence": "numeric_parseable_fraction=0.9999, 2604 distinct decimal values, 37136 occurrences -- clearly a common numeric physical spec (weight, height, width, depth, or capacity are all equally plausible from values alone). Statistically near-identical to feature_20/21/35, and no units are present, so the specific measurement cannot be identified.",
+      "abstain": true
+    },
+    {
+      "key": "feature_20",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.25,
+      "evidence": "Highest occurrence count of any field in the dataset (57110), numeric_parseable_fraction=0.9996, 6071 distinct decimals -- almost certainly a near-universal numeric spec such as weight, but statistically indistinguishable from feature_19/21/35 without units or a name.",
+      "abstain": true
+    },
+    {
+      "key": "feature_21",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.25,
+      "evidence": "numeric_parseable_fraction=0.9993, 2734 distinct decimals, 46687 occurrences -- another common numeric physical spec, but its exact identity (height/width/depth/weight/capacity) cannot be distinguished from feature_19/20/35 using values alone.",
+      "abstain": true
+    },
+    {
+      "key": "feature_22",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "abstract",
+        "abstract geometric"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "93 distinct values including an explicit N/A placeholder '[ doesnotapply ]' plus art-subject vocabulary ('abstract','abstract cubism','abstract/geometric') -- looks like an Art Subject / Theme facet for wall-art-type products. Vocabulary overlaps with feature_28's shape/pattern terms, so the category boundary is not fully certain.",
+      "abstain": false
+    },
+    {
+      "key": "feature_23",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.7,
+      "evidence": "Long free-form values (mean 27.02 chars) enumerating package contents with counts, e.g. '( 1 ) stand mixer , ( 1 ) 6 quart bowl , ...' -- a 'What's Included' / package-contents description field. 2706 distinct values and uniqueness_ratio 0.3933 fit descriptive, largely unique per-product text rather than a clean facet.",
+      "abstain": false
+    },
+    {
+      "key": "feature_24",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "cotton",
+        "porcelain",
+        "water hyacinth"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.55,
+      "evidence": "250 distinct values consistently patterned '100 % &lt;material&gt;' ('100 % cotton','100 % fine porcelain','100 % medium density fiberboard','100 % water hyacinth') -- a Material Composition field. Overlaps with feature_13 (plain material names) and feature_33 (multi-material % breakdowns), so the exact boundary between 'primary material' and 'composition detail' fields is uncertain.",
+      "abstain": false
+    },
+    {
+      "key": "feature_25",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "easy to clean",
+        "wipe clean"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.85,
+      "evidence": "Very long mean value length (50.76 chars), 3500 distinct values, sample text is explicit cleaning guidance ('wipe clean with a damp cloth', 'do not use strong liquid cleaners') -- unambiguously a Care/Cleaning Instructions field. Mostly a display/ranking feature rather than a direct search vector.",
+      "abstain": false
+    },
+    {
+      "key": "feature_26",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "1 year warranty",
+        "lifetime warranty",
+        "90 day warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.55,
+      "evidence": "Only 7 distinct values incl. '1 year','90 days','lifetime' and one long outlier support-contact sentence -- a Warranty Duration/Term field. mean_value_length of only 2.77 (frequency-weighted characters) implies the dominant real-world values are short ('1 year'/blank) even though the alphabetically-shown samples include a long outlier; overlaps conceptually with feature_14 (warranty type) and feature_34 (warranty text).",
+      "abstain": false
+    },
+    {
+      "key": "feature_27",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.65,
+      "evidence": "uniqueness_ratio=0.9785 (2004 distinct / 2048 occurrences); samples include a 12-digit numeric string ('069556530416', barcode/UPC-shaped) and dotted alphanumeric codes ('06.mmfpbdv.44') alongside a spreadsheet-error artifact ('# ref !') -- consistent with a UPC/GTIN or secondary manufacturer code column with some ingestion junk mixed in.",
+      "abstain": false
+    },
+    {
+      "key": "feature_28",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "abstract",
+        "arabesque"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.5,
+      "evidence": "99 distinct decor-pattern/shape vocabulary values ('abstract','abstract/novelty','amphora','arabesque') -- looks like a Pattern or decorative Shape facet (e.g. for vases/rugs). Vocabulary overlaps partially with feature_22's art-subject values ('abstract' appears in both), so the precise boundary between the two fields is uncertain.",
+      "abstain": false
+    },
+    {
+      "key": "feature_29",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "american traditional",
+        "asian inspired",
+        "apothecary"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.6,
+      "evidence": "70 distinct multi-word theme/style values ('american traditional','antik','apothecary','asian inspired') -- a more granular Theme/Style facet than feature_8's 16-value broad Style field. Style/theme is heavily used in furniture and decor search.",
+      "abstain": false
+    },
+    {
+      "key": "feature_30",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "vintage map",
+        "wall art"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.6,
+      "evidence": "uniqueness_ratio=0.9029, long descriptive values ('1881 oahu hawaii vintage map', 'a pelican and other birds near a pool the floating feather 1680') read as individual artwork titles rather than a coded identifier -- likely a product/art-piece Title field for a wall-art-like subset of the catalog (only 546 occurrences, a narrow product slice).",
+      "abstain": false
+    },
+    {
+      "key": "feature_31",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.3,
+      "evidence": "2 distinct values ('no'/'yes'), 10779 occurrences -- same shape as feature_0/3/7/12/15/17. No distinguishing textual signal exists to say which boolean attribute this represents.",
+      "abstain": true
+    },
+    {
+      "key": "feature_32",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "2-tone espresso",
+        "2-tone brown",
+        "2-tone latte"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.4,
+      "evidence": "2176 distinct values, mostly '2-tone &lt;color&gt;' descriptions ('2 tone espresso','2-tone brown','2-tone latte') plus a stray numeric code sample ('0354-92 ; 0354-92') -- another color/finish-like field, but its relationship to feature_1/feature_9/feature_11 (which cover overlapping color/finish vocabulary) cannot be resolved from values alone; there are at least 4 candidate color/finish-shaped fields in this dataset.",
+      "abstain": false
+    },
+    {
+      "key": "feature_33",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "polyester fiber",
+        "cotton",
+        "metal frame"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.5,
+      "evidence": "113 distinct values with detailed multi-component percentage breakdowns ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame') alongside simple ones ('100 % fabrics') -- looks like an Upholstery/Fabric Material Composition field, more construction-detail-oriented than feature_24's simpler single-material composition strings, though the two are closely related and not fully separable without names.",
+      "abstain": false
+    },
+    {
+      "key": "feature_34",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "1 year warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.45,
+      "evidence": "112 distinct warranty-flavored text values ('1','1 year','1 year from the date of purchase.','1 year limited manufacturer warranty') -- overlaps heavily with feature_26's warranty-duration content; genuinely hard to tell whether this is a distinct field (e.g. full legal warranty text vs. a simplified duration bucket) or a near-duplicate of feature_26.",
+      "abstain": false
+    },
+    {
+      "key": "feature_35",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.25,
+      "evidence": "numeric_parseable_fraction=0.9997, 531 distinct decimal values ('0','0.01','0.2','0.22','0.5'), 15125 occurrences -- another plain numeric spec, statistically similar to feature_18/19/20/21 but with a lower occurrence count suggesting a less-universal measurement (e.g. a capacity or clearance rather than a core dimension); cannot be identified further from values alone.",
+      "abstain": true
+    }
+  ]
+}

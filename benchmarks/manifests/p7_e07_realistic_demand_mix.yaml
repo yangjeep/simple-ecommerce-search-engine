@@ -1,0 +1,68 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E07
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Tests whether P7-E06/H9's ~9-13x cold/hot latency-ratio effect is a
+  general architectural property or an artifact of H9's specific
+  fully-dedicated-thread design. The same size-matched real tenant pair
+  (both 5 products) was embedded in a single shared Zipfian-weighted
+  (weight ~ 1/rank) query stream spanning all 55 real tenants at once,
+  with the pair's weights overridden to the population's max/min (~55x
+  apart). A first-draft 15-second run self-caught a real statistical
+  problem before trusting any ratio: only 62-63 cold samples per run
+  made p99 an unstable statistic (it swung 1.53x-5.50x across 3 runs of
+  an IDENTICAL deterministic query sequence). Fixed by raising the
+  window to 120s (487-501 cold samples per run, comparable to H9's own
+  ~300-sample design). With adequate sampling, the ratio stabilizes to
+  1.85x-2.08x across all 3 runs -- roughly 4-6x SMALLER than H9's
+  originally-observed 9-13x, but real, reproducible, and directionally
+  consistent (p50 ratio an exact 2.083x in every single run). By the
+  letter of the pre-registered "all runs must clear 2.0x" criterion,
+  H10 does not cleanly replicate H9 -- but the DIRECTION replicates in
+  100% of runs at both p50 and p99, pointing at H9's idealized
+  fully-dedicated-thread design (not a general architectural property)
+  as the likely source of its larger observed ratio. See
+  docs/experiments/PHASE7_LOG.md for the full H10 hypothesis and result.
+
+git_sha: 98a29e8
+binary: crates/phase7-eval/src/bin/p7_e07_realistic_demand_mix.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e07_realistic_demand_mix
+run_command: ./target/release/p7_e07_realistic_demand_mix dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS all 55 real tenants (Zipfian-weighted stream; tracked
+    size-matched pair: Faux Plants and Trees, Ergonomic Accessories --
+    the same pair P7-E06 used)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex, all 55 real tenants
+    in-process, 4 worker threads each independently sampling from a
+    shared rand::distributions::WeightedIndex (weight ~ 1/rank),
+    deterministic per-thread ChaCha8Rng seed (identical across the 3
+    repeats -- isolates runtime/scheduling noise as the only run-to-run
+    variable)
+
+workload:
+  selection: 4 threads continuously sample and query tenants via the
+    shared Zipfian weight distribution; latency tracked only for the
+    size-matched hot/cold pair, all other tenants' queries counted
+    toward aggregate throughput only
+  repetitions: 3 independent in-process runs (built into the binary),
+    120 seconds each (487-501 cold-tenant samples per run)
+
+seed: "deterministic: ChaCha8Rng::seed_from_u64(1000 + worker_id), identical every run"
+
+raw_results: docs/research/artifacts/p7_e07_realistic_demand_mix_run1/
+  - results.csv (all 3 runs, corrected 120s design)
+  - console.log
+  - results_15s_undersampled_superseded.csv / console_15s_undersampled_superseded.log
+    (first-draft, withdrawn statistic, preserved not deleted)
+
+analysis: printed directly by the binary; see
+  docs/experiments/PHASE7_LOG.md for the full H10 hypothesis, the
+  self-caught undersampling problem, and the corrected interpretation
+  (direction replicates, magnitude does not).

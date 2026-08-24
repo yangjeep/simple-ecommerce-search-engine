@@ -1,0 +1,16 @@
+=== P9-E03: lexicon-coverage diagnostic (Hypothesis 2: semantic/lexicon-compilation gap) ===
+raw WANDS records: 42994
+distinct product_class (raw, whole): 860, distinct product_class (pipe-split): 601, distinct category_leaf leaf-segments: 1569, products with pipe-delimited product_class: 2247 (5.23%)
+queries with zero constraints today (current production compile_lexicon behavior): 314/480
+
+=== recoverability breakdown (of 314 zero-constraint queries; mechanisms are non-exclusive) ===
+H2a pipe-split product_class:  0/314 (0.0%)  examples: []
+H2b category leaf segment:     3/314 (1.0%)  examples: ["bed risers", "auburn throw pillows", "cake plates with tops"]
+H2c plural/singular:           81/314 (25.8%)  examples: ["chair and a half recliner", "sofa with ottoman", "king poster bed", "bar stool with backrest", "bar stool 24 inches height"]
+H2d substring near-miss:       14/314 (4.5%)  (catch-all signal, not itself a proposed fix)
+none of the above recoverable: 226/314 (72.0%)  examples: ["salon chair", "driftwood mirror", "home sweet home sign", "ombre rug", "large spoon and fork wall decor", "blk 18x18 seat cushions", "closet storage with zipper", "gurney  slade 56"]
+
+=== per-hypothesis verdict (>=10% of zero-constraint queries = material, disclosed evidence) ===
+H2a (pipe-split product_class): FALSIFIED as a material contributor (0.0%, below the 10% bar)
+H2b (category leaf segment): FALSIFIED as a material contributor (1.0%, below the 10% bar)
+H2c (plural/singular): CONFIRMED material (25.8% of zero-constraint queries recoverable)

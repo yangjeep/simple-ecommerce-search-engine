@@ -328,6 +328,14 @@ fn main() {
 
     println!("building commerce_core structural index...");
     let index = CatalogIndex::build(&ingested.catalog);
+    let n_products = ingested.catalog.products.len();
+    let index_bytes = index.approximate_size_bytes();
+    let ordinal_facet_bytes = index.approximate_ordinal_facet_bytes();
+    println!(
+        "index size: approx_size={index_bytes} bytes total, ordinal_facet_bytes={ordinal_facet_bytes} bytes ({:.1}% of total, {:.2} bytes/product) -- P6D-E03 real measurement replacing the earlier ~172KB estimate",
+        100.0 * ordinal_facet_bytes as f64 / index_bytes as f64,
+        ordinal_facet_bytes as f64 / n_products as f64
+    );
 
     println!("checking Solr ({solr_base_url})...");
     let ping = solr_num_found(&solr_base_url, &[], 0, 0, None);
@@ -554,6 +562,7 @@ fn main() {
                 "FACET MISMATCH product_class_under_category={category_name}: native={native_facets:?} solr={solr_facets:?}"
             ));
         }
+        let solr_ns_reused = solr_ns.clone();
         push_row(
             &mut rows,
             &mut mismatches,
@@ -565,6 +574,43 @@ fn main() {
             solr_count,
             native_ns,
             solr_ns,
+        );
+
+        // Issue #21 Phase 6D (P6D-E02): the ordinal-based counterpart to
+        // `product_type_facet_counts_by_scan` -- unlike the generic Enum
+        // scan, this baseline never paid a per-candidate attribute-map
+        // clone (it reads `product.product_type` directly), so this is
+        // an adversarial test of whether the ordinal technique still
+        // helps when that specific inefficiency was never present.
+        let (native_ordinal_ns, native_ordinal_facets_full) = time_reps(|| {
+            index
+                .product_type_facet_counts_ordinal(&category_bitmap)
+                .into_iter()
+                .map(|(id, c)| {
+                    (
+                        product_type_raw_by_id.get(&id).cloned().unwrap_or_default(),
+                        c,
+                    )
+                })
+                .collect::<BTreeMap<String, u64>>()
+        });
+        let native_ordinal_facets = top_n(native_ordinal_facets_full, 50);
+        if native_ordinal_facets != solr_facets {
+            mismatches.push(format!(
+                "FACET MISMATCH product_class_ordinal_under_category={category_name}: native_ordinal={native_ordinal_facets:?} solr={solr_facets:?}"
+            ));
+        }
+        push_row(
+            &mut rows,
+            &mut mismatches,
+            "product_class_facet_ordinal_under_category_filter",
+            "category_leaf",
+            &category_name,
+            &bucket,
+            category_bitmap.len(),
+            solr_count,
+            native_ordinal_ns,
+            solr_ns_reused,
         );
 
         // 4. style facet under category filter (LOW cardinality: 65
@@ -798,6 +844,7 @@ fn main() {
                 "FACET MISMATCH color_under_depth1={name}: native={native_facets:?} solr={solr_facets:?}"
             ));
         }
+        let solr_ns_reused = solr_ns.clone();
         push_row(
             &mut rows,
             &mut mismatches,
@@ -809,6 +856,36 @@ fn main() {
             solr_n,
             native_ns,
             solr_ns,
+        );
+
+        // Issue #21 Phase 6D: the same facet request, timed against the
+        // ordinal/dictionary-based counting strategy instead of the scan
+        // (P6C-E01 found Lucene's own ordinal-based facet module closes
+        // most of the facet crossover against Solr; this tests whether
+        // the same technique does the same for commerce-native itself).
+        // Reuses the exact same `solr_ns`/`solr_n`/`solr_facets` captured
+        // just above rather than re-querying Solr a second time, so both
+        // native strategies are compared against one identical Solr
+        // measurement.
+        let (native_ordinal_ns, native_ordinal_facets_full) =
+            time_reps(|| index.facet_counts_ordinal(&candidates, "color"));
+        let native_ordinal_facets = top_n(native_ordinal_facets_full, 50);
+        if native_ordinal_facets != solr_facets {
+            mismatches.push(format!(
+                "FACET MISMATCH color_ordinal_under_depth1={name}: native_ordinal={native_ordinal_facets:?} solr={solr_facets:?}"
+            ));
+        }
+        push_row(
+            &mut rows,
+            &mut mismatches,
+            "color_facet_ordinal_under_depth1_crossover_sweep",
+            "category_depth_1",
+            name,
+            &bucket,
+            n,
+            solr_n,
+            native_ordinal_ns,
+            solr_ns_reused,
         );
     }
 

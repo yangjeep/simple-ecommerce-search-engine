@@ -1,0 +1,19 @@
+=== P7-E04: long-running resident-process overhead ===
+RUN_DURATION=20s, WORKER_THREADS=4, sampling every 5s
+
+spawning 3 idle-resident bare processes (no tenant data, 4 parked worker threads, 20s window)...
+    idle child 0: t0=2184 KB  samples: t5s=2428KB t10s=2428KB t15s=2428KB t20s=2428KB  peak=2428 KB  post_teardown=2556 KB
+    idle child 1: t0=2188 KB  samples: t5s=2432KB t10s=2432KB t15s=2432KB t20s=2432KB  peak=2432 KB  post_teardown=2560 KB
+    idle child 2: t0=2188 KB  samples: t5s=2432KB t10s=2432KB t15s=2432KB t20s=2432KB  peak=2432 KB  post_teardown=2560 KB
+  idle-resident: t0_mean=2186.7 KB peak_mean=2430.7 KB growth=244.0 KB post_teardown_mean=2558.7 KB (n=3)
+
+spawning active-resident single-tenant processes (largest/mid/smallest, 20s of sustained real query serving each)...
+  tenant="Furniture" products=16039   t0_rss_kb=2248     with_tenant_rss_kb=53212    peak_serving_rss_kb=54108    peak_growth_kb=896      post_teardown_rss_kb=52732    total_queries_served=6002  samples: t5s=54048KB t10s=54080KB t15s=54104KB t20s=54108KB
+  tenant="Faux Plants and Trees" products=5       t0_rss_kb=2184     with_tenant_rss_kb=2388     peak_serving_rss_kb=2584     peak_growth_kb=196      post_teardown_rss_kb=2712     total_queries_served=82274156  samples: t5s=2584KB t10s=2584KB t15s=2584KB t20s=2584KB
+  tenant="Water Filter Pitchers" products=1       t0_rss_kb=2188     with_tenant_rss_kb=2392     peak_serving_rss_kb=2588     peak_growth_kb=196      post_teardown_rss_kb=2716     total_queries_served=195755448  samples: t5s=2584KB t10s=2588KB t15s=2588KB t20s=2588KB
+
+H7 comparison: idle-resident peak growth=244.0 KB (11.2% of t0), max active-resident tenant peak growth=896 KB
+  H7 verdict: CONFIRMED -- peak RSS while actually serving is materially higher than H6's immediate snapshot; a genuinely long-running service costs more than the short-lived-process floor
+  (note: post-teardown RSS, printed above, is a distinct secondary signal about thread-join/shutdown behavior -- not used for this verdict, since a real long-running service does not tear down its worker pool mid-life)
+
+artifacts written to docs/research/artifacts/p7_e04_long_running_run1

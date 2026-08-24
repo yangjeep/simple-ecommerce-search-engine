@@ -1,0 +1,62 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P7-E11
+phase: 7
+issue: 21
+decision_document: PHASE7_DECISION.md
+claim: >
+  Issue #21 explicitly names "high-churn tenant impact on low-churn
+  tenants" as a required Phase 7 experiment; no prior Phase 7
+  experiment tested any mutation/churn workload. This architecture
+  uses immutable tenant CatalogIndex bundles, so "churn" means
+  repeated REBUILDS of a tenant's index, not in-place mutation. Reuses
+  H2/P7-E00's exact quiet-tenant methodology (same reps, duration, and
+  quiet tenant "Rugs") for direct comparability. A separate high-churn
+  tenant (Furniture, the largest real tenant, 16,039 products) has its
+  CatalogIndex continuously rebuilt and hot-swapped by a dedicated
+  thread with no sleep between rebuilds. Result (3 runs): p50 ratio
+  1.14-1.17x (mild, inside the pass bar); p99 ratio 4.00-6.70x
+  (material, clearing the 2x threshold in every run) -- H14 is
+  genuinely FALSIFIED, unlike H2's null result for pure query load.
+  Exactly 5 full index rebuilds completed in the 5-second window in
+  every run, meaning a single Furniture rebuild costs almost exactly
+  1 second of wall time (~100x a single query's own CPU cost, per
+  P7-E10/H13). A real, actionable isolation gap: this architecture's
+  immutable-bundle rebuild path can materially degrade a co-located
+  tenant's own tail latency while a rebuild is in progress. See
+  docs/experiments/PHASE7_LOG.md for the full H14 hypothesis and
+  result.
+
+git_sha: 316988b
+binary: crates/phase7-eval/src/bin/p7_e11_high_churn_impact.rs
+build_command: cargo build --release -p phase7-eval --bin p7_e11_high_churn_impact
+run_command: ./target/release/p7_e11_high_churn_impact dataset_cache/wands/catalog.jsonl
+
+dataset:
+  name: WANDS 2 real tenants (Rugs, the quiet/low-churn tenant from
+    H2/P7-E00; Furniture, the largest real tenant, repeatedly rebuilt
+    as the high-churn tenant)
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  native: commerce_core::index::CatalogIndex; quiet tenant queried by
+    the main thread (500 reps baseline, then under churn); a separate
+    thread continuously rebuilds the churn tenant's CatalogIndex from
+    its unchanging Catalog and hot-swaps it into a
+    Mutex<Arc<CatalogIndex>>, with no sleep between rebuilds
+
+workload:
+  selection: quiet tenant's own facet-scan query (same operation as
+    every other Phase 7 QPS experiment), 500 reps baseline then 500
+    reps (or 5s, whichever comes first) under churn
+  repetitions: 3 independent external process runs
+
+seed: "n/a (deterministic real-data, no sampling)"
+
+raw_results: docs/research/artifacts/p7_e11_high_churn_impact_run1/
+  - results_run{1,2,3}.csv
+  - console_run{1,2,3}.log
+
+analysis: printed directly by the binary per run; see
+  docs/experiments/PHASE7_LOG.md for the full H14 hypothesis and the
+  real, reproduced material-degradation result.

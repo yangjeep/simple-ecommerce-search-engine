@@ -1,0 +1,73 @@
+=== Issue #45 E2c serving-overhead measurement (GO-gate criterion 6) ===
+baseline_sha: d965b7444e1ae563707af987da1a55b98d939135
+oracle: 29 WANDS structural descriptors accepted
+Treatment C (canonicalizer): 27 WANDS structural descriptors promoted
+
+building oracle-compiled bundle...
+  42994 products, build=498.06ms, index size=7955852 bytes
+building Treatment C-compiled bundle...
+  42994 products, build=421.52ms, index size=6382086 bytes
+
+16 fields common to both bundles' own accepted Enum set, with real shared values
+workload: 68 queries
+candidate-set cross-check: 68/68 match
+
+=== indexed_candidates (ms) ===
+  oracle: n=2040 mean=0.0001ms sd=0.0001ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0002 p90=0.0002 p95=0.0002 p99=0.0004 | min=0.0001 max=0.0005ms
+  canonicalizer: n=2040 mean=0.0001ms sd=0.0001ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0002 p90=0.0002 p95=0.0002 p99=0.0004 | min=0.0001 max=0.0005ms
+P50 overhead: -2.02% below_floor=true => INCONCLUSIVE
+
+=== execute_ranked top-10 (ms) ===
+  oracle: n=2040 mean=0.0176ms sd=0.0857ms | p10=0.0001 p25=0.0002 p50=0.0002 p75=0.0004 p90=0.0208 p95=0.0353 p99=0.5537 | min=0.0001 max=0.5849ms
+  canonicalizer: n=2040 mean=0.0174ms sd=0.0846ms | p10=0.0001 p25=0.0002 p50=0.0002 p75=0.0004 p90=0.0206 p95=0.0352 p99=0.5483 | min=0.0001 max=0.5604ms
+execute_ranked P50: +0.23% floor=true => INCONCLUSIVE
+execute_ranked P95: -0.21% floor=false => PASS
+execute_ranked P99: -0.97% floor=false => PASS
+
+=> E2c serving-overhead gate (criterion 6): PASS
+
+{
+  "baseline_sha": "d965b7444e1ae563707af987da1a55b98d939135",
+  "bundles": {
+    "canonicalizer": {
+      "build_ms": 421.52242,
+      "index_size_bytes": 6382086,
+      "label": "canonicalizer",
+      "n_products": 42994
+    },
+    "oracle": {
+      "build_ms": 498.061174,
+      "index_size_bytes": 7955852,
+      "label": "oracle",
+      "n_products": 42994
+    }
+  },
+  "experiment_id": "I45-E2c-serving-overhead",
+  "result": {
+    "execute_ranked_top10": {
+      "canonical_p50_ms": 0.0001714125,
+      "canonical_p95_ms": 0.03524767025,
+      "canonical_p99_ms": 0.5483338328499999,
+      "gate_p50": "INCONCLUSIVE",
+      "gate_p95": "PASS",
+      "gate_p99": "PASS",
+      "oracle_p50_ms": 0.0001710225,
+      "oracle_p95_ms": 0.035321276,
+      "oracle_p99_ms": 0.55372994785,
+      "overhead_pct_p50": 0.2280401701530429,
+      "overhead_pct_p95": -0.20838927223353151,
+      "overhead_pct_p99": -0.9745030083620815
+    },
+    "go_gate_criterion_6": "PASS",
+    "indexed_candidates": {
+      "below_timer_floor": true,
+      "candidate_set_mismatches": 0,
+      "canonical_p50_ms": 0.00010139249999999999,
+      "gate": "INCONCLUSIVE",
+      "n_queries": 68,
+      "oracle_p50_ms": 0.00010348249999999999,
+      "overhead_pct_p50": -2.0196651607759786
+    }
+  }
+}
+summary written to docs/research/artifacts/i45_e2c_serving_overhead_run1/summary.json

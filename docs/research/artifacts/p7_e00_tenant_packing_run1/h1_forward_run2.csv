@@ -1,0 +1,6 @@
+order,tenant_count,tenant_name,tenant_products,cumulative_products,marginal_rss_kb,rss_kb_per_tenant,cumulative_index_bytes,index_bytes_per_tenant,build_ms_cumulative
+forward,1,Furniture,16039,16039,12948,12948.00,3242510,3242510.00,206.74
+forward,5,Storage & Organization,2175,30906,30456,6091.20,6839510,1367902.00,404.35
+forward,10,Baby & Kids,1204,39664,44264,4426.40,9125788,912578.80,511.90
+forward,25,Buffet Accessories,6,41378,51080,2043.20,9791194,391647.76,536.33
+forward,55,Water Filter Pitchers,1,41438,51912,943.85,9843378,178970.51,537.62

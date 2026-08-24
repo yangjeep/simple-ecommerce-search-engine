@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P7-E04",
+  "phase": "7",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p7_e04_long_running_overhead.yaml",
+  "git_sha": "c87efbd",
+  "dataset": {
+    "name": "WANDS real tenants (largest/middle/smallest category_depth_1)"
+  },
+  "engine_config": {
+    "native": "commerce_core::index::CatalogIndex, in 20-second long-running spawned child OS processes, 4 worker threads each"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p7_e04_long_running_run1/",
+  "analysis_version": "docs/experiments/PHASE7_LOG.md#P7-E04",
+  "decision": "PHASE7_DECISION.md",
+  "headline_result": {
+    "h7_status": "CONFIRMED, reproduced across 3 independent runs",
+    "idle_resident_peak_growth_kb": 244.0,
+    "idle_resident_peak_growth_pct_of_baseline": 11.2,
+    "furniture_16039_products_peak_growth_kb_range": [896, 900],
+    "smallest_tenants_peak_growth_kb": 196,
+    "self_caught_methodology_issue": "first-draft primary metric used RSS measured after worker-thread teardown, which inverted the sign of the effect for the largest tenant"
+  }
+}

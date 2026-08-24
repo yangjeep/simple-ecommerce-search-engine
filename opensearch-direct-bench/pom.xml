@@ -1,0 +1,67 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.commercenative</groupId>
+  <artifactId>opensearch-direct-bench</artifactId>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <opensearch.version>2.17.0</opensearch.version>
+    <catalog.path>../dataset_cache/wands/catalog.jsonl</catalog.path>
+    <solr.base.url>http://localhost:8983/solr/wands_bench</solr.base.url>
+    <repo.root>..</repo.root>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.opensearch</groupId>
+      <artifactId>opensearch</artifactId>
+      <version>${opensearch.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opensearch.test</groupId>
+      <artifactId>framework</artifactId>
+      <version>${opensearch.version}</version>
+    </dependency>
+    <dependency>
+      <!-- OpenSearch's own POM brings log4j-api (the interface) but not
+           log4j-core (the actual logging implementation), unlike ES's
+           equivalent bundle. Fixed by adding it explicitly. -->
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.21.0</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <argLine>-Djava.security.manager=allow -Xmx2g</argLine>
+          <systemPropertyVariables>
+            <catalog.path>${catalog.path}</catalog.path>
+            <solr.base.url>${solr.base.url}</solr.base.url>
+            <repo.root>${repo.root}</repo.root>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

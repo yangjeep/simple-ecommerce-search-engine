@@ -1,0 +1,87 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: I45-E2c-disagreement-taxonomy
+phase: issue-45
+issue: 45
+decision_document: docs/experiments/ISSUE45_PROTOCOL.md#6-explaining-the-8760-raw-agreement-result-measured-before-45-code-exists
+claim: >
+  A diagnostic, pre-implementation analysis of E2b's own 20 frozen raw
+  LLM-proposal artifacts (dataset_cache/export/e2b_llm_proposals_*.json,
+  4 configurations x 5 runs, unmodified, no new LLM calls), performed
+  before any E2c canonicalization rule was written, to (a) independently
+  reproduce ISSUE42_LOG.md's own committed 1095/1250 (87.60%) repeated-run
+  agreement number byte-for-byte, and (b) classify every one of the 155
+  disagreeing pairs by root cause: primitive-selection ambiguity (101
+  pairs, 65.2% -- candidate_physical_primitive flips between bitmap_enum
+  and lexical_postings at identical measured statistics), value-type
+  ambiguity (28 pairs, 18.1% -- Enum-vs-Numeric/Enum-vs-FreeText boundary
+  cases with real evidentiary ambiguity), model hallucination/error (22
+  pairs, 14.2% -- concentrated in the "color" field, including one run
+  reading a literal WANDS export junk placeholder value as evidence of a
+  real cross-product relationship), and insufficient/contradictory
+  evidence (4 pairs, 2.6% -- one field where the 5 sample values shown
+  contradict the field's own aggregate statistics). Also discovers and
+  quantifies a second, larger instability pool E2b's own role+primitive-only
+  metric never counts at all: 158 additional pairs (12.64% of all 1,250)
+  where role and primitive fully agree but scope (Product vs Variant)
+  disagrees -- root-caused to WANDS's own real lack of per-row Variant
+  identity (e2b_ingest::build_catalog maps every row to exactly one
+  Product with exactly one Variant), an irreducible ambiguity given the
+  bounded inputs, not LLM unreliability. Combining all four compared
+  fields (role/type/scope/primitive), aggregate raw agreement falls from
+  87.60% to 74.96% -- new, disclosed context for the true magnitude of
+  raw instability once scope is counted, not a retroactive change to
+  E2b's own committed number.
+
+  This taxonomy directly informed docs/experiments/ISSUE45_PROTOCOL.md's
+  own canonicalization rules R1 (primitive is a deterministic function of
+  role, resolving the 65.2% category), R3 (cardinality+parse-rate-based
+  Enum/Numeric resolution, resolving the 18.1% category), R4 (zero-variance
+  override), R6 (scope defaults to Product when no real per-row Variant
+  identity exists, resolving the 158-pair pool), and R7 (Relationship
+  promotion hard-blocked regardless of vote, resolving the hallucination
+  case) -- each rule is cited in the protocol as principle-derived
+  (reused validator thresholds, Issue #45's own example text, or audited
+  commerce_core capability facts), not fit to this specific data, per
+  ISSUE45_PROTOCOL.md's own section 1 disclosure that this taxonomy work
+  means no genuinely blind held-out split is available for rule design.
+
+git_sha: d965b7444e1ae563707af987da1a55b98d939135
+baseline_sha: d965b7444e1ae563707af987da1a55b98d939135
+binary: scripts/e2c_disagreement_taxonomy.py (a pure, deterministic
+  Python read-and-aggregate script over the already-frozen JSON artifacts
+  -- no model calls, no mutation of any file under dataset_cache/export/)
+build_command: N/A (Python, no build step)
+run_command: python3 scripts/e2c_disagreement_taxonomy.py
+
+dataset: dataset_cache/export/e2b_llm_proposals_{automotive,wands_baseline,
+  wands_anonymized,wands_noisy}_run{1..5}.json (20 files, already frozen
+  and committed by Issue #42's own E2b work; this manifest reads them,
+  writes nothing back)
+
+engine: N/A -- offline aggregation over already-frozen artifacts, not a
+  serving-path measurement
+
+workload:
+  total_pairwise_comparisons: 1250 (4 configs x C(5,2)=10 pairs x ~31.25
+    avg keys/config -- exact per-config totals: automotive 170,
+    wands_baseline 360, wands_anonymized 360, wands_noisy 360)
+  real_keys_with_any_disagreement: 21 (of 53 total oracle-covered fields)
+
+seed: N/A -- deterministic aggregation, no randomness
+
+latency_methodology: N/A
+
+raw_results: docs/research/artifacts/i45_e2c_disagreement_taxonomy_run1/
+  - summary.txt (category/pair-count breakdown, byte-reproducing
+    ISSUE42_LOG.md's own 1095/1250 number)
+  - per_key_detail.txt (every one of the 21 unstable real keys, every
+    disagreeing run's own role/type/scope/primitive/confidence/evidence
+    text, unified across wands_anonymized/wands_noisy's shown-key aliases
+    back to the real WANDS key via the exact committed
+    e2b_key_mapping.rs mappings)
+
+analysis: docs/experiments/ISSUE45_PROTOCOL.md's own section 6 is the
+  full write-up; category assignment (scripts/e2c_disagreement_taxonomy.py's
+  own CATEGORY dict) was a manual classification against per_key_detail.txt's
+  raw evidence text, cross-checked against this file's own weighted pair
+  counts before being written into the protocol.

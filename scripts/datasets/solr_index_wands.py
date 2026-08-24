@@ -6,8 +6,13 @@ since Solr cannot sort on a tokenized text_general field).
 
 Reads the same dataset_cache/wands/catalog.jsonl the Rust ingestion
 (crates/phase6a-eval) reads, so both systems see identical documents.
+Phase 6B's scale-ladder tiers pass a replicated controlled-stress
+catalog (dataset_cache/wands_scale/catalog_{K}x.jsonl, produced by
+scripts/datasets/replicate_wands_scale.py) as the third argument
+instead -- same schema, same to_solr_doc mapping, just a different
+source file.
 
-Usage: python3 scripts/datasets/solr_index_wands.py [core_url] [max_docs]
+Usage: python3 scripts/datasets/solr_index_wands.py [core_url] [max_docs] [catalog_path]
 """
 import json
 import sys
@@ -17,7 +22,11 @@ from pathlib import Path
 import requests
 
 SOLR_URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8983/solr/wands_bench"
-CATALOG = Path(__file__).resolve().parents[2] / "dataset_cache" / "wands" / "catalog.jsonl"
+CATALOG = (
+    Path(sys.argv[3])
+    if len(sys.argv) > 3
+    else Path(__file__).resolve().parents[2] / "dataset_cache" / "wands" / "catalog.jsonl"
+)
 BATCH_SIZE = 2000
 
 STRING_DOCVALUES_FIELDS = [
@@ -97,14 +106,33 @@ def setup_schema(session):
     if resp.status_code >= 400 and "already exists" not in resp.text:
         resp.raise_for_status()
 
-    resp = session.post(
-        f"{SOLR_URL}/schema",
-        json={
-            "add-copy-field": {"source": "title", "dest": "title_sort"},
-        },
+    # Unlike add-field, Solr's add-copy-field is NOT idempotent: re-posting
+    # the same copy-field rule against a core that already has it does not
+    # error, it silently appends a SECOND identical rule. Two rules copying
+    # the same single-valued source into a non-multiValued destination
+    # then makes every future update fail with "Multiple values
+    # encountered for non multiValued copy field title_sort" -- a real bug
+    # first hit when Phase 6B re-ran this script against an
+    # already-initialized scale-ladder core (Phase 6A only ever indexed
+    # each core once, so this path was never exercised before). Guard by
+    # checking the existing copy-field list first.
+    existing = session.get(f"{SOLR_URL}/schema/copyfields").json().get("copyFields", [])
+    already_present = any(
+        cf.get("source") == "title" and cf.get("dest") == "title_sort" for cf in existing
     )
-    if resp.status_code >= 400 and "already exists" not in resp.text and "duplicate" not in resp.text.lower():
-        resp.raise_for_status()
+    if not already_present:
+        resp = session.post(
+            f"{SOLR_URL}/schema",
+            json={
+                "add-copy-field": {"source": "title", "dest": "title_sort"},
+            },
+        )
+        if (
+            resp.status_code >= 400
+            and "already exists" not in resp.text
+            and "duplicate" not in resp.text.lower()
+        ):
+            resp.raise_for_status()
 
 
 def to_solr_doc(record):
@@ -121,7 +149,7 @@ def to_solr_doc(record):
 
 
 def main():
-    max_docs = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    max_docs = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] else None
     session = requests.Session()
     setup_schema(session)
 

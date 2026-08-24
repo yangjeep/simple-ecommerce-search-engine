@@ -1,0 +1,97 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P9-E06
+phase: 9
+issue: 34
+decision_document: PHASE9_DECISION.md
+claim: >
+  Re-runs P9-E02 (WANDS physical-advantage-by-query-class) and P9-E04
+  (isolated H1 ranking-quality / H3 execution-speed comparison) unmodified
+  against the P9-E05-corrected `compile()`, using the identical datasets,
+  query cohorts, planner policy, warmup discipline, and repetition counts
+  (3 runs for P9-E02, 6 for P9-E04) as the original checkpoints, to
+  independently re-verdict H1/H3 from a defect-free baseline rather than
+  merely updating their numbers.
+
+  Routing composition changes drastically: structural_routed traffic
+  drops from 150/480 (31.25%) to 21/480 (4.375%) -- P9-E05's fix
+  demoted essentially every query whose only compiled constraint was a
+  coincidental attribute match with no entity, which P9-E04's own
+  before-fix data showed was 92 of 136 evaluated structural_routed
+  queries (67.6%). The surviving 21 are, by construction, exactly the
+  entity-anchored population: the aggregate "attribute-only, no entity"
+  Exact-recall bucket that averaged 7.2% before the fix is now n=0
+  (vacuous -- that population no longer routes structurally at all).
+
+  H1 (ranking quality): remains FALSIFIED, more decisively (relative gap
+  moves from -1.05% before the fix to +4.33% after -- native's ranking
+  signal was never the problem and is not disturbed by the fix).
+
+  H3 (execution-speed advantage, relevance-controlled): remains
+  FALSIFIED, but the qualitative story changes materially. Before the
+  fix, native's median candidate-set size was 6 (a degenerate, narrow
+  bitmap from a coincidental single-attribute match), making native's
+  ranking pass nearly free and producing a near-parity 0.71x-1.14x
+  latency ratio across 6 runs. After the fix, the surviving
+  entity-anchored population's median candidate-set size is 568 (~95x
+  larger, a realistic structural admission, e.g. a ProductType match
+  over thousands of products before narrowing) -- and native's own
+  `execute_ranked` cost visibly scales with candidate-set size, producing
+  a consistent, reproducible 0.42x-0.60x ratio across 6 runs (native
+  SLOWER than Solr-restricted, not just failing to clear 2x). This is a
+  new finding, not previously visible: H3's earlier near-parity reading
+  was itself partly a defect-contaminated artifact of degenerate
+  candidate sets, not evidence that native's ranking cost is
+  scale-independent.
+
+  Candidate-set relevant-document recall improves sharply for the smaller
+  surviving population: mean 8.41% -> 44.60%, Exact recall 11.52% ->
+  47.57%, Partial recall 8.03% -> 40.99% -- consistent with the surviving
+  queries being exactly the ones with a real, meaningful structural
+  constraint. The n=11 entity-anchored subset's own Exact recall
+  (47.57%) is byte-for-byte identical before and after, confirming the
+  fix is precisely scoped: it never touches queries that already had an
+  entity constraint.
+
+git_sha: 2f8d9cbdc8855c02d62f4603957f8e14edfcc41e
+binaries:
+  - crates/phase9-eval/src/bin/p9_e02_wands_physical_advantage.rs (unmodified)
+  - crates/phase9-eval/src/bin/p9_e04_isolated_ranking_and_execution.rs (unmodified)
+build_command: cargo build --release -p phase9-eval
+run_command: |
+  ./target/release/p9_e02_wands_physical_advantage
+  ./target/release/p9_e04_isolated_ranking_and_execution
+
+dataset:
+  name: real WANDS catalog + queries + judgments (identical to P9-E02/P9-E04)
+  source: https://github.com/wayfair/WANDS
+  size: 42,994 products, 480 queries
+
+engine:
+  native: commerce_core::plan::{plan, execute_planned} / CatalogIndex,
+    identical to P9-E02/P9-E04, now compiled through the P9-E05-corrected
+    ir::query::compile
+  baseline: fresh, same-run Apache Solr 9.10.1 (wands_bench core),
+    identical to P9-E02/P9-E04
+
+workload:
+  planner_policy: selectivity_threshold=0.05, delegate_oversample=20 (unchanged)
+  k: 10
+  warmup: identical to the original P9-E02/P9-E04 binaries' own warmup passes
+  repetitions: 3 independent full runs for P9-E02 (matching its own
+    original manifest), 6 independent full runs for P9-E04 (matching its
+    own original manifest) -- NDCG/recall figures deterministic and
+    identical across all runs within each binary; latency figures vary
+    run to run as expected
+
+seed: "n/a (deterministic real-data selection, no sampling)"
+
+raw_results: docs/research/artifacts/p9_e06_corrected_baseline_rerun/
+  - p9_e02_after_run{1,2,3}.txt
+  - p9_e04_after_run{1,2,3,4,5,6}.txt
+before_fix_reference_artifacts (unchanged, for the diff):
+  - docs/research/artifacts/p9_e02_wands_physical_advantage_run1/run1.txt
+  - docs/research/artifacts/p9_e04_isolated_ranking_run1/run1.txt
+
+analysis: printed directly by each binary per run; see
+  docs/experiments/PHASE9_LOG.md P9-E06 for the full before/after
+  comparison and re-verdict.

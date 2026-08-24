@@ -1,0 +1,26 @@
+{
+  "experiment_id": "P6E-E02",
+  "phase": "6E",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6e_e02_havenask_docker_recheck.yaml",
+  "git_sha": "20885d270cff471366e8833113a36a2d50536ca2",
+  "dataset": {
+    "name": "N/A -- live environment/network re-verification, not a dataset benchmark"
+  },
+  "engine_config": {
+    "docker": "29.3.1, manually started daemon (no systemd)",
+    "registries_tested": "Docker Hub, ghcr.io, AWS public ECR mirror, registry.cn-hangzhou.aliyuncs.com, quay.io"
+  },
+  "repetitions": 1,
+  "raw_results_path": "docs/research/artifacts/p6e_e02_havenask_docker_recheck_run1/",
+  "analysis_version": "docs/experiments/PHASE6E_LOG.md#P6E-E02",
+  "decision": "PHASE6E_DECISION.md",
+  "headline_result": {
+    "docker_daemon": "now functional -- a real change from Phase 6B/6C's 'Docker daemon absent' finding; dockerd starts successfully when launched directly, no systemd needed",
+    "image_pulls": "blocked network-wide across every registry tested -- registry/auth API hosts (ghcr.io, docker hub) are reachable, but their actual blob/CDN storage hosts (production.cloudfront.docker.com, pkg-containers.githubusercontent.com, another CloudFront host) all return 403 Forbidden",
+    "havenask_registry": "registry.cn-hangzhou.aliyuncs.com remains blocked at the connection level (CONNECT tunnel failed, 403), unchanged from Phase 6B/6C",
+    "havenask_mirror_search": "no Havenask image found on Docker Hub under plausible names (havenask/havenask, alibaba/havenask, havenask/ha3, havenask/suez)",
+    "net_conclusion": "Havenask remains genuinely blocked -- headline verdict unchanged -- but the reason is now more precisely characterized: Docker itself works, but no container image can be pulled via any tested registry, and Havenask's own registry is separately blocked",
+    "named_limitation": "only 4 registries tested, not exhaustive; a from-source Havenask build (bazel route) was not attempted or re-tested in this pass"
+  }
+}

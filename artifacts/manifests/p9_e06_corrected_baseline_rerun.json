@@ -1,0 +1,31 @@
+{
+  "experiment_id": "P9-E06",
+  "phase": "9",
+  "issue": 34,
+  "benchmark_manifest": "benchmarks/manifests/p9_e06_corrected_baseline_rerun.yaml",
+  "git_sha": "2f8d9cbdc8855c02d62f4603957f8e14edfcc41e",
+  "dataset": {
+    "name": "real WANDS catalog + queries + judgments",
+    "products": 42994,
+    "queries": 480
+  },
+  "engine_config": {
+    "native": "commerce_core::plan::{plan, execute_planned} through the P9-E05-corrected ir::query::compile",
+    "baseline": "fresh, same-run Apache Solr 9.10.1 (wands_bench core)"
+  },
+  "repetitions": "3 runs (P9-E02), 6 runs (P9-E04), matching each binary's own original manifest",
+  "seed": "n/a (deterministic real-data selection, no sampling)",
+  "raw_results_path": "docs/research/artifacts/p9_e06_corrected_baseline_rerun/",
+  "analysis_version": "docs/experiments/PHASE9_LOG.md#p9-e06",
+  "decision": "PHASE9_DECISION.md",
+  "headline_result": {
+    "routing_composition": "structural_routed 150/480 (31.25%) before -> 21/480 (4.375%) after; the 92/136 (67.6%) attribute-only-no-entity population from before-fix P9-E04 no longer routes structurally at all",
+    "H1_ranking_quality": "still FALSIFIED -- relative gap -1.05% (before) -> +4.33% (after), native never worse",
+    "H3_execution_speed_controlled": "still FALSIFIED, more decisively -- ratio 0.71x-1.14x (before, 6 runs) -> 0.42x-0.60x (after, 6 runs); native now consistently SLOWER, not just failing to clear 2x",
+    "candidate_set_median_size": "6 (before) -> 568 (after), ~95x larger -- the mechanistic explanation for H3's reversal (native's ranking cost scales with candidate-set size; the before-fix near-parity reading was itself a defect-contaminated artifact of degenerate tiny candidate sets)",
+    "candidate_set_relevant_recall_mean": "0.0841 (before) -> 0.4460 (after)",
+    "candidate_set_exact_recall_mean": "0.1152 (before, n=103) -> 0.4757 (after, n=11)",
+    "entity_anchored_subset_consistency_check": "n=11 entity-constraint queries' own Exact recall (0.4757) is byte-for-byte identical before and after, confirming the fix never touches already-entity-anchored queries",
+    "P9_E02_structural_routed_verdict": "REVISE both before and after -- relative NDCG gap -20.81% (before) -> -25.05% (after, smaller n=21 population); latency ratio 2.55x (before) -> 2.15x-3.91x across 3 runs (after), still clearing 2x"
+  }
+}

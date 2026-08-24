@@ -1,0 +1,25 @@
+{
+  "experiment_id": "P6D-E03",
+  "phase": "6D",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6d_e03_ordinal_facet_memory.yaml",
+  "git_sha": "98a23f2029f4219ae8fc93e16a157914232b16b9",
+  "dataset": {
+    "name": "real WANDS catalog (42,994 products)"
+  },
+  "engine_config": {
+    "metric_under_test": "commerce_core::index::CatalogIndex::approximate_size_bytes (fixed), approximate_ordinal_facet_bytes (new)"
+  },
+  "repetitions": 1,
+  "raw_results_path": "docs/research/artifacts/p6d_e03_ordinal_facet_memory_run1/",
+  "analysis_version": "docs/experiments/PHASE6D_LOG.md#P6D-E03",
+  "decision": "PHASE6D_DECISION.md",
+  "headline_result": {
+    "gap_found": "approximate_size_bytes (this campaign's canonical memory-size metric, referenced across 21 files) silently omitted every Phase 6D ordinal-facet structure",
+    "fix": "extracted accounting into ordinal_facet_bytes() helper, folded into approximate_size_bytes, exposed standalone via approximate_ordinal_facet_bytes()",
+    "correctness_gate": "new unit test: nonzero once brand/category/product_type indexed; never exceeds whole-index total; does not shrink as more data indexed -- 18/18 physical_index.rs tests pass",
+    "measured_result": "2,876,248 bytes for the ordinal-facet structures on the real WANDS catalog (42,994 products), 26.2% of the whole index's 10,984,302 measured bytes, 66.90 bytes/product",
+    "vs_prior_estimate": "~16.7x the earlier ~172 KB unmeasured analytical estimate",
+    "named_limitation": "still a flat byte-size approximation (String lengths, Vec/HashMap element sizes), not a dedicated RSS/allocator-level benchmark matching Phase 7's own methodology; measured only at WANDS' natural 1x scale, not across the Phase 6B scale ladder"
+  }
+}

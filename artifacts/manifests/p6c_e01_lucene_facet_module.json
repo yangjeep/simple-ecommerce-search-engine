@@ -1,0 +1,29 @@
+{
+  "experiment_id": "P6C-E01",
+  "phase": "6C",
+  "issue": 21,
+  "benchmark_manifest": "benchmarks/manifests/p6c_e01_lucene_facet_module.yaml",
+  "git_sha": "9206ee59272e941ca3f13cf5601520d04d42b3e5",
+  "dataset": {
+    "name": "real WANDS catalog (42,994 products), same 7 category_depth_1 checkpoints as P6A-E00/P6B-E00/P6C-E00"
+  },
+  "engine_config": {
+    "lucene_facet_module": "Apache Lucene 9.11.1 lucene-facet module (SortedSetDocValuesFacetCounts) via Maven Central, embedded Java harness (lucene-direct-bench/), NIOFSDirectory",
+    "solr": "Apache Solr 9.10.1, wands_bench core, re-queried same session",
+    "native": "commerce_core::index::CatalogIndex, re-run fresh same session"
+  },
+  "repetitions": 3,
+  "raw_results_path": "docs/research/artifacts/p6c_e01_lucene_facet_module_run1/",
+  "analysis_version": "docs/experiments/PHASE6C_LOG.md#P6C-E01",
+  "decision": "PHASE6C_DECISION.md",
+  "headline_result": {
+    "correctness_gate": "8/8 filter and numeric-range counts exactly matched the live Solr wands_bench core in all 3 repeated runs; facet-sum-never-exceeds-candidates sanity check passed for module-based counts every run",
+    "module_vs_solr_5_of_7_checkpoints": "faster, up to 3.0x",
+    "module_vs_solr_2_of_7_checkpoints": "slower, 1.11x-1.30x (Décor & Pillows, Furniture)",
+    "module_vs_p6c_e00_scan_6_of_7_checkpoints": "faster, up to 2.7x",
+    "module_vs_p6c_e00_scan_1_of_7_checkpoints": "slower, 1.9x (Lighting, the smallest checkpoint)",
+    "finding": "substantially revises P6C-E00's own headline: Solr does not categorically outperform raw Lucene, it outperforms a naive per-candidate scan specifically -- Lucene's own specialized ordinal-based facet module reverses most of that gap, sharpening the facet-crossover finding into a claim about facet algorithms (naive scan vs. specialized ordinal-based counting), not generic-engine vs. commerce-native faceting in general",
+    "newly_enabled_question": "whether commerce-native's own facet_counts_by_scan could adopt an equivalent ordinal-based counting approach to close its own crossover -- untested, the single highest-value next question this phase surfaces",
+    "named_limitation": "only SortedSetDocValuesFacetCounts tested, not taxonomy-based faceting; no profiling of the mechanism; NIOFSDirectory not MMapDirectory; only WANDS 1x scale tested, not the Phase 6B scale ladder"
+  }
+}

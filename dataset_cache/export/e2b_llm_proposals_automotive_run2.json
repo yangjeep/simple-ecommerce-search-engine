@@ -1,0 +1,371 @@
+{
+  "configuration": "automotive",
+  "run_index": 2,
+  "descriptors": [
+    {
+      "key": "amperage_output",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "amp output",
+        "alternator amps",
+        "output current",
+        "130 amp alternator"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.72,
+      "evidence": "100% numeric-parseable, 72 distinct values across 150 rows (uniqueness 0.48) suggesting a continuous-ish numeric spec; name strongly implies charging-system/alternator output current. Sample values 101-105 are suspiciously consecutive for a real spec distribution, which tempers confidence slightly.",
+      "abstain": false
+    },
+    {
+      "key": "bulb_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "h11",
+        "h4",
+        "h7",
+        "9005",
+        "headlight bulb type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "4 distinct values (9005, H11, H4, H7) exactly match standard automotive halogen bulb base designations; numeric_parseable_fraction of 0.26 is explained by '9005' parsing as numeric while the H-codes do not, confirming a mixed-alphanumeric fitment code rather than a free-text field.",
+      "abstain": false
+    },
+    {
+      "key": "cold_cranking_amps",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "cold cranking amps",
+        "cca",
+        "cranking amps",
+        "700 cca battery"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "Field name is the standard battery spec 'CCA'; 100% numeric-parseable with realistic sample range (401-410+). High uniqueness (0.87/131 distinct) reflects natural continuous variation in a real spec, not identifier-like uniqueness -- should not be mistaken for a part number despite the high ratio.",
+      "abstain": false
+    },
+    {
+      "key": "filter_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "panel filter",
+        "cylindrical filter",
+        "air filter type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "Only 2 distinct non-numeric values (Cylindrical, Panel) describing filter physical form factor; low uniqueness (0.013) and 0.0 numeric-parseable fraction confirm a categorical field, and shoppers commonly filter by filter shape.",
+      "abstain": false
+    },
+    {
+      "key": "group_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "group size 35",
+        "battery group size",
+        "bci group size",
+        "24f battery"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "Values '24F', '35', '65' match standard BCI battery group-size codes (a fitment/form-factor standard), a very commonly-searched battery attribute. Mixed alphanumeric '24F' explains the partial numeric_parseable_fraction (0.66 = 2 of 3 values are pure digits).",
+      "abstain": false
+    },
+    {
+      "key": "heat_range",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "heat range",
+        "spark plug heat range",
+        "colder plug",
+        "hotter plug"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.6,
+      "evidence": "Small integer values 4-8, 100% numeric-parseable, matches spark-plug 'heat range' terminology (an ordinal thermal rating). Only 5 distinct values and niche/enthusiast usage suggest this is more a technical/ranking spec than a mainstream shopper filter query.",
+      "abstain": false
+    },
+    {
+      "key": "lumens",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "lumens",
+        "brightness",
+        "6000 lumen bulb",
+        "high lumen output"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "Name directly matches the photometric unit 'lumens'; 100% numeric-parseable with high cardinality (141/150, uniqueness 0.94). The high uniqueness reflects continuous real-valued brightness measurement, not identifier-like structure -- should not be confused with a part number despite the similarly high ratio.",
+      "abstain": false
+    },
+    {
+      "key": "material",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "aluminum radiator",
+        "copper brass radiator",
+        "radiator material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "2 distinct non-numeric values (Aluminum, Copper-Brass) describing base construction material, most plausibly for radiators/cooling components; low uniqueness (0.013) confirms a categorical field commonly used in shopper queries.",
+      "abstain": false
+    },
+    {
+      "key": "material_grade",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "ceramic brake pads",
+        "semi-metallic pads",
+        "organic brake pads",
+        "brake pad material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "Values Ceramic/Organic/Semi-Metallic are the standard brake-pad friction-material grades, a very commonly searched shopper term; low uniqueness (0.02) and 0.0 numeric-parseable fraction confirm categorical enum.",
+      "abstain": false
+    },
+    {
+      "key": "micron_rating",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "micron rating",
+        "20 micron filter",
+        "filtration rating",
+        "filter micron size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.7,
+      "evidence": "100% numeric-parseable values (10-40 range, 31 distinct/150), consistent with oil/fuel filter micron filtration rating. A legitimate spec, but more often used to compare filter quality/ranking than as an explicit shopper search filter.",
+      "abstain": false
+    },
+    {
+      "key": "oem_or_aftermarket",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "oem",
+        "aftermarket",
+        "genuine oem part",
+        "aftermarket replacement"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "Exactly 2 distinct values (Aftermarket, OEM) observed across the full catalog (occurrences=1500, matching part_number/warranty_months scale rather than the 150-per-category specs), a classic binary provenance classifier that shoppers explicitly search/filter by.",
+      "abstain": false
+    },
+    {
+      "key": "part_number",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "exact_lookup",
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "part number",
+        "sku",
+        "part #",
+        "catalog number",
+        "am-1026-cb"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.95,
+      "evidence": "1497 distinct values out of 1500 occurrences (uniqueness 0.998) with a structured alphanumeric pattern 'AM-####-XX'; variant_scoped=true confirms this is assigned at the specific variant/SKU level rather than shared across a product's variants -- exactly the real-per-part-identifier-scoped-to-variant case.",
+      "abstain": false
+    },
+    {
+      "key": "position",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "front",
+        "rear",
+        "front brake pads",
+        "rear position"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "2 distinct values (Front, Rear); occurrences of 300 (double the typical 150-per-category count) suggests this attribute spans two product categories where install position matters (e.g., brake pads, struts). Recorded variant_scoped=false, so treated as product-level here, though front/rear is plausibly variant-differentiating in some real catalogs.",
+      "abstain": false
+    },
+    {
+      "key": "size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.35,
+      "evidence": "Fully generic field name gives almost no semantic signal beyond 'a dimensional spec'; 100% numeric-parseable with 13 distinct values in a 16-20+ range, plausibly wiper-blade length (inches), wheel diameter, or another size spec -- genuinely ambiguous which, so this call is low-confidence despite clear numeric structure.",
+      "abstain": false
+    },
+    {
+      "key": "thread_size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "10mm thread",
+        "12mm thread",
+        "14mm thread",
+        "spark plug thread size",
+        "o2 sensor thread size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "Sample values '10mm', '12mm', '14mm' match standard spark-plug/oxygen-sensor thread diameters. numeric_parseable_fraction reads 0.0 only because the literal 'mm' unit suffix defeats naive numeric parsing -- the underlying quantity is genuinely numeric/dimensional, not free text, and should not be mislabeled based on that stat alone.",
+      "abstain": false
+    },
+    {
+      "key": "voltage",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "12v",
+        "12 volt battery",
+        "voltage"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.55,
+      "evidence": "Only 1 distinct value ('12') observed in this catalog slice (zero variance, uniqueness 0.0067), which could naively look like an uninformative constant. But 'voltage' is a legitimate, universally-typed automotive electrical spec (systems really do vary 6V/12V/24V/48V) and shoppers do search '12v battery' -- the lack of variance here is a property of this sample, not evidence the field itself is non-discriminating.",
+      "abstain": false
+    },
+    {
+      "key": "warranty_months",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "warranty",
+        "36 month warranty",
+        "2 year warranty",
+        "lifetime warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "4 distinct values (12, 24, 36, 60), 100% numeric-parseable, present catalog-wide (occurrences=1500) with variant_scoped=true, meaning warranty length can differ per specific variant/SKU even within the same product. Some shoppers filter by warranty length, but it more often functions as a secondary trust/ranking signal than a primary search term.",
+      "abstain": false
+    }
+  ]
+}

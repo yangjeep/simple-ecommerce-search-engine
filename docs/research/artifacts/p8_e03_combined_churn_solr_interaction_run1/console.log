@@ -1,0 +1,80 @@
+=== P8-E03: three-way interaction -- native rebuild-churn + shared-Solr contention, simultaneous (H19, Issue #21 Phase 8) ===
+(native quiet tenant='Rugs'; native churn tenant='Furniture'; Solr quiet core='wands_bench'; Solr noisy core='wands_bench_20x'; base_url=http://localhost:8983/solr)
+native quiet tenant="Rugs" (2002 products); native churn tenant="Furniture" (16039 products)
+
+--- run 1/10 ---
+  BASELINE:     rugs p50=1.4334ms p99=2.0697ms | solr p50=2.6293ms p99=3.3236ms
+  NATIVE_CHURN: rugs p50=1.5045ms p99=2.2101ms | solr p50=2.7003ms p99=4.1452ms | wall=1.60s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.5148ms p99=3.2716ms | solr p50=3.5830ms p99=8.3153ms
+  COMBINED:     rugs p50=1.6071ms p99=6.9709ms | solr p50=4.1783ms p99=9.3551ms | wall=2.43s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.07x combined_ratio=3.37x cross_amp=3.15x | solr: solo_ratio=2.50x combined_ratio=2.81x cross_amp=1.13x
+
+--- run 2/10 ---
+  BASELINE:     rugs p50=1.4479ms p99=2.0250ms | solr p50=2.6292ms p99=3.5747ms
+  NATIVE_CHURN: rugs p50=1.4674ms p99=2.2076ms | solr p50=2.6484ms p99=3.9688ms | wall=1.57s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4935ms p99=3.1123ms | solr p50=3.6028ms p99=7.5273ms
+  COMBINED:     rugs p50=1.7243ms p99=6.7701ms | solr p50=4.2355ms p99=9.7261ms | wall=2.55s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.09x combined_ratio=3.34x cross_amp=3.07x | solr: solo_ratio=2.11x combined_ratio=2.72x cross_amp=1.29x
+
+--- run 3/10 ---
+  BASELINE:     rugs p50=1.5106ms p99=2.1693ms | solr p50=2.7152ms p99=3.5934ms
+  NATIVE_CHURN: rugs p50=1.5067ms p99=2.1186ms | solr p50=2.7431ms p99=3.7502ms | wall=1.62s churns=7 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.5307ms p99=3.5519ms | solr p50=3.7137ms p99=7.1666ms
+  COMBINED:     rugs p50=1.4817ms p99=5.3176ms | solr p50=3.9623ms p99=9.2198ms | wall=2.33s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=0.98x combined_ratio=2.45x cross_amp=2.51x | solr: solo_ratio=1.99x combined_ratio=2.57x cross_amp=1.29x
+
+--- run 4/10 ---
+  BASELINE:     rugs p50=1.4897ms p99=1.9966ms | solr p50=2.6130ms p99=3.4185ms
+  NATIVE_CHURN: rugs p50=1.4854ms p99=2.0611ms | solr p50=2.6144ms p99=3.4152ms | wall=1.54s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4431ms p99=3.2858ms | solr p50=3.5973ms p99=8.2892ms
+  COMBINED:     rugs p50=1.5988ms p99=5.9199ms | solr p50=3.8002ms p99=9.0789ms | wall=2.34s churns=10 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.03x combined_ratio=2.96x cross_amp=2.87x | solr: solo_ratio=2.42x combined_ratio=2.66x cross_amp=1.10x
+
+--- run 5/10 ---
+  BASELINE:     rugs p50=1.4479ms p99=2.0620ms | solr p50=2.5924ms p99=3.4055ms
+  NATIVE_CHURN: rugs p50=1.4448ms p99=2.0830ms | solr p50=2.5539ms p99=3.4693ms | wall=1.51s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4519ms p99=2.6249ms | solr p50=3.4202ms p99=8.1225ms
+  COMBINED:     rugs p50=1.5837ms p99=6.0504ms | solr p50=3.9171ms p99=9.4200ms | wall=2.31s churns=10 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.01x combined_ratio=2.93x cross_amp=2.90x | solr: solo_ratio=2.39x combined_ratio=2.77x cross_amp=1.16x
+
+--- run 6/10 ---
+  BASELINE:     rugs p50=1.4675ms p99=2.0499ms | solr p50=2.5860ms p99=3.2793ms
+  NATIVE_CHURN: rugs p50=1.4981ms p99=2.1608ms | solr p50=2.6238ms p99=7.6437ms | wall=1.60s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4479ms p99=3.5427ms | solr p50=3.5444ms p99=8.7152ms
+  COMBINED:     rugs p50=1.5505ms p99=6.2041ms | solr p50=4.0489ms p99=9.4447ms | wall=2.36s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.05x combined_ratio=3.03x cross_amp=2.87x | solr: solo_ratio=2.66x combined_ratio=2.88x cross_amp=1.08x
+
+--- run 7/10 ---
+  BASELINE:     rugs p50=1.4627ms p99=2.0990ms | solr p50=2.5863ms p99=3.2636ms
+  NATIVE_CHURN: rugs p50=1.4650ms p99=2.1179ms | solr p50=2.6200ms p99=6.2922ms | wall=1.58s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4746ms p99=3.3211ms | solr p50=3.6400ms p99=8.2377ms
+  COMBINED:     rugs p50=1.6011ms p99=6.0383ms | solr p50=4.0965ms p99=9.2778ms | wall=2.41s churns=10 (rugs_n=500 solr_n=500)
+  native: solo_ratio=1.01x combined_ratio=2.88x cross_amp=2.85x | solr: solo_ratio=2.52x combined_ratio=2.84x cross_amp=1.13x
+
+--- run 8/10 ---
+  BASELINE:     rugs p50=1.4556ms p99=2.0561ms | solr p50=2.6282ms p99=3.4159ms
+  NATIVE_CHURN: rugs p50=1.5024ms p99=2.0147ms | solr p50=2.5950ms p99=3.5524ms | wall=1.52s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4696ms p99=2.6940ms | solr p50=3.5442ms p99=8.1307ms
+  COMBINED:     rugs p50=1.6152ms p99=6.2439ms | solr p50=4.0043ms p99=8.9185ms | wall=2.36s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=0.98x combined_ratio=3.04x cross_amp=3.10x | solr: solo_ratio=2.38x combined_ratio=2.61x cross_amp=1.10x
+
+--- run 9/10 ---
+  BASELINE:     rugs p50=1.4412ms p99=1.9488ms | solr p50=2.5475ms p99=3.1985ms
+  NATIVE_CHURN: rugs p50=1.4606ms p99=1.8518ms | solr p50=2.5263ms p99=3.2303ms | wall=1.48s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.5056ms p99=3.3168ms | solr p50=3.5505ms p99=8.1117ms
+  COMBINED:     rugs p50=1.6169ms p99=6.0432ms | solr p50=3.9520ms p99=9.7367ms | wall=2.37s churns=10 (rugs_n=500 solr_n=500)
+  native: solo_ratio=0.95x combined_ratio=3.10x cross_amp=3.26x | solr: solo_ratio=2.54x combined_ratio=3.04x cross_amp=1.20x
+
+--- run 10/10 ---
+  BASELINE:     rugs p50=1.4630ms p99=2.0555ms | solr p50=2.6373ms p99=3.5496ms
+  NATIVE_CHURN: rugs p50=1.5208ms p99=1.9959ms | solr p50=2.7236ms p99=5.6042ms | wall=1.65s churns=8 (rugs_n=500 solr_n=500)
+  SOLR_NOISY:   rugs p50=1.4803ms p99=2.9597ms | solr p50=3.4414ms p99=7.8889ms
+  COMBINED:     rugs p50=1.5362ms p99=5.3245ms | solr p50=3.9797ms p99=9.2303ms | wall=2.39s churns=11 (rugs_n=500 solr_n=500)
+  native: solo_ratio=0.97x combined_ratio=2.59x cross_amp=2.67x | solr: solo_ratio=2.22x combined_ratio=2.60x cross_amp=1.17x
+
+H19 verdict across 10 runs:
+  native side: median solo_ratio=1.01x median combined_ratio=3.00x median cross_amplification=2.89x
+  solr side:   median solo_ratio=2.40x median combined_ratio=2.74x median cross_amplification=1.14x
+  H19 verdict: CONFIRMED -- at least one quiet path's own degradation gets materially worse when both mechanisms run simultaneously vs. that mechanism's own single-source gap alone; the two subsystems interact rather than acting as if on independent hardware (native side CONFIRMED, solr side not confirmed)
+
+artifacts written to docs/research/artifacts/p8_e03_combined_churn_solr_interaction_run1

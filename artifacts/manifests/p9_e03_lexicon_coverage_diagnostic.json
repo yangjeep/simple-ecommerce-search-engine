@@ -1,0 +1,29 @@
+{
+  "experiment_id": "P9-E03",
+  "phase": "9",
+  "issue": 34,
+  "benchmark_manifest": "benchmarks/manifests/p9_e03_lexicon_coverage_diagnostic.yaml",
+  "git_sha": "e6bd550",
+  "dataset": {
+    "name": "real WANDS raw catalog + queries",
+    "products": 42994,
+    "queries": 480,
+    "zero_constraint_queries_today": 314
+  },
+  "engine_config": {
+    "native": "n/a -- pure vocabulary/string-matching diagnostic",
+    "baseline": "n/a"
+  },
+  "repetitions": "1 (fully deterministic string matching, no sampling)",
+  "seed": "n/a",
+  "raw_results_path": "docs/research/artifacts/p9_e03_lexicon_coverage_run1/run1.txt",
+  "analysis_version": "docs/experiments/PHASE9_LOG.md#p9-e03",
+  "decision": "PHASE9_DECISION.md",
+  "headline_result": {
+    "H2a_pipe_split_product_class": "FALSIFIED (0.0%)",
+    "H2b_category_leaf_segment": "FALSIFIED (1.0%)",
+    "H2c_plural_singular": "CONFIRMED material (25.8%, 81/314)",
+    "H2d_substring_near_miss": "4.5% (catch-all signal, not a proposed fix)",
+    "not_recoverable_under_any_mechanism": "72.0% (226/314)"
+  }
+}

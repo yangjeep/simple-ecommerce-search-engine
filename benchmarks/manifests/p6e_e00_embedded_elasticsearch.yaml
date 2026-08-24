@@ -1,0 +1,69 @@
+# Worked-example manifest (see benchmarks/README.md for the convention).
+experiment_id: P6E-E00
+phase: 6E
+issue: 21
+decision_document: PHASE6E_DECISION.md
+claim: >
+  Directly responsive to the user's own standing instruction that Solr
+  alone is "not enough" and Elasticsearch/OpenSearch should be revisited
+  before trusting Phase 6C's "genuinely blocked" verdict: that verdict
+  tested only the prebuilt-distribution and from-source-build routes for
+  Elasticsearch, never the Maven-library route that made P6C-E00's own
+  raw-Lucene benchmark possible. Confirmed org.elasticsearch:elasticsearch
+  and org.elasticsearch.test:framework (8.15.0) resolve cleanly from
+  Maven Central. Built a real embedded single-node ES cluster via
+  ESSingleNodeTestCase, fixing four concrete, disclosed blockers (a
+  Maven jar-hell conflict, JDK 21's SecurityManager opt-in requirement,
+  and two file-permission denials from ES's own test-framework security
+  policy) -- none of them network/environment blockers. Benchmarked the
+  real WANDS catalog at the same 7 depth-1 category checkpoints and same
+  WARMUP=5/REPS=30 convention P6A-E00/P6C-E00 used, 3 independent runs,
+  24/24 correctness checks against Solr's live response matched exactly.
+  Timing result: embedded ES's terms-aggregation is 1.2x-2.0x SLOWER
+  than Solr's own facet.field for color-facet-under-category at every
+  checkpoint tested -- a genuinely new, disclosed finding, since both
+  engines share the same Lucene core. commerce-native's own ordinal
+  method remains dramatically faster than both. See
+  docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.
+
+git_sha: bf95577672a721d695a64bc778dcbbf3598fea46
+binary: es-direct-bench/pom.xml, es-direct-bench/src/test/java/org/commercenative/esdirect/WandsEsBenchTest.java
+build_command: cd es-direct-bench && mvn test-compile
+run_command: cd es-direct-bench && mvn test -Dcatalog.path=/tmp/wands_catalog.jsonl -Drepo.root=..
+test_command: cd es-direct-bench && mvn test -Dcatalog.path=/tmp/wands_catalog.jsonl -Drepo.root=..
+  (this module's own test IS the benchmark + correctness gate combined --
+  a mismatch throws IllegalStateException and fails the build)
+
+dataset:
+  name: real WANDS catalog (42,994 products), same 7 depth-1 category
+    checkpoints P6A-E00/P6C-E00 both used
+  source: https://github.com/wayfair/WANDS
+  pinned_commit: 3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5
+
+engine:
+  elasticsearch: 8.15.0, embedded single-node via
+    org.elasticsearch.test:framework's ESSingleNodeTestCase, in-process
+    NodeClient (not the REST layer)
+  solr: Apache Solr 9.10.1, wands_bench core, live count cross-check
+    every run; timing comparison for color_facet_under_category sourced
+    from the same session's fresh p6a_e00_wands_vs_native_eval run
+    (used for P6D-E03)
+
+workload:
+  selection: filter_only (category count), product_class/color facet
+    under category, sort_title_asc, sort_rating_desc, deep_pagination
+    (per checkpoint), plus one whole-catalog numeric_range_rating -- the
+    same operation classes P6C-E00 used against raw Lucene
+  repetitions: WARMUP=5, REPS=30 per operation; whole test invoked 3
+    independent times via `mvn test`
+
+seed: "N/A -- deterministic given a fixed catalog and index-build code path"
+
+raw_results: docs/research/artifacts/p6e_e00_es_direct_run1/
+  - console_run1.log, console_run2.log, console_run3.log
+  - results_run1.csv, results_run2.csv, results_run3.csv
+  - blockers_found_and_fixed/ (the two earlier failing-attempt logs,
+    preserved per this project's "record failed experiments" rule)
+
+analysis: printed directly by the JUnit test; see
+  docs/experiments/PHASE6E_LOG.md for the full hypothesis and result.

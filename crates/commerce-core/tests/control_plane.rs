@@ -13,7 +13,7 @@ fn observes_every_residual_term_from_the_representative_query_set() {
     let observations = observe_residual_terms(REPRESENTATIVE_QUERY_SET, ctx.lexicon());
     let terms: Vec<&str> = observations.iter().map(|o| o.term.as_str()).collect();
 
-    // Was 9 terms (E004). Now 11: Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md`
+    // Was 9 terms (E004). Then 11: Issue #6 P1-B (`docs/experiments/PHASE2_LOG.md`
     // P2-E11) fixed `apply_candidates` so a phrase resolving to *only* a
     // soft `Preference` -- "cushioned", "breathable" -- also stays in
     // `residual_lexical` (a Preference must never hide its own phrase
@@ -22,6 +22,18 @@ fn observes_every_residual_term_from_the_representative_query_set() {
     // (matched a real lexicon entry, unlike the other 9 out-of-vocabulary
     // terms here), but this function's job is "what residual text exists
     // to search on," which correctly includes them now.
+    //
+    // Now 12: Phase 9 (Issue #34) fixed `compile`'s resolution-priority
+    // defect (`docs/experiments/PHASE9_LOG.md` P9-E05,
+    // `PHASE9_DECISION.md`) so a lexicon-derived hard attribute constraint
+    // with no corroborating entity constraint anywhere in the query is
+    // demoted to a `Preference` and kept searchable, exactly like the
+    // P1-B fix already did for genuinely soft candidates. "New Balance
+    // waterproof shoes" in this fixture set resolves no entity at all
+    // ("New Balance" is out-of-vocabulary, bare "shoes" is never a
+    // registered phrase -- only "running shoes" is), so "waterproof" used
+    // to compile to an unconfirmed hard filter and is now correctly
+    // demoted, adding it to what this function observes as residual text.
     assert_eq!(
         terms,
         vec![
@@ -35,6 +47,7 @@ fn observes_every_residual_term_from_the_representative_query_set() {
             "shoes",
             "trail",
             "vegan",
+            "waterproof",
             "wide"
         ]
     );
