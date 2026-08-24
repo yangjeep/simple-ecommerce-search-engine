@@ -1,0 +1,564 @@
+Total distinct real keys with ANY disagreement (role/type/scope/primitive) in any config: 21
+
+====================================================================================================
+REAL KEY: basecolor
+  [wands_anonymized run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: 1613 distinct values over 8145 occurrences (uniqueness_ratio 0.198) with finish/material-style samples ('acacia','acorn','acrylic','aged brass') strongly sugges
+  [wands_anonymized run2] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 1613 distinct short values (mean 8.15 chars) mixing wood species (acacia), materials (acrylic) and metal finishes (aged brass) -- a broad color/finish swatch at
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: 1613 distinct short lowercase tokens (acacia, acorn, acrylic, aged brass), 0% numeric parseable, mean length 8.1 — reads as a material/finish descriptor enum, t
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: 1613 distinct short lowercase tokens (mean length 8.1, 0% numeric-parseable) resembling material/finish names (acacia, acrylic, aged brass).
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 1613 distinct short values (mean length 8.1) over 8145 occurrences, 0% numeric-parseable, samples are material/finish-style single words ('acacia','acrylic','ag
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 1613 distinct/8145 occurrences, uniqueness 0.198 (highest of the color-family fields). Samples ('acacia','acorn','acrylic','aged brass') are actually material/f
+  [wands_baseline run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: Sample values ('acacia','acrylic','aged brass') are actually material/finish names rather than basic hues -- common in furniture/hardware where 'color' is conve
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 8145 occurrences, 1613 distinct short tokens (mean length 8.1) like 'acacia','acorn','acrylic','aged brass' — categorical color/finish vocabulary, but overlaps 
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 1613 distinct values over 8145 occurrences (uniqueness 0.198); samples like 'acacia','acrylic','aged brass' overlap with the separate 'finish' field's vocabular
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 8145 occurrences, 1613 distinct short single-token-ish values (mean length 8.1) like 'acacia','acorn','acrylic','aged brass' — categorical facet, though samples
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: Despite the 'hue' naming, samples ('acacia','acorn','acrylic','aged brass') mix material names with finish/color names - this looks more like a finish attribute
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: Despite the 'hue' name implying color, the actual samples -- acacia, acorn, acrylic, aged brass -- are materials/finishes, not color words like the taupe/teal/w
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 1613 distinct values over 8145 occurrences; samples 'acacia', 'acorn', 'acrylic', 'aged brass' read more like material/finish names than hues despite the field 
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 1613 distinct values over 8145 occurrences (uniqueness 0.198), 0% numeric-parseable; samples ('acacia','acorn','acrylic','aged brass') read as finish/color/mate
+  [wands_noisy run5] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 1613 distinct values over 8145 occurrences (uniqueness_ratio 0.198); samples 'acacia','acorn','acrylic','aged brass' read more like finish/material names than p
+
+====================================================================================================
+REAL KEY: color
+  [wands_anonymized run1] role=ignore       type=string   scope=product    prim=none                 conf=0.15 abstain=True
+      evidence: Lexically-first samples are wildly heterogeneous: an empty string, the bare digit '0', a color-count breakdown ('2 taupe , 2 teal , 2 white'), a lone punctuatio
+  [wands_anonymized run2] role=relationship type=string   scope=relationship prim=none                 conf=0.40 abstain=False
+      evidence: Sample values are heterogeneous and partly junk ('0', ';', ''), but one literal sample is the bracketed tag '[ tied to : color ]', an explicit cross-reference t
+  [wands_anonymized run3] role=free_text    type=string   scope=product    prim=none                 conf=0.15 abstain=True
+      evidence: Heterogeneous values ('0', ';', '2 taupe , 2 teal , 2 white', '[ tied to : color ]') mixing numerics, delimiters, multi-value color lists, and a meta-annotation
+  [wands_anonymized run4] role=free_text    type=string   scope=product    prim=none                 conf=0.20 abstain=True
+      evidence: Heterogeneous samples mixing counts ('2 taupe , 2 teal , 2 white'), punctuation-only values (';'), and meta-annotations ('[ tied to : color ]') over 4686 distin
+  [wands_anonymized run5] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.20 abstain=True
+      evidence: Samples are highly inconsistent — multi-item lists ('2 taupe , 2 teal , 2 white'), bare delimiters (';'), and an apparent internal annotation ('[ tied to : colo
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 4686 distinct/26295 occurrences, uniqueness 0.178 -- far too high/messy for a clean bounded color enum. Samples include a stray literal '0', a bare ';', a multi
+  [wands_baseline run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: Color is normally one of the highest-value shopper search facets, but this field's own samples are unusually dirty: a bare '0', a lone ';', and a bracketed cros
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 26295 occurrences, 4686 distinct values; samples include multi-value strings ('2 taupe , 2 teal , 2 white'), junk tokens (';','[ tied to : color ]','0') indicat
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 4686 distinct values over 26295 occurrences with corrupted/placeholder samples such as '0', ';', and literal template text '[ tied to : color ]', plus compound 
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 26295 occurrences, 4686 distinct values but samples show heavy noise/multi-value strings ('2 taupe , 2 teal , 2 white', ';', '[ tied to : color ]', '0'), indica
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: Name and samples ('2 taupe , 2 teal , 2 white') point to a color field, but cardinality is far too high for a clean color enum (4686 distinct over 26295 occurre
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: Name and several samples support 'color' as the core concept, but the data is notably contaminated: sample values include bare junk tokens ('0', ';') and an exp
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 4686 distinct values over 26295 occurrences (uniqueness_ratio 0.178); samples include a plausible color list ('2 taupe , 2 teal , 2 white') alongside clear data
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 4686 distinct values over 26295 occurrences (uniqueness 0.178), mean_value_length 8.12, samples show a garbled color field ('2 taupe , 2 teal , 2 white', ';', '
+  [wands_noisy run5] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.35 abstain=False
+      evidence: 4686 distinct values over 26295 occurrences (uniqueness_ratio 0.178); some samples are legible color lists ('2 taupe , 2 teal , 2 white') but others are corrupt
+
+====================================================================================================
+REAL KEY: compatiblediningchairpartnumber
+  [wands_anonymized run1] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.65 abstain=False
+      evidence: distinct_values (71) exactly equals occurrences (71), uniqueness_ratio 1.0 — every populated row is unique. Samples ('120767wht','1wf54a0jsv','140-c6501s-t') ar
+  [wands_anonymized run2] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.80 abstain=False
+      evidence: uniqueness_ratio=1.0 (distinct_values==occurrences==71): every value is unique. Sample values are heterogeneous alphanumeric codes ('120767wht', '1wf54a0jsv', '
+  [wands_anonymized run3] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.85 abstain=False
+      evidence: Uniqueness ratio 1.0 (71 distinct of 71 occurrences), alphanumeric codes with slashes/dashes ('01-0619-884-01/01-0619-885-01','120767wht') — pure identifier fie
+  [wands_anonymized run4] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.85 abstain=False
+      evidence: uniqueness_ratio=1.0 (71 distinct / 71 occurrences); alphanumeric codes like '120767wht','1c-285','1wf54a0jsv' typical of SKU/model numbers.
+  [wands_anonymized run5] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.85 abstain=False
+      evidence: uniqueness_ratio 1.0 (71/71, fully unique), samples are alphanumeric codes ('120767wht','1c-285','1wf54a0jsv') — textbook SKU/model-number identifier field, rar
+
+====================================================================================================
+REAL KEY: compatibledrainassemblypartnumber
+  [wands_anonymized run1] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.30 abstain=False
+      evidence: Only 161 occurrences (sparse) with 78 distinct values (uniqueness_ratio 0.4845) but numeric_parseable_fraction of only 0.1304 — meaning most of the 78 distinct 
+  [wands_anonymized run2] role=identifier   type=string   scope=product    prim=none                 conf=0.15 abstain=True
+      evidence: Contradictory signal: the 5 shown sample values ('1','140780','1795','2','330') all look purely numeric, yet numeric_parseable_fraction is only 0.1304, implying
+  [wands_anonymized run3] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.20 abstain=True
+      evidence: Small sample (161 occurrences), moderate uniqueness (0.48), low numeric-parseable fraction (0.13) with values mixing plain numbers ('1','2') and larger codes ('
+  [wands_anonymized run4] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.25 abstain=True
+      evidence: Sample values ('1','140780','1795','2','330') look numeric, but numeric_parseable_fraction is only 0.13 and uniqueness_ratio is 0.48 (78/161) - contradictory si
+  [wands_anonymized run5] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.40 abstain=False
+      evidence: 78 distinct / 161 occurrences (uniqueness 0.48), samples are short numeric-looking codes ('140780','1795','330') — plausibly a secondary model/part code, but lo
+
+====================================================================================================
+REAL KEY: dswoodtone
+  [wands_anonymized run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: Only 9 distinct 'X wood' tone values (dark brown wood, espresso wood, gray wood, light wood), including a manual-entry typo ('esptresso wood') confirming hand-c
+  [wands_anonymized run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: Only 9 distinct values, all of the form '&lt;tone&gt; wood' ('dark brown wood','espresso wood','gray wood','light wood'), including a typo 'esptresso wood' pres
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 9 distinct wood-color values including a typo variant ('esptresso wood' alongside 'espresso wood') consistent with real messy catalog data — wood finish/co
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.85 abstain=False
+      evidence: Only 9 distinct values, all '<color> wood' finish descriptors including a typo variant ('esptresso wood') - a curated finish/color enum.
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 9 distinct values, samples are wood-tone color/finish descriptors ('dark brown wood','espresso wood','gray wood','light wood'), including a real-world typo
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: 9 distinct values, mean length 10.66, includes a visible typo ('esptresso wood' vs 'espresso wood') confirming this is raw, lightly-curated vocabulary rather th
+  [wands_baseline run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.80 abstain=False
+      evidence: Only 9 distinct values, all short wood-tone descriptors ('dark brown wood','espresso wood','light wood'); the 'ds' prefix again suggests a curated taxonomy. Sam
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.85 abstain=False
+      evidence: 10223 occurrences, only 9 distinct values ('dark brown wood','espresso wood','gray wood','light wood',...) — small closed wood-tone taxonomy.
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.85 abstain=False
+      evidence: Only 9 distinct values over 10223 occurrences, clean tone labels (one contains a typo 'esptresso wood', confirming free-form entry but very low real cardinality
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.85 abstain=False
+      evidence: 10223 occurrences, only 9 distinct values ('dark brown wood','espresso wood','gray wood','light wood', incl. typo 'esptresso wood') — tightly bounded enum.
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.85 abstain=False
+      evidence: 9 distinct values, all wood-tone/finish phrases ('dark brown wood','espresso wood','gray wood','light wood'). Notably includes 'esptresso wood', a typo-duplicat
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: 9 distinct wood-finish phrases ('dark brown wood', 'espresso wood', 'gray wood', 'light wood'). Notably 'esptresso wood' is a misspelled duplicate of 'espresso 
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 9 distinct values over 10223 occurrences; samples 'dark brown wood', 'espresso wood', 'esptresso wood' (typo variant), 'gray wood', 'light wood' form a com
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 9 distinct values over 10223 occurrences (uniqueness 0.00088), samples ('dark brown wood','espresso wood','esptresso wood','gray wood','light wood') form a
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: Only 9 distinct values over 10223 occurrences (uniqueness_ratio 0.00088), samples 'dark brown wood','espresso wood','esptresso wood' (typo variant, consistent w
+
+====================================================================================================
+REAL KEY: finish
+  [wands_anonymized run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: 1294 distinct values / 7719 occurrences (uniqueness 0.1676) with vocabulary near-identical to feature_1 ('acrylic','aged brass') — almost certainly another Colo
+  [wands_anonymized run2] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 1294 distinct values sharing exact vocabulary with feature_1 ('acrylic','aged brass' appear in both), similar low numeric_parseable_fraction and comparable mean
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: 1294 distinct near-zero-numeric tokens sharing vocabulary with feature_1 ('acrylic','aged ash','aged brass') — same material/finish-style enum pattern but noisi
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: 1294 distinct near-zero-numeric-parseable values resembling material/finish tokens (acrylic, aged ash, aged brass), similar pattern to feature_1 but with a '0' 
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 1294 distinct values, near-zero numeric_parseable_fraction, samples overlap with feature_1's material/finish vocabulary ('acrylic','aged brass') but includes st
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 1294 distinct/7719 occurrences, uniqueness 0.168, and a stray literal '0' value (same garbage pattern seen in 'color') indicating a shared default/placeholder i
+  [wands_baseline run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: Samples ('acrylic','aged ash','aged brass') overlap heavily with basecolor's samples, indicating real redundancy between the two fields in this feed; a stray nu
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: 7719 occurrences, 1294 distinct short tokens (mean length 9.68) like 'acrylic','aged ash','aged brass' — long-tail but categorical finish vocabulary, non-numeri
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 1294 distinct values over 7719 occurrences (uniqueness 0.168); samples 'acrylic' and 'aged brass' duplicate values seen in the separate 'basecolor' field, indic
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: 7719 occurrences, 1294 distinct short tokens ('acrylic','aged ash','aged brass'), mean_value_length 9.7 — high-cardinality but still a categorical finish facet.
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: Samples ('acrylic','aged ash','aged brass') overlap almost exactly with hue_code_2's samples, and both contain a junk numeric '0' sentinel - suggesting surface_
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: Samples (acrylic, aged ash, aged brass) match a surface-material/finish interpretation consistent with the name. Notably near-identical sample values appear in 
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 1294 distinct values over 7719 occurrences; samples 'acrylic', 'aged ash', 'aged brass' indicate a surface/finish material attribute, but high cardinality and a
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 1294 distinct values over 7719 occurrences (uniqueness 0.168), samples mix finish/material names ('acrylic','aged ash','aged brass') with a garbage '0' token, i
+  [wands_noisy run5] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 1294 distinct values over 7719 occurrences (uniqueness_ratio 0.168), samples '0','acrylic','aged ash','aged brass' -- surface/finish descriptions with fairly hi
+
+====================================================================================================
+REAL KEY: framematerial
+  [wands_noisy run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: 77 distinct plain material names without percentage prefixes ('acacia wood','acrylic','aluminium','aluminum') - a cleaner/simpler material field than material_c
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: Simpler material names than material_code, without percentage prefixes (acacia wood, acrylic, aluminium, aluminum) -- likely a secondary material attribute (e.g
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 77 distinct values over 10396 occurrences with clean short samples ('acacia wood', 'acrylic', 'aluminium', 'aluminum') indicate a normalized primary-materi
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: Only 77 distinct values over 10396 occurrences (uniqueness 0.0074), short clean material-name samples ('acacia wood','acrylic','aluminium','aluminum') indicatin
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: Only 77 distinct values over 10396 occurrences (uniqueness_ratio 0.0074), samples 'acacia wood','acrylic','aluminium','aluminum' (note the spelling-variant nois
+
+====================================================================================================
+REAL KEY: heat_range
+  [automotive run1] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: Values 4-8 (5 distinct, numeric_parseable_fraction=1.0, mean_value_length=1.0) match the small-integer heat-range numbering used by spark plug makers (NGK/Denso
+  [automotive run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: Small integer values 4-8, 100% numeric-parseable, matches spark-plug 'heat range' terminology (an ordinal thermal rating). Only 5 distinct values and niche/enth
+  [automotive run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: 5 distinct single-digit numeric values ('4'-'8'), numeric_parseable_fraction 1, mean_value_length 1 — consistent with spark plug heat range ordinal scale; low c
+  [automotive run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 5 distinct single-digit values (4-8), numeric_parseable_fraction=1.0, matches spark-plug heat-range numbering; low cardinality makes bitmap_enum plausible too, 
+  [automotive run5] role=numeric      type=number   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: Only 5 distinct single-digit numeric values (4-8), numeric_parseable_fraction 1.0, mean length 1 — a small ordinal numeric set typical of spark plug heat range;
+
+====================================================================================================
+REAL KEY: overalldepth-fronttoback
+  [wands_anonymized run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.45 abstain=False
+      evidence: numeric_parseable_fraction 1.0 (fully numeric) with short values (mean_value_length 2.98) — a small-scale physical measurement (e.g. leg diameter or material th
+  [wands_anonymized run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.45 abstain=False
+      evidence: numeric_parseable_fraction=1.0, 2006 distinct values that are all clean eighth-inch-style decimal fractions ('.2','.375','.5','.625','.75') -- suggests a fine-g
+  [wands_anonymized run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.70 abstain=False
+      evidence: 99.997% numeric parseable, 2006 distinct fractional-inch-style values ('.2','.375','.5','.625','.75') — a physical measurement dimension field, likely thickness
+  [wands_anonymized run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: numeric_parseable_fraction=0.99997 across 2006 distinct decimal values ('.2','.375','.5','.625','.75') consistent with a fractional physical measurement (e.g. t
+  [wands_anonymized run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: 99.997% numeric-parseable, samples '.2','.375','.5','.625','.75' are decimal/fractional values typical of a dimension or measurement field; 2006 distinct values
+  [wands_baseline run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.82 abstain=False
+      evidence: 100% numeric-parseable (no blank/'' even present among samples), 2006 distinct/29674 occurrences, mean length 2.98 -- clean continuous dimension (depth). Groupe
+  [wands_baseline run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction is a full 1.0 and all samples are pure decimals; depth is the standard third furniture dimension shoppers filter on for space fit, al
+  [wands_baseline run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 29674 occurrences, numeric_parseable_fraction 0.99997, samples '.2','.375','.5','.625','.75' — pure dimensional measurement.
+  [wands_baseline run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: numeric_parseable_fraction 0.99997 across 29674 occurrences with 2006 distinct numeric values ('.2','.375','.5',...).
+  [wands_baseline run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 29674 occurrences, numeric_parseable_fraction 0.99997, samples '.2','.375','.5','.625','.75' — pure continuous dimension in inches.
+  [wands_noisy run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction is a perfect 1.0 (unlike dim_a/dim_b which have a residual non-numeric sliver), 2006 distinct, uniqueness 0.0676, samples are clean f
+  [wands_noisy run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.50 abstain=False
+      evidence: 100% numeric-parseable (no empty-string sample, unlike dim_a/b), values like '.2','.375','.5','.625','.75' -- quarter/eighth-inch fraction increments typical of
+  [wands_noisy run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: numeric_parseable_fraction 0.99997 across 29674 occurrences with 2006 distinct values; samples '.2', '.375', '.5', '.625', '.75' complete a 3-axis dimension tri
+  [wands_noisy run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.99997 across 29674 occurrences, mean_value_length 2.98, samples ('.2','.375','.5','.625','.75') are bare decimals forming the third
+  [wands_noisy run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.99997, mean_value_length 2.98, values '.2','.375','.5','.625','.75' -- third dimensional axis alongside dim_a/dim_b.
+
+====================================================================================================
+REAL KEY: overallheight-toptobottom
+  [wands_anonymized run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.35 abstain=False
+      evidence: numeric_parseable_fraction 0.9999, mean_value_length 2.89, 37136 occurrences — a clean numeric measurement field of unknown unit; shares the same decimal-string
+  [wands_anonymized run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.25 abstain=True
+      evidence: numeric_parseable_fraction=0.9999, 2604 distinct decimal values, 37136 occurrences -- clearly a common numeric physical spec (weight, height, width, depth, or c
+  [wands_anonymized run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: 99.99% numeric parseable, 2604 distinct small decimal values (.5, 0, 0.04, 0.08) — another physical measurement/dimension field.
+  [wands_anonymized run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: numeric_parseable_fraction=0.99987 over 2604 distinct decimal values ('.5','0','0.04','0.08'), short mean length 2.89 - a continuous measurement field.
+  [wands_anonymized run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.99% numeric-parseable, mean length 2.89, samples '.5','0','0.04','0.08' indicate a small-magnitude measurement/weight-type numeric field.
+  [wands_baseline run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.82 abstain=False
+      evidence: 99.99% numeric-parseable, 2604 distinct/37136 occurrences (uniqueness 0.070), mean length 2.89 -- same profile as the other overall* dimension fields. Height is
+  [wands_baseline run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.9999, decimal-only samples, name explicitly denotes vertical dimension; height range filters ('under 30 inches') are common for fur
+  [wands_baseline run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.93 abstain=False
+      evidence: 37136 occurrences, numeric_parseable_fraction 0.99987, samples '.5','0','0.04','0.08' — dimensional measurement with occasional blanks.
+  [wands_baseline run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: numeric_parseable_fraction 0.99987 across 37136 occurrences with 2604 distinct numeric values.
+  [wands_baseline run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 37136 occurrences, numeric_parseable_fraction 0.99987, samples '.5','0','0.04','0.08' — continuous dimension field.
+  [wands_noisy run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction 0.9999, 2604 distinct, uniqueness 0.0701, samples '0','0.04','0.08' - same shape as dim_a/dim_c, indicating this is a second physical
+  [wands_noisy run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.55 abstain=False
+      evidence: 99.99% numeric-parseable, bare-decimal values ('.5','0','0.04','0.08'), 2604 distinct over 37,136 rows -- same dimension-component profile as dim_a/dim_c, most 
+  [wands_noisy run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: numeric_parseable_fraction 0.99987 across 37136 occurrences with 2604 distinct values and short mean length (2.89); samples '.5', '0', '0.04', '0.08' are compan
+  [wands_noisy run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.99987 across 37136 occurrences, mean_value_length 2.89, samples all bare decimals ('.5','0','0.04','0.08') consistent with a second
+  [wands_noisy run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.9999, mean_value_length 2.89, values '.5','0','0.04','0.08' -- same dimensional-measurement pattern as dim_a/dim_c, a companion axi
+
+====================================================================================================
+REAL KEY: overallproductweight
+  [wands_anonymized run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.40 abstain=False
+      evidence: 57110 occurrences — the single most-populated field in the whole set — with numeric_parseable_fraction 0.9996, suggesting a near-universal core spec (weight, pr
+  [wands_anonymized run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.25 abstain=True
+      evidence: Highest occurrence count of any field in the dataset (57110), numeric_parseable_fraction=0.9996, 6071 distinct decimals -- almost certainly a near-universal num
+  [wands_anonymized run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.96% numeric parseable across 6071 distinct decimal values, highest occurrence count of the numeric group (57110) — likely a weight/capacity-style dimension s
+  [wands_anonymized run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction=0.9996 over 6071 distinct decimal values ('.02','.1','.2024','.25') - highest-cardinality member of the decimal-numeric group.
+  [wands_anonymized run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.96% numeric-parseable across 57110 occurrences (highest volume numeric-looking field), mean length 2.95, samples '.02','.1','.2024','.25' fit a common dimens
+  [wands_baseline run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.80 abstain=False
+      evidence: Name plus 99.96% numeric-parseable fraction and short mean length (2.95 chars) confirm a continuous physical measurement (product weight). 6071 distinct values 
+  [wands_baseline run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.80 abstain=False
+      evidence: numeric_parseable_fraction 0.9996 and short mean length (2.95) match decimal weight values (e.g. '.25'); 6071 distinct values over 57110 rows with low uniquenes
+  [wands_baseline run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 57110 occurrences (highest volume field), numeric_parseable_fraction 0.99963, samples '.02','.1','.2024','.25' — clean weight measurement.
+  [wands_baseline run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: numeric_parseable_fraction 0.99963 across 57110 occurrences (highest occurrence count of any field) with 6071 distinct numeric values.
+  [wands_baseline run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 57110 occurrences, numeric_parseable_fraction 0.9996, samples '.02','.1','.2024','.25' — continuous weight field.
+  [wands_noisy run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.35 abstain=False
+      evidence: numeric_parseable_fraction 0.9996 and short mean_value_length (2.95) match a compact numeric spec, and its profile (fractional decimal samples '.02'-'.25', dist
+  [wands_noisy run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.35 abstain=False
+      evidence: Highest occurrence count of all 36 fields (57,110) and 99.96% numeric-parseable with very short values (mean 2.95 chars) like '.02', '.1', '.2024', '.25' -- the
+  [wands_noisy run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.45 abstain=False
+      evidence: numeric_parseable_fraction 0.9996 across 57110 occurrences with 6071 distinct short values (mean length 2.95); clearly a numeric spec column, but the generic 'i
+  [wands_noisy run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.50 abstain=False
+      evidence: numeric_parseable_fraction 0.99963 across 57110 occurrences, mean_value_length 2.95, samples all bare decimals ('.02','.1','.2024','.25'); clearly numeric struc
+  [wands_noisy run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.45 abstain=False
+      evidence: numeric_parseable_fraction 0.9996 across 57110 occurrences with short mean_value_length (2.95) -- clearly a numeric spec column, but the generic key name gives 
+
+====================================================================================================
+REAL KEY: overallwidth-sidetoside
+  [wands_anonymized run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.35 abstain=False
+      evidence: numeric_parseable_fraction 0.9993 over 46687 occurrences, same decimal-string profile as feature_18/feature_19/feature_20/feature_35 — an indistinguishable memb
+  [wands_anonymized run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.25 abstain=True
+      evidence: numeric_parseable_fraction=0.9993, 2734 distinct decimals, 46687 occurrences -- another common numeric physical spec, but its exact identity (height/width/depth
+  [wands_anonymized run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.93% numeric parseable, 2734 distinct decimal values (.5, .66, 0, 0.1) — dimension/measurement field.
+  [wands_anonymized run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction=0.9993 over 2734 distinct decimal values ('.5','.66','0','0.1') - continuous measurement field.
+  [wands_anonymized run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.93% numeric-parseable, mean length 2.78, samples '.5','.66','0','0.1' match the decimal-measurement pattern shared with feature_18/19/20.
+  [wands_baseline run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.82 abstain=False
+      evidence: 99.93% numeric-parseable, 2734 distinct/46687 occurrences (uniqueness 0.059), short mean length (2.78) -- classic continuous dimension field (width). Sample val
+  [wands_baseline run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.9993, decimal-only samples ('.5','.66','0.1'), 2734 distinct values. Width is a well-known fit-driven search/filter dimension in fu
+  [wands_baseline run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.93 abstain=False
+      evidence: 46687 occurrences, numeric_parseable_fraction 0.99931, samples '.5','.66','0','0.1' — dimensional measurement.
+  [wands_baseline run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: numeric_parseable_fraction 0.99931 across 46687 occurrences with 2734 distinct numeric values.
+  [wands_baseline run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 46687 occurrences, numeric_parseable_fraction 0.9993, samples '.5','.66','0','0.1' — continuous dimension field.
+  [wands_noisy run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction 0.9993, 2734 distinct values, low uniqueness (0.0586, many products share the same round dimension values) and short decimal samples 
+  [wands_noisy run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.55 abstain=False
+      evidence: 99.93% numeric-parseable, short bare-decimal values ('.5','.66','0','0.1'), 2734 distinct values over 46,687 rows -- the classic profile of a physical dimension
+  [wands_noisy run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.65 abstain=False
+      evidence: numeric_parseable_fraction 0.9993 across 46687 occurrences with 2734 distinct values and short mean length (2.78); samples '.5', '.66', '0', '0.1' are pure nume
+  [wands_noisy run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction is 0.9993 across 46687 occurrences with short mean_value_length (2.78) and samples ('.5','.66','0','0.1') all being bare decimals, in
+  [wands_noisy run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.85 abstain=False
+      evidence: numeric_parseable_fraction 0.9993 with short mean_value_length (2.78) and values '.5','.66','0','0.1' -- a physical dimension measurement (one of length/width/h
+
+====================================================================================================
+REAL KEY: primarymaterial
+  [wands_anonymized run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 250 distinct 'NN % material' values ('100 % cotton','100 % fine porcelain') but low uniqueness_ratio (0.023) over 10860 occurrences — values repeat heavily, so 
+  [wands_anonymized run2] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 250 distinct values consistently patterned '100 % &lt;material&gt;' ('100 % cotton','100 % fine porcelain','100 % medium density fiberboard','100 % water hyacin
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 250 distinct '100 % <material>' composition phrases — material-composition enum best served by tokenized/contains matching.
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 250 distinct 'X % material' composition strings ('100 % cotton','100 % fine porcelain','100 % water hyacinth') - bounded but compound material-composition vocab
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 250 distinct values, 0% numeric-parseable, samples '100 % cotton','100 % fine porcelain' are material-composition strings; contains-queryable material list.
+  [wands_baseline run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 250 distinct/10860 occurrences, mean length only 7.68 -- shorter than the composite '100 % ...' composition strings shown in the sample, implying most actual oc
+  [wands_baseline run2] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 250 distinct values, but samples show compound 'percentage + material' composition strings ('100 % medium density fiberboard','100 % water hyacinth') rather tha
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.80 abstain=False
+      evidence: 10860 occurrences, 250 distinct values, samples '100 % cotton','100 % fine porcelain','100 % medium density fiberboard' — bounded material vocabulary with a rec
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.60 abstain=False
+      evidence: 250 distinct values over 10860 occurrences with compound composition strings ('100 % cotton','100 % fine porcelain'), implying token-level material matching rat
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: 10860 occurrences, 250 distinct compound percentage-composition strings ('100 % cotton','100 % fine porcelain') — categorical material facet requiring normaliza
+  [wands_noisy run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: 250 distinct values formatted as '&lt;percentage&gt; % &lt;material&gt;' ('100 % cotton','100 % fine porcelain','100 % medium density fiberboard','100 % water h
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: Samples are '100 % &lt;material&gt;' composition strings (cotton, fine porcelain, medium density fiberboard, water hyacinth); 250 distinct values but only 0.023
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.65 abstain=False
+      evidence: 250 distinct values over 10860 occurrences; samples '100 % cotton', '100 % fine porcelain', '100 % medium density fiberboard', '100 % water hyacinth' show a mat
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 250 distinct values over 10860 occurrences, 0% numeric-parseable; samples follow a '100 % <material>' composition pattern ('100 % fine porcelain','100 % water h
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 250 distinct values over 10860 occurrences (uniqueness_ratio 0.023, low), samples '100 % cotton','100 % fine porcelain','100 % medium density fiberboard' -- mat
+
+====================================================================================================
+REAL KEY: productwarranty
+  [wands_baseline run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: Only 7 distinct values across 29209 occurrences, yet mean_value_length is just 2.77 -- far shorter than the long outlier sample shown ('1 year warranty for car 
+  [wands_baseline run2] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: Reported distinct_values is only 7, yet the visible samples are highly heterogeneous -- from short tokens ('90 days','lifetime') to a full run-on sentence conta
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 29209 occurrences, only 7 distinct values ('1 year','1 year limited warranty','90 days','lifetime',...) but one sample is a long custom sentence with an embedde
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: Only 7 distinct values over 29209 occurrences, but one sample is a long outlier sentence containing a support URL, showing mostly clean short labels with occasi
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: 29209 occurrences but only 7 distinct values despite verbose text samples ('1 year','90 days','lifetime', one long value with an embedded support URL) — small c
+  [wands_noisy run1] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: Only 7 distinct values with clean-looking short samples ('1 year','90 days','lifetime') suggest a bucketed warranty-term enum, but one distinct value is an enti
+  [wands_noisy run2] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: Only 7 distinct values despite 29,209 occurrences (0.0002 uniqueness) suggests a small enum of warranty terms ('1 year', '90 days', 'lifetime'), but one sample 
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: Only 7 distinct values across 29209 occurrences (uniqueness_ratio 0.00024) despite an occurrence-weighted mean_value_length of only 2.77, meaning most occurrenc
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: Only 7 distinct values across 29209 occurrences (uniqueness 0.00024) with very low mean_value_length (2.77), implying the field is dominated by a handful of sho
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: Only 7 distinct values across 29209 occurrences (uniqueness_ratio 0.00024) despite some sample values being long sentences; the tiny distinct count and low occu
+
+====================================================================================================
+REAL KEY: samplepartnumber
+  [wands_anonymized run1] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.55 abstain=False
+      evidence: uniqueness_ratio 0.9785 (2004 distinct / 2048 occurrences) with barcode-like values ('069556530416' — 12 digits, UPC-A shaped) and structured codes ('06.mmfpbdv
+  [wands_anonymized run2] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.65 abstain=False
+      evidence: uniqueness_ratio=0.9785 (2004 distinct / 2048 occurrences); samples include a 12-digit numeric string ('069556530416', barcode/UPC-shaped) and dotted alphanumer
+  [wands_anonymized run3] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.85 abstain=False
+      evidence: Uniqueness ratio 0.979 (2004 distinct of 2048 occurrences), alphanumeric SKU/UPC-style codes ('06.mmfpbdv.44','069556530416' — a 12-digit UPC pattern) — product
+  [wands_anonymized run4] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.80 abstain=False
+      evidence: uniqueness_ratio=0.978 (2004/2048); values like '06.mmfpbdv.44' and a 12-digit UPC-like code '069556530416' - a reference/barcode identifier field.
+  [wands_anonymized run5] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.75 abstain=False
+      evidence: uniqueness_ratio 0.9785 (2004 distinct / 2048 occurrences), samples look like SKU/model/UPC codes ('06.mmfpbdv.44','069556530416') — near-unique alphanumeric co
+  [wands_baseline run1] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.45 abstain=False
+      evidence: 2004 distinct/2048 occurrences, uniqueness 0.9785 -- a near-unique identifier. Values mix short alphanumeric codes ('06.mmfpbdv.44') with what look like UPC bar
+  [wands_baseline run2] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.55 abstain=False
+      evidence: uniqueness_ratio 0.9785 (near one-to-one with occurrences) is a classic identifier signature, but the name ('sample' + 'part number') strongly suggests an inter
+  [wands_baseline run3] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.55 abstain=False
+      evidence: 2048 occurrences, 2004 distinct values (uniqueness_ratio 0.979), mean_value_length 16.7, alphanumeric codes like '06.mmfpbdv.44','069556530416' — near-unique id
+  [wands_baseline run4] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.65 abstain=False
+      evidence: uniqueness_ratio 0.979 (2004 distinct values over 2048 occurrences), alphanumeric codes like '06.mmfpbdv.44' and '069556530416', low numeric_parseable_fraction 
+  [wands_baseline run5] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.60 abstain=False
+      evidence: 2048 occurrences, 2004 distinct values (uniqueness_ratio 0.979), alphanumeric codes ('06.mmfpbdv.44','069556530416') consistent with a per-item identifier, thou
+  [wands_noisy run1] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.65 abstain=False
+      evidence: Near-total uniqueness (0.9785) with SKU/model-number-shaped samples ('06.mmfpbdv.44','069556530416' - the latter looks like a 12-digit UPC/EAN) supports a per-i
+  [wands_noisy run2] role=identifier   type=string   scope=variant    prim=identifier_dictionary conf=0.60 abstain=False
+      evidence: Near-1:1 uniqueness (0.9785) over only 2,048 occurrences (far lower than most other fields, implying sparse population) with a 12-digit UPC-like sample ('069556
+  [wands_noisy run3] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.85 abstain=False
+      evidence: 2004 distinct values over 2048 occurrences (uniqueness_ratio 0.979), mostly non-numeric (numeric_parseable_fraction 0.034); samples '06.mmfpbdv.44', '0695565304
+  [wands_noisy run4] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.80 abstain=False
+      evidence: 2004 distinct values over 2048 occurrences (uniqueness 0.979, near-unique), samples are SKU/part-number style strings ('06.mmfpbdv.44','069556530416') consisten
+  [wands_noisy run5] role=identifier   type=string   scope=product    prim=identifier_dictionary conf=0.80 abstain=False
+      evidence: 2004 distinct values out of 2048 occurrences (uniqueness_ratio 0.979, near-unique), samples '06.mmfpbdv.44','069556530416' -- SKU/barcode-like identifiers used 
+
+====================================================================================================
+REAL KEY: thread_size
+  [automotive run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.68 abstain=False
+      evidence: Samples (10mm, 12mm, 14mm) are a small closed set (3 distinct, uniqueness=0.02) of metric thread diameters, plausibly for oil drain plugs, spark plugs, or lug s
+  [automotive run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: Sample values '10mm', '12mm', '14mm' match standard spark-plug/oxygen-sensor thread diameters. numeric_parseable_fraction reads 0.0 only because the literal 'mm
+  [automotive run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.80 abstain=False
+      evidence: 3 distinct values ('10mm','12mm','14mm'), numeric_parseable_fraction 0 because of the embedded unit suffix — a discrete thread-size spec (e.g. spark plug fitmen
+  [automotive run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.80 abstain=False
+      evidence: 3 distinct unit-suffixed values ('10mm','12mm','14mm'), numeric_parseable_fraction=0 because of the embedded 'mm' unit, consistent with a spark-plug/fastener th
+  [automotive run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.75 abstain=False
+      evidence: Only 3 distinct values (10mm, 12mm, 14mm), numeric_parseable_fraction 0 because values carry a unit suffix, mean length 4 consistent with fixed thread-size labe
+
+====================================================================================================
+REAL KEY: upholsterycolor
+  [wands_anonymized run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.40 abstain=False
+      evidence: 2176 distinct values / 7306 occurrences (uniqueness 0.2978) dominated by descriptive '2-tone X' color names ('2 tone espresso','2-tone brown','2-tone latte') — 
+  [wands_anonymized run2] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 2176 distinct values, mostly '2-tone &lt;color&gt;' descriptions ('2 tone espresso','2-tone brown','2-tone latte') plus a stray numeric code sample ('0354-92 ; 
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 2176 distinct color/finish phrases ('2 tone espresso','2-tone brown','2-tone latte') mixed with a code-like value ('0354-92 ; 0354-92') — color/finish enum with
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: 2176 distinct values mixing color names ('2 tone espresso','2-tone brown') with code-like tokens ('0354-92 ; 0354-92') - noisy but predominantly a color/finish 
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 2176 distinct values, 0% numeric, samples '2 tone espresso','2-tone brown','2-tone latte' are clear color/finish descriptors with high cardinality, favoring lex
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 2176 distinct/7306 occurrences, uniqueness 0.298 (the highest of any enum-like field here). Samples mix a vendor fabric-code string ('0354-92 ; 0354-92') with a
+  [wands_baseline run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: High uniqueness ratio (0.298) combined with a sample value that looks like a raw internal fabric code repeated with a separator ('0354-92 ; 0354-92') indicates 
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 7306 occurrences, 2176 distinct values, samples mix descriptive colors ('2 tone espresso','2-tone brown') with what look like internal SKU codes ('0354-92 ; 035
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 2176 distinct values over 7306 occurrences (uniqueness 0.298) with messy samples including SKU-like codes ('0354-92 ; 0354-92') and compound descriptors ('2-ton
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 7306 occurrences, 2176 distinct values, samples mix clean tokens ('2-tone brown','2-tone latte') with product-code noise ('0354-92 ; 0354-92') — categorical but
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: Samples mix descriptive fabric-color names ('2 tone espresso','2-tone brown','2-tone latte') with what looks like a raw manufacturer color code ('0354-92 ; 0354
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: Name suggests fabric color, and most samples support that ('2 tone espresso', '2-tone brown', '2-tone latte'), but one sample ('0354-92 ; 0354-92') is a raw man
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 2176 distinct values over 7306 occurrences (uniqueness_ratio 0.298); samples '2 tone espresso', '2-tone brown', '2-tone latte' and a raw code '0354-92 ; 0354-92
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 2176 distinct values over 7306 occurrences (uniqueness 0.298) with descriptive color-name samples ('2 tone espresso','2-tone brown','2-tone latte') plus a raw c
+  [wands_noisy run5] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 2176 distinct values over 7306 occurrences (uniqueness_ratio 0.298, high), samples '0354-92 ; 0354-92','2 tone espresso','2-tone brown','2-tone latte' -- uphols
+
+====================================================================================================
+REAL KEY: upholsterymaterial
+  [wands_anonymized run1] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 113 distinct compound material-composition strings ('10 % mdf/ 10 % half pu/ ... / 60 % metal frame','100 % cotton') with low uniqueness_ratio (0.0156) over 724
+  [wands_anonymized run2] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: 113 distinct values with detailed multi-component percentage breakdowns ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame') alongside simp
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 113 distinct material-composition phrases ('10 % polyester fiber','100 % cotton','100 % fabrics') including multi-part breakdowns — material composition field s
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 113 distinct compound composition strings ('10 % polyester fiber','100 % cotton','100 % fabrics') similar in structure to feature_24.
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 113 distinct values, samples '10 % polyester fiber','100 % cotton','100 % fabrics' — a material-composition breakdown field, similar pattern to feature_24.
+  [wands_baseline run1] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.60 abstain=False
+      evidence: 113 distinct/7247 occurrences, mean length 12.3; the composite composition strings in the samples ('10 % mdf/ 10 % half pu/...') sort first lexically (leading d
+  [wands_baseline run2] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.70 abstain=False
+      evidence: Samples include long multi-component composition strings ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame') rather than single clean toke
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.65 abstain=False
+      evidence: 7247 occurrences, 113 distinct values, some samples are compound multi-component breakdowns (e.g. '10 % mdf/ 10 % half pu/... 60 % metal frame') alongside simpl
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 113 distinct values over 7247 occurrences with compound multi-material percentage strings ('10 % mdf/ 10 % half pu/... 60 % metal frame'), implying token-level 
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.70 abstain=False
+      evidence: 7247 occurrences, 113 distinct compound composition strings ('10 % polyester fiber','100 % cotton','100 % fabrics') — material facet needing normalization.
+  [wands_noisy run1] role=enum         type=string   scope=variant    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 113 distinct values ranging from simple ('100 % cotton') to a complex multi-part composite spec ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % meta
+  [wands_noisy run2] role=enum         type=string   scope=variant    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: Compound composition strings ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame', '100 % cotton') describing upholstery/frame material blen
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.60 abstain=False
+      evidence: 113 distinct values over 7247 occurrences; samples '100 % cotton', '100 % fabrics', and a compound '10 % mdf/ 10 % half pu/...' composition string show a materi
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 113 distinct values over 7247 occurrences, 0% numeric-parseable, mean_value_length 12.3; samples show compound composition strings ('100 % cotton','10 % mdf/ 10
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 113 distinct values over 7247 occurrences (uniqueness_ratio 0.0156, low repeat count) but values are composite percentage compositions like '10 % mdf/ 10 % half
+
+====================================================================================================
+REAL KEY: voltage
+  [automotive run1] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: distinct_values=1 (only '12' observed, uniqueness=0.0067) shows zero variance in this particular sample, but that reflects this catalog slice being dominated by
+  [automotive run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.55 abstain=False
+      evidence: Only 1 distinct value ('12') observed in this catalog slice (zero variance, uniqueness 0.0067), which could naively look like an uninformative constant. But 'vo
+  [automotive run3] role=numeric      type=number   scope=product    prim=none                 conf=0.55 abstain=False
+      evidence: Only 1 distinct value ('12') observed across 150 occurrences (uniqueness_ratio 0.0067) — a constant in this sample with no discriminating power for filtering, t
+  [automotive run4] role=numeric      type=number   scope=product    prim=none                 conf=0.75 abstain=False
+      evidence: Only 1 distinct value ('12') across all 150 occurrences (uniqueness_ratio=0.0067) — a constant standard automotive voltage that carries no discriminating filter
+  [automotive run5] role=numeric      type=number   scope=product    prim=none                 conf=0.80 abstain=False
+      evidence: 150 occurrences but only 1 distinct value ('12'), meaning the field never discriminates between products in this dataset and provides no useful filtering signal
+
+====================================================================================================
+REAL KEY: warrantylength
+  [wands_anonymized run1] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 112 distinct, often verbose warranty-style phrases ('1 year from the date of purchase.','1 year limited manufacturer warranty') over 21320 occurrences — reads a
+  [wands_anonymized run2] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: 112 distinct warranty-flavored text values ('1','1 year','1 year from the date of purchase.','1 year limited manufacturer warranty') -- overlaps heavily with fe
+  [wands_anonymized run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.35 abstain=False
+      evidence: 112 distinct values ranging from bare '1' to full sentences ('1 year from the date of purchase.','1 year limited manufacturer warranty') — warranty-duration fie
+  [wands_anonymized run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: 112 distinct values ranging from a bare '1' to full sentences ('1 year from the date of purchase.','1 year limited manufacturer warranty') - a messy but bounded
+  [wands_anonymized run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 112 distinct values, near-zero numeric_parseable_fraction, samples '1 year','1 year from the date of purchase.','1 year limited manufacturer warranty' — a warra
+  [wands_baseline run1] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.45 abstain=False
+      evidence: 112 distinct values but numeric_parseable_fraction is only 0.0003 -- almost none of the raw strings are bare numbers even though the field is conceptually a dur
+  [wands_baseline run2] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 112 distinct values ranging from a bare number ('1') to short phrases ('1 year') to full sentences ('1 year from the date of purchase.'), so despite the name im
+  [wands_baseline run3] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.55 abstain=False
+      evidence: 21320 occurrences, 112 distinct values, numeric_parseable_fraction only 0.00028 (values are phrases like '1 year','1 year from the date of purchase.', not raw n
+  [wands_baseline run4] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.45 abstain=False
+      evidence: 112 distinct values over 21320 occurrences but numeric_parseable_fraction only 0.00028 despite the field name implying a duration; samples mix bare numbers ('1'
+  [wands_baseline run5] role=enum         type=string   scope=product    prim=bitmap_enum          conf=0.50 abstain=False
+      evidence: 21320 occurrences, 112 distinct values, numeric_parseable_fraction only 0.00028 despite duration semantics, samples mix bare numbers ('1') with full sentences (
+  [wands_noisy run1] role=free_text    type=string   scope=product    prim=lexical_postings     conf=0.55 abstain=False
+      evidence: 112 distinct values including full sentences ('1 year from the date of purchase.','1 year limited manufacturer warranty') vs coverage_tier's 12 clean bucket lab
+  [wands_noisy run2] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.40 abstain=False
+      evidence: 112 distinct values spanning wildly inconsistent granularity -- from a bare '1' with no unit, to short phrases ('1 year'), to full sentences ('1 year from the d
+  [wands_noisy run3] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.60 abstain=False
+      evidence: 112 distinct values over 21320 occurrences, near-zero numeric_parseable_fraction (0.00028), mean length 6.7; samples '1', '1 year', '1 year from the date of pur
+  [wands_noisy run4] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 112 distinct values over 21320 occurrences, numeric_parseable_fraction near 0 (0.00028) despite samples like '1' and '1 year', plus long free-text variants ('1 
+  [wands_noisy run5] role=enum         type=string   scope=product    prim=lexical_postings     conf=0.50 abstain=False
+      evidence: 112 distinct values over 21320 occurrences (uniqueness_ratio 0.0053, near-zero numeric_parseable_fraction) with sample values '1 year','1 year from the date of 
+
+====================================================================================================
+REAL KEY: weightcapacity
+  [wands_anonymized run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.35 abstain=False
+      evidence: numeric_parseable_fraction 0.9997 over 15125 occurrences, same short-decimal-string profile as feature_18/feature_19/feature_20/feature_21 — another undifferent
+  [wands_anonymized run2] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.25 abstain=True
+      evidence: numeric_parseable_fraction=0.9997, 531 distinct decimal values ('0','0.01','0.2','0.22','0.5'), 15125 occurrences -- another plain numeric spec, statistically s
+  [wands_anonymized run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.55 abstain=False
+      evidence: 99.97% numeric parseable, 531 distinct small decimals (0, 0.01, 0.2, 0.22, 0.5), mean length 2.87 — numeric attribute, unit/purpose unclear so treated as rankin
+  [wands_anonymized run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.70 abstain=False
+      evidence: numeric_parseable_fraction=0.9997 over 531 distinct decimal values ('0','0.01','0.2','0.22','0.5') - a continuous measurement field.
+  [wands_anonymized run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.60 abstain=False
+      evidence: 99.97% numeric-parseable, mean length 2.87, samples '0','0.01','0.2','0.22','0.5' — small-magnitude decimal measurement field, similar to feature_18-21.
+  [wands_baseline run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.70 abstain=False
+      evidence: 531 distinct/15125 occurrences, 99.97% numeric-parseable, mean length only 2.87 -- a load-rating spec (common on chairs, shelving, ladders). The shown samples (
+  [wands_baseline run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.75 abstain=False
+      evidence: numeric_parseable_fraction 0.9997 with decimal samples; the visible sample values (0, 0.01, 0.2...) look implausibly small for a real load rating and are likely
+  [wands_baseline run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 15125 occurrences, numeric_parseable_fraction 0.99974, samples '0','0.01','0.2','0.22','0.5' — clean numeric capacity measurement.
+  [wands_baseline run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.90 abstain=False
+      evidence: numeric_parseable_fraction 0.9997 across 15125 occurrences with 531 distinct numeric values (0, 0.01, 0.2, 0.22, 0.5,...).
+  [wands_baseline run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.95 abstain=False
+      evidence: 15125 occurrences, numeric_parseable_fraction 0.9997, samples '0','0.01','0.2','0.22','0.5' — clean continuous numeric field.
+  [wands_noisy run1] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.70 abstain=False
+      evidence: Name plus near-total numeric_parseable_fraction (0.9997) and low uniqueness (0.0351, many items share standard capacity values like '0.2','0.5') is exactly the 
+  [wands_noisy run2] role=numeric      type=number   scope=variant    prim=numeric_range        conf=0.45 abstain=False
+      evidence: Name directly signals a weight/load capacity value and the field is 99.97% numeric-parseable. However the visible low-end samples (0, 0.01, 0.2, 0.22, 0.5) look
+  [wands_noisy run3] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: numeric_parseable_fraction 0.9997 across 15125 occurrences, 531 distinct values, short mean length (2.87); the name 'load_rating' plus purely numeric samples ('
+  [wands_noisy run4] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.80 abstain=False
+      evidence: numeric_parseable_fraction 0.99974 across 15125 occurrences, mean_value_length 2.87, samples all bare decimals ('0','0.01','0.2','0.22','0.5'); field name 'load
+  [wands_noisy run5] role=numeric      type=number   scope=product    prim=numeric_range        conf=0.75 abstain=False
+      evidence: numeric_parseable_fraction 0.9997 across 15125 occurrences, values '0','0.01','0.2','0.22','0.5' -- a weight/load capacity spec, a common furniture range filter
