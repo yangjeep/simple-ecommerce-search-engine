@@ -1,212 +1,133 @@
-# Architecture — how the system actually works today
+# Architecture
 
-This describes the **implementation that exists in `main` today**, through
-Phase 5. It is deliberately narrower than Issue #21's Phase 9 target
-architecture — see `docs/WHAT.md` for the explicit non-goals and what is
-still only a design target. Where this document says a mechanism "exists,"
-it means running code with tests and/or a real-data experiment behind it,
-traceable to an ADR and/or an experiment log entry.
+This page describes what exists in `main` now. Experimental treatments that have not been promoted are called out explicitly.
 
-For the durable *why* and the evidence-backed *what*, see `docs/WHY.md` and
-`docs/WHAT.md`. For architectural decisions and their rationale, see
-`docs/adr/`. For the experiment-by-experiment evidence behind every claim
-below, see `docs/experiments/` and the `PHASE*_DECISION.md` files.
+## End-to-end shape
 
-## Crate map
+```mermaid
+flowchart TB
+    subgraph Ingestion[Offline ingestion / compilation]
+        C[Catalog] --> P[Deterministic profiling]
+        P --> X[Compressed semantic problems]
+        X --> M[Model / heuristic proposals]
+        M --> V[Deterministic validation / canonicalization]
+        V --> B[Compiled context + physical indexes]
+    end
 
-- **`commerce-core`** — the engine itself: typed domain, Commerce IR,
-  physical indexes, admission, control plane, state overlay, planning. No
-  crate outside `commerce-core` is a dependency of it (kept deliberately
-  minimal — see ADR-0001).
-- **`round1-eval`** — real-data adapters (ESCI catalog ingestion, Solr
-  client helpers, relevance judgment loading) and the first real-corpus
-  evaluation binaries. Every later `phaseN-eval` crate depends on this for
-  real data rather than re-implementing ingestion.
-- **`phase2-eval`** through **`phase5-eval`** — one crate per research
-  phase, each holding that phase's experiment binaries
-  (`src/bin/pXeNN_*.rs`) and any phase-specific eval-only helpers. These
-  are evaluation harnesses, not product code — see `docs/WHAT.md`'s
-  non-goals.
-- **`bench-harness`** — shared repeated-measurement/timing/statistics
-  infrastructure (percentiles, bootstrap CIs) used across phases so timing
-  methodology doesn't drift between experiments.
-- **`realtime-eval`** — Issue #8's variant-availability fast-path
-  evaluation.
+    subgraph Query[Serving]
+        Q[Raw query] --> IR[Commerce IR compiler]
+        IR --> PL[Planner]
+        PL --> SI[Structural index execution]
+        PL --> LD[Lexical delegate]
+        SI --> RK[Ranking / top-K]
+        LD --> RK
+        O[Mutable availability overlay] --> SI
+    end
 
-## 1. Catalog compilation
+    B --> IR
+    B --> PL
+    B --> SI
+```
 
-Real product data (Amazon ESCI: title, description, bullet points, brand,
-color — no price/category/product-type field in the source at all) is
-adapted into `commerce_core::domain` types by `round1_eval::catalog`. Since
-the real data has no product-type/category/price, every real product is
-assigned an explicit sentinel (`ProductTypeId(0)`, `CategoryId(0)`,
-`Price::usd(0)`) rather than inventing ground truth — this is recorded
-explicitly in the ingestion code's own doc comment, not hidden, and it is
-the reason Phase 5 could not test genuine category/PLP workloads (see
-`docs/WHY.md`). `BrandId(0)` is a similar sentinel for "no brand field on
-this real product" and is a real adversarial hazard any brand-based
-mechanism must exclude explicitly (Phase 4 found and fixed exactly this
-bug).
+The project enforces one architectural rule throughout: **semantic flexibility is resolved before or around compilation; query serving should stay deterministic and context-light.**
 
-## 2. Query compilation (Commerce IR)
+## 1. `commerce-core`
 
-`commerce_core::ir::compile` turns a raw query string into a typed
-`CommerceQuery`: spans are resolved against a `SemanticLexicon` into
-`ResolvedConstraint`s (structural facts — brand, color, etc.) or left as
-`residual_lexical` (free text the lexicon didn't resolve). Ambiguity
-(`AmbiguousSpan`) is a first-class outcome, not collapsed to a guess, when
-the lexicon has multiple competing candidates for a span and no signal to
-choose between them (ADR-0002) — this is the mechanism CLAUDE.md's
-"preserve ambiguity explicitly" rule actually cashes out as. Coverage
-(`ir::coverage::measure_coverage`) reports what fraction of a query
-corpus resolves fully structurally, as a real, measured metric, not an
-estimate.
+`crates/commerce-core` is the engine. Evaluation crates do not become dependencies of it.
 
-## 3. Physical operators (`commerce_core::index`)
+Its major responsibilities are:
 
-`CatalogIndex` is the immutable structural index: compact IDs, per-value
-`RoaringBitmap`s for enum attributes (brand, color, ...), used for:
+- `domain` — Product/Variant and typed attribute concepts;
+- `ir` — query compilation into typed Commerce IR;
+- `index` — bitmap/range/facet/identifier physical structures;
+- `plan` — native/delegate composition;
+- `admission` — conservative routing decisions;
+- `control_plane` — offline proposal/replay/promotion primitives;
+- `state` — mutable availability overlay.
 
-- **Filtering** (`indexed_candidates`) — bitmap AND across every resolved
-  structural constraint. This is the operation behind every large
-  filter-only speedup measured in Phases 2–5.
-- **Faceting** (`facet_counts`, `brand_facet_counts`, and their `_by_scan`
-  counterparts) — count candidates per distinct attribute value. Phase 5
-  found the original implementation is `O(global attribute vocabulary)`
-  regardless of candidate-set size (a real, measured 35–420ms cost at this
-  catalog's 175K–206K-value cardinality); the `_by_scan` variants
-  (`O(|candidates|)`, added and parity-tested in Phase 5) fix this for
-  small-to-medium candidate sets, but scan cost is still linear in
-  candidate-set size, so a real crossover exists (measured at roughly
-  9,000–12,000 candidates in this catalog) past which the *original*
-  vocabulary-scan implementation, or Solr, wins instead. **No operator
-  selects between the two automatically today** — this is exactly the
-  cardinality-aware planning gap named in `docs/WHAT.md` and targeted for
-  Phase 6+.
-- **Sorting** (`execute_ranked` / `native_title_sorted`-style helpers) — a
-  full sort of the candidate set. Phase 5 found and disclosed this is a
-  naive full `O(n log n)` sort even though only a page of results is ever
-  needed, so its speedup collapses for large result sets (measured as low
-  as 1.65x on an 11,264-product group) — a known, real, *not yet fixed*
-  inefficiency, not a fundamental property of native sorting.
-- **Ranking within a candidate set** (`index::rank`) — Phase 2 (P2-E17)
-  found this has no real relevance signal when `query.preferences` is
-  empty (which it is for the compiled baseline lexicon), so ties break on
-  ascending `(product_id, variant_id)`, not relevance. This is the direct
-  cause of the NDCG gap Phase 3/4 both measured between native and Solr on
-  the same admitted queries — a known, unfixed, disclosed limitation, not
-  an oversight discovered late.
+## 2. Query compilation and ambiguity
 
-## 4. Admission (the serving-time routing decision)
+The compiler resolves known commerce phrases into structural constraints and preserves residual lexical text. Ambiguous meaning is not supposed to become a hard filter merely because one interpretation exists.
 
-`commerce_core::admission` is the single decision point between routing a
-query to the native path and forwarding it unmodified to Solr
-(`docs/adr/0008-narrow-to-structural-planning-layer.md`,
-`docs/adr/0009-structural-lexical-execution-contract.md`). It is
-deliberately cheap — no delegate call, no index execution beyond a
-selectivity check — because its cost is paid on every query, including
-every rejected one. Three mechanisms are independently verified and kept,
-each strictly additive with the others (Phase 3, `P3-E06`/`P3-E10`/
-`P3-E16`):
+Historical experiments found several real compiler-resolution defects; the current baseline includes the corrections that survived RED-test/adversarial-review cycles. One typed-ambiguity performance question remains isolated in Issue #51.
 
-1. **`admit`** — fully structurally resolved query, no residual.
-2. **`admit_structurally_anchored_lexical`** — at least one structural
-   constraint plus a lexically-narrowed residual.
-3. **`admit_single_token_lexical`** — exactly one residual token
-   (structural constraint optional).
+## 3. Physical indexes
 
-A rejected query is forwarded to Solr **exactly as if commerce-native did
-not exist** — this is what keeps the measured fallback tax statistically
-indistinguishable from zero (Phase 3, P3-E01).
+The serving path uses specialized structures rather than a universal document schema.
 
-### Semantic enrichment before admission (Phase 4)
+### Bitmaps and typed structural constraints
 
-`commerce_core::control_plane::implication` sits in front of admission: a
-compiled `ImplicationTable` can add resolved facts to a query (e.g. "air
-force 1" implies Brand=Nike) before the same three admission mechanisms
-run. `ImplicationTable::compile` enforces two safety properties
-structurally, not just by test: only `Promoted`-status rules are ever
-served, and conflicting `Promoted` rules sharing the same trigger cause
-that trigger to abstain entirely at compile time (found and fixed as a
-real bug during Phase 4's own adversarial review, not from a test
-failure).
+Enum-like values and typed IDs use compact IDs / Roaring bitmaps. Variant-safe matching is handled by typed constraints rather than ad-hoc string filtering.
 
-## 5. Backend delegation (today: an eval-harness integration, not a real adapter contract)
+### Numeric/range
 
-`commerce_core::plan` defines a `LexicalDelegate` trait and composes it
-with `CatalogIndex` into three execution outcomes (Phase 2, ADR-0009):
-**FastPath** (fully structural, delegate never called), **Hybrid**
-(structural narrowing then delegate ranks the narrowed set), and **Punt**
-(delegate searches, native verifies). `commerce_core` itself has zero
-dependency on any concrete lexical engine — the only implementation of
-`LexicalDelegate` lives in `phase2-eval`, wrapping a Tantivy index. Solr is
-used throughout Phases 3–5 as the fair-baseline comparison target via
-`round1_eval::solr`, not as an implementation of `LexicalDelegate` — **there
-is no production "backend contract/adapter" abstraction yet** that would
-let Solr or Havenask be swapped in behind the planner at serving time; that
-is a Phase 9 target (Issue #21), not built today. Do not read
-`round1_eval::solr`'s HTTP client as that contract.
+Numeric constraints use typed numeric structures rather than lexical token matching.
 
-## 6. Mutable commerce state (Issue #8)
+### Faceting
 
-`commerce_core::state::CommerceStateOverlay` is a real, running mechanism
-for one specific field class: variant availability/OOS. It is
-deliberately independent of `CatalogIndex` (the immutable structural
-index knows nothing about mutable state, and the overlay knows nothing
-about brand/category semantics) — they compose only through
-`commerce_core::plan::execute_with_overlay`. The mechanism is in-place
-`RoaringBitmap` mutation, the same physical idea Havenask/IndexLib
-independently converged on for this class of field per
-`docs/research/havenask-realtime-update-archaeology.md` (a clean-room
-implementation, not derived from Havenask's source). Two real limitations
-are tracked as open issues, not silently accepted: no durability/replay
-across a restart (**Issue #12**), and a single coarse-grained `RwLock`
-rather than a finer-grained concurrency primitive (**Issue #11**). This
-overlay does **not** cover price or general typed attributes, and there is
-no per-tenant bundle concept yet.
+The code contains both scan-style and ordinal/dictionary counting families. Phase 6D is important because it changed the interpretation of earlier facet results: the old crossover was primarily a property of the naive scan algorithm, not a fundamental limit of commerce-native faceting. The ordinal method beat Solr across every tested WANDS scale-ladder checkpoint for the color case, while typed-ID facets still showed a small-candidate crossover because ordinal counting has a fixed dictionary-reset cost.
 
-## 7. Control-plane learning lifecycle (offline, never in the hot path)
+There is not yet a universal cost-based runtime chooser that selects every physical implementation optimally from measured cardinality.
 
-`commerce_core::control_plane` implements observe → propose → replay →
-promote (Gate 5, ADR-0005), the *only* place a model/LLM signal is allowed
-to enter this codebase, and only offline:
+### Identifier dictionary
 
-- **`observe_residual_terms`** — find real unresolved query terms from a
-  corpus.
-- **`ModelProvider`** (trait; `FixtureModelProvider` for tests — CLAUDE.md's
-  "no test may require a real model API key" rule) — proposes a candidate
-  resolution for an observed term.
-- **`replay`** — measures whether adopting a candidate lexicon strictly
-  improves coverage on the query corpus with no regression, before it is
-  ever considered for promotion.
-- **`check_precision`** (`PrecisionOracle` trait; `FixtureJudgmentOracle`
-  for tests) — a second, independent gate added after Round 1 (R1-E06)
-  found the coverage-only gate structurally cannot reject a nonsensical
-  mapping for a previously-unseen term. `try_promote_with_precision` is
-  additive; it does not change `try_promote`'s existing behavior.
-- **`ImplicationTable`** (Phase 4) is the same discipline applied to a
-  different rule shape (conjunction-of-facts rather than
-  competing-lexicon-candidates): propose from a real, zero-model-call
-  co-occurrence signal, replay against held-out judgments, gate on a false-
-  positive-rate ceiling, then compile to a versioned, inspectable lookup
-  table. Nothing on the query hot path calls a model.
+Issue #42 promoted `IdentifierClassifier` / `IdentifierDictionary` after the dedicated primitive outperformed variant-level lexical indexing on the measured exact-lookup/adversarial workload. Classification is statistics-based, not field-name-based.
 
-## 8. What does not exist yet (do not infer product-readiness from the above)
+## 4. Native + lexical execution
 
-To keep this document from reading as more built than it is:
+`commerce_core::plan::LexicalDelegate` keeps mature lexical retrieval outside the structural engine.
 
-- No per-tenant bundle, tenant isolation, or resource accounting of any
-  kind.
-- No cost/cardinality-aware planner that picks between native and Solr, or
-  between two native implementations, based on measured breakpoints — the
-  facet-scan and sort breakpoints above are *known* but not yet *acted on*
-  by any runtime decision.
-- No real backend-swap contract (Solr vs. Havenask behind one interface).
-- No scale-out, warmup, or cluster coordination of any kind — everything
-  above runs single-node, single-process.
-- No observability/explain/debug surface for why a query was admitted,
-  rejected, or enriched — today that information only exists as
-  eval-harness console output and CSV artifacts, not a queryable/servable
-  explain path.
-- No production polish — every binary in this repository is a benchmark or
-  evaluation harness (`src/bin/pXeNN_*.rs`), not a deployable service.
+The planner can execute:
+
+- **FastPath** — native-only structural execution;
+- **Hybrid** — structural narrowing plus lexical ranking;
+- **Punt** — lexical backend first, followed by native verification where required.
+
+Issue #42 added an optional compiled residual-token policy so residual words can be classified as required/preferred/contextual/unknown instead of always acting as a hard veto. Existing call sites can still pass `None` and preserve prior behavior.
+
+The concrete lexical/search baselines live in evaluation crates. `commerce-core` deliberately does not depend on Solr, Elasticsearch or OpenSearch.
+
+## 5. Dynamic merchant schema compilation
+
+Issue #38 tested the hot-path cost of compiling a merchant-discovered schema into physical structures.
+
+The naive generic tuple-key design was measurably slower because it allocated strings during lookup. A redesigned per-field compiled map removed that cost: the successful treatment matched the hand-coded path's allocation count and met the preregistered serving-overhead gate.
+
+The architectural conclusion is narrow but important: **merchant schema variability does not require runtime-generic serving.** Ingestion can discover/compile a field into a concrete physical operator before queries arrive.
+
+## 6. Learned semantic proposals
+
+Issue #42's E2b provided the first actual model-assisted feature-discovery evidence. The model produced useful semantic descriptors but failed the raw repeated-stability gate and lacked real Product/Variant/relationship-rich external validation.
+
+Issue #45 then tested deterministic canonicalization. It established two useful things:
+
+1. raw model wording/primitive choices should not own the installed schema;
+2. deterministic rules can absorb a large part of proposal instability without unsafe promotion.
+
+The E2c canonicalizer is still an experimental/evaluation boundary, not a production service. The active Issue #47 tests adaptive consensus and model capability/cost before any productionization decision.
+
+## 7. Mutable commerce state
+
+`CommerceStateOverlay` keeps variant availability separate from immutable semantic/index state and composes through query execution. This avoids rebuilding semantic structures for every OOS event.
+
+Known limitations are intentionally tracked separately:
+
+- #11 — coarse `RwLock` concurrency;
+- #12 — no restart durability/replay.
+
+## 8. Multi-tenant findings vs. multi-tenant product code
+
+Phase 7/8 evaluation crates measured packing/pooling, noisy-neighbor and correlated-burst behavior. Those results are evidence about the target operating model, **not proof that `commerce-core` contains a production tenant scheduler or isolation subsystem**.
+
+The important measured boundary is that pooled in-process native querying behaved well in steady state, while index rebuilds and a shared lexical backend created real cross-tenant tail-latency interference; correlated bursts amplified those known gaps.
+
+## 9. What is still experimental or absent
+
+- E2c/E2d adaptive learned compilation is not installed as production control-plane behavior.
+- No real Product/Variant/relationship-rich external dataset has yet closed the learned-schema external-validity gap.
+- No generic cost-based planner covers every measured operator crossover.
+- No production Solr/Elasticsearch/OpenSearch adapter lifecycle or service API exists.
+- No durable mutable-state log/snapshot mechanism.
+- No distributed serving / HA / sharding / replication.
+
+That boundary is deliberate. The repository adds product machinery only when a falsifiable experiment shows it is needed.
