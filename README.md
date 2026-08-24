@@ -1,12 +1,19 @@
 # Commerce-Native Search
 
-A research prototype for one question:
+A research prototype asking one core question:
 
-> **Can ecommerce search do less work by understanding commerce structure before query time?**
+> **Can an ecommerce search engine be faster, more flexible, more accurate, and more stable at the same time?**
 
-The current answer is: **sometimes, and only if the system stays narrow.**
+Not by putting a bigger model in every query. The hypothesis is that merchant-specific intelligence can be learned **offline**, compiled into deterministic commerce-aware structures, and then served through a small predictable runtime.
 
-This project keeps a small deterministic serving path for commerce-native work — typed filters, ranges, identifiers, faceting, variant constraints — and delegates open-ended lexical relevance to a mature search backend. An offline model can help interpret a merchant's catalog, but it never gets to make live query decisions or directly choose production data structures.
+In this project:
+
+- **Faster** means less CPU/latency for the commerce workloads that can use specialized execution.
+- **More flexible** means new merchants, categories, schemas, variants, and relationships should not require new serving code.
+- **More accurate** means structural specialization must preserve or improve retrieval correctness/relevance — speed obtained by dropping good results does not count.
+- **More stable** means deterministic installed semantics and predictable serving behavior even when catalogs are messy and model proposals are stochastic.
+
+The project has evidence for each piece, but has **not yet proved all four simultaneously end to end**. That is the research program.
 
 ```mermaid
 flowchart LR
@@ -16,10 +23,10 @@ flowchart LR
     D --> E[Compiled merchant context + indexes]
 
     Q[Shopper query] --> R[Commerce IR]
-    R --> P{Safely structural?}
-    P -->|yes| N[Native bitmap / range / ID execution]
+    R --> P{Best execution path?}
+    P -->|structural| N[Native bitmap / range / ID execution]
     P -->|mixed| H[Native narrowing + lexical ranking]
-    P -->|no| L[Mature lexical backend]
+    P -->|open-ended| L[Mature lexical backend]
     N --> K[Top-K results]
     H --> K
     L --> K
@@ -27,21 +34,20 @@ flowchart LR
 
 ## What the research has actually shown
 
-| Finding | Current conclusion |
+| Goal | Current evidence |
 |---|---|
-| **Structural execution** | Real and often very fast, but conditional. It is not a universal replacement for Lucene/Solr/Elasticsearch-style retrieval. |
-| **Faceting** | Algorithm choice matters more than language/runtime. The ordinal implementation beats Solr across the tested WANDS scale ladder, while simpler scan methods have real crossovers. |
-| **Dynamic merchant schemas** | A schema discovered offline can compile to the same physical operators as hand-written code without meaningful hot-path overhead in the tested case. |
-| **Identifiers and residual text** | Dedicated identifier lookup and a compiled residual-token policy both survived adversarial testing and are now part of `commerce-core`. |
-| **LLM-assisted catalog understanding** | Useful, but not trusted. LLM + deterministic validation materially beats a statistics-only floor; raw model outputs remain unstable enough that deterministic canonicalization/consensus is still an active research problem. |
-| **Multi-tenant economics** | Pooling is promising under normal load, but rebuild churn and shared lexical-backend contention create real tail-latency isolation gaps, amplified during correlated bursts. |
+| **Faster** | Structural execution can be dramatically cheaper than generic retrieval, but only in measured workload regions. Faceting also showed that the right physical algorithm matters more than language/runtime alone. |
+| **More flexible** | A dynamically discovered merchant schema can compile into the same physical operators as hand-written code without meaningful hot-path overhead in the tested case; mixed/unseen synthetic catalogs did not require vertical-specific serving branches. |
+| **More accurate** | The project rejected the original whole-engine replacement thesis because mature lexical ranking was better. The current design delegates open-ended relevance and only promotes specialized paths when correctness/relevance survives explicit gates. |
+| **More stable** | LLM proposals are useful but stochastic. Deterministic validation/canonicalization substantially reduces that instability and prevents confirmed unsafe promotions; adaptive consensus is the current research frontier. |
 
-A few representative measurements, with the full caveats preserved in the decision records:
+A few representative measurements, with full caveats preserved in the decision records:
 
 - Real-catalog experiments reached **1.2M products** and a **22,458-query judged corpus**.
-- WANDS ordinal faceting beat Solr at every tested point in the 1x–20x controlled scale ladder (**2.5x–72.6x** depending on the checkpoint).
+- WANDS ordinal faceting beat Solr at every tested point in the 1x–20x controlled scale ladder (**2.5x–72.6x**, depending on checkpoint).
 - E2b feature discovery: **LLM + deterministic validator macro F1 0.7697 vs. 0.5366** for statistics-only.
 - E2c: true raw full-descriptor agreement was **74.96%**; deterministic canonicalization raised it to **95.20%** for a single-proposal reading and **100%** for the measured ensemble reading. The experiment still concluded **REVISE**, not GO.
+- Multi-tenant pooling looked economically promising in steady state, but rebuild churn and a shared lexical backend produced real tail-latency isolation gaps that became worse/more reliable under correlated bursts.
 
 ## The architecture being tested
 
@@ -49,7 +55,7 @@ The structural serving pieces are real `commerce-core` code. The general model-a
 
 ```mermaid
 flowchart TB
-    subgraph Offline[Offline / ingestion]
+    subgraph Offline[Offline: flexibility + intelligence]
         P1[Catalog profiling]
         P2[Semantic problem compression]
         P3[Model / heuristic proposals]
@@ -58,12 +64,12 @@ flowchart TB
         P1 --> P2 --> P3 --> P4 --> P5
     end
 
-    subgraph Serving[Query serving]
+    subgraph Serving[Serving: speed + accuracy + stability]
         S1[Query compiler]
         S2[Planner]
         S3[Structural indexes]
         S4[Lexical delegate]
-        S5[Deterministic ranking / top-K]
+        S5[Ranking / top-K]
         S1 --> S2
         S2 --> S3 --> S5
         S2 --> S4 --> S5
@@ -73,15 +79,16 @@ flowchart TB
     P5 --> S2
 ```
 
-The important boundary is simple: **models propose; deterministic code decides what may be installed; serving stays model-free.**
+The boundary is deliberate: **models propose; deterministic code decides what may be installed; serving stays model-free.**
 
 ## What this is not
 
 - Not a production search service.
 - Not a claim that Rust is generally faster than Lucene.
 - Not an Elasticsearch-compatible document engine or query DSL.
-- Not an attempt to rebuild BM25 or general lexical relevance from scratch.
+- Not an attempt to rebuild mature lexical ranking from scratch.
 - No LLM call in the normal query hot path.
+- No claim that one specialized execution path should handle every query.
 - No distributed serving, sharding, HA, or Kubernetes work until the single-node thesis requires it.
 
 ## What is being tested now
