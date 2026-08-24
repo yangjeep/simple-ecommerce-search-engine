@@ -15,17 +15,18 @@
 //!
 //! Usage: `e2d_adaptive_consensus_eval [calibration|heldout] [out.json]`
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 
 use issue42_eval::e2b_oracle::{automotive_oracle, wands_oracle};
-use issue42_eval::e2b_schema::{LlmPassOutput, SemanticRole};
+use issue42_eval::e2b_schema::{Descriptor, LlmPassOutput, SemanticRole};
 use issue42_eval::e2b_validator::wands_query_texts;
 use issue42_eval::e2b_workload::{automotive_unified_stats, load_wands_feed, UnifiedFieldStats};
 use issue42_eval::e2c_canonicalizer::canonicalize;
 use issue42_eval::e2c_metrics::{
-    group_by_real_key, leave_one_out_outcomes, pairwise_stability, Treatment,
+    group_by_real_key, leave_one_out_outcomes, pairwise_stability, retrieval_significant_recall,
+    Treatment,
 };
 use issue42_eval::e2c_schema::CanonicalOutcome;
 use issue42_eval::e2d_controller::{cyclic_rotations, run_controller, ControllerTrace};
@@ -50,6 +51,54 @@ fn load_pool(prefix: &str, config: &str) -> Vec<LlmPassOutput> {
 
 fn promoted_role(outcome: &CanonicalOutcome) -> Option<SemanticRole> {
     outcome.promoted().map(|d| d.semantic_role)
+}
+
+/// Phase A GO-gate criterion 1 (`ISSUE47_PROTOCOL.md` section 11):
+/// zero confirmed unsafe accepted structural classifications. Reuses
+/// `e2c_metrics::unsafe_accepted_count` -- E2b/E2c's own corrected
+/// definition (a promoted descriptor whose oracle-confirmed real role is
+/// Identifier or Relationship) -- rather than a generic oracle-role
+/// mismatch count, since disagreement and unsafety are not the same
+/// thing (e.g. `productwarranty`/`heat_range` in E2c's own precedent are
+/// disagreements, not unsafe promotions).
+struct SafetyBreakdown {
+    unsafe_count: usize,
+    unsafe_keys: Vec<String>,
+    disagreement_count: usize,
+    disagreeing_keys: Vec<String>,
+}
+
+fn safety_breakdown(
+    promoted_keys_and_roles: &[(String, SemanticRole)],
+    oracle: &BTreeMap<String, SemanticRole>,
+) -> SafetyBreakdown {
+    let unsafe_count =
+        issue42_eval::e2c_metrics::unsafe_accepted_count(promoted_keys_and_roles, oracle);
+    // Mirrors e2c_metrics::unsafe_accepted_count's own (fixed) definition
+    // exactly -- oracle says Identifier/Relationship AND the promoted
+    // role does not match -- so this list is never inconsistent with
+    // `unsafe_count` above.
+    let unsafe_keys: Vec<String> = promoted_keys_and_roles
+        .iter()
+        .filter(|(k, role)| {
+            matches!(
+                oracle.get(k),
+                Some(SemanticRole::Identifier) | Some(SemanticRole::Relationship)
+            ) && oracle.get(k) != Some(role)
+        })
+        .map(|(k, _)| k.clone())
+        .collect();
+    let disagreeing_keys: Vec<String> = promoted_keys_and_roles
+        .iter()
+        .filter(|(k, role)| oracle.get(k).map(|o| o != role).unwrap_or(false))
+        .map(|(k, _)| k.clone())
+        .collect();
+    SafetyBreakdown {
+        unsafe_count,
+        disagreement_count: disagreeing_keys.len(),
+        unsafe_keys,
+        disagreeing_keys,
+    }
 }
 
 struct KeyResult {
@@ -139,11 +188,32 @@ fn oracle_by_key() -> BTreeMap<String, SemanticRole> {
     oracle
 }
 
+/// Full per-key promoted-role map -- transparency for adversarial review
+/// (so "does treatment X's promoted set actually equal treatment Y's"
+/// can be checked directly, key by key, not inferred from aggregate
+/// counts alone) and the basis this checkpoint's own log uses to verify
+/// A2/A3 promote an identical set to A1 on the held-out data before
+/// inheriting A1's own end-to-end relevance result rather than
+/// recomputing it independently.
+fn promoted_role_map(
+    promoted_keys_and_roles: &[(String, SemanticRole)],
+) -> BTreeMap<String, SemanticRole> {
+    promoted_keys_and_roles.iter().cloned().collect()
+}
+
+fn oracle_all() -> Vec<Descriptor> {
+    wands_oracle()
+        .into_iter()
+        .chain(automotive_oracle())
+        .collect()
+}
+
 fn summarize_treatment_a2_or_a3(
     label: &str,
     results: &[KeyResult],
     pick: impl Fn(&KeyResult) -> &Vec<ControllerTrace>,
     oracle: &BTreeMap<String, SemanticRole>,
+    oracle_all: &[Descriptor],
 ) -> serde_json::Value {
     let mut depth = DepthStats::default();
     let mut n_used_per_key = Vec::new();
@@ -151,7 +221,6 @@ fn summarize_treatment_a2_or_a3(
     let mut promoted_keys_and_roles: Vec<(String, SemanticRole)> = Vec::new();
     let mut certified_count = 0usize;
     let mut agg_stability = issue42_eval::e2c_metrics::StabilityCounts::default();
-    let mut oracle_disagreements = 0usize;
 
     for r in results {
         let traces = pick(r);
@@ -166,9 +235,6 @@ fn summarize_treatment_a2_or_a3(
         }
         if let Some(role) = promoted_role(&primary.final_outcome) {
             promoted_keys_and_roles.push((r.real_key.clone(), role));
-            if oracle.get(&r.real_key).map(|o| *o != role).unwrap_or(false) {
-                oracle_disagreements += 1;
-            }
         }
         let stab = rotation_stability(traces);
         agg_stability.add(&stab);
@@ -177,6 +243,12 @@ fn summarize_treatment_a2_or_a3(
     let abstention = abstention_rate(&outcomes_primary_order);
     let mean_depth = depth.mean();
     let reduction_vs_fixed5 = 1.0 - (mean_depth / 5.0);
+    let safety = safety_breakdown(&promoted_keys_and_roles, oracle);
+    let promoted_set: BTreeSet<String> = promoted_keys_and_roles
+        .iter()
+        .map(|(k, _)| k.clone())
+        .collect();
+    let rs_recall = retrieval_significant_recall(&promoted_set, oracle_all);
 
     serde_json::json!({
         "label": label,
@@ -191,31 +263,39 @@ fn summarize_treatment_a2_or_a3(
         "role_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.role_agree, agg_stability.total_pairs) * 100.0,
         "primitive_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.primitive_agree, agg_stability.total_pairs) * 100.0,
         "full_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.full_agree, agg_stability.total_pairs) * 100.0,
-        "oracle_disagreements_among_promoted": oracle_disagreements,
+        "unsafe_accepted_count": safety.unsafe_count,
+        "unsafe_accepted_keys": safety.unsafe_keys,
+        "oracle_disagreements_among_promoted": safety.disagreement_count,
+        "oracle_disagreeing_keys": safety.disagreeing_keys,
+        "retrieval_significant_recall_pct": rs_recall * 100.0,
         "n_promoted": promoted_keys_and_roles.len(),
+        "promoted_role_by_key": promoted_role_map(&promoted_keys_and_roles),
     })
 }
 
 fn summarize_a1(
     results: &[KeyResult],
     oracle: &BTreeMap<String, SemanticRole>,
+    oracle_all: &[Descriptor],
 ) -> serde_json::Value {
     let mut agg_stability = issue42_eval::e2c_metrics::StabilityCounts::default();
     let mut outcomes_full = Vec::new();
     let mut promoted_keys_and_roles: Vec<(String, SemanticRole)> = Vec::new();
-    let mut oracle_disagreements = 0usize;
     for r in results {
         let stab = pairwise_stability(&r.a1_leave_one_out);
         agg_stability.add(&stab);
         outcomes_full.push(r.a1_full.clone());
         if let Some(role) = promoted_role(&r.a1_full) {
             promoted_keys_and_roles.push((r.real_key.clone(), role));
-            if oracle.get(&r.real_key).map(|o| *o != role).unwrap_or(false) {
-                oracle_disagreements += 1;
-            }
         }
     }
     let abstention = abstention_rate(&outcomes_full);
+    let safety = safety_breakdown(&promoted_keys_and_roles, oracle);
+    let promoted_set: BTreeSet<String> = promoted_keys_and_roles
+        .iter()
+        .map(|(k, _)| k.clone())
+        .collect();
+    let rs_recall = retrieval_significant_recall(&promoted_set, oracle_all);
     serde_json::json!({
         "label": "A1_fixed5",
         "n_keys": results.len(),
@@ -226,28 +306,36 @@ fn summarize_a1(
         "role_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.role_agree, agg_stability.total_pairs) * 100.0,
         "primitive_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.primitive_agree, agg_stability.total_pairs) * 100.0,
         "full_stability_pct": issue42_eval::e2c_metrics::StabilityCounts::rate(agg_stability.full_agree, agg_stability.total_pairs) * 100.0,
-        "oracle_disagreements_among_promoted": oracle_disagreements,
+        "unsafe_accepted_count": safety.unsafe_count,
+        "unsafe_accepted_keys": safety.unsafe_keys,
+        "oracle_disagreements_among_promoted": safety.disagreement_count,
+        "oracle_disagreeing_keys": safety.disagreeing_keys,
+        "retrieval_significant_recall_pct": rs_recall * 100.0,
         "n_promoted": promoted_keys_and_roles.len(),
+        "promoted_role_by_key": promoted_role_map(&promoted_keys_and_roles),
     })
 }
 
 fn summarize_a0(
     results: &[KeyResult],
     oracle: &BTreeMap<String, SemanticRole>,
+    oracle_all: &[Descriptor],
 ) -> serde_json::Value {
     let mut outcomes = Vec::new();
     let mut promoted_keys_and_roles: Vec<(String, SemanticRole)> = Vec::new();
-    let mut oracle_disagreements = 0usize;
     for r in results {
         outcomes.push(r.a0.clone());
         if let Some(role) = promoted_role(&r.a0) {
             promoted_keys_and_roles.push((r.real_key.clone(), role));
-            if oracle.get(&r.real_key).map(|o| *o != role).unwrap_or(false) {
-                oracle_disagreements += 1;
-            }
         }
     }
     let abstention = abstention_rate(&outcomes);
+    let safety = safety_breakdown(&promoted_keys_and_roles, oracle);
+    let promoted_set: BTreeSet<String> = promoted_keys_and_roles
+        .iter()
+        .map(|(k, _)| k.clone())
+        .collect();
+    let rs_recall = retrieval_significant_recall(&promoted_set, oracle_all);
     serde_json::json!({
         "label": "A0_single",
         "n_keys": results.len(),
@@ -255,8 +343,13 @@ fn summarize_a0(
         "raw_batched_call_count": 1,
         "reduction_vs_fixed5_pct": 80.0,
         "abstention_rate_pct": abstention * 100.0,
-        "oracle_disagreements_among_promoted": oracle_disagreements,
+        "unsafe_accepted_count": safety.unsafe_count,
+        "unsafe_accepted_keys": safety.unsafe_keys,
+        "oracle_disagreements_among_promoted": safety.disagreement_count,
+        "oracle_disagreeing_keys": safety.disagreeing_keys,
+        "retrieval_significant_recall_pct": rs_recall * 100.0,
         "n_promoted": promoted_keys_and_roles.len(),
+        "promoted_role_by_key": promoted_role_map(&promoted_keys_and_roles),
     })
 }
 
@@ -281,6 +374,7 @@ fn main() {
     let automotive_stats = automotive_unified_stats(1500);
     let wands_queries = wands_query_texts();
     let oracle = oracle_by_key();
+    let oracle_descriptors = oracle_all();
 
     let configs: &[&str] = if mode == "calibration" {
         &["automotive"]
@@ -308,10 +402,10 @@ fn main() {
             config.to_string(),
             serde_json::json!({
                 "n_keys_evaluated": results.len(),
-                "a0": summarize_a0(&results, &oracle),
-                "a1": summarize_a1(&results, &oracle),
-                "a2": summarize_treatment_a2_or_a3("A2_adaptive_C", &results, |r| &r.a2_rotations, &oracle),
-                "a3": summarize_treatment_a2_or_a3("A3_conservative_D", &results, |r| &r.a3_rotations, &oracle),
+                "a0": summarize_a0(&results, &oracle, &oracle_descriptors),
+                "a1": summarize_a1(&results, &oracle, &oracle_descriptors),
+                "a2": summarize_treatment_a2_or_a3("A2_adaptive_C", &results, |r| &r.a2_rotations, &oracle, &oracle_descriptors),
+                "a3": summarize_treatment_a2_or_a3("A3_conservative_D", &results, |r| &r.a3_rotations, &oracle, &oracle_descriptors),
             }),
         );
         all_results.extend(results);
@@ -325,10 +419,10 @@ fn main() {
         "n_total_keys": all_results.len(),
         "per_config": per_config_summary,
         "combined": {
-            "a0": summarize_a0(&all_results, &oracle),
-            "a1": summarize_a1(&all_results, &oracle),
-            "a2": summarize_treatment_a2_or_a3("A2_adaptive_C", &all_results, |r| &r.a2_rotations, &oracle),
-            "a3": summarize_treatment_a2_or_a3("A3_conservative_D", &all_results, |r| &r.a3_rotations, &oracle),
+            "a0": summarize_a0(&all_results, &oracle, &oracle_descriptors),
+            "a1": summarize_a1(&all_results, &oracle, &oracle_descriptors),
+            "a2": summarize_treatment_a2_or_a3("A2_adaptive_C", &all_results, |r| &r.a2_rotations, &oracle, &oracle_descriptors),
+            "a3": summarize_treatment_a2_or_a3("A3_conservative_D", &all_results, |r| &r.a3_rotations, &oracle, &oracle_descriptors),
         },
     });
 
