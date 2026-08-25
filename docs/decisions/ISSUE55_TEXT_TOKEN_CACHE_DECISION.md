@@ -75,3 +75,48 @@ traffic-weighted whole-workload economics question (P9-E02's full
 480-query mix is dominated by Punt-routed traffic, ~95.6% post-fix,
 unaffected by either of these fixes) — that remains a distinct, larger
 measurement named as this checkpoint's own next question.
+
+### Addendum (2026-08-25) — scope boundary found: regresses ~1.7x-2.3x on queries with empty residual-lexical/preferences
+
+The whole-workload follow-up checkpoint
+(`docs/decisions/ISSUE55_WHOLE_WORKLOAD_DECISION.md`) found that this
+fix's gain does **not** hold at every candidate-set size. On the 2 of
+this WANDS run's 21 `structural_routed` queries with zero structural
+constraints ("driftwood mirror", "marble" — `compile()`'s correct,
+expected output for pure noun-phrase text with no lexicon signal),
+`indexed_candidates` returns the entire 42,994-product catalog, and
+`execute_ranked` regresses by ~1.7x-2.3x after this fix (confirmed by
+three independent measurements: a single-shot embedded run, a 6x6
+matched-run comparison, and a dedicated 200-rep same-process
+microbenchmark, all agreeing on direction and magnitude — see the
+whole-workload log for full numbers).
+
+**Root cause**: both queries compile to empty `residual_lexical` and
+empty `preferences`, so this is not a token-lookup or cache-locality
+cost at all — the whole-workload checkpoint tested and falsified that
+theory directly (both sets are never touched for these two queries in
+either build). The real cause is in `execute_ranked`
+(`crates/commerce-core/src/index/rank.rs:205-217`): the post-fix code
+does an unconditional `index.product_location.get(&product)` `HashMap`
+lookup for every candidate before checking whether `residual_lexical`
+is empty, whereas the pre-fix `score_text_relevance` checked emptiness
+as its very first line and did zero work (no lookup, no tokenization)
+for exactly this case. At real `Hybrid`/typical-`FastPath` candidate
+sizes (median ~570-590), one extra hashmap lookup per candidate is
+negligible next to the tokenization cost the fix removes for
+non-empty-residual queries. At 42,994 candidates with an empty residual
+(these two queries), there was no tokenization cost to remove in the
+first place, so the fix's only effect is 42,994 added lookups — a pure
+regression. Full investigation, including the falsified cache-locality
+theory, is in the whole-workload log.
+
+**This does not reverse the KEEP verdict or the H3 reversal above** for
+the traffic segment they were actually measured on (candidate sets up to
+~5,000 — the large majority of real `structural_routed`/`Hybrid`
+traffic in this dataset, where the gain is real and reproduced again in
+the follow-up checkpoint). It narrows the claim: this fix is a
+confirmed win whenever a query has real residual lexical tokens to
+score, and a confirmed regression (proportional to candidate-set size)
+for queries with empty `residual_lexical` and `preferences`. The fix —
+hoist the emptiness check before the `product_location` lookup — is
+named as a follow-up experiment, not implemented speculatively here.
