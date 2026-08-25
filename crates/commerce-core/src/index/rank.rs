@@ -195,6 +195,20 @@ pub(super) fn execute_ranked(
     // hand via `lookup_variant`, not the merged attrs -- so this keeps the
     // P1-D cost fix intact while no longer leaving preference-less queries
     // with zero ranking signal at all.
+    // Issue #55 whole-workload checkpoint
+    // (`docs/decisions/ISSUE55_WHOLE_WORKLOAD_DECISION.md`): the
+    // `product_location` lookup below is real, non-free work (a `HashMap`
+    // hash + probe per candidate) that only pays for itself when there is
+    // a non-empty `residual_lexical` to score against
+    // `product_text_tokens`. A query with no residual lexical at all (the
+    // "no constraints -> everything" case, e.g. WANDS's real
+    // "driftwood mirror"/"marble") used to pay *zero* per-candidate cost
+    // here (the old, pre-token-cache `score_text_relevance` checked
+    // emptiness as its very first line); check both emptiness conditions
+    // once, outside the loop, so that case is restored to zero
+    // per-candidate cost instead of one avoidable hashmap lookup each.
+    let use_preferences = !query.preferences.is_empty();
+    let has_residual_lexical = !query.residual_lexical.is_empty();
     let scored: Vec<RankedHit> = index
         .execute(query, catalog)
         .into_iter()
@@ -202,7 +216,10 @@ pub(super) fn execute_ranked(
             let (p, v) = index
                 .lookup_variant(catalog, variant)
                 .expect("execute() only returns ids that exist in this catalog");
-            let score = if query.preferences.is_empty() {
+            let score = if use_preferences {
+                let attrs = effective_attributes(p, v);
+                score_preferences(&query.preferences, p, v, &attrs)
+            } else if has_residual_lexical {
                 let p_idx = *index
                     .product_location
                     .get(&product)
@@ -212,8 +229,7 @@ pub(super) fn execute_ranked(
                     &index.product_text_tokens[p_idx],
                 )
             } else {
-                let attrs = effective_attributes(p, v);
-                score_preferences(&query.preferences, p, v, &attrs)
+                0.0
             };
             RankedHit {
                 product,
@@ -522,6 +538,62 @@ mod tests {
         assert!(
             ranked.iter().all(|hit| hit.score == 2.0),
             "\"zoom\" is a title token, so both of this product's variants should score 2.0: {ranked:?}"
+        );
+    }
+
+    fn product_with_id(id: u64, title: &str) -> Product {
+        Product {
+            id: ProductId(id),
+            product_type: ProductTypeId(1),
+            brand: BrandId(1),
+            category: CategoryId(1),
+            title: title.to_string(),
+            attributes: attributes([]),
+            variants: vec![Variant {
+                id: VariantId(id),
+                attributes: attributes([]),
+                price: crate::domain::Price::usd(999),
+                inventory: crate::domain::Inventory::in_stock(1),
+            }],
+        }
+    }
+
+    /// Issue #55 whole-workload checkpoint
+    /// (`docs/decisions/ISSUE55_WHOLE_WORKLOAD_DECISION.md`): a query with
+    /// empty `residual_lexical` and empty `preferences` used to still pay
+    /// a `product_location` hashmap lookup per candidate even though the
+    /// score is trivially `0.0` regardless. This proves output is
+    /// unaffected by the reordering (every hit scores `0.0`, ties break on
+    /// ascending `(product_id, variant_id)` exactly as `rank_order`
+    /// documents) on a real multi-product catalog, not just the single
+    /// pre-existing fixture. The latency claim itself is measured
+    /// separately by `p9_e05_full_catalog_ranking_tail` against real WANDS
+    /// data.
+    #[test]
+    fn execute_ranked_short_circuits_to_zero_when_residual_and_preferences_are_both_empty() {
+        let catalog = Catalog {
+            products: vec![
+                product_with_id(3, "Zebra Print Rug"),
+                product_with_id(1, "Aardvark Lamp"),
+                product_with_id(2, "Marble Table"),
+            ],
+        };
+        let index = CatalogIndex::build(&catalog);
+        let query = CommerceQuery::default();
+        assert!(query.residual_lexical.is_empty());
+        assert!(query.preferences.is_empty());
+
+        let ranked = execute_ranked(&index, &query, &catalog, 10);
+        assert_eq!(ranked.len(), 3, "{ranked:?}");
+        assert!(
+            ranked.iter().all(|hit| hit.score == 0.0),
+            "empty residual_lexical/preferences must score every hit 0.0: {ranked:?}"
+        );
+        let ids: Vec<u64> = ranked.iter().map(|hit| hit.product.0).collect();
+        assert_eq!(
+            ids,
+            vec![1, 2, 3],
+            "all tied at 0.0, so ties break on ascending product id: {ranked:?}"
         );
     }
 }

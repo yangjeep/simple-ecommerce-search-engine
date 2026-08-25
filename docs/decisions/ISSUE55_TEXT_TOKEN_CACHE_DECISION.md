@@ -120,3 +120,11 @@ score, and a confirmed regression (proportional to candidate-set size)
 for queries with empty `residual_lexical` and `preferences`. The fix —
 hoist the emptiness check before the `product_location` lookup — is
 named as a follow-up experiment, not implemented speculatively here.
+
+**Update (2026-08-25)**: that follow-up is implemented and validated in
+`docs/decisions/ISSUE55_EMPTY_RESIDUAL_FIX_DECISION.md` — KEEP, the
+regression is closed, and the confirmed-win path gains a small
+additional improvement from the same reorder. This scope-boundary
+addendum is preserved verbatim rather than deleted, per this project's
+evidence-preservation discipline, but no longer describes a live
+regression.
