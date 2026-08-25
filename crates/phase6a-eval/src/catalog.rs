@@ -45,6 +45,37 @@ fn normalize(s: &str) -> String {
     s.trim().to_lowercase()
 }
 
+/// Issue #55 (`docs/experiments/ISSUE55_PRODUCT_CLASS_INGESTION_PROTOCOL.md`):
+/// resolves the effective `product_class` string to key a `ProductTypeId`
+/// from, handling two real, disclosed WANDS data-quality gaps found by
+/// direct investigation of `dataset_cache/wands/catalog.jsonl`, neither
+/// invented nor guessed:
+///
+/// 1. **Null/empty `product_class`** (2,852 of 42,994 products, 6.64%)
+///    used to fall straight to the `UNKNOWN_PRODUCT_TYPE` sentinel, even
+///    when the same record's own `category_depth_N` fields unambiguously
+///    imply a real, otherwise-lexicon-known type (e.g. product #10018
+///    "parkash bunk bed" has `product_class=None` but its deepest
+///    category depth is "Kids Beds" -- a real `product_class` value on
+///    other, non-null products). Falls back to the deepest available
+///    `category_depth_N` segment already present on the record -- no new
+///    data, just using a field this same record already carries instead
+///    of discarding it.
+/// 2. **Pipe-delimited multi-class strings** (2,247 products, 5.23%,
+///    e.g. `"Stackable Chairs|Dining Chairs"`) used to be ingested
+///    verbatim as one opaque compound string that could never match any
+///    single-type lexicon term. Uses the first segment instead -- a
+///    disclosed **partial** fix (a product tagged with a second-listed
+///    type a query resolves to still will not match; full multi-type
+///    membership would need a `Product`-level schema change, out of
+///    scope for this ingestion-only fix), not a claim of full recovery.
+fn effective_product_class(p: &WandsProduct) -> Option<&str> {
+    match p.product_class.as_deref() {
+        Some(raw) if !raw.trim().is_empty() => Some(raw.split('|').next().unwrap_or(raw).trim()),
+        _ => p.category_depths().last().map(|(_, v)| *v),
+    }
+}
+
 pub struct IngestedCatalog {
     pub catalog: Catalog,
     /// WANDS product_id string -> the ProductId assigned during
@@ -92,9 +123,7 @@ pub fn build_catalog(products: &[WandsProduct]) -> IngestedCatalog {
             })
             .unwrap_or(UNKNOWN_CATEGORY);
 
-        let product_type = p
-            .product_class
-            .as_deref()
+        let product_type = effective_product_class(p)
             .map(|raw| {
                 let key = normalize(raw);
                 *product_type_ids.entry(key.clone()).or_insert_with(|| {
