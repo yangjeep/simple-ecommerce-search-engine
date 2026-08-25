@@ -117,3 +117,29 @@ optimization does not touch. REVISE is confirmed as this thread's
 terminal state, not an artifact of R1's small fixture — closing this
 open item without re-opening a new investigation into the same
 mechanism.
+
+### Update (2026-08-25) — the Punt-path cost itself is confirmed inherent, not fixable: this thread is now fully closed
+
+`docs/decisions/ISSUE51_PUNT_COST_FLOOR_DECISION.md` answered the one
+question the update above left unpursued: is the `Punt`-path
+delegate-query cost that blocks the full gate a fixable treatment-side
+inefficiency? Isolating exactly the two real operations involved
+(`identifier_lookup` + `BitmapTantivyDelegate::search`), called
+directly with no surrounding treatment machinery, reproduced
+94.3%-98.8% of Treatment E's measured row-1 cost across two independent
+runs — essentially all of it. **The cost is inherent to correctly
+delegating to real lexical search when structural evidence cannot
+disambiguate, not an implementation defect anywhere in this session's
+own code.** A supplementary measurement found the fixture's own
+zero-hit case *understates* this: a genuine match costs 45.6x more
+than the zero-hit floor, meaning real traffic would cost even more than
+what blocked the gate here. R1's `<=5%`-vs-Treatment-A bar, as
+literally defined, cannot be cleared by any correctness-preserving
+treatment on a workload containing this row shape — this is a property
+of the gate's own framing, not of Treatment D/E's mechanism. This
+closes the Issue #51 overhead-gate thread definitively: no further
+checkpoint should spend effort trying to optimize the Punt-path cost
+down under the current architecture. The one remaining actionable
+direction (redefining what the gate measures, e.g. per-row-class
+overhead or a precision/cost tradeoff framing instead of a single
+aggregate ceiling) is named, not implemented.
