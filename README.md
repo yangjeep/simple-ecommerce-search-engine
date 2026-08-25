@@ -91,13 +91,15 @@ The boundary is deliberate: **models propose; deterministic code decides what ma
 - No claim that one specialized execution path should handle every query.
 - No distributed serving, sharding, HA, or Kubernetes work until the single-node thesis requires it.
 
-## What is being tested now
+## What was tested most recently
 
-The active control-plane experiment is **[Issue #47](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/47)**:
+**[Issue #47](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/47)** asked:
 
-> **How much model do we actually need once semantic compilation is deterministic?**
+> **How much model do we actually need once semantic compilation is deterministic, and exactly which semantic problems still force us to pay for a stronger model?**
 
-It tests adaptive consensus first, then freezes the controller and measures a model capability/cost frontier. A separate follow-up, **[#51](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/51)**, keeps the remaining typed-ambiguity serving question independent from that experiment.
+It tested a deterministic adaptive-consensus controller first, then froze that controller and measured a proposal-model capability/cost frontier (strong/mid/small tiers, plus a cheap→strong cascade) against it. Both phases concluded **REVISE** — full results in [`docs/decisions/ISSUE47_DECISION.md`](docs/decisions/ISSUE47_DECISION.md): the cascade specifically costs more than always using the strong model, single-tier substitution is a more promising but not yet clean direction, and external validity against a genuine Product/Variant/relationship dataset remains **NOT ESTABLISHED**. No architecture GO was made. Issue #47 is closed as research-complete.
+
+A separate, independent follow-up, **[#51](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/51)**, keeps the remaining typed-ambiguity serving question open.
 
 ## Repository map
 

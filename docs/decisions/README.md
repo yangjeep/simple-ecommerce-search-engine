@@ -24,6 +24,7 @@ These files are the compact verdicts for major research checkpoints. Read these 
 | [`ISSUE38_DECISION.md`](ISSUE38_DECISION.md) | Dynamic compiled merchant schema: hot-path overhead can be removed; unseen/mixed synthetic generalization succeeds within its stated scope. |
 | [`ISSUE42_DECISION.md`](ISSUE42_DECISION.md) | R2 residual policy and R3 identifier primitive GO; R1 and model-assisted E2b remain REVISE. |
 | [`ISSUE45_DECISION.md`](ISSUE45_DECISION.md) | Deterministic semantic canonicalization substantially reduces LLM instability but remains **REVISE** under the stricter single-proposal reading. |
+| [`ISSUE47_DECISION.md`](ISSUE47_DECISION.md) | Adaptive semantic consensus controller and proposal-model capability/cost frontier: both phases **REVISE**; cheap→strong cascade specifically rejected; external validity against a genuine Product/Variant dataset remains NOT ESTABLISHED. |
 
 ## How to read old numbers
 

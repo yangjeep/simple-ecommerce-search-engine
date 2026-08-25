@@ -266,17 +266,21 @@ identical abstention rate across every depth.
    already carry -- not independently confirmed here, explicitly by
    inheritance. **PASS-by-inheritance, disclosed as such.**
 6. **Average per-key depth reduced by >=40% vs fixed-5** -- 20.38%
-   combined under the per-key unit. **FAIL.** (automotive alone: 37.65%,
-   close to this controller design's own mechanical ceiling;
-   wands_baseline alone: 12.22%, far below.) Under the protocol's own
-   *other* preregistered cost unit (raw batched-call count, the
-   deployment-relevant one given this repo's real batching mechanism),
-   the reduction is **0%** in every scope measured -- both
-   configurations have at least one straggler key that never certifies
-   before exhausting the pool, so a real deployment issuing whole-config
-   batched draws would need the same 5 calls A1 already needs. **FAIL
-   under both cost units, more starkly under the deployment-relevant
-   one.**
+   combined under the per-key unit. **FAIL, even before batching
+   inefficiency is considered** (automotive alone: 37.65%, close to this
+   controller design's own mechanical ceiling; wands_baseline alone:
+   12.22%, far below). Under the protocol's own *other* preregistered
+   cost unit (raw batched-call count, the deployment-relevant one given
+   this repo's real batching mechanism), full-configuration batching then
+   further eliminates the remaining realized API-call savings entirely:
+   the reduction is **0%** in every scope measured -- both configurations
+   have at least one straggler key that never certifies before
+   exhausting the pool, so a real deployment issuing whole-config batched
+   draws would need the same 5 calls A1 already needs. This 0% is a
+   property of this repo's own full-configuration batching, not proof
+   that adaptive consensus inherently saves zero inference in every
+   possible deployment shape. **FAIL under both cost units, more starkly
+   under the deployment-relevant one.**
 7. **Savings not achieved primarily through excessive abstention** --
    A2/A3's own abstention rate (11.32%) is *identical* to A1's own
    (11.32%) -- the modest reduction achieved is genuine early
@@ -433,11 +437,16 @@ adversarial review) and, after the vacuous-certification fix, its own
 diagnostic reporting is now honest about when a stop is genuinely proven
 versus merely pool-exhausted.
 
-**Economics is not established**: 20.38% combined reduction under the
-per-key cost unit, well short of the preregistered 40% target, and
-**0% reduction under the protocol's own deployment-relevant
-raw-batched-call-count unit** in every scope measured, because every
-configuration has at least one straggler key. The corrected
+**Economics is not established**: the controller fails the efficiency
+target even before batching inefficiency is considered -- 20.38%
+combined reduction under the per-key cost unit, well short of the
+preregistered 40% target -- and full-configuration batching then further
+eliminates the remaining realized API-call savings: **0% reduction under
+the protocol's own deployment-relevant raw-batched-call-count unit** in
+every scope measured, because every configuration has at least one
+straggler key. This 0% reflects this repo's own whole-configuration
+batching mechanism, not an inherent property of adaptive consensus. The
+corrected
 certified-robust numbers sharpen why: on real WANDS data, only 30.56%
 of promoted keys are ever genuinely proven safe to stop early; the rest
 reach their answer only because the pool ran out, identical to what the
@@ -512,11 +521,17 @@ B4 (haiku alone, no escalation) is the only treatment that ever differs
 from the strong reference, on this one field, out of 53.
 
 **The headline finding: the cascade is not cheap.** B5's own true
-per-key cost (6.49 draws, counting both tiers whenever escalation
+per-key draw count (6.49 draws, counting both tiers whenever escalation
 fires) is **higher than B1's own fixed-5 opus ensemble (5.0)** --
-confirmed in real measured tokens too: the cascade's total cost
-(262,331 tokens, both tiers' full 10-call cost) is **159% of B1's own
-cost (164,528 tokens)**, not a saving. The mechanism is simple and, in
+confirmed in real measured token volume too: the cascade's total token
+volume (262,331 tokens, both tiers' full 10-call draws) is **159% of
+B1's own token volume (164,528 tokens)**, not a saving. **This is a
+token-volume/draw-count comparison, not a dollar-cost one**: no frozen
+per-tier pricing table was constructed, opus/sonnet/haiku tokens are not
+priced identically, and a mixed-tier token total is not itself a
+monetary figure -- monetary cost is recorded as NOT ESTABLISHED (see
+`ISSUE47_PROTOCOL.md` §10/§B5 for the disclosed token/draw units this
+checkpoint actually measured). The mechanism is simple and, in
 retrospect, unsurprising given Phase A's own findings: the escalation
 trigger (`certified_robust_at_stop`) is the same flag Phase A's
 adversarial review found only genuinely fires on a modest majority of
@@ -534,22 +549,23 @@ strong model for the hard ones in any meaningfully lopsided way; it is
 escalating roughly half of everything, retrieval-significant or not.
 
 **A genuinely more promising, distinct finding, not to be confused with
-the cascade's own failure**: committing to a *single* cheaper tier
-(never cascading) looks considerably better than cascading between
-tiers. B3 (sonnet alone) matches B2 (opus alone) **exactly** -- same
-promoted role for all 53 keys, same stability, same recall, same
-abstention -- at meaningfully lower per-call token cost (a same-family,
-smaller/cheaper model than opus). B4 (haiku alone) reaches 98.11%
-agreement with the opus reference (52 of 53 keys identical) at only
-59.5% of B1's own total token cost (97,803 vs. 164,528) -- cheaper, and
-only one field's worth of disagreement out of 53. **That one field is
-not a random unimportant miss, though**: it is `color`, the oracle's
-own highest-confidence retrieval-significant structural/attribute field
-(§ below has the full evidence) -- so B4's own result reads as a
-real-but-imperfect direction worth the caveat below, not a clean
-Pareto win on its own. Neither B3 nor B4 ever pays for a second tier;
-the cascade's own failure is specific to *cascading*, not to using a
-cheaper tier at all.
+the cascade's own failure**: committing to a *single* smaller/lower-
+list-price tier (never cascading) looks considerably better than
+cascading between tiers, in token volume/draw count -- monetary cost is
+NOT ESTABLISHED (no frozen per-tier pricing table exists to convert
+token volume into dollars). B3 (sonnet alone) matches B2 (opus alone)
+**exactly** -- same promoted role for all 53 keys, same stability, same
+recall, same abstention -- using a smaller, same-family model than
+opus. B4 (haiku alone) reaches 98.11% agreement with the opus reference
+(52 of 53 keys identical) at only 59.5% of B1's own total token volume
+(97,803 vs. 164,528) -- lower token volume, and only one field's worth
+of disagreement out of 53. **That one field is not a random unimportant
+miss, though**: it is `color`, the oracle's own highest-confidence
+retrieval-significant structural/attribute field (§ below has the full
+evidence) -- so B4's own result reads as a real-but-imperfect direction
+worth the caveat below, not a clean Pareto win on its own. Neither B3
+nor B4 ever pays for a second tier; the cascade's own failure is
+specific to *cascading*, not to using a cheaper tier at all.
 
 #### Phase B GO-gate evaluation (criteria per `ISSUE47_PROTOCOL.md` §B6)
 
@@ -585,55 +601,70 @@ cheaper tier at all.
    capability loss the `color` mismatch causes.
 5. **No material relevance regression** -- B3 inherits B2's own result
    by construction (byte-identical promoted set): **PASS-by-inheritance**.
-   B4/B5 differ from B2 on exactly one field, `color` -- **not a random
-   unimportant field**: independently checked against every confidence
-   value in `e2b_oracle.rs` (not just the reviewer's own characterization) --
-   it is the oracle's own highest-confidence (`0.9`) `RetrievalSignificant`
-   **structural/attribute** entry in the 53-key sample, second overall
-   only to `part_number`'s `1.0` (a categorically different kind of
-   field -- an exact-lookup identifier, not a descriptive attribute).
-   `e2b_oracle.rs`'s own annotation calls `color` "the single most
-   obvious real shopper query term in this sample." The reviewer's own
-   draft
-   cited "43 of 480 (~9%)" real queries containing "an explicit color
-   term"; independently reproduced directly against
-   `dataset_cache/wands/query.csv` before trusting it (per this repo's
-   own "do not trust the experiment author" discipline, applied to a
-   reviewer's own claim as much as to this session's own) -- the literal
+   B4 (haiku alone) differs from B2 on exactly one field, `color` -- **not
+   a random unimportant field**: independently checked against every
+   confidence value in `e2b_oracle.rs` (not just the reviewer's own
+   characterization) -- it is the oracle's own highest-confidence (`0.9`)
+   `RetrievalSignificant` **structural/attribute** entry in the 53-key
+   sample, second overall only to `part_number`'s `1.0` (a categorically
+   different kind of field -- an exact-lookup identifier, not a
+   descriptive attribute). `e2b_oracle.rs`'s own annotation calls `color`
+   "the single most obvious real shopper query term in this sample." B5
+   (the cascade) does **not** share this disagreement -- its primary
+   compiled output agrees with B2 on all 53 keys by construction; B5's
+   own failure is rotation-level stability (98.87%, criteria 2/3's floor
+   clause above), not a primary `color` mismatch, and should not be
+   conflated with B4's.
+   The reviewer's own draft cited "43 of 480 (~9%)" real queries
+   containing "an explicit color term"; independently reproduced directly
+   against `dataset_cache/wands/query.csv` before trusting it (per this
+   repo's own "do not trust the experiment author" discipline, applied to
+   a reviewer's own claim as much as to this session's own) -- the literal
    substring `"color"`/`"colour"` appears in only 2 of 480 queries, not
    43; matching real color **names** as whole words instead (`black`,
-   `navy`, `turquoise`, `rose gold`, etc. -- a 23-word list) gives **42
-   of 480 (8.75%)**, close to but not exactly the reviewer's own figure,
-   confirmed here as the number this log actually relies on: 42 real
-   shopper queries, not 43, and via color-name matching, not the literal
-   word "color." `retrieval_significant_recall` only checks whether a
-   key is
-   *promoted*, not whether its role/primitive is correct, so it cannot
-   see this: haiku's `free_text`/`LexicalPostings` compiles to
-   substring/contains matching, not the oracle's `enum`/`BitmapEnum`
-   exact-match faceting -- a real, likely material capability loss on a
-   field roughly one in eleven real queries touches, not a negligible
-   footnote. **FAIL-with-evidence for B4/B5**, corrected from this
-   checkpoint's own first-draft "PASS-with-a-named-caveat," which
-   assumed negligibility instead of bounding it.
+   `navy`, `turquoise`, `rose gold`, etc. -- a 23-word list) gives **42 of
+   480 (8.75%)**, confirmed here as the number this log actually relies
+   on. This bounds *exposure* -- how many real queries touch a field
+   whose role/primitive haiku alone gets wrong -- it is not itself a
+   relevance measurement: `retrieval_significant_recall` only checks
+   whether a key is *promoted*, not whether its role/primitive is
+   correct, so it cannot see that haiku's `free_text`/`LexicalPostings`
+   compiles to substring/contains matching rather than the oracle's
+   `enum`/`BitmapEnum` exact-match faceting. No replay of B2 vs. B4's
+   compiled descriptors against the WANDS judgments (NDCG/recall/
+   zero-result deltas) was run this checkpoint. **Criterion 5 for B4:
+   NOT ESTABLISHED / materially at risk**, corrected from both this
+   checkpoint's own first-draft "PASS-with-a-named-caveat" (which assumed
+   negligibility) and a later draft's overreaching "FAIL-with-evidence"
+   (a 42/480 exposure bound is not itself a proof of relevance
+   regression). **Criterion 5 for B5: PASS-by-inheritance on the primary
+   compiled output** (53/53 agreement with B2); B5's own failures are
+   recorded separately under criteria 2/3/6/7.
 6. **Total LLM cost falls by >=50% vs. B1, or a clear Pareto advantage**
-   -- B4 alone: 40.5% reduction (97,803 vs. 164,528 tokens), short of
-   the 50% bar; combined with criterion 5's corrected FAIL above, this is
-   **not** the clean Pareto candidate this checkpoint's own first draft
-   described (cheaper, yes, but the one quality cost is on the sample's
-   single most retrieval-important field). **B5 (the cascade): FAILS
-   outright** under this repo's own established whole-batch cost
-   convention (`ISSUE47_PROTOCOL.md` section 10's own "raw batched-call
-   count" reading, unchanged since Phase A) -- 262,331 vs. 164,528
-   tokens, 159% of B1's own cost, because both tiers' full 10-call pools
-   are drawn regardless of which specific keys escalate. Disclosed
-   nuance (found by this section's own adversarial review): if a
-   hypothetical deployment could draw the strong tier *only* for the
-   49.81% of keys that actually escalate rather than the whole
-   configuration batch, a rough proportional estimate gives ~109% of
-   B1's cost instead of 159% -- the *direction* (cascade costs more, not
-   less) is unchanged either way, but 159% is the number this repo's own
-   batching reality actually supports, not a pessimistic upper bound.
+   -- **monetary cost is NOT ESTABLISHED**: no frozen, auditable per-tier
+   pricing table was built, and opus/sonnet/haiku tokens are not priced
+   identically, so a raw token count is not itself a dollar-cost figure.
+   What is measured is token volume/draw count: B4 alone: 40.5% reduction
+   in token volume (97,803 vs. 164,528 tokens), short of the 50% bar;
+   combined with criterion 5's corrected NOT-ESTABLISHED/at-risk verdict
+   above, this is **not** the clean Pareto candidate this checkpoint's
+   own first draft described (lower token volume, yes, but the one
+   quality risk is on the sample's single most retrieval-important
+   field). **B5 (the cascade): FAILS outright** on token volume under
+   this repo's own established whole-batch draw convention
+   (`ISSUE47_PROTOCOL.md` section 10's own "raw batched-call count"
+   reading, unchanged since Phase A) -- 262,331 vs. 164,528 tokens, 159%
+   of B1's own token volume, because both tiers' full 10-call pools are
+   drawn regardless of which specific keys escalate. Disclosed nuance
+   (found by this section's own adversarial review): if a hypothetical
+   deployment could draw the strong tier *only* for the 49.81% of keys
+   that actually escalate rather than the whole configuration batch, a
+   rough proportional estimate gives ~109% of B1's token volume instead
+   of 159% -- the *direction* (cascade consumes more resources, not
+   fewer) is unchanged either way, but 159% is the number this repo's own
+   batching reality actually supports, not a pessimistic upper bound. In
+   the absence of a pricing table, do not read either 159% or 109% as a
+   dollar-cost multiplier.
 7. **Strong-model escalation explicit and low enough that cheap-first is
    not cosmetic** -- 49.81% overall, 51.58% among retrieval-significant
    problems. **FAIL** -- this is not low; cheap-first resolves barely
@@ -666,25 +697,30 @@ real, small, previously unmeasured cost of cascading specifically, not
 a defect in any tier's own controller.
 
 **2. CONFIRMED, corrects an unsupported "not material" inference.** The
-first draft's characterization of the sole B4/B5 disagreement (`color`)
-as merely "the single messiest field" understated a more important
-fact: it is also the oracle's own highest-confidence retrieval-significant
-*structural/attribute* field (second overall only to an identifier
-field, a categorically different kind of entry -- verified directly
-against every confidence value in `e2b_oracle.rs`, not merely the
-reviewer's own claim), and the recall metric used for criterion 4
-structurally cannot
-detect the capability loss a role/primitive misclassification causes
-(it only checks presence in the promoted set). A cheap, concrete bound
-was available and not computed in the first draft; independently
-reproduced (not merely copied from the reviewer's own draft figure) at
-42 of 480 real WANDS queries (8.75%) matching a real color name as a
-whole word. Criteria 5 and 6 are corrected above to reflect this -- B4
-is a cheaper-but-real-quality-cost result, not a clean near-Pareto
-point, on the specific evidence
-available.
+first draft's characterization of B4's sole disagreement with B2
+(`color`) as merely "the single messiest field" understated a more
+important fact: it is also the oracle's own highest-confidence
+retrieval-significant *structural/attribute* field (second overall only
+to an identifier field, a categorically different kind of entry --
+verified directly against every confidence value in `e2b_oracle.rs`, not
+merely the reviewer's own claim), and the recall metric used for
+criterion 4 structurally cannot detect the capability loss a
+role/primitive misclassification causes (it only checks presence in the
+promoted set). A cheap, concrete exposure bound was available and not
+computed in the first draft; independently reproduced (not merely
+copied from the reviewer's own draft figure) at 42 of 480 real WANDS
+queries (8.75%) matching a real color name as a whole word -- this
+bounds exposure, it does not itself measure a relevance regression (no
+NDCG/recall replay of B2 vs. B4's compiled descriptors against the WANDS
+judgments was run). Criteria 5 and 6 are corrected above to reflect
+this -- B4 is a lower-token-volume-but-real-quality-risk result (risk
+recorded as NOT ESTABLISHED / materially at risk, not a proven
+regression), not a clean near-Pareto point, on the specific evidence
+available. B5 (the cascade) does not share this disagreement on its
+primary compiled output (100% agreement with B2, 53/53) and should not
+be described as differing from B2 on `color`.
 
-**3. CONFIRMED, no implementation defect, one disclosed cost-accounting
+**3. CONFIRMED, no implementation defect, one disclosed token-accounting
 nuance.** Independently traced every rotation-index use in the cascade
 path (`b5_rotations`, `b5_depths`) by hand -- `b4_rotations[i]` (cheap)
 and `b2_rotations[i]` (escalation target) are paired at the same index
@@ -695,13 +731,15 @@ sums (164,528 / 97,803 / 262,331, all matching
 `e2d_phase_b_draw_cost_manifest.json` digit-for-digit). B3's own numbers
 were confirmed to come from `run_controller` called fresh on the raw
 sonnet draw files with the current, Phase-A-fixed controller code, not
-a stale cached Phase A result. The one disclosed nuance: the 159%-of-B1
-cost figure assumes this repo's own established whole-batch draw
-mechanism (every key in a configuration is drawn together, so the whole
-tier's own cost is paid once any key in it escalates); a hypothetical
-per-key-selective draw mechanism (which this repo's tooling does not
-actually support) would give a smaller, still-negative ~109% figure --
-folded into criterion 6 above.
+a stale cached Phase A result. The one disclosed nuance: the
+159%-of-B1 token-volume figure assumes this repo's own established
+whole-batch draw mechanism (every key in a configuration is drawn
+together, so the whole tier's own token volume is paid once any key in
+it escalates); a hypothetical per-key-selective draw mechanism (which
+this repo's tooling does not actually support) would give a smaller,
+still-negative ~109% figure -- folded into criterion 6 above. Neither
+159% nor 109% is a dollar-cost figure; no per-tier pricing table exists
+in this checkpoint to convert either into monetary terms.
 
 **4. CONFIRMED, a fair characterization check.** The alternative
 "within-tier stability" reading of criteria 2/3 would have made B4 look
@@ -729,35 +767,44 @@ is needed"). The decision below leads with that finding first.
 
 **The centerpiece finding, stated first and plainly**: the cascade (B5)
 -- cheap-tier-first, escalate-to-strong-only-when-needed -- does not
-work. It fails criteria 2 (own-stability floor), 5 (corrected), 6, and 7
-against this checkpoint's own preregistered bars, and on real measured
-tokens costs 159% of simply always using the strong model, because the
+work. It fails criteria 2 (own-stability floor), 6, and 7 against this
+checkpoint's own preregistered bars (criterion 5 is a PASS-by-inheritance
+for B5's own primary output, corrected above), and on real measured
+token volume consumes 159% of the tokens simply always using the strong
+model would consume (monetary cost NOT ESTABLISHED -- no per-tier
+pricing table exists to convert token volume into dollars), because the
 escalation trigger fires on very close to half of all semantic problems
 (49.81% overall, 51.58% of retrieval-significant ones specifically) --
 not a rare exception cheap-first was designed to catch, but close to a
-coin flip. This is exactly what Issue #47's own governance warned a
-cascade might do ("do not claim small models are enough if the cascade
-secretly sends the hard cases to the strong model") -- measured
-directly here, not assumed: **the strong model is needed for roughly
-half of this held-out catalog, slightly more of its retrieval-significant
-half, and cascading does not recover cheap-tier-level cost once that is
-true.**
+coin flip. This is exactly the shape of failure Issue #47's own
+governance warned a cascade might do ("do not claim small models are
+enough if the cascade secretly sends the hard cases to the strong
+model") -- but the precise, defensible statement of what is actually
+measured is narrower than "the strong model is needed": **about half of
+the problems failed the frozen Haiku-tier certificate and triggered
+escalation under B5; this does not establish that Opus specifically was
+required, because B3 (Sonnet) matched B2 (Opus) exactly on all 53
+keys.** Cascading does not recover cheap-tier-level token volume once
+escalation is this common, regardless of which tier is "required."
 
 **A secondary, more promising but still not clean, finding**: committing
-to a *single* cheaper tier (never cascading between tiers within one
-catalog) fares better than cascading. B3 (sonnet-5 alone) matches B2
-(opus-5 alone) exactly -- every one of 53 keys, identical role/primitive/
-scope/stability/recall -- at materially lower cost; on this held-out
-set, the strong tier added nothing measurable over the mid tier. B4
-(haiku-4.5 alone) is close but, on the corrected reading above, not a
-clean Pareto point: 98.11% agreement at 59.5% of B1's cost sounds
-favorable until the one disagreement is examined -- it is the sample's
-highest-confidence retrieval-significant structural/attribute field,
-with a real,
-plausible capability loss (losing exact-match color faceting) the
-recall metric cannot see. This is a REVISE-not-GO result for B4
-specifically, with a real, quantified reason for caution, not merely a
-missed threshold.
+to a *single* smaller/lower-list-price tier (never cascading between
+tiers within one catalog) fares better than cascading, in token volume.
+B3 (sonnet-5 alone) matches B2 (opus-5 alone) exactly -- every one of 53
+keys, identical role/primitive/scope/stability/recall -- using a
+smaller model class; on this held-out set, the strong tier added nothing
+measurable over the mid tier. B4 (haiku-4.5 alone) is close but, on the
+corrected reading above, not a clean Pareto point: 98.11% agreement at
+59.5% of B1's token volume sounds favorable until the one disagreement
+is examined -- it is the sample's highest-confidence retrieval-
+significant structural/attribute field, with a disclosed, bounded
+capability-loss risk (losing exact-match color faceting on a field 42 of
+480 real WANDS queries touch) the recall metric cannot see, though this
+checkpoint did not replay the compiled descriptors against WANDS
+judgments to measure an actual relevance regression (criterion 5 for B4:
+NOT ESTABLISHED / materially at risk, not a proven FAIL). This is a
+REVISE-not-GO result for B4 specifically, with a real, disclosed reason
+for caution, not merely a missed threshold.
 
 **Decision: REVISE.** Overall GO is precluded by criterion 8 (external
 validity NOT ESTABLISHED) regardless of B1-B7. Among B1-B7: quality/
@@ -765,14 +812,17 @@ safety is clean on the criteria that measure it most directly (1, and
 4's own narrow presence-only reading); the cascade (B5) fails on
 economics, escalation rate, and now its own stability floor -- three
 independent, preregistered criteria, not merely a single missed bar;
-single-tier substitution (B3 cleanly, B4 with a real, evidenced quality
-caveat) is the more informative direction, but B4 does not itself clear
-this checkpoint's own bars either. Recommended next step if this thread
-continues: do not re-attempt the cascade with a loosened escalation
-trigger merely to manufacture a lower escalation rate (forbidden by
-Issue #47's own governance); if single-tier substitution is pursued
-further, measure it against a materially larger or more diverse held-out
-set before trusting a 52/53-key sample where the entire quality
-question turns on a single field, and prioritize measuring exactly
-which semantic-problem classes (not just which fields happen to appear
-in one 53-key sample) systematically need the strong tier.
+single-tier substitution (B3 cleanly, B4 with a real, disclosed
+quality-risk caveat, not yet a proven regression) is the more informative
+direction, but B4 does not itself clear this checkpoint's own bars
+either. Recommended next step if this thread continues: do not
+re-attempt the cascade with a loosened escalation trigger merely to
+manufacture a lower escalation rate (forbidden by Issue #47's own
+governance); if single-tier substitution is pursued further, measure it
+against a materially larger or more diverse held-out set before trusting
+a 52/53-key sample where the entire quality question turns on a single
+field, and prioritize measuring exactly which semantic-problem classes
+(not just which fields happen to appear in one 53-key sample)
+systematically fail a frozen cheap-tier certificate and would need
+independent evidence of whether a stronger tier actually changes the
+outcome, rather than assuming escalation implies necessity.
