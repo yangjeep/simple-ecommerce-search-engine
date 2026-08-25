@@ -64,7 +64,12 @@ contract.
   `index.execute()`/`lookup_variant` for the unconstrained case, or
   revisit whether a 100%-of-catalog candidate set should route to
   `FastPath` at all — a planner-policy question raised, not resolved, by
-  the whole-workload checkpoint).
+  the whole-workload checkpoint). A follow-up checkpoint
+  (`docs/decisions/ISSUE55_AMBIGUOUS_ROUTING_DECISION.md`) confirmed this
+  is about candidate-set size specifically, not the reason
+  `residual_lexical` ended up empty: queries where ambiguity absorbs all
+  content reproduce this exact pathology when unnarrowed (`0.0` NDCG),
+  but not when a real constraint elsewhere keeps the candidate set small.
 - **No correctness change, no NDCG change, no candidate-set change** in
   any measurement across all three checkpoints in this sub-thread — this
   and the prior checkpoint are latency-only findings on an existing,

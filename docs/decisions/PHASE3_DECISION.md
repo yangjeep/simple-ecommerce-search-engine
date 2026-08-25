@@ -305,3 +305,31 @@ numbers (untested); or that Issue #14 as a whole is closed — only that
 its *mining loop*, as scoped to the admission family this phase built, has
 reached a defensible terminal boundary, and that further coverage growth
 is Issue #16's question to answer, not this phase's to keep re-asking.
+
+### Addendum (2026-08-25) — the "no ranking signal" ambiguous-query boundary partially cross-validated on WANDS
+
+Item 4 of this phase's own "what would be built next" list named exactly
+this open question: does the ambiguous-query "no ranking signal" finding
+(P3-E12/P3-E15) generalize beyond ESCI to a materially different, more
+structurally rich real catalog? An Issue #55 checkpoint
+(`docs/decisions/ISSUE55_AMBIGUOUS_ROUTING_DECISION.md`) found, on the
+real WANDS catalog (genuine `Category`/`ProductType` structure, not
+ESCI's single-entity Brand data), a small (n=4 of 480 real queries)
+but real, mechanistically-confirmed instance of the same boundary:
+queries whose entire content resolves to ambiguous attribute readings
+get no useful native ranking signal, and score materially worse than a
+real lexical delegate (0.2819 vs. 0.8173 NDCG@10) specifically when no
+other constraint narrows the candidate set. This is a small, single-
+dataset, non-exhaustive data point, not a repeat of this phase's own
+5,000-query study — but it is consistent with, not contrary to, this
+phase's own conclusion, on the second, materially different catalog
+this phase's own "what's next" list asked for. It does not by itself
+close item 4 or change this phase's terminal-boundary verdict; it is
+recorded here per this project's evidence-preservation discipline
+rather than left as an isolated, uncross-referenced Issue #55 artifact.
+The Issue #55 checkpoint also found that `commerce_core::admission::admit`
+(this phase's own KEPT mechanism) already rejects any query matching
+this pattern to the lexical delegate — the defect it measured exists
+only in the separate, later `plan`/`execute_planned` routing path
+(Phase 2/9's lineage), which never composed with this phase's own
+admission contract.

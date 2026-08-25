@@ -1,0 +1,29 @@
+=== P9-E07: ambiguous-but-residual-empty routing diagnostic ===
+loading WANDS catalog...
+catalog: 42994 products
+building native index + lexicon...
+building bitmap-delegate Tantivy index...
+loading queries + labels...
+480 queries, 480 judged query groups
+evaluated 480 queries (0 skipped, no judgments found)
+
+=== pattern population: ambiguous non-empty AND residual_lexical empty AND preferences empty ===
+matched queries: n=4
+  "driftwood mirror" -- ambiguous tokens: ["driftwood", "mirror"] candidates=42994 native_ndcg=0.0000 solr_ndcg=0.9633
+  "leather dining chairs" -- ambiguous tokens: ["leather"] candidates=568 native_ndcg=0.4080 solr_ndcg=0.8365
+  "marble" -- ambiguous tokens: ["marble"] candidates=42994 native_ndcg=0.0000 solr_ndcg=0.7156
+  "wood bar stools" -- ambiguous tokens: ["wood"] candidates=775 native_ndcg=0.7196 solr_ndcg=0.7540
+routing distribution within matched population: {"FastPath": 4}
+
+=== control group: zero-signal-for-FastPath but NOT ambiguous (residual_lexical/preferences empty, ambiguous empty) ===
+control queries: n=0
+control population: native NDCG@10=0.0000  solr NDCG@10=0.0000  relative gap=+0.00%
+
+matched population: native NDCG@10=0.2819  solr NDCG@10=0.8173
+rest of corpus (same run, same methodology): native NDCG@10=0.6628  solr NDCG@10=0.6209
+
+relative NDCG gap (native vs solr, matched population): -65.51%
+=== FALSIFIED/low-priority (preregistered gate): population too small to generalize from (n=4) ===
+
+=== exploratory only, not preregistered (broader population: ambiguous non-empty, any residual/preferences state) ===
+n=56: native NDCG@10=0.5550  solr NDCG@10=0.5486  relative gap=+1.18%
