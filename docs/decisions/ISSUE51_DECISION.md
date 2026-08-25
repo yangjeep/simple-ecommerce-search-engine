@@ -102,3 +102,18 @@ adoption — Issue #51's own <=5% bar, applied to R1's specific frozen
 fixture, is not cleared, and this checkpoint's own diagnostic is
 explicitly scoped to the isolated mechanism, not the full end-to-end
 pipeline a production decision would need measured.
+
+### Update (2026-08-25) — the named next step is done: REVISE confirmed, not resolved, at realistic scale
+
+The follow-up this decision named (`docs/decisions/ISSUE51_FULLGATE_SCALE_DECISION.md`)
+reran R1's full `<=5%` gate at ~43,000-product scale. Treatment E still
+does not clear it (14.0%-16.7% across 3 runs, essentially unchanged from
+R1's own N=5 measurement) — the asymptotic advantage above is real and
+confirmed again at this scale, but it was never the dominant cost in the
+full gate. A per-row breakdown found the actual driver: the `Punt`
+fallback's lexical-delegate query cost for genuinely ambiguous,
+uncorroborated queries (row 1's own case), which Issue #51's registry
+optimization does not touch. REVISE is confirmed as this thread's
+terminal state, not an artifact of R1's small fixture — closing this
+open item without re-opening a new investigation into the same
+mechanism.
