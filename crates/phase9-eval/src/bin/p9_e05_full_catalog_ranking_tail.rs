@@ -53,8 +53,8 @@ fn main() {
             compiled.constraints
         );
         println!(
-            "  compiled: preferences={:?} residual_lexical={:?}",
-            compiled.preferences, compiled.residual_lexical
+            "  compiled: preferences={:?} residual_lexical={:?} ambiguous={:?}",
+            compiled.preferences, compiled.residual_lexical, compiled.ambiguous
         );
 
         // warmup, discarded -- matches this project's own established
