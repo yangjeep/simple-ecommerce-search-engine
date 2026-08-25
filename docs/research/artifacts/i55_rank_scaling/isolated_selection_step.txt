@@ -1,0 +1,75 @@
+   Compiling commerce-core v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/commerce-core)
+    Finished `bench` profile [optimized] target(s) in 19.28s
+     Running benches/select_top_k_bench.rs (target/release/deps/select_top_k_bench-47d2a7101ef95c40)
+Benchmarking select_top_k_isolated/full_sort/100
+Benchmarking select_top_k_isolated/full_sort/100: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/full_sort/100: Collecting 100 samples in estimated 5.0062 s (2.1M iterations)
+Benchmarking select_top_k_isolated/full_sort/100: Analyzing
+select_top_k_isolated/full_sort/100
+                        time:   [2.4180 µs 2.4697 µs 2.5282 µs]
+Found 14 outliers among 100 measurements (14.00%)
+  7 (7.00%) high mild
+  7 (7.00%) high severe
+Benchmarking select_top_k_isolated/partial_select/100
+Benchmarking select_top_k_isolated/partial_select/100: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/partial_select/100: Collecting 100 samples in estimated 5.0023 s (8.3M iterations)
+Benchmarking select_top_k_isolated/partial_select/100: Analyzing
+select_top_k_isolated/partial_select/100
+                        time:   [588.71 ns 595.07 ns 601.40 ns]
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking select_top_k_isolated/full_sort/1000
+Benchmarking select_top_k_isolated/full_sort/1000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/full_sort/1000: Collecting 100 samples in estimated 5.0020 s (172k iterations)
+Benchmarking select_top_k_isolated/full_sort/1000: Analyzing
+select_top_k_isolated/full_sort/1000
+                        time:   [27.359 µs 27.863 µs 28.522 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+Benchmarking select_top_k_isolated/partial_select/1000
+Benchmarking select_top_k_isolated/partial_select/1000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/partial_select/1000: Collecting 100 samples in estimated 5.0013 s (1.3M iterations)
+Benchmarking select_top_k_isolated/partial_select/1000: Analyzing
+select_top_k_isolated/partial_select/1000
+                        time:   [3.7961 µs 3.8413 µs 3.8908 µs]
+Found 11 outliers among 100 measurements (11.00%)
+  6 (6.00%) high mild
+  5 (5.00%) high severe
+Benchmarking select_top_k_isolated/full_sort/10000
+Benchmarking select_top_k_isolated/full_sort/10000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/full_sort/10000: Collecting 100 samples in estimated 7.2131 s (15k iterations)
+Benchmarking select_top_k_isolated/full_sort/10000: Analyzing
+select_top_k_isolated/full_sort/10000
+                        time:   [493.67 µs 504.29 µs 517.40 µs]
+Found 9 outliers among 100 measurements (9.00%)
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+Benchmarking select_top_k_isolated/partial_select/10000
+Benchmarking select_top_k_isolated/partial_select/10000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/partial_select/10000: Collecting 100 samples in estimated 5.1307 s (101k iterations)
+Benchmarking select_top_k_isolated/partial_select/10000: Analyzing
+select_top_k_isolated/partial_select/10000
+                        time:   [50.458 µs 50.822 µs 51.230 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking select_top_k_isolated/full_sort/100000
+Benchmarking select_top_k_isolated/full_sort/100000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/full_sort/100000: Collecting 100 samples in estimated 5.5782 s (800 iterations)
+Benchmarking select_top_k_isolated/full_sort/100000: Analyzing
+select_top_k_isolated/full_sort/100000
+                        time:   [6.6986 ms 6.7654 ms 6.8377 ms]
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+Benchmarking select_top_k_isolated/partial_select/100000
+Benchmarking select_top_k_isolated/partial_select/100000: Warming up for 3.0000 s
+Benchmarking select_top_k_isolated/partial_select/100000: Collecting 100 samples in estimated 5.6323 s (10k iterations)
+Benchmarking select_top_k_isolated/partial_select/100000: Analyzing
+select_top_k_isolated/partial_select/100000
+                        time:   [525.92 µs 530.25 µs 535.40 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+

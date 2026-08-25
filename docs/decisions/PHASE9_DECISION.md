@@ -310,11 +310,16 @@ alternative explanation before accepting the entity-constraint one.
    matches CLAUDE.md's "cross-variant false matches are bugs" rule would
    flag) and before/after re-measurement of both the Punt-routing share
    (P9-E03) and end-to-end relevance (P9-E02/P9-E06).
-2. **Localize whether native's ranking-cost-vs-candidate-set-size scaling
-   (P9-E06) is fundamental or implementation-specific** — profile
-   `CatalogIndex::execute_ranked` directly (is it a full sort, or could it
-   be a partial top-K selection?) before Issue #38 E1 treats this as a
-   settled physical-execution-advantage input.
+2. ~~**Localize whether native's ranking-cost-vs-candidate-set-size scaling
+   (P9-E06) is fundamental or implementation-specific**~~ — **done**, see
+   `docs/decisions/ISSUE55_RANK_SCALING_DECISION.md`. `execute_ranked` did
+   do a full sort; replaced with a proven-equivalent partial top-K
+   selection (correctness-preserving, now shipping). Real, if modest
+   (5-12%), improvement at scale, but not the dominant driver of P9-E06's
+   own gap on real WANDS data — that gap's own drivers were localized
+   instead to Solr JVM/network variance (Issue #43) and
+   `score_text_relevance`'s own per-query string-tokenization cost (newly
+   found, not yet addressed).
 3. **A `min_enum_frequency` sweep on WANDS** (fixed at `1` throughout this
    pass), matching Phase 2's own {1,5,25,100} sweep discipline.
 4. **Repeated-measurement latency rigor** (`bench-harness::measured_repeat`

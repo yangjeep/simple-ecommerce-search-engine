@@ -21,3 +21,11 @@ harness = false
 [[bench]]
 name = "index_bench"
 harness = false
+
+[[bench]]
+name = "rank_bench"
+harness = false
+
+[[bench]]
+name = "select_top_k_bench"
+harness = false

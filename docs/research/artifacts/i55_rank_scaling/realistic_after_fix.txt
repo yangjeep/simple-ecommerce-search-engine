@@ -1,0 +1,49 @@
+    Finished `bench` profile [optimized] target(s) in 0.07s
+     Running benches/rank_bench.rs (target/release/deps/rank_bench-de1ae405c8ea662d)
+Benchmarking execute_ranked_scaling/100
+Benchmarking execute_ranked_scaling/100: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/100: Collecting 100 samples in estimated 5.0059 s (101k iterations)
+Benchmarking execute_ranked_scaling/100: Analyzing
+execute_ranked_scaling/100
+                        time:   [48.951 µs 49.248 µs 49.581 µs]
+                        change: [-2.3809% -1.4934% -0.6691%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  6 (6.00%) high mild
+  2 (2.00%) high severe
+Benchmarking execute_ranked_scaling/1000
+Benchmarking execute_ranked_scaling/1000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/1000: Collecting 100 samples in estimated 5.7440 s (10k iterations)
+Benchmarking execute_ranked_scaling/1000: Analyzing
+execute_ranked_scaling/1000
+                        time:   [550.37 µs 553.08 µs 556.04 µs]
+                        change: [-8.0889% -5.5919% -3.3283%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+Benchmarking execute_ranked_scaling/10000
+Benchmarking execute_ranked_scaling/10000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/10000: Collecting 100 samples in estimated 5.1292 s (800 iterations)
+Benchmarking execute_ranked_scaling/10000: Analyzing
+execute_ranked_scaling/10000
+                        time:   [6.2190 ms 6.3010 ms 6.3892 ms]
+                        change: [-14.268% -11.946% -9.8004%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking execute_ranked_scaling/100000
+Benchmarking execute_ranked_scaling/100000: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 8.9s, or reduce sample count to 50.
+Benchmarking execute_ranked_scaling/100000: Collecting 100 samples in estimated 8.8711 s (100 iterations)
+Benchmarking execute_ranked_scaling/100000: Analyzing
+execute_ranked_scaling/100000
+                        time:   [88.232 ms 88.771 ms 89.445 ms]
+                        change: [-7.8101% -6.5771% -5.3438%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  5 (5.00%) high mild
+  3 (3.00%) high severe
+
