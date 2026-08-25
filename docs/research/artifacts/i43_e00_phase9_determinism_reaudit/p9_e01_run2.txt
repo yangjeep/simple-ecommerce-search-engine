@@ -1,0 +1,8 @@
+=== P9-E01: bitmap-restrict vs TermSetQuery delegate restriction ===
+synthetic index: 500000 docs, restrict_to size: 60000
+  TermSetQuery restrict (arm a): n=30 mean=70.6367ms sd=2.2390ms | p10=68.5444 p25=69.3719 p50=70.3468 p75=71.6524 p90=72.6999 p95=74.8973 p99=77.0712 | min=67.2181 max=77.3224ms
+  bitmap restrict (arm b): n=30 mean=6.1484ms sd=0.6741ms | p10=5.6508 p25=5.7144 p50=5.9034 p75=6.1027 p90=7.3578 p95=7.3668 p99=7.8687 | min=5.5417 max=8.0716ms
+mean ratio (termset / bitmap): 11.49x
+both arms returned the same document set: true
+score offset observed (termset - bitmap, same doc): 1.0000 -- a disclosed TermSetQuery/BooleanQuery-combiner artifact, see comment above
+=== VERDICT: CONFIRMED -- bitmap-restrict is 11.49x faster than TermSetQuery (>=2x bar met) ===
