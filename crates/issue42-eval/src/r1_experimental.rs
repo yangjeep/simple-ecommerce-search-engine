@@ -1,5 +1,7 @@
 //! R1 experimental treatments (`docs/experiments/ISSUE42_PROTOCOL.md`'s R1
-//! section): typed ambiguity and corroborated resolution.
+//! section): typed ambiguity and corroborated resolution. Treatment E
+//! (`docs/experiments/ISSUE51_PROTOCOL.md`) was added later, alongside
+//! A-D, not in place of any of them -- see its own doc comment below.
 //!
 //! Treatment A is the real, unmodified `commerce_core::ir::query::compile`,
 //! reused verbatim -- "current behavior" cannot itself be a source of
@@ -23,7 +25,7 @@
 //! reuses real production matching semantics for each interpretation
 //! individually instead of duplicating it.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use commerce_core::domain::{
     effective_attributes, AttributeValue, Catalog, Constraint, NumericOp, ProductId, ProductTypeId,
@@ -350,6 +352,163 @@ pub fn resolve_d(text: &str, lexicon: &SemanticLexicon, catalog: &Catalog) -> Re
     }
 }
 
+/// Issue #51: Treatment D's own decision logic, unchanged, but with
+/// `constraint_kind_registered_on_product_type`'s per-query O(catalog-size)
+/// scan replaced by an O(1) (`HashMap`) lookup against a registry built
+/// once, ahead of time, from the same catalog -- moving the
+/// catalog-dependent work to ingestion/compile time per Issue #51's own
+/// research question. A plain 5-variant discriminant mirroring
+/// `AttributeValue`'s own shape -- not a new generic schema/type system,
+/// per Issue #51's explicit "do not add a generic dynamic schema/query
+/// DSL" boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum AttrKind {
+    Enum,
+    MultiEnum,
+    Boolean,
+    Numeric,
+    Text,
+}
+
+fn attribute_value_kind(value: &AttributeValue) -> AttrKind {
+    match value {
+        AttributeValue::Enum(_) => AttrKind::Enum,
+        AttributeValue::MultiEnum(_) => AttrKind::MultiEnum,
+        AttributeValue::Boolean(_) => AttrKind::Boolean,
+        AttributeValue::Numeric(_) => AttrKind::Numeric,
+        AttributeValue::Text(_) => AttrKind::Text,
+    }
+}
+
+/// The one `AttrKind` a given `Constraint` targets -- mirrors
+/// `constraint_kind_registered_on_product_type`'s own match exactly, so
+/// Treatment E's registry lookup answers the identical question Treatment
+/// D's live scan does.
+fn constraint_kind(constraint: &Constraint) -> AttrKind {
+    match constraint {
+        Constraint::Enum { .. } => AttrKind::Enum,
+        Constraint::MultiEnumContains { .. } => AttrKind::MultiEnum,
+        Constraint::Boolean { .. } => AttrKind::Boolean,
+        Constraint::Numeric { .. } => AttrKind::Numeric,
+        Constraint::Text { .. } => AttrKind::Text,
+    }
+}
+
+/// Precomputed once from the full catalog (the ingestion/compile-time
+/// step Issue #51 asks for): for every `(ProductTypeId, attribute name)`
+/// pair actually present in the catalog, which `AttrKind`(s) that
+/// attribute is registered as on some variant of that product type.
+/// Query-time consultation (`registry_has_kind`) is then a lookup, never
+/// a scan over `catalog.products`. Nested (`ProductTypeId` outer,
+/// attribute-name inner), not a single `(ProductTypeId, String)`-keyed
+/// map: a first version keyed the outer map by that tuple directly, which
+/// forced every query-time lookup to allocate a fresh `String` just to
+/// build the key (`attribute.to_string()`) -- on this experiment's own
+/// tiny fixture that allocation cost more than the linear scan it was
+/// meant to replace, an early, disclosed, and fixed implementation defect
+/// (see `docs/experiments/ISSUE51_LOG.md`). Nesting lets the inner lookup
+/// use `HashMap<String, _>::get(&str)` directly (`String: Borrow<str>`),
+/// with zero allocation on the query-time path.
+#[derive(Debug, Default)]
+pub struct AttributeKindRegistry {
+    kinds: HashMap<ProductTypeId, HashMap<String, HashSet<AttrKind>>>,
+}
+
+/// Builds the registry by scanning the catalog exactly once -- the same
+/// work `constraint_kind_registered_on_product_type` repeats per query in
+/// Treatment D, done here a single time up front.
+pub fn build_attribute_kind_registry(catalog: &Catalog) -> AttributeKindRegistry {
+    let mut kinds: HashMap<ProductTypeId, HashMap<String, HashSet<AttrKind>>> = HashMap::new();
+    for product in &catalog.products {
+        for variant in &product.variants {
+            let merged = effective_attributes(product, variant);
+            for (attribute, value) in merged.iter() {
+                kinds
+                    .entry(product.product_type)
+                    .or_default()
+                    .entry(attribute.clone())
+                    .or_default()
+                    .insert(attribute_value_kind(value));
+            }
+        }
+    }
+    AttributeKindRegistry { kinds }
+}
+
+/// Query-time-allocation-free equivalent of
+/// `constraint_kind_registered_on_product_type`, using the precomputed
+/// registry instead of scanning `catalog.products`.
+fn registry_has_kind(
+    registry: &AttributeKindRegistry,
+    product_type: ProductTypeId,
+    constraint: &Constraint,
+) -> bool {
+    let attribute = match constraint {
+        Constraint::Enum { attribute, .. }
+        | Constraint::MultiEnumContains { attribute, .. }
+        | Constraint::Boolean { attribute, .. }
+        | Constraint::Numeric { attribute, .. }
+        | Constraint::Text { attribute, .. } => attribute.as_str(),
+    };
+    registry
+        .kinds
+        .get(&product_type)
+        .and_then(|by_attribute| by_attribute.get(attribute))
+        .is_some_and(|set| set.contains(&constraint_kind(constraint)))
+}
+
+/// Treatment E: identical decision logic to Treatment D (`resolve_d`) --
+/// same corroboration semantics, same fallback-to-demotion rule -- but
+/// every `constraint_kind_registered_on_product_type` call is replaced by
+/// `registry_has_kind`, an O(1) lookup against a registry built once
+/// ahead of time (`build_attribute_kind_registry`), never a per-query
+/// catalog scan.
+pub fn resolve_e(
+    text: &str,
+    lexicon: &SemanticLexicon,
+    registry: &AttributeKindRegistry,
+) -> Resolution {
+    let base = compile(text, lexicon);
+    let Some((raw, n)) = find_size_numeric_token(text) else {
+        return Resolution {
+            queries: vec![base],
+        };
+    };
+    let alternatives = lexicon_alternatives(&raw, lexicon);
+    if alternatives.is_empty() {
+        return Resolution {
+            queries: vec![base],
+        };
+    }
+    let Some(product_type) = corroborating_product_type(&base) else {
+        return resolve_c(text, lexicon);
+    };
+    let numeric = Constraint::Numeric {
+        attribute: "size".to_string(),
+        op: NumericOp::Eq,
+        value: n,
+    };
+    let numeric_registered = registry_has_kind(registry, product_type, &numeric);
+    let matching_alts: Vec<&Constraint> = alternatives
+        .iter()
+        .filter(|alt| registry_has_kind(registry, product_type, alt))
+        .collect();
+
+    match (numeric_registered, matching_alts.as_slice()) {
+        (true, []) => Resolution {
+            queries: vec![base],
+        },
+        (false, [only_alt]) => {
+            let mut q = base.clone();
+            if let Some(pos) = q.constraints.iter().position(|c| is_size_eq_numeric(c, n)) {
+                q.constraints[pos] = ResolvedConstraint::Attribute((*only_alt).clone());
+            }
+            Resolution { queries: vec![q] }
+        }
+        _ => resolve_c(text, lexicon),
+    }
+}
+
 /// Runs every `CommerceQuery` in `resolution` through the real
 /// `execute_planned`, then unions the verified hit sets (deduped by
 /// `(ProductId, VariantId)`, keeping the higher score on a tie) -- the
@@ -527,6 +686,103 @@ mod tests {
             d.queries, c.queries,
             "with no corroborating ProductType entity, D must behave exactly like C"
         );
+    }
+
+    /// Issue #51's own core correctness requirement: Treatment E must be
+    /// behaviorally identical to Treatment D, not merely pass the same
+    /// aggregate gates (which could mask a compensating pair of
+    /// divergences) -- checked directly, resolution by resolution.
+    #[test]
+    fn treatment_e_matches_treatment_d_exactly_when_jeans_corroborates() {
+        let (lexicon, catalog, _) = lexicon_and_catalog();
+        let registry = build_attribute_kind_registry(&catalog);
+        let d = resolve_d("size 34 jeans", &lexicon, &catalog);
+        let e = resolve_e("size 34 jeans", &lexicon, &registry);
+        assert_eq!(
+            d.queries, e.queries,
+            "Treatment E must resolve identically to Treatment D when corroboration exists"
+        );
+    }
+
+    #[test]
+    fn treatment_e_matches_treatment_d_exactly_with_no_corroborating_entity() {
+        let (lexicon, catalog, _) = lexicon_and_catalog();
+        let registry = build_attribute_kind_registry(&catalog);
+        let d = resolve_d("size 34", &lexicon, &catalog);
+        let e = resolve_e("size 34", &lexicon, &registry);
+        assert_eq!(
+            d.queries, e.queries,
+            "Treatment E must fall back to demotion identically to Treatment D"
+        );
+    }
+
+    #[test]
+    fn treatment_e_matches_treatment_d_on_every_r1_workload_row() {
+        let (lexicon, catalog, _) = lexicon_and_catalog();
+        let registry = build_attribute_kind_registry(&catalog);
+        for text in [
+            "size 34",
+            "size 34 jeans",
+            "under $34",
+            "over $34",
+            "part number IA-1234-BP",
+            "size purple",
+            "size 999999",
+        ] {
+            let d = resolve_d(text, &lexicon, &catalog);
+            let e = resolve_e(text, &lexicon, &registry);
+            assert_eq!(
+                d.queries, e.queries,
+                "Treatment E diverged from Treatment D for {text:?}"
+            );
+        }
+    }
+
+    /// A `(ProductTypeId, attribute)` pair with zero products of that
+    /// type must answer "not registered", matching Treatment D's
+    /// `.any()` over an empty iterator returning `false` -- not panic or
+    /// silently treat an absent registry entry as a match.
+    #[test]
+    fn registry_lookup_for_unknown_product_type_returns_not_registered() {
+        let (_, catalog, _) = lexicon_and_catalog();
+        let registry = build_attribute_kind_registry(&catalog);
+        let bogus_type = ProductTypeId(999_999);
+        let constraint = Constraint::Numeric {
+            attribute: "size".to_string(),
+            op: NumericOp::Eq,
+            value: 34.0,
+        };
+        assert!(!registry_has_kind(&registry, bogus_type, &constraint));
+    }
+
+    /// The registry must key strictly on the *kind* Treatment D checks
+    /// (`Constraint`/`AttributeValue` discriminant), not merely on
+    /// attribute-name presence -- an Enum-typed attribute must not
+    /// satisfy a Numeric-kind lookup for the same name.
+    #[test]
+    fn registry_lookup_distinguishes_attribute_value_kind_not_just_name() {
+        let (lexicon, catalog, _) = lexicon_and_catalog();
+        let registry = build_attribute_kind_registry(&catalog);
+        // Derive the real corroborating product type the same way
+        // production code does (via the compiled query), rather than
+        // guessing a product title string.
+        let compiled = compile("size 34 jeans", &lexicon);
+        let jeans_type =
+            corroborating_product_type(&compiled).expect("jeans query must corroborate");
+        let numeric_size = Constraint::Numeric {
+            attribute: "size".to_string(),
+            op: NumericOp::Eq,
+            value: 34.0,
+        };
+        assert!(
+            !registry_has_kind(&registry, jeans_type, &numeric_size),
+            "Jeans' own size attribute is Enum-typed in this fixture, so a Numeric-kind lookup must not match"
+        );
+        let enum_size = Constraint::Enum {
+            attribute: "size".to_string(),
+            value: "34".to_string(),
+        };
+        assert!(registry_has_kind(&registry, jeans_type, &enum_size));
     }
 
     #[test]
