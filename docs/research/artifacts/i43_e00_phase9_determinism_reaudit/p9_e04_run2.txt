@@ -1,0 +1,32 @@
+=== P9-E04: isolated ranking-quality (H1) + execution-speed (H3) comparison, identical candidate set ===
+warmup pass (both engines, restricted-query path, discarded)...
+structural_routed queries seen: 21, evaluated (candidate set <= 5000): 15, skipped (candidate set too large): 2
+candidate-set size: median=568, max=42994
+
+=== H1: ranking quality, identical candidate set (n=15) ===
+native NDCG@10=0.4586  solr-restricted NDCG@10=0.4396
+relative gap (native vs solr, same candidates): +4.33%
+=== H1 FALSIFIED: native's ranking signal is NOT materially worse on the identical candidate set -- the end-to-end gap must come predominantly from retrieval/coverage differences, not ranking ===
+
+=== H1 follow-on diagnostic: candidate-set relevant-document recall (prompted by H1's own result) ===
+mean fraction of a query's real judged-relevant documents present ANYWHERE in native's structural candidate set, before any ranking (n=15): 0.4460
+queries where the candidate set contains 100% of judged-relevant documents: 0/15
+split by grade -- Exact recall (n=11): 0.4757   Partial recall (n=15): 0.4099
+
+=== aggregate test (not anecdotal): does a real entity constraint (ProductType/Category) predict higher Exact recall than an attribute-only (e.g. incidental color) constraint? ===
+queries with a ProductType/Category constraint (n=11): mean Exact recall = 0.4757
+queries with only attribute-level constraints, no entity (n=0): mean Exact recall = 0.0000
+
+=== qualitative examples: low-Exact-recall queries, resolved constraint, missed Exact products' real category ===
+query="twin over full bunk beds cool desins" exact_recall=0.00 resolved_constraints=["ProductType(\"beds\")"] missed_exact_examples=["10827: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")", "16846: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")", "16847: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")"]
+query="white splashproof shiplap wallpaper" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"white\" })", "ProductType(\"wallpaper\")"] missed_exact_examples=["11372: product_class=Some(\"Wall Paneling\"), category_leaf=Some(\"Home Improvement / Flooring, Walls & Ceiling / Walls & Ceilings / Wall Paneling\")", "26279: product_class=Some(\"Wallpaper\"), category_leaf=Some(\"Décor & Pillows / Wall Décor / Wallpaper\")"]
+query="high weight capacity bunk beds" exact_recall=0.00 resolved_constraints=["ProductType(\"beds\")"] missed_exact_examples=["10075: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")", "10077: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")", "10078: product_class=Some(\"Kids Beds\"), category_leaf=Some(\"Baby & Kids / Toddler & Kids Bedroom Furniture / Kids Beds\")"]
+query="end table between recliners" exact_recall=0.00 resolved_constraints=["ProductType(\"recliners\")"] missed_exact_examples=["1796: product_class=Some(\"End Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")", "18389: product_class=Some(\"End Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")", "1958: product_class=Some(\"End Tables|Nightstands\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")"]
+query="luau string lights" exact_recall=0.00 resolved_constraints=["ProductType(\"string lights\")"] missed_exact_examples=["3335: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")", "3336: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")", "3337: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")"]
+
+=== Exact recall itself is low: native's structural constraint is missing even same-category ground truth -- a real native matching defect, not just a scope-mismatch artifact ===
+
+=== H3: execution speed, identical candidate set and semantic scope (n=15) ===
+native mean latency=4.2991ms  solr-restricted mean latency=3.8569ms
+latency ratio (solr / native): 0.90x
+=== H3 FALSIFIED: native's speed advantage does not clear the >=2x bar once candidate set is held identical ===
