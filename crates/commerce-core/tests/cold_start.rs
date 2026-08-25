@@ -1,11 +1,15 @@
 use commerce_core::cold_start::{
     compile_lexicon, coverage_holes, generate_shopper_queries, CatalogProfile,
 };
+use commerce_core::domain::{
+    attributes, Brand, BrandId, Catalog, Category, CategoryId, Inventory, Price, Product,
+    ProductId, ProductType, ProductTypeId, Variant, VariantId,
+};
 use commerce_core::fixtures::{
     cold_start_brands, cold_start_catalog, cold_start_categories, cold_start_product_types,
     shoe_semantic_context, REPRESENTATIVE_QUERY_SET,
 };
-use commerce_core::ir::{compile, measure_coverage};
+use commerce_core::ir::{compile, measure_coverage, ResolvedConstraint, StructuralConstraint};
 
 fn build_profile() -> CatalogProfile {
     CatalogProfile::build(
@@ -194,5 +198,99 @@ fn hand_curated_and_catalog_derived_lexicons_are_independently_comparable() {
     assert_ne!(
         hand_report, catalog_report,
         "the two lexicons should not resolve identically"
+    );
+}
+
+/// Regression guard for `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`
+/// (REJECT): a P9-E08 audit of the real WANDS vocabulary found that a
+/// whole-word "hyponym" heuristic -- admit a broader product-type name's
+/// query to any other real product-type name whose word set is a superset
+/// -- produces confirmed cross-family false positives (e.g. "beds"
+/// admitting "cat beds"/"dog beds & mats"; "candles" admitting "scented
+/// oils & diffusers" purely via an unrelated sibling's ancestor breadcrumb).
+/// `compile_non_brand_lexicon` was deliberately never wired to that
+/// heuristic in production. This fixture reproduces the exact word-subset
+/// shape ("boots" / "hiking boots") that would trigger it, so a future
+/// change that silently re-wires the heuristic without solving the
+/// false-positive problem fails this test immediately.
+#[test]
+fn product_types_with_a_whole_word_subset_relationship_never_merge_into_one_constraint() {
+    fn product_type_only_catalog() -> (Catalog, Vec<ProductType>) {
+        let boots = Product {
+            id: ProductId(1),
+            product_type: ProductTypeId(1),
+            brand: BrandId(1),
+            category: CategoryId(1),
+            title: "Trail Boots".to_string(),
+            attributes: attributes([]),
+            variants: vec![Variant {
+                id: VariantId(1),
+                attributes: attributes([]),
+                price: Price::usd(4_999),
+                inventory: Inventory::in_stock(1),
+            }],
+        };
+        let hiking_boots = Product {
+            id: ProductId(2),
+            product_type: ProductTypeId(2),
+            brand: BrandId(1),
+            category: CategoryId(1),
+            title: "Summit Hiking Boots".to_string(),
+            attributes: attributes([]),
+            variants: vec![Variant {
+                id: VariantId(2),
+                attributes: attributes([]),
+                price: Price::usd(8_999),
+                inventory: Inventory::in_stock(1),
+            }],
+        };
+        let types = vec![
+            ProductType {
+                id: ProductTypeId(1),
+                name: "Boots".to_string(),
+            },
+            ProductType {
+                id: ProductTypeId(2),
+                name: "Hiking Boots".to_string(),
+            },
+        ];
+        (
+            Catalog {
+                products: vec![boots, hiking_boots],
+            },
+            types,
+        )
+    }
+
+    let (catalog, product_types) = product_type_only_catalog();
+    let brands = vec![Brand {
+        id: BrandId(1),
+        name: "Aerowalk".to_string(),
+    }];
+    let categories = vec![Category {
+        id: CategoryId(1),
+        name: "Footwear".to_string(),
+    }];
+    let profile = CatalogProfile::build(&catalog, &brands, &product_types, &categories);
+    let lexicon = compile_lexicon(&profile, 1);
+
+    // "boots" (a whole-word subset of "hiking boots") must resolve to
+    // exactly its own `ProductType`, never a `ProductTypeAny` (or anything
+    // else) that would also admit "hiking boots" products.
+    let compiled = compile("boots", &lexicon);
+    assert_eq!(compiled.constraints.len(), 1, "{compiled:?}");
+    assert_eq!(
+        compiled.constraints[0],
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
+        "\"boots\" must resolve to its own exact product type only, \
+         never merged with the superset \"hiking boots\": {compiled:?}"
+    );
+
+    let compiled_hiking = compile("hiking boots", &lexicon);
+    assert_eq!(compiled_hiking.constraints.len(), 1, "{compiled_hiking:?}");
+    assert_eq!(
+        compiled_hiking.constraints[0],
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(2))),
+        "{compiled_hiking:?}"
     );
 }

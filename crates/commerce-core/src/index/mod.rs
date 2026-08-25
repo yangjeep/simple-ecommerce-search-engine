@@ -397,6 +397,15 @@ impl CatalogIndex {
                 .get(id)
                 .cloned()
                 .unwrap_or_default(),
+            StructuralConstraint::ProductTypeAny(ids) => {
+                let mut bm = RoaringBitmap::new();
+                for id in ids {
+                    if let Some(b) = self.product_type_bitmaps.get(id) {
+                        bm |= b;
+                    }
+                }
+                bm
+            }
             StructuralConstraint::Category(id) => {
                 self.category_bitmaps.get(id).cloned().unwrap_or_default()
             }

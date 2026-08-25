@@ -22,7 +22,7 @@ pub use prefill::{
 };
 pub use profile::{
     compile_lexicon, compile_lexicon_with_alias_enforcement,
-    compile_lexicon_with_brand_canonicalizer, CatalogProfile,
+    compile_lexicon_with_brand_canonicalizer, product_type_hyponym_groups, CatalogProfile,
 };
 
 use crate::ir::{compile, SemanticLexicon};
