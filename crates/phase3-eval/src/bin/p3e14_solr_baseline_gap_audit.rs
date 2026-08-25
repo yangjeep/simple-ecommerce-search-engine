@@ -62,6 +62,7 @@ fn has_no_fq_substitute(c: &ResolvedConstraint) -> bool {
         ResolvedConstraint::Structural(StructuralConstraint::Brand(_)) => false,
         ResolvedConstraint::Structural(StructuralConstraint::BrandAny(_)) => false,
         ResolvedConstraint::Structural(StructuralConstraint::ProductType(_)) => true,
+        ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(_)) => true,
         ResolvedConstraint::Structural(StructuralConstraint::Category(_)) => true,
         ResolvedConstraint::Structural(StructuralConstraint::PriceUnderCents(_)) => true,
         ResolvedConstraint::Structural(StructuralConstraint::PriceOverCents(_)) => true,
@@ -85,6 +86,9 @@ fn kind_label(c: &ResolvedConstraint) -> String {
         }
         ResolvedConstraint::Structural(StructuralConstraint::ProductType(_)) => {
             "Structural::ProductType".into()
+        }
+        ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(_)) => {
+            "Structural::ProductTypeAny".into()
         }
         ResolvedConstraint::Structural(StructuralConstraint::Category(_)) => {
             "Structural::Category".into()

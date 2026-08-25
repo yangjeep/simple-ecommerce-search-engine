@@ -124,7 +124,8 @@ fn single_valued_slot(c: &ResolvedConstraint) -> Option<SingleValuedSlot> {
         | ResolvedConstraint::Structural(StructuralConstraint::BrandAny(_)) => {
             Some(SingleValuedSlot::Brand)
         }
-        ResolvedConstraint::Structural(StructuralConstraint::ProductType(_)) => {
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(_))
+        | ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(_)) => {
             Some(SingleValuedSlot::ProductType)
         }
         ResolvedConstraint::Structural(StructuralConstraint::Category(_)) => {
@@ -185,6 +186,7 @@ fn is_entity_constraint(c: &ResolvedConstraint) -> bool {
             StructuralConstraint::Brand(_)
                 | StructuralConstraint::BrandAny(_)
                 | StructuralConstraint::ProductType(_)
+                | StructuralConstraint::ProductTypeAny(_)
                 | StructuralConstraint::Category(_)
         )
     )

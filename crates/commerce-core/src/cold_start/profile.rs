@@ -164,6 +164,16 @@ impl CatalogProfile {
         self.product_type_names.keys().map(String::as_str)
     }
 
+    /// Paired with [`product_type_hyponym_groups`] so evaluation tooling
+    /// can audit real hyponym groups (e.g. for cross-family false
+    /// positives) without duplicating `CatalogProfile`'s internal name
+    /// collection logic.
+    pub fn product_type_names_with_ids(&self) -> impl Iterator<Item = (&str, ProductTypeId)> {
+        self.product_type_names
+            .iter()
+            .map(|(name, id)| (name.as_str(), *id))
+    }
+
     pub fn brand_names(&self) -> impl Iterator<Item = &str> {
         self.brand_names.keys().map(String::as_str)
     }
@@ -420,11 +430,64 @@ pub fn compile_lexicon_with_alias_enforcement(
     lex
 }
 
+/// Issue #55 (`docs/experiments/ISSUE55_PRODUCT_TYPE_HYPONYM_PROTOCOL.md`):
+/// product type `B` is a whole-word hyponym of `A` when every
+/// whitespace-separated word of `A`'s name also appears in `B`'s name
+/// and `B` has at least one additional word -- e.g. `"beds"` is a
+/// hyponym-parent of `"kids beds"` (real WANDS vocabulary: a query
+/// resolving to the broader "beds" type should also admit the more
+/// specific "kids beds" products, which a shopper would reasonably
+/// expect). Deliberately **whole-word**, computed via
+/// `split_whitespace`, not raw substring containment: `"table"` must
+/// never match inside `"turntable"` (one word, no space) the way
+/// substring containment would allow, since a turntable is not a kind
+/// of table. Built once from real catalog vocabulary already collected
+/// by `CatalogProfile` -- no new data, no model call, fully
+/// deterministic.
+/// Exposed (beyond `compile_non_brand_lexicon`'s internal use) so
+/// evaluation tooling can audit which pairs a catalog's real vocabulary
+/// actually produces -- e.g. to check for cross-family false positives
+/// before trusting a `ProductTypeAny` recall improvement.
+pub fn product_type_hyponym_groups(
+    product_type_names: &BTreeMap<String, ProductTypeId>,
+) -> BTreeMap<ProductTypeId, Vec<ProductTypeId>> {
+    let word_sets: Vec<(ProductTypeId, BTreeSet<&str>)> = product_type_names
+        .iter()
+        .map(|(name, id)| (*id, name.split_whitespace().collect()))
+        .collect();
+    let mut groups: BTreeMap<ProductTypeId, Vec<ProductTypeId>> = BTreeMap::new();
+    for (a_id, a_words) in &word_sets {
+        for (b_id, b_words) in &word_sets {
+            if a_id == b_id {
+                continue;
+            }
+            // Strict subset (not equal): `b_words` must have strictly
+            // more words than `a_words`, so two distinct names with the
+            // exact same word set (rare, but not ruled out by the domain
+            // model) never form a spurious hyponym pair either way.
+            if a_words.len() < b_words.len() && a_words.is_subset(b_words) {
+                groups.entry(*a_id).or_default().push(*b_id);
+            }
+        }
+    }
+    groups
+}
+
 fn compile_non_brand_lexicon(
     profile: &CatalogProfile,
     min_enum_frequency: usize,
     lex: &mut SemanticLexicon,
 ) {
+    // NOT wired to `product_type_hyponym_groups` -- see
+    // `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md` (REJECT).
+    // A real-vocabulary audit (P9-E08) found the whole-word bag-of-words
+    // test produces confirmed cross-family false positives when applied
+    // to this catalog's real product-type-name vocabulary (some of which
+    // are full ancestor-breadcrumb paths, not bare leaf terms), e.g.
+    // "beds" pulling in "cat beds"/"dog beds & mats", and "candles"
+    // pulling in "scented oils & diffusers" purely because "candles"
+    // appears in an unrelated sibling's ancestor path segment. Each
+    // product type still gets its own precise `ProductType` constraint.
     for (name, id) in &profile.product_type_names {
         lex.insert(
             name,
@@ -477,5 +540,160 @@ fn compile_non_brand_lexicon(
             })
             .collect();
         lex.insert(value_lower, candidates);
+    }
+}
+
+#[cfg(test)]
+mod hyponym_tests {
+    use super::*;
+
+    fn names(pairs: &[(&str, u32)]) -> BTreeMap<String, ProductTypeId> {
+        pairs
+            .iter()
+            .map(|(name, id)| (name.to_string(), ProductTypeId(*id)))
+            .collect()
+    }
+
+    #[test]
+    fn broader_term_admits_a_more_specific_whole_word_superset() {
+        let types = names(&[("beds", 1), ("kids beds", 2), ("sofas", 3)]);
+        let groups = product_type_hyponym_groups(&types);
+        assert_eq!(groups.get(&ProductTypeId(1)), Some(&vec![ProductTypeId(2)]));
+        assert_eq!(
+            groups.get(&ProductTypeId(2)),
+            None,
+            "the more specific term has no hyponyms of its own here"
+        );
+        assert_eq!(
+            groups.get(&ProductTypeId(3)),
+            None,
+            "unrelated term stays untouched"
+        );
+    }
+
+    /// The adversarial case the whole-word design exists specifically to
+    /// reject: "table" must never be treated as a hyponym-parent of
+    /// "turntable" just because the substring "table" appears inside it --
+    /// a turntable is not a kind of table. `split_whitespace` treats
+    /// "turntable" as a single, different word from "table", so no
+    /// subset relation holds either direction.
+    #[test]
+    fn whole_word_matching_rejects_the_turntable_false_positive() {
+        let types = names(&[("table", 1), ("turntable", 2)]);
+        let groups = product_type_hyponym_groups(&types);
+        assert!(
+            groups.get(&ProductTypeId(1)).is_none_or(|v| v.is_empty()),
+            "\"table\" must not admit \"turntable\" as a hyponym"
+        );
+        assert!(
+            groups.get(&ProductTypeId(2)).is_none_or(|v| v.is_empty()),
+            "\"turntable\" must not admit \"table\" as a hyponym either"
+        );
+    }
+
+    #[test]
+    fn identical_word_sets_never_form_a_hyponym_pair() {
+        // Two distinct product-type ids that happen to normalize to the
+        // same word set in a different order ("chairs dining" is not a
+        // real WANDS shape, but the domain model does not forbid it) --
+        // neither is a strict word-count superset of the other.
+        let types = names(&[("dining chairs", 1), ("chairs dining", 2)]);
+        let groups = product_type_hyponym_groups(&types);
+        assert!(groups.get(&ProductTypeId(1)).is_none_or(|v| v.is_empty()));
+        assert!(groups.get(&ProductTypeId(2)).is_none_or(|v| v.is_empty()));
+    }
+
+    #[test]
+    fn empty_vocabulary_produces_no_groups() {
+        assert!(product_type_hyponym_groups(&BTreeMap::new()).is_empty());
+    }
+
+    /// RED/property test: for 500 randomized synthetic vocabularies, every
+    /// entry `product_type_hyponym_groups` produces must satisfy the
+    /// safety property by direct re-derivation from the *names* themselves
+    /// (not the function's own internal logic) -- a hyponym's word set is
+    /// always a genuine, strict word-count superset of its parent's, and a
+    /// product type is never its own hyponym. This is the RED baseline the
+    /// implementation above is checked against, not merely argued to be
+    /// correct.
+    #[test]
+    fn hyponym_groups_are_always_genuine_strict_whole_word_supersets_across_randomized_vocabularies(
+    ) {
+        use rand::seq::SliceRandom;
+        use rand::{Rng, SeedableRng};
+        use rand_chacha::ChaCha8Rng;
+
+        let vocab = [
+            "beds",
+            "kids",
+            "sofas",
+            "chairs",
+            "dining",
+            "tables",
+            "end",
+            "lamps",
+            "table",
+            "turntable",
+            "rugs",
+            "outdoor",
+        ];
+        let mut rng = ChaCha8Rng::seed_from_u64(255);
+        for trial in 0..500u32 {
+            let type_count = rng.gen_range(1..=10);
+            let mut names_by_id: BTreeMap<String, ProductTypeId> = BTreeMap::new();
+            let mut next_id = 1u32;
+            let mut seen_names = std::collections::BTreeSet::new();
+            for _ in 0..type_count {
+                let word_count = rng.gen_range(1..=3);
+                let mut shuffled = vocab;
+                shuffled.shuffle(&mut rng);
+                let name = shuffled[..word_count].join(" ");
+                if seen_names.insert(name.clone()) {
+                    names_by_id.insert(name, ProductTypeId(next_id));
+                    next_id += 1;
+                }
+            }
+
+            let groups = product_type_hyponym_groups(&names_by_id);
+            let word_set_by_id: BTreeMap<ProductTypeId, BTreeSet<&str>> = names_by_id
+                .iter()
+                .map(|(name, id)| (*id, name.split_whitespace().collect()))
+                .collect();
+
+            for (parent_id, hyponym_ids) in &groups {
+                let parent_words = &word_set_by_id[parent_id];
+                for hyponym_id in hyponym_ids {
+                    assert_ne!(
+                        hyponym_id, parent_id,
+                        "trial {trial}: a product type must never be its own hyponym"
+                    );
+                    let hyponym_words = &word_set_by_id[hyponym_id];
+                    assert!(
+                        parent_words.len() < hyponym_words.len()
+                            && parent_words.is_subset(hyponym_words),
+                        "trial {trial}: {parent_id:?} ({parent_words:?}) -> {hyponym_id:?} \
+                         ({hyponym_words:?}) is not a genuine strict whole-word superset"
+                    );
+                }
+            }
+
+            // Completeness in the other direction: every genuine strict
+            // whole-word superset pair the vocabulary contains must show
+            // up in `groups`, not just the ones that do appear being valid.
+            for (a_id, a_words) in &word_set_by_id {
+                for (b_id, b_words) in &word_set_by_id {
+                    if a_id == b_id {
+                        continue;
+                    }
+                    if a_words.len() < b_words.len() && a_words.is_subset(b_words) {
+                        assert!(
+                            groups.get(a_id).is_some_and(|v| v.contains(b_id)),
+                            "trial {trial}: {a_id:?} ({a_words:?}) should admit {b_id:?} \
+                             ({b_words:?}) as a hyponym but does not"
+                        );
+                    }
+                }
+            }
+        }
     }
 }

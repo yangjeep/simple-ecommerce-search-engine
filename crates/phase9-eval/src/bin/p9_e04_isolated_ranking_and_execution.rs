@@ -347,6 +347,7 @@ fn main() {
                     c,
                     commerce_core::ir::ResolvedConstraint::Structural(
                         commerce_core::ir::StructuralConstraint::ProductType(_)
+                            | commerce_core::ir::StructuralConstraint::ProductTypeAny(_)
                             | commerce_core::ir::StructuralConstraint::Category(_)
                     )
                 )
@@ -384,6 +385,20 @@ fn main() {
                                 .map(String::as_str)
                                 .unwrap_or("?")
                         ),
+                        commerce_core::ir::ResolvedConstraint::Structural(
+                            commerce_core::ir::StructuralConstraint::ProductTypeAny(ids),
+                        ) => {
+                            let names: Vec<&str> = ids
+                                .iter()
+                                .map(|id| {
+                                    product_type_name_by_id
+                                        .get(id)
+                                        .map(String::as_str)
+                                        .unwrap_or("?")
+                                })
+                                .collect();
+                            format!("ProductTypeAny({names:?})")
+                        }
                         other => format!("{other:?}"),
                     })
                     .collect();

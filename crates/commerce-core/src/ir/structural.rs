@@ -21,6 +21,15 @@ pub enum StructuralConstraint {
     /// new enforcement tier by itself.
     BrandAny(Vec<BrandId>),
     ProductType(ProductTypeId),
+    /// Issue #55 (`docs/experiments/ISSUE55_PRODUCT_TYPE_HYPONYM_PROTOCOL.md`):
+    /// matches if `product.product_type` is any of the listed ids, exactly
+    /// mirroring [`StructuralConstraint::BrandAny`]'s own shape and
+    /// safety argument -- a *deterministic* whole-word hyponym group
+    /// (e.g. "beds" admitting the more specific "kids beds"), computed at
+    /// lexicon-compile time from real catalog vocabulary, never guessed
+    /// or learned online. A single-element list behaves identically to
+    /// [`StructuralConstraint::ProductType`].
+    ProductTypeAny(Vec<ProductTypeId>),
     Category(CategoryId),
     PriceUnderCents(i64),
     PriceOverCents(i64),
@@ -32,6 +41,7 @@ impl StructuralConstraint {
             StructuralConstraint::Brand(id) => product.brand == *id,
             StructuralConstraint::BrandAny(ids) => ids.contains(&product.brand),
             StructuralConstraint::ProductType(id) => product.product_type == *id,
+            StructuralConstraint::ProductTypeAny(ids) => ids.contains(&product.product_type),
             StructuralConstraint::Category(id) => product.category == *id,
             StructuralConstraint::PriceUnderCents(cents) => variant.price.amount_cents < *cents,
             StructuralConstraint::PriceOverCents(cents) => variant.price.amount_cents > *cents,

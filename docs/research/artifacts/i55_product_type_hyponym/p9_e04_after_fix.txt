@@ -1,0 +1,34 @@
+=== P9-E04: isolated ranking-quality (H1) + execution-speed (H3) comparison, identical candidate set ===
+warmup pass (both engines, restricted-query path, discarded)...
+  [large candidate set] outcome=FastPath query="driftwood mirror" constraints=0 candidates=42994
+  [large candidate set] outcome=FastPath query="marble" constraints=0 candidates=42994
+structural_routed queries seen: 21, evaluated (candidate set <= 5000): 15, skipped (candidate set too large): 2
+candidate-set size: median=634, max=42994
+=== candidate-set size by routing outcome (Issue #55 whole-workload diagnostic) ===
+FastPath: n=7, median_candidates=655, max_candidates=42994, excluded_by_max_candidates_cap=2
+Hybrid: n=14, median_candidates=634, max_candidates=1944, excluded_by_max_candidates_cap=0
+
+=== H1: ranking quality, identical candidate set (n=15) ===
+native NDCG@10=0.5813  solr-restricted NDCG@10=0.5292
+relative gap (native vs solr, same candidates): +9.84%
+=== H1 FALSIFIED: native's ranking signal is NOT materially worse on the identical candidate set -- the end-to-end gap must come predominantly from retrieval/coverage differences, not ranking ===
+
+=== H1 follow-on diagnostic: candidate-set relevant-document recall (prompted by H1's own result) ===
+mean fraction of a query's real judged-relevant documents present ANYWHERE in native's structural candidate set, before any ranking (n=15): 0.6968
+queries where the candidate set contains 100% of judged-relevant documents: 2/15
+split by grade -- Exact recall (n=11): 0.6910   Partial recall (n=15): 0.6604
+
+=== aggregate test (not anecdotal): does a real entity constraint (ProductType/Category) predict higher Exact recall than an attribute-only (e.g. incidental color) constraint? ===
+queries with a ProductType/Category constraint (n=1): mean Exact recall = 0.0000
+queries with only attribute-level constraints, no entity (n=10): mean Exact recall = 0.7601
+
+=== qualitative examples: low-Exact-recall queries, resolved constraint, missed Exact products' real category ===
+query="white splashproof shiplap wallpaper" exact_recall=0.00 resolved_constraints=["Attribute(Enum { attribute: \"color\", value: \"white\" })", "ProductType(\"wallpaper\")"] missed_exact_examples=["11372: product_class=Some(\"Wall Paneling\"), category_leaf=Some(\"Home Improvement / Flooring, Walls & Ceiling / Walls & Ceilings / Wall Paneling\")", "26279: product_class=Some(\"Wallpaper\"), category_leaf=Some(\"Décor & Pillows / Wall Décor / Wallpaper\")"]
+query="end table between recliners" exact_recall=0.00 resolved_constraints=["Structural(ProductTypeAny([ProductTypeId(52), ProductTypeId(683), ProductTypeId(334), ProductTypeId(813)]))"] missed_exact_examples=["1796: product_class=Some(\"End Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")", "18389: product_class=Some(\"End Tables\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")", "1958: product_class=Some(\"End Tables|Nightstands\"), category_leaf=Some(\"Furniture / Living Room Furniture / Coffee Tables & End Tables / End & Side Tables\")"]
+query="luau string lights" exact_recall=0.00 resolved_constraints=["Structural(ProductTypeAny([ProductTypeId(428), ProductTypeId(735)]))"] missed_exact_examples=["3335: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")", "3336: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")", "3337: product_class=Some(\"Holiday Lighting\"), category_leaf=Some(\"Holiday Décor / Holiday Lighting\")"]
+
+
+=== H3: execution speed, identical candidate set and semantic scope (n=15) ===
+native mean latency=1.0262ms  solr-restricted mean latency=2.2303ms
+latency ratio (solr / native): 2.17x
+=== H3 CONFIRMED: native is still materially faster (>=2x) even with candidate set/semantic scope held identical -- the speed advantage is not an artifact of a relevance shortfall ===
