@@ -218,3 +218,56 @@ is looked at again, per this repository's rule 10 discipline.
   the numbers being re-audited; no new fitting/tuning occurs.
 - **Known limitations**: unchanged from the original Phase 9 record —
   WANDS has no real price field (`Price::usd(0)` for every product).
+
+## 9. Dated addenda (added after results were read — disclosed, not silently corrected)
+
+### 2026-08-25, addendum 1 — §6 T2 KEEP-band citation error
+
+§6's original text cited the T2 KEEP band as "NDCG 0.1192–0.1194 vs Solr
+0.1505" (structural_routed n=150). That is the **original, pre-P9-E05-fix**
+figure (`PHASE9_DECISION.md`'s first-pass number). It was a drafting
+error: current HEAD already contains the P9-E05 `compile()` fix (landed
+before the determinism fix, both before this round), so any honest rerun
+was always going to reproduce the **already-published, post-P9-E05-fix**
+population (n=21, NDCG 0.2953 vs 0.3939, `PHASE9_DECISION.md`'s corrected
+figure / `p9_e06_corrected_baseline_rerun/p9_e02_after_run*.txt`), not the
+superseded n=150 figure — the routing-split target stated two lines later
+in §6 (21/480) was already the correct one; only the NDCG figures quoted
+alongside it were wrong. This is disclosed exactly as an adversarial
+reviewer found it (see the log's adversarial-review section): the correct
+comparison target was actually knowable before this protocol was drafted
+(it appears verbatim in `benchmarks/manifests/p9_e06_corrected_baseline_rerun.yaml`,
+read during this round's own reconnaissance before T2 ran), so T2's
+"preregistration" was not genuinely blind — a limitation recorded here
+rather than glossed over, per this repository's own disclosure convention
+(`ISSUE45_PROTOCOL.md` §1). The rerun result itself correctly targets the
+post-fix population; only this document's gate text was wrong.
+
+### 2026-08-25, addendum 2 — P9-E01 "same document set" scope correction
+
+§4/§6 characterize P9-E01 as verifying document-set identity "every run."
+An adversarial review found the raw artifacts only support a
+**within-run** claim: `both arms returned the same document set: true`
+compares the bitmap-restrict arm against the TermSetQuery arm on **one**
+already-built index within a single process invocation — it is not a
+cross-run comparison of DocIds across independent index builds, so it
+does not by itself demonstrate cross-run indexing determinism (the actual
+subject of Issue #43). Cross-run determinism for the fixed
+`bitmap_delegate::build_index` is instead established directly by T2/T3's
+NDCG figures, which require a fresh index rebuild each of the 3 (T2) and
+6 (T3) independent process runs and were byte-identical every time — see
+the log for the corrected framing.
+
+### 2026-08-25, addendum 3 — T3 Solr-JVM-warmup confound, follow-up isolated rerun added
+
+The first T3 pass (6 runs) ran immediately after T2 (3 runs, 1,440
+queries) against the **same, unrestarted** Solr JVM process — violating
+this protocol's own §7 checklist item 1 ("fresh, same-run" baseline,
+found violated by an adversarial reviewer, not by this document's
+original author). A follow-up T3-only rerun was added: Solr stopped,
+restarted fresh, catalog freshly reindexed, and P9-E04 rerun 6 more times
+with no prior query traffic on that JVM. See the log for the result — the
+qualitative H3 verdict does not change, but the confound is real and
+disclosed there in full, including that it does not implicate the
+Issue #43 fix at all (P9-E04's native arm does not use
+`bitmap_delegate`/Tantivy).
