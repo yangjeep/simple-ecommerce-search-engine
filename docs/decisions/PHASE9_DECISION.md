@@ -258,6 +258,44 @@ before and after the fix (n=11, Exact recall 0.4757 both times) — direct
 evidence the repair is precisely scoped and does not disturb queries that
 were already resolving correctly.
 
+### Addendum (2026-08-25) — H3 (execution-speed advantage) REVERSED: native is now consistently FASTER, not slower
+
+This document's own text above states H3's fundamental-vs-implementation
+question was "explicitly undetermined here — it is a required input to
+Issue #38 E1." It has since been determined, in two Issue #55
+checkpoints: `docs/decisions/ISSUE55_RANK_SCALING_DECISION.md` and
+`docs/decisions/ISSUE55_TEXT_TOKEN_CACHE_DECISION.md`. Summary —
+`execute_ranked` had two real, fixable inefficiencies, not one fundamental
+cost: (1) a full `O(n log n)` sort where a partial top-K selection
+suffices (fixed, modest 5-12% end-to-end gain on its own), and (2) far
+more consequentially, re-tokenizing every candidate's title/text
+attributes from scratch on every single query call, now precomputed once
+at `CatalogIndex::build` time (a real ~50-59% end-to-end cost reduction
+on its own, in a controlled synthetic benchmark). **Both fixes together,
+re-measured on the exact same real WANDS data and methodology this
+document's own 0.42x-0.60x figure came from** (`p9_e04_isolated_ranking_and_execution`,
+identical candidate set, fresh-Solr discipline): the H3 latency ratio
+(solr/native) is now **4.59x-8.19x across 6 runs against a freshly
+restarted Solr** (and 3.23x-6.32x across 6 runs against a partially-warm
+one) — native is consistently, comfortably **faster** than
+Solr-restricted, clearing the project's own >=2x bar in every single run
+of either condition. H1 (NDCG, +4.33%) is exactly unchanged in every run,
+confirming the fixes altered nothing about *what* is returned, only how
+fast.
+
+**This reverses this document's own H3 verdict from FALSIFIED to
+CONFIRMED**, preserved here rather than silently rewritten: the original
+0.42x-0.60x figure was real and correctly measured at the time, against
+the code that existed then; it was not measuring something fundamental
+about native's ranking architecture, but two concrete, fixable
+implementation defects, both now fixed and regression-tested (a 500-trial
+randomized property test proves each fix produces byte-identical scoring
+output to the original implementation, for both the sort and the
+tokenization cache). Issue #38 E1's own physical-execution-advantage
+input, previously undetermined, is now: native's ranking pass, once these
+two defects are fixed, is not merely competitive with Solr's own
+identical-scope restricted query — it is several times faster.
+
 ## Decision discipline applied
 
 The traffic-weighted P9-E02 headline was not reported without the

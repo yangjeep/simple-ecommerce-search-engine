@@ -66,6 +66,80 @@ fn score_preferences(
 /// `effective_attributes` merge) so it stays as cheap as the no-op it
 /// replaces -- see `execute_ranked`'s own P1-D comment below for why that
 /// merge is avoided whenever possible.
+/// Issue #55 (`docs/experiments/ISSUE55_TEXT_TOKEN_CACHE_PROTOCOL.md`):
+/// the ranking-scaling checkpoint found `score_text_relevance`'s own
+/// per-call `to_lowercase()`/`split_whitespace()` tokenization of a
+/// candidate's title and every `Text` attribute -- redone on *every*
+/// query call, for every candidate -- was a bigger contributor to
+/// `execute_ranked`'s total cost than the full sort that checkpoint
+/// fixed. `title` and `Text` attributes are `Product`-level fields (not
+/// `Variant`-level -- confirmed by reading `domain::product::Product`'s
+/// and `domain::variant::Variant`'s own field lists, not assumed), so
+/// this token set is identical for every variant of the same product and
+/// never changes for the lifetime of one `CatalogIndex` -- exactly the
+/// catalog-dependent, query-independent computation this project's own
+/// thesis says belongs at build/ingestion time, not repeated per query.
+/// Deliberately reuses the *exact* `to_lowercase()` + `split_whitespace()`
+/// logic `score_text_relevance` already used (not `super::tokenize`'s
+/// different alphanumeric-splitting rule), so scores are provably
+/// unchanged, not merely similar -- proven by
+/// `score_text_relevance_precomputed_matches_live_tokenization_across_randomized_inputs`,
+/// not just argued.
+#[derive(Debug, Clone, Default)]
+pub(super) struct PrecomputedTextTokens {
+    title_tokens: HashSet<String>,
+    text_attr_tokens: HashSet<String>,
+}
+
+pub(super) fn precompute_text_tokens(product: &Product) -> PrecomputedTextTokens {
+    let title_tokens = product
+        .title
+        .to_lowercase()
+        .split_whitespace()
+        .map(str::to_string)
+        .collect();
+    let mut text_attr_tokens = HashSet::new();
+    for value in product.attributes.values() {
+        if let AttributeValue::Text(t) = value {
+            for token in t.to_lowercase().split_whitespace() {
+                text_attr_tokens.insert(token.to_string());
+            }
+        }
+    }
+    PrecomputedTextTokens {
+        title_tokens,
+        text_attr_tokens,
+    }
+}
+
+fn score_text_relevance_precomputed(
+    residual_lexical: &[String],
+    tokens: &PrecomputedTextTokens,
+) -> f64 {
+    if residual_lexical.is_empty() {
+        return 0.0;
+    }
+    residual_lexical
+        .iter()
+        .map(|token| {
+            let token = token.to_lowercase();
+            let mut hit = 0.0;
+            if tokens.title_tokens.contains(token.as_str()) {
+                hit += 2.0;
+            }
+            if tokens.text_attr_tokens.contains(token.as_str()) {
+                hit += 1.0;
+            }
+            hit
+        })
+        .sum()
+}
+
+/// The original, live-tokenization-per-call implementation, kept only as
+/// the independent reference `score_text_relevance_precomputed` is proven
+/// equivalent against -- no longer called by `execute_ranked` itself
+/// (see `PrecomputedTextTokens`'s own doc comment).
+#[cfg(test)]
 fn score_text_relevance(residual_lexical: &[String], product: &Product) -> f64 {
     if residual_lexical.is_empty() {
         return 0.0;
@@ -129,7 +203,14 @@ pub(super) fn execute_ranked(
                 .lookup_variant(catalog, variant)
                 .expect("execute() only returns ids that exist in this catalog");
             let score = if query.preferences.is_empty() {
-                score_text_relevance(&query.residual_lexical, p)
+                let p_idx = *index
+                    .product_location
+                    .get(&product)
+                    .expect("execute() only returns ids that exist in this catalog");
+                score_text_relevance_precomputed(
+                    &query.residual_lexical,
+                    &index.product_text_tokens[p_idx],
+                )
             } else {
                 let attrs = effective_attributes(p, v);
                 score_preferences(&query.preferences, p, v, &attrs)
@@ -252,6 +333,62 @@ mod tests {
             title: title.to_string(),
             attributes: attributes(text_attrs),
             variants: vec![],
+        }
+    }
+
+    #[test]
+    fn score_text_relevance_precomputed_matches_live_tokenization_across_randomized_inputs() {
+        use rand::seq::SliceRandom;
+        use rand::{Rng, SeedableRng};
+        use rand_chacha::ChaCha8Rng;
+
+        let vocab = [
+            "waterproof",
+            "lightweight",
+            "running",
+            "trail",
+            "leather",
+            "insulated",
+            "Zoom",
+            "Air",
+        ];
+        let mut rng = ChaCha8Rng::seed_from_u64(155);
+        for trial in 0..500u32 {
+            // A product with a randomly-sized, randomly-ordered subset of
+            // the vocabulary in its title, and (sometimes) a second
+            // subset in a Text attribute -- exercising empty titles, empty
+            // attributes, and residual tokens that hit neither, per this
+            // experiment's own adversarial-review checklist.
+            let mut shuffled = vocab;
+            shuffled.shuffle(&mut rng);
+            let title_len = rng.gen_range(0..=vocab.len());
+            let title = shuffled[..title_len].join(" ");
+
+            let mut attrs: Vec<(&'static str, AttributeValue)> = Vec::new();
+            if rng.gen_bool(0.5) {
+                let mut shuffled2 = vocab;
+                shuffled2.shuffle(&mut rng);
+                let attr_len = rng.gen_range(0..=vocab.len());
+                attrs.push((
+                    "description",
+                    AttributeValue::Text(shuffled2[..attr_len].join(" ")),
+                ));
+            }
+            let product = product_with(&title, attrs);
+
+            let residual_len = rng.gen_range(0..=3);
+            let residual: Vec<String> = (0..residual_len)
+                .map(|_| vocab.choose(&mut rng).unwrap().to_string())
+                .collect();
+
+            let expected = score_text_relevance(&residual, &product);
+            let tokens = precompute_text_tokens(&product);
+            let actual = score_text_relevance_precomputed(&residual, &tokens);
+            assert_eq!(
+                actual, expected,
+                "trial {trial}: precomputed score diverged from live tokenization \
+                 (title={title:?}, residual={residual:?})"
+            );
         }
     }
 

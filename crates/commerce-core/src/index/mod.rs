@@ -92,6 +92,14 @@ pub struct CatalogIndex {
     // one of 18 candidate fields), so a linear scan in `identifier_lookup`
     // costs nothing measurable and needs no extra hashing machinery.
     identifier_dictionaries: Vec<(String, IdentifierDictionary)>,
+
+    // Issue #55 (`docs/experiments/ISSUE55_TEXT_TOKEN_CACHE_PROTOCOL.md`):
+    // each product's title/Text-attribute tokens, computed once here
+    // instead of on every `execute_ranked` call. Indexed by the same
+    // array position `product_location` maps a `ProductId` to (one entry
+    // per product, not per variant -- title/Text attributes are
+    // `Product`-level fields, shared by every variant of that product).
+    product_text_tokens: Vec<rank::PrecomputedTextTokens>,
 }
 
 /// Split text into lowercased alphanumeric tokens. Public so callers that
@@ -139,6 +147,8 @@ impl CatalogIndex {
 
         for (p_idx, product) in catalog.products.iter().enumerate() {
             idx.product_location.insert(product.id, p_idx);
+            idx.product_text_tokens
+                .push(rank::precompute_text_tokens(product));
             for (v_idx, variant) in product.variants.iter().enumerate() {
                 let ord = idx.ordinals.len() as Ordinal;
                 idx.ordinals.push((product.id, variant.id));

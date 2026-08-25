@@ -45,6 +45,7 @@ A few representative measurements, with full caveats preserved in the decision r
 
 - Real-catalog experiments reached **1.2M products** and a **22,458-query judged corpus**.
 - WANDS ordinal faceting beat Solr at every tested point in the 1x–20x controlled scale ladder (**2.5x–72.6x**, depending on checkpoint).
+- Phase 9 originally found native's ranking pass **slower** than Solr-restricted (0.42x–0.60x) on real, structural-routed WANDS traffic once realistic candidate-set sizes were used. Localizing that cost (Issue #55) found two fixable implementation defects, not a fundamental limit; once fixed, the identical real comparison flips to native **4.6x–8.2x faster**, reversing the earlier finding (`docs/decisions/PHASE9_DECISION.md`'s dated addendum).
 - E2b feature discovery: **LLM + deterministic validator macro F1 0.7697 vs. 0.5366** for statistics-only.
 - E2c: true raw full-descriptor agreement was **74.96%**; deterministic canonicalization raised it to **95.20%** for a single-proposal reading and **100%** for the measured ensemble reading. The experiment still concluded **REVISE**, not GO.
 - Multi-tenant pooling looked economically promising in steady state, but rebuild churn and a shared lexical backend produced real tail-latency isolation gaps that became worse/more reliable under correlated bursts.

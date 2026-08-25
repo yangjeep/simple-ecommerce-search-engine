@@ -1,0 +1,50 @@
+   Compiling commerce-core v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/commerce-core)
+    Finished `bench` profile [optimized] target(s) in 22.11s
+     Running benches/rank_bench.rs (target/release/deps/rank_bench-de1ae405c8ea662d)
+Benchmarking execute_ranked_scaling/100
+Benchmarking execute_ranked_scaling/100: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/100: Collecting 100 samples in estimated 5.1126 s (212k iterations)
+Benchmarking execute_ranked_scaling/100: Analyzing
+execute_ranked_scaling/100
+                        time:   [23.311 µs 23.459 µs 23.609 µs]
+                        change: [-52.948% -52.568% -52.182%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Benchmarking execute_ranked_scaling/1000
+Benchmarking execute_ranked_scaling/1000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/1000: Collecting 100 samples in estimated 6.0801 s (25k iterations)
+Benchmarking execute_ranked_scaling/1000: Analyzing
+execute_ranked_scaling/1000
+                        time:   [247.33 µs 251.42 µs 256.71 µs]
+                        change: [-55.658% -54.889% -54.051%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+Benchmarking execute_ranked_scaling/10000
+Benchmarking execute_ranked_scaling/10000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/10000: Collecting 100 samples in estimated 5.0119 s (1700 iterations)
+Benchmarking execute_ranked_scaling/10000: Analyzing
+execute_ranked_scaling/10000
+                        time:   [2.9005 ms 2.9284 ms 2.9583 ms]
+                        change: [-54.318% -53.525% -52.730%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+Benchmarking execute_ranked_scaling/100000
+Benchmarking execute_ranked_scaling/100000: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 5.5s, or reduce sample count to 90.
+Benchmarking execute_ranked_scaling/100000: Collecting 100 samples in estimated 5.5141 s (100 iterations)
+Benchmarking execute_ranked_scaling/100000: Analyzing
+execute_ranked_scaling/100000
+                        time:   [53.878 ms 54.415 ms 55.121 ms]
+                        change: [-39.442% -38.702% -37.811%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+
