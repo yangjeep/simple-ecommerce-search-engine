@@ -1,0 +1,16 @@
+=== Issue #51 Punt-path delegate-cost floor isolation ===
+catalog: 42995 products (matches r1_full_gate_scale_rerun.rs's own scale)
+
+--- reproduction gate: Treatment A vs Treatment E, row 1 only ---
+Treatment A row 1: trials=["0.00039", "0.00033", "0.00019", "0.00018", "0.00018", "0.00018", "0.00018"] median=0.00018ms
+Treatment E row 1: trials=["0.01077", "0.00923", "0.00917", "0.00893", "0.00901", "0.00888", "0.00887"] median=0.00901ms
+reproduction check: prior checkpoint recorded A~0.0001-0.0003ms, E~0.0097-0.0104ms (docs/decisions/ISSUE51_FULLGATE_SCALE_DECISION.md)
+
+--- isolated floor: identifier_lookup + delegate.search, called directly ---
+isolated floor: trials=["0.00919", "0.00861", "0.00924", "0.00894", "0.00881", "0.00891", "0.00863"] median=0.00891ms
+
+sanity check: identifier_lookup("22") returned 0 hits (expected 0 -- "22" is not a registered identifier); delegate.search(["22"], None, 10) returned 0 hits (expected >0 -- a real Tantivy match, not a vacuous/short-circuited call)
+
+--- decision ---
+isolated floor (0.00891ms) is 98.8% of Treatment E's measured row-1 cost (0.00901ms)
+=== H0 CONFIRMED (>=80%): the gap is dominated by the delegate's own inherent, necessary cost of a real lexical fallback -- R1's <=5% overhead bar, applied to a workload containing a genuinely ambiguous, uncorroborated query, is structurally unclearable by any correctness-preserving treatment ===

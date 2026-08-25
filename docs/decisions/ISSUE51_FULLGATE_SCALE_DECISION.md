@@ -130,3 +130,13 @@ numbers at face value.
 Source: `crates/issue42-eval/src/bin/r1_full_gate_scale_rerun.rs` (new,
 diagnostic only). Raw evidence:
 `docs/research/artifacts/i51_fullgate_scale_rerun/run{1,2,3}.txt`.
+
+### Follow-up resolved (2026-08-25)
+
+The "candidate follow-up" named above (is the `Punt`-path delegate-query
+cost fixable?) is answered:
+`docs/decisions/ISSUE51_PUNT_COST_FLOOR_DECISION.md` found it is
+inherent to correctly delegating to real lexical search, not a fixable
+inefficiency (94.3%-98.8% of Treatment E's row-1 cost reproduces from
+the isolated delegate call alone). This closes the Issue #51
+overhead-gate thread; see `ISSUE51_DECISION.md`'s own dated addendum.

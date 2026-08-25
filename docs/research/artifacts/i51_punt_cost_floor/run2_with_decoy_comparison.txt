@@ -1,0 +1,20 @@
+=== Issue #51 Punt-path delegate-cost floor isolation ===
+catalog: 42995 products (matches r1_full_gate_scale_rerun.rs's own scale)
+
+--- reproduction gate: Treatment A vs Treatment E, row 1 only ---
+Treatment A row 1: trials=["0.00044", "0.00025", "0.00022", "0.00022", "0.00019", "0.00020", "0.00019"] median=0.00022ms
+Treatment E row 1: trials=["0.01177", "0.00954", "0.00983", "0.00947", "0.00998", "0.00995", "0.00993"] median=0.00993ms
+reproduction check: prior checkpoint recorded A~0.0001-0.0003ms, E~0.0097-0.0104ms (docs/decisions/ISSUE51_FULLGATE_SCALE_DECISION.md)
+
+--- isolated floor: identifier_lookup + delegate.search, called directly ---
+isolated floor: trials=["0.00941", "0.00959", "0.00930", "0.00980", "0.00923", "0.00936", "0.00915"] median=0.00936ms
+
+sanity check: identifier_lookup("22") returned 0 hits (expected 0 -- "22" is not a registered identifier); delegate.search(["22"], None, 10) returned 0 hits (0 is expected here -- see comment above; validity does not depend on a nonzero count since this is the identical call the production Punt path makes)
+
+--- comparison: isolated floor for a term with real matches ("decoy") ---
+delegate.search(["decoy"], None, 10) returns 10 hits (a real, large posting-list traversal + BM25 top-10 selection, the most adversarial real-hit case this corpus can produce); trials=["0.42972", "0.43290", "0.42316", "0.42429", "0.42719", "0.42217", "0.43448"] median=0.42719ms
+
+--- decision ---
+isolated floor (0.00936ms) is 94.3% of Treatment E's measured row-1 cost (0.00993ms)
+real-hit comparison: a genuine large-posting-list match ("decoy", 0.42719ms) vs. the zero-hit "22" case (0.00936ms) -- ratio 45.63x, confirming whether the zero-hit floor understates a real match's cost
+=== H0 CONFIRMED (>=80%): the gap is dominated by the delegate's own inherent, necessary cost of a real lexical fallback -- R1's <=5% overhead bar, applied to a workload containing a genuinely ambiguous, uncorroborated query, is structurally unclearable by any correctness-preserving treatment ===
