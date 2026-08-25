@@ -349,3 +349,25 @@ alternative explanation before accepting the entity-constraint one.
 - A speculative fix for native's candidate-set-size ranking-cost scaling
   (P9-E06) before its cause is actually profiled and localized — the
   "what would be built next" item above, not a rushed optimization.
+
+## Addendum (2026-08-25) — Issue #43 reproducibility re-audit: CONFIRMED
+
+`ISSUE38_DECISION.md` disclosed that this document's own numbers (P9-E01,
+P9-E02, and by extension P9-E05/E06 above) were computed using
+`phase9_eval::bitmap_delegate`'s non-deterministic multi-threaded Tantivy
+indexing, before that bug's fix (commit `449c22f`), and had "not been
+re-audited (GitHub Issue #43)." That gap is now closed: see
+`docs/decisions/ISSUE43_DECISION.md` and
+`docs/experiments/ISSUE43_LOG.md` for the full record. Summary — every
+NDCG-based figure above that the fix could plausibly touch reproduced
+**byte-identical** against the fixed code on a freshly fetched real WANDS
+dataset: the structural-routed -25.05% relative gap, the isolated-H1
++4.33% relative gap, and P9-E01's >11x mechanism-level speedup all hold
+exactly. No verdict in this document changes. A separate, previously
+undisclosed methodological gap was found in P9-E04's own H3 latency-ratio
+measurement (sensitive to Solr JVM warm-state by more than 3x across
+conditions tested) — unrelated to the Issue #43 fix, and already
+anticipated in spirit by this document's own "sensitive to warmup state"
+note above (What should be built next, item 4); it does not change H3's
+qualitative FALSIFIED verdict and is tracked as an open thread in
+`ISSUE43_DECISION.md` rather than reopening this document's numbers.
