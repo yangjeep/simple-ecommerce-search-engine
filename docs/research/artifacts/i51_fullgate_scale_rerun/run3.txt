@@ -1,0 +1,108 @@
+=== Issue #51 full-gate rerun at realistic catalog scale ===
+catalog: 42995 products (5 real fixture products + 42990 inert decoys, approximating this project's real WANDS scale of 42,994)
+one-time ingestion/compile-time setup (not part of the query-time overhead gate): CatalogIndex+Tantivy build=87.26ms, Treatment E registry build=1.08924ms
+
+--- Treatment A ---
+row  1 (                     size 22): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  2 (               size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[2], preferences_len=[0]
+row  3 (        size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  4 (                   under $34): 1 sub-queries, outcomes=["fast_path"], hits=4, candidates=[4], constraints=[1], preferences_len=[0]
+row  5 (                    over $34): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  6 ( 2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  7 (      part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row  9 (                 size purple): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row 10 (                 size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[1], preferences_len=[0]
+
+--- Treatment B ---
+row  1 (                     size 22): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=3, candidates=[1, 1, 1], constraints=[1, 1, 1], preferences_len=[0, 0, 0]
+  WRONG-FAMILY FALSE POSITIVE: (ProductId(5), VariantId(50))
+row  2 (               size 22 jeans): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=1, candidates=[0, 1, 0], constraints=[2, 2, 2], preferences_len=[0, 0, 0]
+row  3 (        size 22 wiper blades): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=1, candidates=[1, 0, 0], constraints=[2, 2, 2], preferences_len=[0, 0, 0]
+row  4 (                   under $34): 1 sub-queries, outcomes=["fast_path"], hits=4, candidates=[4], constraints=[1], preferences_len=[0]
+row  5 (                    over $34): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  6 ( 2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  7 (      part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row  9 (                 size purple): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row 10 (                 size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[1], preferences_len=[0]
+
+--- Treatment C ---
+row  1 (                     size 22): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[3]
+row  2 (               size 22 jeans): 1 sub-queries, outcomes=["hybrid"], hits=0, candidates=[1], constraints=[1], preferences_len=[3]
+row  3 (        size 22 wiper blades): 1 sub-queries, outcomes=["hybrid"], hits=0, candidates=[1], constraints=[1], preferences_len=[3]
+row  4 (                   under $34): 1 sub-queries, outcomes=["fast_path"], hits=4, candidates=[4], constraints=[1], preferences_len=[0]
+row  5 (                    over $34): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  6 ( 2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  7 (      part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row  9 (                 size purple): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row 10 (                 size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[1], preferences_len=[0]
+
+--- Treatment D ---
+row  1 (                     size 22): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[3]
+row  2 (               size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  3 (        size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  4 (                   under $34): 1 sub-queries, outcomes=["fast_path"], hits=4, candidates=[4], constraints=[1], preferences_len=[0]
+row  5 (                    over $34): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  6 ( 2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  7 (      part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row  9 (                 size purple): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row 10 (                 size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[1], preferences_len=[0]
+
+--- Treatment E ---
+row  1 (                     size 22): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[3]
+row  2 (               size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  3 (        size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  4 (                   under $34): 1 sub-queries, outcomes=["fast_path"], hits=4, candidates=[4], constraints=[1], preferences_len=[0]
+row  5 (                    over $34): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[1], preferences_len=[0]
+row  6 ( 2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1, candidates=[1], constraints=[2], preferences_len=[0]
+row  7 (      part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row  9 (                 size purple): 1 sub-queries, outcomes=["punt"], hits=0, candidates=[42995], constraints=[0], preferences_len=[0]
+row 10 (                 size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0, candidates=[0], constraints=[1], preferences_len=[0]
+
+--- per-row latency breakdown (single trial, diagnostic only -- explains, does not replace, the median-of-7-trials gate numbers below) ---
+  Treatment A row  1 (                     size 22): 0.00020ms
+  Treatment A row  2 (               size 22 jeans): 0.00017ms
+  Treatment A row  3 (        size 22 wiper blades): 0.00026ms
+  Treatment A row  4 (                   under $34): 0.00033ms
+  Treatment A row  5 (                    over $34): 0.00021ms
+  Treatment A row  6 ( 2015 honda civic brake pads): 0.00029ms
+  Treatment A row  7 (      part number IA-1234-BP): 0.03403ms
+  Treatment A row  9 (                 size purple): 0.02381ms
+  Treatment A row 10 (                 size 999999): 0.00011ms
+  Treatment A row total: 0.05939ms
+  Treatment D row  1 (                     size 22): 0.00942ms
+  Treatment D row  2 (               size 22 jeans): 0.00031ms
+  Treatment D row  3 (        size 22 wiper blades): 0.00040ms
+  Treatment D row  4 (                   under $34): 0.00035ms
+  Treatment D row  5 (                    over $34): 0.00023ms
+  Treatment D row  6 ( 2015 honda civic brake pads): 0.00029ms
+  Treatment D row  7 (      part number IA-1234-BP): 0.03398ms
+  Treatment D row  9 (                 size purple): 0.02477ms
+  Treatment D row 10 (                 size 999999): 0.00010ms
+  Treatment D row total: 0.06986ms
+  Treatment E row  1 (                     size 22): 0.01241ms
+  Treatment E row  2 (               size 22 jeans): 0.00031ms
+  Treatment E row  3 (        size 22 wiper blades): 0.00027ms
+  Treatment E row  4 (                   under $34): 0.00037ms
+  Treatment E row  5 (                    over $34): 0.00023ms
+  Treatment E row  6 ( 2015 honda civic brake pads): 0.00029ms
+  Treatment E row  7 (      part number IA-1234-BP): 0.03615ms
+  Treatment E row  9 (                 size purple): 0.02371ms
+  Treatment E row 10 (                 size 999999): 0.00011ms
+  Treatment E row total: 0.07384ms
+
+--- latency (median of 7 independent batched trials) ---
+Treatment A: trials=["0.05924", "0.05954", "0.05783", "0.05705", "0.05793", "0.05740", "0.05855"] median=0.05793ms
+Treatment B: trials=["0.06218", "0.05944", "0.05942", "0.06656", "0.06133", "0.05900", "0.05981"] median=0.05981ms
+Treatment C: trials=["0.09990", "0.12004", "0.12395", "0.10059", "0.09915", "0.10198", "0.09938"] median=0.10059ms
+Treatment D: trials=["0.06887", "0.07284", "0.06927", "0.06709", "0.07462", "0.06650", "0.06668"] median=0.06887ms
+Treatment E: trials=["0.06799", "0.06722", "0.06946", "0.06704", "0.06907", "0.06683", "0.06757"] median=0.06757ms
+
+--- GO gate evaluation (identical gate to R1/#51, realistic scale) ---
+wrong-family false positives, per treatment: {"B": 1} (require: 0 for that treatment)
+row 1 silent-single-family violations: ["A"] (require: empty)
+negative-row hard-constraint violations: [] (require: empty)
+Treatment A: corroborated mean NDCG@10=0.6667 (require >=0.95), latency overhead vs A=0.0% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=false, negatives_ok=true => GO gate FAIL
+Treatment B: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=3.3% (require <=5% except for A itself), wrong_family_fps=1 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment C: corroborated mean NDCG@10=0.3333 (require >=0.95), latency overhead vs A=73.7% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment D: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=18.9% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment E: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=16.7% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
