@@ -665,3 +665,107 @@ qualitative conclusion (pooling has a real cost advantage over
 process-per-tenant isolation): the true per-process cost a
 one-process-per-tenant deployment would pay is higher than H6's
 short-lived floor alone suggested.
+
+## P7-E05: extended-duration resident overhead (H8, stated before implementation)
+
+H7's per-sample trace showed Furniture's (the largest real tenant)
+in-service RSS still climbing, decelerating but not fully plateaued, at
+the end of its 20-second window. Before treating H7's ~896-900 KB figure
+as a stable number, P7-E05 asks the obvious next question: does that
+curve actually plateau given a much longer window, or does it keep
+climbing without bound (which would suggest a genuine memory leak in
+this architecture's query path -- a materially more serious finding)?
+
+**H8**: Furniture's RSS growth, extended to a much longer resident
+window (180 seconds, 9x H7's 20-second window, sampled every 15
+seconds), decelerates materially in the window's second half compared
+to its first half -- consistent with a bounded allocator/arena
+high-water-mark effect settling toward a ceiling, not an open-ended
+leak. Idle-resident (already flat within H7's first 5-second sample) is
+included as a cheap comparison point, not the focus of this experiment.
+
+**Pass/fail defined in advance**: compare RSS growth (relative to the
+immediate post-load snapshot) accumulated in the FIRST HALF of the
+180-second window (0-90s) against growth accumulated in the SECOND HALF
+(90-180s). If second-half growth is at most half of first-half growth
+(or non-positive), the curve is decelerating toward a plateau --
+CONFIRMED. If second-half growth is comparable to or larger than
+first-half growth, the curve is not decelerating -- FALSIFIED, and would
+require further investigation (e.g. profiling) before trusting any
+long-running-service memory claim.
+
+Reused the exact same `phase7_eval::resident` sampling primitives H7's
+binary uses (factored out into a shared module specifically so P7-E05
+would not duplicate the mechanism), just with `RUN_DURATION` raised from
+20s to 180s and `SAMPLE_INTERVAL` from 5s to 15s. A regression sanity
+run immediately after this refactor reproduced H7's original result
+(idle growth 222.7-244.0 KB, Furniture 896-904 KB, near-empty tenants
+196 KB across an ad-hoc check), confirming the refactor did not change
+behavior before this new experiment was trusted.
+
+## P7-E05 result: H8 CONFIRMED, reproduced across 3 independent runs
+
+| condition | run1 | run2 | run3 |
+|---|---|---|---|
+| idle: peak growth (KB) | 244 | 244 | 244 |
+| idle: first-half / second-half growth (KB) | 244 / 0 | 244 / 0 | 244 / 0 |
+| Furniture: peak growth (KB, 180s window) | 1,004 | 1,004 | 1,024 |
+| Furniture: first-half / second-half growth (KB) | 984 / 20 | 976 / 28 | 1,004 / 20 |
+| Furniture: total queries served | 51,396 | 51,608 | 50,764 |
+
+Idle-resident's curve is identical in shape across all 3 runs: RSS jumps
+once at the first 15-second sample (matching H7's finding that idle
+growth happens immediately, not gradually) and then stays PERFECTLY
+flat for the remaining 165 seconds of the window (all 12 samples in
+every run show the same value from t15s through t180s) -- H7's idle
+finding holds unchanged over a 9x longer window, with zero further
+growth.
+
+Furniture's curve decelerates sharply and consistently across all 3
+runs: roughly 98% of the total 180-second window's growth happens in
+the first half (976-1,004 KB out of 1,004-1,024 KB total), with only
+20-28 KB accruing in the entire second half -- a ~35-50x deceleration
+ratio between the two halves. **H8 CONFIRMED** by the pre-registered
+criterion (second-half growth is far below half of first-half growth)
+in all 3 runs.
+
+**Named, honestly-disclosed residual**: the deceleration is very strong
+but the curve is not PERFECTLY flat by t180s -- run2's samples show a
+small, real, still-positive creep in the tail (54,108 -> 54,116 ->
+54,116 -> 54,116 -> 54,124 -> 54,132 -> 54,136 KB across the last 7
+samples, i.e. still gaining a few KB every 15-30 seconds), and run3
+shows a similar small tail creep (54,096 -> 54,096 -> 54,100 -> 54,104
+-> 54,104). This residual is roughly two orders of magnitude smaller
+than the initial climb and does not change the H8 verdict (it is well
+within the "decelerating" criterion), but it means "fully plateaued" is
+not asserted -- only "decelerating toward what looks like a bound,"
+per this project's discipline against overclaiming past what was
+actually measured. Whether this tiny residual creep itself eventually
+stops, or continues indefinitely at a much slower rate over an even
+longer window (minutes to hours), remains untested.
+
+**What this means for the economic model**: H8 does not change H7's
+qualitative or quantitative conclusion -- it strengthens confidence in
+it. The ~896-1,024 KB peak growth figure for Furniture is not a
+transient artifact of a too-short measurement window; the underlying
+mechanism (whatever it is -- a thread-local allocator arena high-water
+mark remains the leading, still-unconfirmed hypothesis) settles toward
+a bound rather than growing without limit, which is exactly the
+property a real capacity-planning model needs before treating H7's
+figure as a stable input. Idle-resident's finding is now confirmed
+completely stable over a 9x longer window with literally zero
+additional growth observed.
+
+**Named limitations, not resolved this pass**: only a single 180-second
+run's worth of samples per repetition (12 samples at 15-second
+intervals) was examined for deceleration shape; a finer-grained sample
+rate might reveal structure this coarser one misses. Only Furniture (the
+one condition that hadn't plateaued in H7) and idle were tested --
+near-empty tenants, which had already plateaued within H7's first
+5-second sample, were not re-tested at length (a reasonable scope
+choice given they showed no sign of continued growth in H7, but
+technically untested at 180s). The specific allocator mechanism remains
+a disclosed, unconfirmed hypothesis, as in H7. Whether the tiny residual
+tail creep continues, plateaus, or accelerates over an even longer
+window (minutes to hours, matching a real production service's actual
+lifetime) is untested.

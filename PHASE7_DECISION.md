@@ -1,15 +1,17 @@
-# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E04 first pass
+# Phase 7 Decision (Issue #21 Phase 7) — P7-E00 through P7-E05 first pass
 
 **Decision: PROCEED**, with one hypothesis falsified (in the good
-direction) and five hypotheses confirmed — one with a small,
-honestly-disclosed open question, four cleanly across repeated runs.
+direction) and six hypotheses confirmed — one with a small,
+honestly-disclosed open question, five cleanly across repeated runs.
 The most important new finding (H6) is the first real, measured evidence
 for this project's own opening "statistical multiplexing" thesis: pooling
 tenants in one process has a real, quantifiable cost advantage over
 process-per-tenant isolation. A follow-on finding (H7) shows that
 advantage is even larger than H6 alone suggested: a genuinely
 long-running, actively-serving process costs more than H6's short-lived
-snapshot captured.
+snapshot captured. A further follow-on (H8) confirms H7's figure is a
+stable, decelerating-toward-a-plateau measurement rather than a
+transient artifact of too short a window.
 
 This is the first phase in this project's history to build and measure
 more than one tenant's index in the same process. It does not require
@@ -49,6 +51,12 @@ stated before implementation (`docs/experiments/PHASE7_LOG.md`):
   higher than H6's immediate spawn-and-exit snapshot — closing the gap
   every prior Phase 7 unresolved-risk note named between H6's
   short-lived-process floor and a real deployed service's actual cost.
+- **H8** (P7-E05): H7's still-rising RSS curve for the largest real
+  tenant decelerates toward a plateau given a much longer (9x) resident
+  window, rather than growing without bound — distinguishing a bounded
+  allocator/arena warm-up from a genuine leak, and confirming H7's
+  figure is a stable input rather than a transient artifact of too
+  short a measurement window.
 
 ## Process note: this project's adversarial-review discipline caught a real problem here too
 
@@ -267,12 +275,41 @@ near-empty tenants (+196 KB) but a real, substantial addition for
 tenants under genuine sustained load (+896-900 KB for the largest real
 tenant). Pooling avoids paying this too.
 
+**H8 — CONFIRMED, reproduced across 3 independent runs (P7-E05).**
+Answers the question H7's own limitations section raised: extending the
+resident window 9x (20s -> 180s, sampled every 15s instead of 5s) shows
+Furniture's RSS growth decelerates sharply rather than continuing at a
+similar rate. Roughly 98% of the full window's growth happens in the
+FIRST half (976-1,004 KB out of a 1,004-1,024 KB total across 3 runs),
+with only 20-28 KB accruing in the entire second half — a ~35-50x
+deceleration between halves, in every run, clearing the pre-registered
+"second-half growth at most half of first-half growth" bar decisively.
+Idle-resident's finding is now confirmed completely stable over the same
+9x longer window: RSS jumps once at the first 15-second sample and then
+stays perfectly flat for the remaining 165 seconds, identically across
+all 3 runs (zero further growth).
+
+**Named, honestly-disclosed residual**: the deceleration is very strong
+but not perfectly flat by t180s — 2 of the 3 runs show a small,
+still-positive tail creep (a few KB every 15-30 seconds in the last
+30-60 seconds of the window), roughly two orders of magnitude smaller
+than the initial climb. This does not change the H8 verdict but means
+"fully plateaued" is not claimed — only "decelerating toward what looks
+like a bound." Whether this tiny residual eventually stops is untested.
+
+**What this means for the economic model**: H8 does not change H7's
+qualitative or quantitative conclusion — it strengthens confidence that
+H7's ~896-1,024 KB peak-growth figure for the largest real tenant is a
+stable input for a capacity model, not a transient artifact of too short
+a measurement window.
+
 Full tables, raw CSVs/logs: `docs/experiments/PHASE7_LOG.md`,
 `docs/research/artifacts/p7_e00_tenant_packing_run1/`,
 `docs/research/artifacts/p7_e01_qps_scaling_run1/`,
 `docs/research/artifacts/p7_e02_packing_ceiling_run1/`,
 `docs/research/artifacts/p7_e03_cross_process_run1/`,
-`docs/research/artifacts/p7_e04_long_running_run1/`.
+`docs/research/artifacts/p7_e04_long_running_run1/`,
+`docs/research/artifacts/p7_e05_extended_duration_run1/`.
 
 ## Failed / fixed experiments (preserved, not erased)
 
@@ -314,17 +351,18 @@ renamed rather than deleted.
    more genuinely-independent schema/vocabulary divergence than this
    experiment's fix (independent ID-interning per tenant) fully
    captures.
-4. **H6/H7 measure memory only.** A real capacity model would also need
-   per-process CPU/scheduling overhead, which this experiment did not
-   attempt.
-5. **H7's 20-second resident window is itself still a floor, not a
-   ceiling.** Furniture's peak-RSS curve was still rising (decelerating,
-   not fully plateaued) at the end of the tested window; whether it
-   would keep growing materially further over a real service's much
-   longer lifetime, or plateau shortly after, is untested. The specific
-   allocator mechanism behind H7's growth (thread-local arena high-water
-   marks from sustained alloc/dealloc churn is the leading, disclosed,
-   but unconfirmed hypothesis) has not been profiled.
+4. **H6/H7/H8 measure memory only.** A real capacity model would also
+   need per-process CPU/scheduling overhead, which this experiment did
+   not attempt.
+5. **H8 confirms H7's growth decelerates sharply over a 9x longer
+   window, but a small, real residual tail creep persists in 2 of 3
+   runs.** The specific allocator mechanism behind both H7's growth and
+   this residual (thread-local arena high-water marks from sustained
+   alloc/dealloc churn is the leading, disclosed, but unconfirmed
+   hypothesis) has not been profiled. Whether the residual eventually
+   stops, continues at a much slower rate, or behaves differently over a
+   real service's minutes-to-hours lifetime (vs. this experiment's
+   180-second window) is untested.
 
 ## What would be built next if scaling up
 
@@ -333,25 +371,27 @@ breadth of touched tenants at fixed per-tenant demand, not aggregate QPS
 at a realistic multi-tenant demand mix, which Issue #21's "per-tenant
 and aggregate QPS" metric also asks for); extending H4 (query throughput
 under breadth) to the hundreds-to-thousands tenant counts H5 already
-reached for memory; a longer-duration resident-process run (minutes
-rather than seconds) to see whether H7's still-rising Furniture curve
-plateaus or keeps climbing; a full economic cost model (Issue #21's
-Phase 7 "economic output" section) combining H1/H5's negligible
-in-process marginal cost with H6/H7's now-measured per-process and
-per-long-running-process baselines to produce a real
-cost-per-tenant-at-scale estimate for the first time.
+reached for memory; a full economic cost model (Issue #21's Phase 7
+"economic output" section) combining H1/H5's negligible in-process
+marginal cost with H6/H7/H8's now-measured and now-confirmed-stable
+per-process and per-long-running-process baselines to produce a real
+cost-per-tenant-at-scale estimate for the first time; profiling to
+identify the specific allocator mechanism behind H7/H8's growth pattern
+and residual tail creep, if a real deployment's memory budget needs
+tighter precision than "decelerates toward roughly a known bound."
 
 ## What should explicitly not be built yet
 
 No tenant-aware planner/admission changes based on this pass —
-H1/H4/H5/H6/H7's favorable and now-quantified results and H2's pass are
-encouraging but rest on one tenant model (real category partitions, or
-controlled-stress replicas of them), one machine configuration, and (for
-H7) only a 20-second resident window rather than a real service's full
-lifetime; a full economic cost model should wait for the
-longer-duration resident-process measurement named above, since real
-service overhead over a full lifetime may be materially larger than
-H7's 20-second floor.
+H1/H4/H5/H6/H7/H8's favorable and now-quantified results and H2's pass
+are encouraging but rest on one tenant model (real category partitions,
+or controlled-stress replicas of them), one machine configuration, and
+(for H7/H8) only a 180-second resident window rather than a real
+service's full lifetime; a full economic cost model can now reasonably
+proceed given H8's confirmation that H7's figure is stable rather than
+still-climbing, but should still disclose that a real service's much
+longer lifetime (minutes to hours vs. this experiment's 180 seconds)
+remains untested.
 
 ## What this decision does and does not claim
 
@@ -386,7 +426,14 @@ query volume/data size, 3 runs) beyond the immediate post-load snapshot
 pooling-advantage conclusion. A third self-caught methodology issue (the
 first-draft H7 binary used a post-thread-teardown RSS reading as its
 primary metric, which actively inverted the sign of the effect for the
-largest tenant) is withdrawn and documented alongside the fix.
+largest tenant) is withdrawn and documented alongside the fix. Extending
+the resident window 9x (20s -> 180s) shows that growth decelerates
+sharply toward what looks like a bound rather than continuing at a
+similar rate — roughly 98% of the total growth happens in the first half
+of the window, in all 3 runs (H8) — confirming H7's figure is a stable
+input, not a transient artifact of too short a measurement window; idle-
+resident's finding is now confirmed completely stable with zero further
+growth over the same 9x longer window.
 
 **Does not claim**: that the small cross-vs-same-tenant latency
 difference in H2 is understood; that 6,500 tenants is a discovered
@@ -394,28 +441,29 @@ hardware or architectural ceiling (it is a self-imposed safety bound —
 the real ceiling is very likely materially higher and was deliberately
 not pursued); that H4's no-degradation finding holds at the
 hundreds-to-thousands tenant counts H5 reached for memory (H4 itself was
-only tested up to WANDS' real 54-other-tenant ceiling); that H7's
-20-second resident window represents a real service's full-lifetime
-steady state (Furniture's peak-RSS curve was still rising, not fully
-plateaued, at the end of the tested window); that the specific allocator
-mechanism behind H7's growth is confirmed (a thread-local-arena
-hypothesis is named, not verified); that aggregate QPS under a realistic
-multi-tenant demand mix or a full economic cost-per-tenant model (both
-explicitly named in Issue #21's Phase 7) have been answered — this is a
-first pass on memory (including at scale), pairwise isolation,
-fixed-tenant throughput-under-breadth, and process-baseline floors
-(both short-lived and a first, still-rising, longer-resident window)
-only.
+only tested up to WANDS' real 54-other-tenant ceiling); that H8's
+180-second resident window represents a real service's full-lifetime
+steady state (a small, real residual tail creep persists in 2 of 3 runs,
+roughly two orders of magnitude smaller than the initial climb, and
+whether it fully stops over a much longer real lifetime is untested);
+that the specific allocator mechanism behind H7/H8's growth is confirmed
+(a thread-local-arena hypothesis is named, not verified); that aggregate
+QPS under a realistic multi-tenant demand mix or a full economic
+cost-per-tenant model (both explicitly named in Issue #21's Phase 7)
+have been answered — this is a first pass on memory (including at
+scale), pairwise isolation, fixed-tenant throughput-under-breadth, and
+process-baseline floors (short-lived, and a longer-resident window that
+decelerates toward but has not been proven to fully reach a bound) only.
 
-**Decision: PROCEED** to the next Phase 7 sub-experiment (a
-longer-duration resident-process run to see whether H7's still-rising
-curve plateaus, and/or combining H1/H5/H6/H7's results into a first real
-economic cost-per-tenant model) without changing the underlying
-commerce-native mechanism. The favorable, adversarially-corrected H1
-result, its clean confirmation at scale via H5, the robust H2/H4
-results, and H6/H7's real, reproduced measurement of the pooling
-advantage this project's own thesis assumed are real evidence in favor
-of the architecture's packing-density potential, but are explicitly a
-floor on the claim (single-process, short-lived-process, or
-20-second-resident-process measurements, one tenant model, one
+**Decision: PROCEED** to the next Phase 7 sub-experiment (combining
+H1/H5/H6/H7/H8's results into a first real economic cost-per-tenant
+model, and/or aggregate QPS under a realistic multi-tenant demand mix)
+without changing the underlying commerce-native mechanism. The
+favorable, adversarially-corrected H1 result, its clean confirmation at
+scale via H5, the robust H2/H4 results, and H6/H7/H8's real, reproduced,
+now-stability-confirmed measurement of the pooling advantage this
+project's own thesis assumed are real evidence in favor of the
+architecture's packing-density potential, but are explicitly a floor on
+the claim (single-process, short-lived-process, or
+180-second-resident-process measurements, one tenant model, one
 self-imposed safety bound), not a ceiling on what remains to be tested.

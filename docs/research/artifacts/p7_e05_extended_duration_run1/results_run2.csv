@@ -1,0 +1,3 @@
+condition,tenant_name,tenant_products,t0_rss_kb,with_tenant_rss_kb,peak_serving_rss_kb,peak_growth_kb,first_half_growth_kb,second_half_growth_kb,decelerating,total_queries_served
+idle_resident,,,2296,,2540,244,244,0,true,
+active_resident,Furniture,16039,2232,53132,54136,1004,976,28,true,51608
