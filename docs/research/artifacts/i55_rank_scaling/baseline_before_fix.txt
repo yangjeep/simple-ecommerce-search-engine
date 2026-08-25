@@ -1,0 +1,39 @@
+    Finished `bench` profile [optimized] target(s) in 0.14s
+     Running benches/rank_bench.rs (target/release/deps/rank_bench-de1ae405c8ea662d)
+Benchmarking execute_ranked_scaling/100
+Benchmarking execute_ranked_scaling/100: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/100: Collecting 100 samples in estimated 5.0110 s (1.7M iterations)
+Benchmarking execute_ranked_scaling/100: Analyzing
+execute_ranked_scaling/100
+                        time:   [2.8371 µs 2.8560 µs 2.8797 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+Benchmarking execute_ranked_scaling/1000
+Benchmarking execute_ranked_scaling/1000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/1000: Collecting 100 samples in estimated 5.0076 s (192k iterations)
+Benchmarking execute_ranked_scaling/1000: Analyzing
+execute_ranked_scaling/1000
+                        time:   [25.994 µs 26.349 µs 26.774 µs]
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+Benchmarking execute_ranked_scaling/10000
+Benchmarking execute_ranked_scaling/10000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/10000: Collecting 100 samples in estimated 6.3045 s (20k iterations)
+Benchmarking execute_ranked_scaling/10000: Analyzing
+execute_ranked_scaling/10000
+                        time:   [303.81 µs 305.83 µs 308.04 µs]
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) high mild
+  8 (8.00%) high severe
+Benchmarking execute_ranked_scaling/100000
+Benchmarking execute_ranked_scaling/100000: Warming up for 3.0000 s
+Benchmarking execute_ranked_scaling/100000: Collecting 100 samples in estimated 5.3636 s (1100 iterations)
+Benchmarking execute_ranked_scaling/100000: Analyzing
+execute_ranked_scaling/100000
+                        time:   [5.0280 ms 5.1720 ms 5.3267 ms]
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+

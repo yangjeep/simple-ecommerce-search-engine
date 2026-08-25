@@ -27,6 +27,7 @@ These files are the compact verdicts for major research checkpoints. Read these 
 | [`ISSUE43_DECISION.md`](ISSUE43_DECISION.md) | Phase 9 reproducibility re-audit: published numbers **CONFIRMED** byte-identical against the Tantivy determinism fix; unrelated Solr-JVM-warmup confound found and disclosed as a new open thread. |
 | [`ISSUE55_H3_DECISION.md`](ISSUE55_H3_DECISION.md) | Variant-scoped conjunction correctness **CONFIRMED** on real Product/Variant data (Magento configurable products) for the first time, closing the external-validity gap `ISSUE47_DECISION.md` named; FastPath only, disclosed scope boundary. |
 | [`ISSUE51_DECISION.md`](ISSUE51_DECISION.md) | Precomputed corroboration registry (Treatment E): correctness-preserving, but **REVISE** at R1's own 5-product fixture; a disclosed scaling diagnostic shows a 492x asymptotic advantage over the query-time scan at realistic catalog sizes, naming a concrete next step. |
+| [`ISSUE55_RANK_SCALING_DECISION.md`](ISSUE55_RANK_SCALING_DECISION.md) | `execute_ranked`'s full sort replaced with a proven-equivalent partial top-K selection (adopted); **REFINE** — real but modest gain, not the dominant driver of P9-E06's native-vs-Solr gap on real WANDS data, which localizes instead to Solr JVM variance and a newly found `score_text_relevance` tokenization cost. |
 
 ## How to read old numbers
 

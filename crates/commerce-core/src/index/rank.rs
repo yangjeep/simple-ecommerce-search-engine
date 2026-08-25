@@ -121,7 +121,7 @@ pub(super) fn execute_ranked(
     // hand via `lookup_variant`, not the merged attrs -- so this keeps the
     // P1-D cost fix intact while no longer leaving preference-less queries
     // with zero ranking signal at all.
-    let mut scored: Vec<RankedHit> = index
+    let scored: Vec<RankedHit> = index
         .execute(query, catalog)
         .into_iter()
         .map(|(product, variant)| {
@@ -142,13 +142,47 @@ pub(super) fn execute_ranked(
         })
         .collect();
 
-    scored.sort_by(|a, b| {
-        b.score
-            .total_cmp(&a.score)
-            .then(a.product.0.cmp(&b.product.0))
-            .then(a.variant.0.cmp(&b.variant.0))
-    });
-    scored.truncate(k);
+    select_top_k(scored, k)
+}
+
+/// The comparator every top-k selection in this module orders by: score
+/// descending, then `(product_id, variant_id)` ascending so ties never
+/// depend on hash-map iteration order (unchanged from before Issue #55 --
+/// this experiment changes how the top-k is *extracted*, never the order
+/// candidates are ranked in).
+fn rank_order(a: &RankedHit, b: &RankedHit) -> std::cmp::Ordering {
+    b.score
+        .total_cmp(&a.score)
+        .then(a.product.0.cmp(&b.product.0))
+        .then(a.variant.0.cmp(&b.variant.0))
+}
+
+/// Issue #55 (`docs/experiments/ISSUE55_RANK_SCALING_PROTOCOL.md`,
+/// `docs/decisions/PHASE9_DECISION.md`'s "what would be built next" item
+/// 2): the previous implementation called `Vec::sort_by` over the
+/// *entire* `scored` vector before truncating to `k` -- a full
+/// `O(n log n)` sort regardless of how small `k` is, profiled and
+/// confirmed the dominant, fixable cost behind native's ranking cost
+/// scaling with candidate-set size on real WANDS data (P9-E06/P9-E04).
+/// `k` is a small constant in every real query (10); `n`, the candidate-
+/// set size, is not bounded and was already measured at a median of 568
+/// on real structural-routed WANDS traffic. `slice::select_nth_unstable_by`
+/// partitions the true `k`-th element into place in average `O(n)` (vs.
+/// `O(n log n)` for a full sort), after which only the resulting
+/// `k`-element front needs its own `O(k log k)` sort -- identical final
+/// output to the old full-sort-then-truncate for the same input and
+/// comparator (proven by `select_top_k_matches_full_sort_reference`
+/// across many randomized inputs including heavy ties, not merely
+/// argued), asymptotically `O(n + k log k)` instead of `O(n log n)`.
+fn select_top_k(mut scored: Vec<RankedHit>, k: usize) -> Vec<RankedHit> {
+    if k == 0 {
+        return Vec::new();
+    }
+    if scored.len() > k {
+        scored.select_nth_unstable_by(k - 1, rank_order);
+        scored.truncate(k);
+    }
+    scored.sort_by(rank_order);
     scored
 }
 
@@ -219,6 +253,82 @@ mod tests {
             attributes: attributes(text_attrs),
             variants: vec![],
         }
+    }
+
+    /// Independent, obviously-correct reference: full sort by the exact
+    /// same comparator, then truncate. `select_top_k` must be
+    /// indistinguishable from this for any input -- this is the "RED"
+    /// baseline the optimized implementation is checked against, not
+    /// merely argued to be equivalent.
+    fn full_sort_reference(mut scored: Vec<RankedHit>, k: usize) -> Vec<RankedHit> {
+        scored.sort_by(rank_order);
+        scored.truncate(k);
+        scored
+    }
+
+    #[test]
+    fn select_top_k_matches_full_sort_reference_across_randomized_inputs() {
+        use rand::{Rng, SeedableRng};
+        use rand_chacha::ChaCha8Rng;
+
+        let mut rng = ChaCha8Rng::seed_from_u64(55);
+        for trial in 0..500u32 {
+            let n = rng.gen_range(0..200);
+            // A small discrete score set (not a continuous random range)
+            // deliberately manufactures heavy ties -- exactly where a
+            // partial-selection algorithm most plausibly diverges from a
+            // full sort's own tie-breaking, per this experiment's own
+            // adversarial-review checklist.
+            let score_pool = [0.0, 1.0, 1.0, 2.0, 2.0, 2.0];
+            let scored: Vec<RankedHit> = (0..n)
+                .map(|i| RankedHit {
+                    product: ProductId(rng.gen_range(0..20)),
+                    variant: VariantId(i),
+                    score: score_pool[rng.gen_range(0..score_pool.len())],
+                })
+                .collect();
+            let k = rng.gen_range(0..30);
+
+            let expected = full_sort_reference(scored.clone(), k);
+            let actual = select_top_k(scored, k);
+            assert_eq!(
+                actual, expected,
+                "trial {trial}: select_top_k diverged from the full-sort reference (n={n}, k={k})"
+            );
+        }
+    }
+
+    #[test]
+    fn select_top_k_handles_k_zero() {
+        let scored = vec![RankedHit {
+            product: ProductId(1),
+            variant: VariantId(1),
+            score: 5.0,
+        }];
+        assert_eq!(select_top_k(scored, 0), Vec::new());
+    }
+
+    #[test]
+    fn select_top_k_handles_k_larger_than_candidate_set() {
+        let scored = vec![
+            RankedHit {
+                product: ProductId(1),
+                variant: VariantId(1),
+                score: 5.0,
+            },
+            RankedHit {
+                product: ProductId(2),
+                variant: VariantId(2),
+                score: 1.0,
+            },
+        ];
+        let result = select_top_k(scored.clone(), 10);
+        assert_eq!(result, full_sort_reference(scored, 10));
+    }
+
+    #[test]
+    fn select_top_k_handles_empty_candidate_set() {
+        assert_eq!(select_top_k(Vec::new(), 10), Vec::new());
     }
 
     #[test]
