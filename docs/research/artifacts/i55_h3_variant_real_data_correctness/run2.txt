@@ -1,0 +1,7 @@
+loaded 22 parent products, 155 kept (sparsified) variants of 293 full-cartesian combinations
+total exhaustive (color,size) queries: 293
+  true-positive queries (combo is a real kept variant of that product): 155
+  trap queries (color and size each real, but never co-occur on one variant of that product): 138
+queries routed to FastPath: 293 / 293
+mismatches found: 0
+=== VERDICT: CONFIRMED -- every one of 293 exhaustive real-data variant-scoped conjunction queries (138 of them genuine cross-variant traps) matched the independently-computed ground truth exactly, on both Catalog::search and the production execute_planned/CatalogIndex path ===
