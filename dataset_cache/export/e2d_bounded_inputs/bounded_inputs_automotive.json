@@ -1,0 +1,250 @@
+[
+  {
+    "shown_key": "amperage_output",
+    "occurrences": 150,
+    "distinct_values": 72,
+    "uniqueness_ratio": 0.48,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 2.8733333333333335,
+    "variant_scoped": false,
+    "sample_values": [
+      "101",
+      "102",
+      "103",
+      "104",
+      "105"
+    ]
+  },
+  {
+    "shown_key": "bulb_type",
+    "occurrences": 150,
+    "distinct_values": 4,
+    "uniqueness_ratio": 0.02666666666666667,
+    "numeric_parseable_fraction": 0.26,
+    "mean_value_length": 2.8333333333333335,
+    "variant_scoped": false,
+    "sample_values": [
+      "9005",
+      "H11",
+      "H4",
+      "H7"
+    ]
+  },
+  {
+    "shown_key": "cold_cranking_amps",
+    "occurrences": 150,
+    "distinct_values": 131,
+    "uniqueness_ratio": 0.8733333333333333,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 3.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "401",
+      "405",
+      "406",
+      "407",
+      "410"
+    ]
+  },
+  {
+    "shown_key": "filter_type",
+    "occurrences": 150,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.013333333333333334,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 7.68,
+    "variant_scoped": false,
+    "sample_values": [
+      "Cylindrical",
+      "Panel"
+    ]
+  },
+  {
+    "shown_key": "group_size",
+    "occurrences": 150,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.02,
+    "numeric_parseable_fraction": 0.66,
+    "mean_value_length": 2.34,
+    "variant_scoped": false,
+    "sample_values": [
+      "24F",
+      "35",
+      "65"
+    ]
+  },
+  {
+    "shown_key": "heat_range",
+    "occurrences": 150,
+    "distinct_values": 5,
+    "uniqueness_ratio": 0.03333333333333333,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 1.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "4",
+      "5",
+      "6",
+      "7",
+      "8"
+    ]
+  },
+  {
+    "shown_key": "lumens",
+    "occurrences": 150,
+    "distinct_values": 141,
+    "uniqueness_ratio": 0.94,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 3.8266666666666667,
+    "variant_scoped": false,
+    "sample_values": [
+      "1004",
+      "1014",
+      "1018",
+      "1038",
+      "1041"
+    ]
+  },
+  {
+    "shown_key": "material",
+    "occurrences": 150,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.013333333333333334,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 9.76,
+    "variant_scoped": false,
+    "sample_values": [
+      "Aluminum",
+      "Copper-Brass"
+    ]
+  },
+  {
+    "shown_key": "material_grade",
+    "occurrences": 150,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.02,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 8.96,
+    "variant_scoped": false,
+    "sample_values": [
+      "Ceramic",
+      "Organic",
+      "Semi-Metallic"
+    ]
+  },
+  {
+    "shown_key": "micron_rating",
+    "occurrences": 150,
+    "distinct_values": 31,
+    "uniqueness_ratio": 0.20666666666666667,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 2.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "10",
+      "11",
+      "12",
+      "13",
+      "14"
+    ]
+  },
+  {
+    "shown_key": "oem_or_aftermarket",
+    "occurrences": 1500,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.0013333333333333333,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 8.52,
+    "variant_scoped": false,
+    "sample_values": [
+      "Aftermarket",
+      "OEM"
+    ]
+  },
+  {
+    "shown_key": "part_number",
+    "occurrences": 1500,
+    "distinct_values": 1497,
+    "uniqueness_ratio": 0.998,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 9.936,
+    "variant_scoped": true,
+    "sample_values": [
+      "AM-1026-CB",
+      "AM-1037-SP",
+      "AM-1038-SP",
+      "AM-1041-WB",
+      "AM-1072-SA"
+    ]
+  },
+  {
+    "shown_key": "position",
+    "occurrences": 300,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.006666666666666667,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 4.5,
+    "variant_scoped": false,
+    "sample_values": [
+      "Front",
+      "Rear"
+    ]
+  },
+  {
+    "shown_key": "size",
+    "occurrences": 150,
+    "distinct_values": 13,
+    "uniqueness_ratio": 0.08666666666666667,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 2.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "16",
+      "17",
+      "18",
+      "19",
+      "20"
+    ]
+  },
+  {
+    "shown_key": "thread_size",
+    "occurrences": 150,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.02,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 4.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "10mm",
+      "12mm",
+      "14mm"
+    ]
+  },
+  {
+    "shown_key": "voltage",
+    "occurrences": 150,
+    "distinct_values": 1,
+    "uniqueness_ratio": 0.006666666666666667,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 2.0,
+    "variant_scoped": false,
+    "sample_values": [
+      "12"
+    ]
+  },
+  {
+    "shown_key": "warranty_months",
+    "occurrences": 1500,
+    "distinct_values": 4,
+    "uniqueness_ratio": 0.0026666666666666666,
+    "numeric_parseable_fraction": 1.0,
+    "mean_value_length": 2.0,
+    "variant_scoped": true,
+    "sample_values": [
+      "12",
+      "24",
+      "36",
+      "60"
+    ]
+  }
+]

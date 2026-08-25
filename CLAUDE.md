@@ -29,11 +29,11 @@ Read [`README.md`](README.md) and [`docs/README.md`](docs/README.md) before star
 
 ## Current research
 
-The active learned-control-plane experiment is **GitHub Issue #47**: adaptive semantic consensus and proposal-model capability/cost frontier.
+**GitHub Issue #47** (adaptive semantic consensus and proposal-model capability/cost frontier) is **closed, research-complete, REVISE** — see [`docs/decisions/ISSUE47_DECISION.md`](docs/decisions/ISSUE47_DECISION.md) and [`docs/experiments/ISSUE47_LOG.md`](docs/experiments/ISSUE47_LOG.md) for the full record. No architecture GO was made; the cheap→strong cascade was specifically rejected, and external validity against a genuine Product/Variant/relationship dataset remains NOT ESTABLISHED. Do not reopen or re-tune it to chase a different verdict; a future checkpoint against a real Product/Variant dataset would be new work, preregistered fresh.
 
-The clean baseline for that experiment is recorded in the issue itself. Start new research branches from current `main`; do not continue historical stacked branches.
+There is no other actively-running learned-control-plane experiment at this checkpoint. Start any new research branch from current `main`; do not continue historical stacked branches.
 
-Issue #51 is a separate R1b serving-contract follow-up. Do not silently fold it into #47.
+Issue #51 is a separate R1b serving-contract follow-up, independent of #47. Do not silently fold it into #47's own conclusions.
 
 Other open issues are independent backlog unless the user explicitly asks to work them.
 
