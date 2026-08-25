@@ -148,3 +148,15 @@ FastPath/Hybrid breakdown rows), `p9_e04_isolated_ranking_and_execution.rs`
 `p9_e05_full_catalog_ranking_tail.rs` (dedicated regression measurement).
 No `commerce-core` production code changed in this checkpoint — this is
 a measurement/diagnosis checkpoint, not a fix.
+
+### Follow-up (2026-08-25)
+
+The named fix (hoist the emptiness check before the `product_location`
+lookup) is implemented and validated in
+`docs/decisions/ISSUE55_EMPTY_RESIDUAL_FIX_DECISION.md`: KEEP, regression
+eliminated, no new regression on the confirmed win (a small additional
+gain, in fact), and the whole-workload `structural_routed` aggregate
+returns to ~2.48x — essentially this checkpoint's own pre-Issue-55
+baseline (2.545x), now understood to reflect a distinct
+candidate-materialization cost (`index.execute()`/`lookup_variant`) that
+was never in this issue's scope, not a failure of the ranking fixes.

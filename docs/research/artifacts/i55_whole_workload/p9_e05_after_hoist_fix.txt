@@ -1,0 +1,6 @@
+=== P9-E05: full-catalog (zero-constraint) execute_ranked tail latency, real WANDS queries ===
+catalog: 42994 products
+  compiled: preferences=[] residual_lexical=[]
+query="driftwood mirror" candidates=42994 reps=200: mean=2.2096ms median=2.0563ms p95=3.2075ms min=1.9048ms max=6.7778ms
+  compiled: preferences=[] residual_lexical=[]
+query="marble" candidates=42994 reps=200: mean=2.3581ms median=2.0709ms p95=3.4816ms min=1.8872ms max=4.8034ms
