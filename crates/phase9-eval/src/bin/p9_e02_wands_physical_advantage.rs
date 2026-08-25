@@ -401,6 +401,16 @@ fn main() {
             "punt_routed (delegate-only, no structural constraint)"
         };
         push_result(&mut by_routing, routing_key, &point);
+        // Issue #55 whole-workload diagnostic: `execute_ranked` (the code
+        // path both Issue #55 fixes touch) is only ever called from the
+        // FastPath branch of execute_planned, never from Hybrid (Hybrid
+        // uses bitmap narrowing + delegate + verify_and_truncate instead).
+        // Split structural_routed further so a FastPath-only vs
+        // Hybrid-only comparison can show whether the isolated ranking-only
+        // gain is being diluted by Hybrid traffic that never touches it.
+        if matches!(outcome_label, "FastPath" | "Hybrid") {
+            push_result(&mut by_routing, outcome_label, &point);
+        }
         evaluated += 1;
     }
 

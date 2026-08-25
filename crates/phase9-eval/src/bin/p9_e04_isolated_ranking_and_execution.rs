@@ -231,6 +231,17 @@ fn main() {
     let mut native_ms = Vec::new();
     let mut solr_ms = Vec::new();
     let mut candidate_sizes = Vec::new();
+    // Issue #55 whole-workload diagnostic: P9-E02's own FastPath-only vs
+    // Hybrid-only breakdown showed FastPath's real end-to-end latency
+    // staying high post-fix while Hybrid's dropped sharply -- the opposite
+    // of what an isolated `execute_ranked`-only speedup predicts if both
+    // routes see similar candidate-set sizes. Track candidate-set size by
+    // outcome label to check the competing explanation: FastPath queries
+    // in this WANDS run may be exactly the ones MAX_CANDIDATES excludes
+    // from this experiment's own isolation, so its H3 result would not
+    // even cover the population dragging P9-E02's FastPath number up.
+    let mut candidate_sizes_by_outcome: std::collections::BTreeMap<&'static str, Vec<u64>> =
+        std::collections::BTreeMap::new();
     let mut candidate_set_relevant_recall = Vec::new();
     let mut candidate_set_exact_recall = Vec::new();
     let mut candidate_set_partial_recall = Vec::new();
@@ -255,6 +266,24 @@ fn main() {
 
         let candidate_ords = index.indexed_candidates(&compiled.constraints);
         candidate_sizes.push(candidate_ords.len());
+        let outcome_label = match outcome {
+            ExecutionOutcome::FastPath => "FastPath",
+            ExecutionOutcome::Hybrid => "Hybrid",
+            ExecutionOutcome::Punt => "Punt",
+        };
+        candidate_sizes_by_outcome
+            .entry(outcome_label)
+            .or_default()
+            .push(candidate_ords.len());
+        if candidate_ords.len() > 10_000 {
+            println!(
+                "  [large candidate set] outcome={outcome_label} query={:?} \
+                 constraints={} candidates={}",
+                q.text,
+                compiled.constraints.len(),
+                candidate_ords.len()
+            );
+        }
         if candidate_ords.len() > MAX_CANDIDATES as u64 {
             skipped_too_large += 1;
             continue;
@@ -446,6 +475,18 @@ fn main() {
         candidate_sizes.len()
     );
     println!("candidate-set size: median={median_candidates}, max={max_candidates}");
+    println!("=== candidate-set size by routing outcome (Issue #55 whole-workload diagnostic) ===");
+    for (label, mut sizes) in candidate_sizes_by_outcome {
+        sizes.sort_unstable();
+        let n = sizes.len();
+        let median = sizes.get(n / 2).copied().unwrap_or(0);
+        let max = sizes.last().copied().unwrap_or(0);
+        let over_cap = sizes.iter().filter(|&&s| s > MAX_CANDIDATES as u64).count();
+        println!(
+            "{label}: n={n}, median_candidates={median}, max_candidates={max}, \
+             excluded_by_max_candidates_cap={over_cap}"
+        );
+    }
     println!();
 
     let native_ndcg_mean = mean(&native_ndcg);
