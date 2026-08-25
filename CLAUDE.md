@@ -2,59 +2,77 @@
 
 ## Mission
 
-This repository is an experimental **Rust-based commerce-native search engine**.
+This repository is an experimental Rust implementation of **commerce-native hybrid retrieval**.
 
-The architecture is a **semantic forwarding plane + learned control plane**:
-- deterministic, low-latency serving path;
-- commerce entities and product/variant semantics are first-class;
-- structural retrieval is primary where semantics are known;
-- lexical retrieval handles residual uncertainty;
-- LLM/model reasoning belongs in an offline/slow control plane, not the default hot path;
-- learned semantic knowledge must be validated, versioned, and compiled into the fast path.
+The core research question is:
 
-The active execution plan is GitHub Issue #2.
+> **Can an ecommerce search engine be faster, more flexible, more accurate, and more stable at the same time?**
 
-## Primary objective
+Interpret those goals concretely:
 
-Prove or disprove the architecture with measurements. Do not optimize for feature count, API completeness, or resemblance to Elasticsearch.
+- **faster** — materially lower CPU/latency on meaningful ecommerce workload classes;
+- **more flexible** — unseen merchant schemas/verticals should not require bespoke serving code;
+- **more accurate** — specialization must preserve or improve correctness/relevance;
+- **more stable** — deterministic installed semantics and predictable serving despite messy catalogs and stochastic model proposals.
 
-The strongest outcome is a defensible `SCALE_UP_DECISION.md` backed by reproducible experiments, even if the decision is REVISE or STOP.
+The current architectural hypothesis is intentionally narrow:
 
-## Autonomy contract
+- use deterministic, typed commerce structures where they measurably reduce work;
+- delegate open-ended lexical retrieval/ranking to a mature backend rather than rebuilding a general search engine;
+- learn merchant-specific semantics offline, over compressed catalog problems rather than per-SKU calls;
+- treat model output as a proposal, never production truth;
+- validate/canonicalize/compile accepted semantics before serving;
+- keep normal query serving model-free, deterministic and cheap;
+- preserve Product/Variant correctness and explicit ambiguity.
 
-You are expected to continue working without waiting for routine human confirmation.
+Read [`README.md`](README.md) and [`docs/README.md`](docs/README.md) before starting broad work.
 
-For each experiment loop:
-1. Read Issue #2, this file, `docs/EXPERIMENT_LOOP.md`, current experiment log, and relevant code/tests.
-2. State a falsifiable hypothesis in the experiment log.
-3. Define the measurement and pass/fail interpretation before implementation.
-4. Add or modify a failing test/benchmark first where practical.
-5. Implement the smallest experiment that can answer the question.
-6. Run formatting, linting, unit tests, integration tests, regression tests, and relevant benchmarks.
-7. Record raw results, environment, interpretation, limitations, and next action.
-8. Commit a coherent checkpoint.
-9. Continue to the next highest-value unanswered hypothesis.
+## Current research
 
-Do not stop merely because one experiment succeeds. Continue until the scale-up stop condition in Issue #2 is reached or the next meaningful experiment requires materially larger infrastructure/data/product scope.
+The active learned-control-plane experiment is **GitHub Issue #47**: adaptive semantic consensus and proposal-model capability/cost frontier.
+
+The clean baseline for that experiment is recorded in the issue itself. Start new research branches from current `main`; do not continue historical stacked branches.
+
+Issue #51 is a separate R1b serving-contract follow-up. Do not silently fold it into #47.
+
+Other open issues are independent backlog unless the user explicitly asks to work them.
+
+## Research discipline
+
+For nontrivial experiments:
+
+1. Read the issue, relevant decision record under `docs/decisions/`, protocol/log under `docs/experiments/`, and affected code.
+2. State a falsifiable hypothesis and competing explanations.
+3. Preregister treatments, metrics, thresholds, splits and stop conditions before held-out results where the issue requires it.
+4. Keep generators/proposal models separate from evaluators/oracles.
+5. Add RED correctness/regression tests before production fixes where practical.
+6. Implement the smallest experiment that can answer the question.
+7. Run targeted tests, then the full quality gate.
+8. Preserve raw outputs, failures, model/provider/version/settings, seeds, manifests and superseded numbers.
+9. Run a fresh adversarial review that tries to falsify favorable conclusions.
+10. Record GO / REVISE / STOP without changing thresholds after seeing the answer.
+
+Negative results are first-class outputs. Do not turn a failed gate into a feature roadmap.
+
+See [`docs/EXPERIMENT_LOOP.md`](docs/EXPERIMENT_LOOP.md) for the durable experiment-loop guidance.
 
 ## Hard rules
 
-- Rust is the implementation language for the active engine.
-- Do not preserve old C architecture for compatibility. Preserve git history only.
-- No LLM/model call in the default query hot path.
-- No test may require a real model API key. Model-provider code must have deterministic fixtures/mocks.
-- Product/variant correctness is non-negotiable. Cross-variant false matches are bugs.
-- Prefer typed domain concepts over generic JSON/document abstractions.
-- Preserve ambiguity explicitly when confidence is insufficient.
-- Keep benchmark inputs deterministic and versioned.
-- Never improve benchmark numbers by weakening correctness or silently changing the workload.
-- Record failed experiments. Do not erase evidence because an approach was abandoned.
-- Avoid distributed systems work until the single-node thesis has been measured.
-- Avoid production polish, UI work, generic query DSLs, auth, tenancy, HA, and cluster coordination during this epic.
+- Rust is the implementation language for the engine.
+- No LLM/model call in the normal query hot path.
+- No test or CI path may require a live model API key; live outputs used by tests must be frozen artifacts.
+- Product/Variant correctness is non-negotiable. Cross-variant false matches are bugs.
+- Prefer typed commerce concepts over generic JSON/document abstractions.
+- Preserve ambiguity/abstention when evidence is insufficient.
+- LLMs may propose semantic meaning; deterministic code owns safety, installed semantics and physical representation.
+- Never improve benchmark numbers by weakening correctness, changing the workload silently, or dropping failed cases.
+- Preserve corrected and superseded evidence rather than rewriting history.
+- Do not rebuild generic lexical ranking unless an experiment demonstrates a differentiated need.
+- Avoid distributed systems, production UI/auth and compatibility-DSL work until measured evidence requires them.
 
 ## Engineering quality gate
 
-Before every checkpoint commit, run at minimum:
+Before a checkpoint/PR is considered complete:
 
 ```bash
 cargo fmt --all -- --check
@@ -63,59 +81,33 @@ cargo test --workspace --all-features
 cargo build --workspace --release
 ```
 
-Run all relevant benchmark/replay commands for the experiment as well.
+Run the relevant benchmark/replay/evaluation commands as well.
 
-If these commands do not yet exist because Gate 0 is incomplete, creating a clean equivalent is the first task.
+## Repository boundaries
+
+- `crates/commerce-core/` — engine/product code.
+- `*-eval` crates — experiment/evaluation code, not product dependencies.
+- `docs/architecture/` — current implementation description.
+- `docs/decisions/` — phase/issue verdicts.
+- `docs/experiments/` — protocols and append-only logs.
+- `docs/research/` — exploratory analysis/prior art/paper/economic work.
+- `docs/adr/` — durable architecture decisions.
+- `benchmarks/` / `artifacts/` — reproducibility metadata and archived evidence.
+
+Do not create a new documentation category for a single issue.
 
 ## Architecture bias
 
-Start narrow and explicit:
-- Product
-- Variant
-- ProductType
-- Brand
-- Category
-- Price
-- Inventory / Availability
-- typed attributes
-- Commerce IR
-- compiled semantic context / FIB
-- specialized physical indexes
+The serving plane should remain small and concrete: typed Commerce IR, compact IDs, bitmap/range/identifier structures, measured facet implementations, deterministic planning, mature lexical delegation and top-K/ranking composition.
 
-Likely physical primitives include compact IDs, bitmaps, typed columns/range structures, minimal postings, dense ranking feature arrays, and immutable/mmap-friendly bundles. These are hypotheses, not dogma: benchmark alternatives when the tradeoff matters.
+Merchant/category diversity should be absorbed by ingestion-time profiling, semantic problem compression, validated descriptors and physical compilation — not by a universal runtime schema or vertical-specific serving branches.
+
+Treat this as a hypothesis to falsify, not a requirement to preserve.
 
 ## Decision discipline
 
-Create/update ADRs when an architectural choice materially affects semantics, index representation, query planning, benchmark validity, or future scale.
+Create/update ADRs when a choice materially changes serving semantics, physical representation, planner contracts or durable architecture.
 
-Prefer evidence such as:
-- correctness fixtures;
-- query coverage;
-- latency percentiles;
-- memory/RSS;
-- index size;
-- CPU-normalized throughput;
-- facet latency;
-- build time;
-- relevance metrics;
-- replay regressions.
+Research verdicts belong in `docs/decisions/`; detailed measurement/correction history belongs in `docs/experiments/`.
 
-Do not claim an architectural win from microbenchmarks alone when end-to-end evidence is available.
-
-## Working tree / commits
-
-Keep commits small enough to explain but large enough to represent a complete experimental checkpoint. Use commit messages that describe the hypothesis/result, not just the files changed.
-
-Do not rewrite published history. Do not force-push shared branches.
-
-## End state
-
-When the epic reaches a stop condition, produce `SCALE_UP_DECISION.md` containing:
-- PROCEED / REVISE / STOP;
-- architecture tested;
-- datasets/workloads;
-- measured results;
-- failed experiments;
-- unresolved risks;
-- what would be built next if scaling up;
-- what should explicitly not be built yet.
+Do not claim a system-level win from a microbenchmark when end-to-end evidence is available.
