@@ -600,6 +600,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "issue35-eval"
+version = "0.1.0"
+dependencies = [
+ "commerce-core",
+ "phase9-eval",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "issue38-e2e3-eval"
 version = "0.1.0"
 dependencies = [

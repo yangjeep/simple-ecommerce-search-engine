@@ -1,0 +1,14 @@
+[package]
+name = "issue35-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #35: first-pass unseen-vertical slice (real ESCI electronics data) testing whether the existing discovery/serving pipeline generalizes with zero commerce-core changes and zero hand-authored vertical ontology."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+phase9-eval = { path = "../phase9-eval" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
