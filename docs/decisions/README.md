@@ -26,6 +26,7 @@ These files are the compact verdicts for major research checkpoints. Read these 
 | [`ISSUE45_DECISION.md`](ISSUE45_DECISION.md) | Deterministic semantic canonicalization substantially reduces LLM instability but remains **REVISE** under the stricter single-proposal reading. |
 | [`ISSUE43_DECISION.md`](ISSUE43_DECISION.md) | Phase 9 reproducibility re-audit: published numbers **CONFIRMED** byte-identical against the Tantivy determinism fix; unrelated Solr-JVM-warmup confound found and disclosed as a new open thread. |
 | [`ISSUE55_H3_DECISION.md`](ISSUE55_H3_DECISION.md) | Variant-scoped conjunction correctness **CONFIRMED** on real Product/Variant data (Magento configurable products) for the first time, closing the external-validity gap `ISSUE47_DECISION.md` named; FastPath only, disclosed scope boundary. |
+| [`ISSUE51_DECISION.md`](ISSUE51_DECISION.md) | Precomputed corroboration registry (Treatment E): correctness-preserving, but **REVISE** at R1's own 5-product fixture; a disclosed scaling diagnostic shows a 492x asymptotic advantage over the query-time scan at realistic catalog sizes, naming a concrete next step. |
 
 ## How to read old numbers
 

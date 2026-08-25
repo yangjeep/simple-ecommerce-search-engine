@@ -1,0 +1,111 @@
+=== Issue #42 R1: typed ambiguity and corroborated resolution ===
+baseline_sha: fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6
+Treatment E registry build (one-time, ingestion/compile-time, not part of the query-time overhead gate): 0.00967ms for 5 catalog products
+
+--- Treatment A ---
+row  1 (             size 22): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  2 (       size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=0
+row  3 (size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  4 (           under $34): 1 sub-queries, outcomes=["fast_path"], hits=4
+row  5 (            over $34): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  6 (2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
+row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
+row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
+
+--- Treatment B ---
+row  1 (             size 22): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=3
+  WRONG-FAMILY FALSE POSITIVE: (ProductId(5), VariantId(50))
+row  2 (       size 22 jeans): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=1
+row  3 (size 22 wiper blades): 3 sub-queries, outcomes=["fast_path", "fast_path", "fast_path"], hits=1
+row  4 (           under $34): 1 sub-queries, outcomes=["fast_path"], hits=4
+row  5 (            over $34): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  6 (2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
+row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
+row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
+
+--- Treatment C ---
+row  1 (             size 22): 1 sub-queries, outcomes=["punt"], hits=0
+row  2 (       size 22 jeans): 1 sub-queries, outcomes=["punt"], hits=0
+row  3 (size 22 wiper blades): 1 sub-queries, outcomes=["punt"], hits=0
+row  4 (           under $34): 1 sub-queries, outcomes=["fast_path"], hits=4
+row  5 (            over $34): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  6 (2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
+row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
+row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
+
+--- Treatment D ---
+row  1 (             size 22): 1 sub-queries, outcomes=["punt"], hits=0
+row  2 (       size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  3 (size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  4 (           under $34): 1 sub-queries, outcomes=["fast_path"], hits=4
+row  5 (            over $34): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  6 (2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
+row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
+row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
+
+--- Treatment E ---
+row  1 (             size 22): 1 sub-queries, outcomes=["punt"], hits=0
+row  2 (       size 22 jeans): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  3 (size 22 wiper blades): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  4 (           under $34): 1 sub-queries, outcomes=["fast_path"], hits=4
+row  5 (            over $34): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  6 (2015 honda civic brake pads): 1 sub-queries, outcomes=["fast_path"], hits=1
+row  7 (part number IA-1234-BP): 1 sub-queries, outcomes=["punt"], hits=0
+row  9 (         size purple): 1 sub-queries, outcomes=["punt"], hits=0
+row 10 (         size 999999): 1 sub-queries, outcomes=["fast_path"], hits=0
+
+--- diagnostic (NOT part of the preregistered GO gate): isolated C without the residual_lexical push ---
+row  2 (       size 22 jeans): outcomes=["fast_path"], hits=1, ndcg=1.0000
+row  3 (size 22 wiper blades): outcomes=["fast_path"], hits=1, ndcg=1.0000
+row  6 (2015 honda civic brake pads): outcomes=["fast_path"], hits=1, ndcg=1.0000
+isolated-C mean corroborated NDCG@10 = 1.0000 vs. Treatment C's own measured 0.3333 -- the gap between these two numbers is attributable to the residual-lexical-veto confound, not to C's own corroboration-blindness
+
+--- latency (median of 7 independent batched trials) ---
+Treatment A: trials=["0.10885", "0.10154", "0.08996", "0.08862", "0.08098", "0.08390", "0.08571"] median=0.08862ms
+Treatment B: trials=["0.09197", "0.08485", "0.08638", "0.08309", "0.08423", "0.09080", "0.08186"] median=0.08485ms
+Treatment C: trials=["0.11981", "0.12356", "0.11896", "0.13357", "0.13896", "0.12580", "0.13006"] median=0.12580ms
+Treatment D: trials=["0.09772", "0.10267", "0.09203", "0.10566", "0.10310", "0.09896", "0.09459"] median=0.09896ms
+Treatment E: trials=["0.09242", "0.10560", "0.10325", "0.09309", "0.09677", "0.09862", "0.09941"] median=0.09862ms
+
+--- GO gate evaluation ---
+wrong-family false positives, per treatment: {"B": 1} (require: 0 for that treatment)
+row 1 silent-single-family violations: ["A"] (require: empty)
+negative-row hard-constraint violations: [] (require: empty)
+Treatment A: corroborated mean NDCG@10=0.6667 (require >=0.95), latency overhead vs A=0.0% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=false, negatives_ok=true => GO gate FAIL
+Treatment B: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=-4.3% (require <=5% except for A itself), wrong_family_fps=1 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment C: corroborated mean NDCG@10=0.3333 (require >=0.95), latency overhead vs A=42.0% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment D: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=11.7% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+Treatment E: corroborated mean NDCG@10=1.0000 (require >=0.95), latency overhead vs A=11.3% (require <=5% except for A itself), wrong_family_fps=0 (require 0), row1_ok=true, negatives_ok=true => GO gate FAIL
+
+Note: wrong-family false-positive count is measured against this experiment's small (4-product, 1-candidate-per-family) fixture -- Constraint::matches's own AttributeValue-kind catch-all (commerce_core/src/domain/constraint.rs) structurally guarantees a type-mismatched constraint can never match, so this fixture cannot by itself stress-test a *larger*-catalog coincidental cross-family collision; that remains a disclosed limitation, not fabricated as already covered.
+
+{
+  "baseline_sha": "fe2e52e0fe872a0f4ab86c63ccc839e61de8f3e6",
+  "corroborated_ndcg_mean": {
+    "A": 0.6666666666666666,
+    "B": 1.0,
+    "C": 0.3333333333333333,
+    "D": 1.0,
+    "E": 1.0
+  },
+  "experiment_id": "I42-R1",
+  "latency_ms_per_call": {
+    "A": 0.088619055,
+    "B": 0.08485086,
+    "C": 0.12580255499999998,
+    "D": 0.09896032,
+    "E": 0.09861948499999999
+  },
+  "negative_violations": [],
+  "row1_violations": [
+    "A"
+  ],
+  "wrong_family_false_positives": {
+    "B": 1
+  }
+}
+summary written to docs/research/artifacts/i51_e00_precomputed_corroboration/summary_run2.json
