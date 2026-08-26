@@ -656,6 +656,7 @@ name = "issue55-eval"
 version = "0.1.0"
 dependencies = [
  "commerce-core",
+ "issue35-eval",
  "phase6a-eval",
  "phase9-eval",
  "round1-eval",
