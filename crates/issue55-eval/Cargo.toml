@@ -8,5 +8,9 @@ description = "Issue #55 Architecture Falsification Loop: H3 (variant-aware exec
 
 [dependencies]
 commerce-core = { path = "../commerce-core" }
+round1-eval = { path = "../round1-eval" }
+phase6a-eval = { path = "../phase6a-eval" }
+phase9-eval = { path = "../phase9-eval" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+ureq = { version = "2", features = ["json"] }

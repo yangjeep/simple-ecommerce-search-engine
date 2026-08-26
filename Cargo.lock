@@ -655,8 +655,12 @@ name = "issue55-eval"
 version = "0.1.0"
 dependencies = [
  "commerce-core",
+ "phase6a-eval",
+ "phase9-eval",
+ "round1-eval",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]

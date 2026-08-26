@@ -157,3 +157,47 @@ Source: `crates/commerce-core/src/cold_start/profile.rs`
 Raw evidence: `docs/research/artifacts/i55_product_type_hyponym/`
 (`p9_e08_after_leaf_fix.txt`, `p9_e04_after_leaf_fix.txt`,
 `p9_e04_h3_leaf_fix_3runs.txt`, `p9_e02_after_leaf_fix.txt`).
+
+## Dated correction (Issue #55 Priority 1A, `ISSUE55_PAIRED_COMPARATOR_DECISION.md`)
+
+The `ProductTypeAny` mechanism's own verdict above (**KEEP**, corrected
+leaf-only version, false positives gone, recall retained) is
+**unaffected** by this correction — it was not re-tested. What is
+corrected is specifically this document's **"A major, unplanned
+finding"** section: the claim that `structural_routed` NDCG "turns
+positive for the first time" (-25.05% → +5.37%) does **not survive** a
+fair Solr comparator.
+
+A follow-up paired-comparator experiment found that
+`p9_e02_wands_physical_advantage.rs`'s Solr-query construction
+(`wands_solr_query_for`) had **no match arm for
+`StructuralConstraint::ProductTypeAny`** — a constraint kind that did
+not exist as reachable against WANDS data until this very checkpoint
+wired it into production. Every query where native resolved to
+`ProductTypeAny` therefore sent Solr a query with **no product-type
+filter at all**, asymmetrically weakening Solr's own side of exactly
+this checkpoint's own treatment cohort. This was confirmed
+mechanistically (the missing match arm was read directly in source),
+not inferred from the numbers alone — and confirmed the before/after
+`structural_routed` cohort itself *was* the literal same 21 query IDs
+both times (not merely the same count), and that this local Solr
+instance is fully deterministic (0.000000 stdev across 5 repeated
+identical-text calls), ruling out cohort drift or Solr nondeterminism
+as alternative explanations.
+
+After fixing the missing arm and rerunning: **native NDCG@10=0.3641,
+solr NDCG@10=0.4579, relative gap=-20.49%** (was reported as +5.37%
+against an unfair comparator). The correct summary is: this checkpoint's
+`ProductTypeAny` mechanism narrows `structural_routed`'s relative gap
+against Solr materially (-25.05% → -20.49%, a genuine ~4.6pp
+improvement) but does **not** reverse it into a native win, contrary to
+what was reported here. See `ISSUE55_PAIRED_COMPARATOR_DECISION.md` for
+the full protocol, per-query evidence, and adversarial review.
+
+A more durable finding surfaced by the same follow-up: splitting by
+routing under the fair comparator shows FastPath (native materially
+worse than Solr, -66.11%, n=7) and Hybrid (native roughly at parity,
++3.02%, n=14) diverge sharply — evidence that structural anchors +
+lexical residual (Hybrid) carry real value while forcing complete
+structural execution (FastPath) does not, at least on this vertical and
+sample size.

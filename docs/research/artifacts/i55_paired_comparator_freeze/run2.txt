@@ -1,0 +1,70 @@
+=== Issue #55 checkpoint-14 follow-up: paired comparator freeze (Priority 1A) ===
+solr_base_url=http://localhost:8983/solr/wands_bench  repeat_runs=5
+loading WANDS catalog...
+catalog: 42994 products, 1623 categories, 929 product types
+building native index (shared, treatment-independent)...
+building bitmap-delegate Tantivy index...
+loading queries + labels...
+evaluated 480 queries with judgments
+
+=== cohort freeze: structural_routed (FastPath+Hybrid) query-ID sets ===
+baseline (hyponyms OFF, pre-checkpoint-14): n=21
+treatment (hyponyms ON, current production): n=21
+identical cohort (same query IDs in both): 21
+in baseline's structural_routed cohort but NOT treatment's: 0 []
+in treatment's structural_routed cohort but NOT baseline's: 0 []
+=== COHORT IDENTICAL: the n=21 match in checkpoint 14's own artifacts was not a coincidence -- it is the exact same 21 query IDs both before and after ===
+
+=== firing Solr for 21 queries (union of both cohorts) x 2 query variants x 5 repetitions = 210 live Solr calls ===
+of 21 queries, the compiled Solr (q, fq) itself DIFFERS between baseline and treatment for 15 of them (71.4%) -- these are queries where enabling ProductTypeAny changed what text/filters get sent to Solr, not just what native does with the result
+
+query_id   routing route_chg  nat_base nat_treat nat_delta solr_base solr_treat solr_delta q_changed
+7          FastPath -            0.0000    0.0000   +0.0000    0.9633    0.9633   +0.0000 false   
+14         Hybrid  -            0.4306    0.1811   -0.2495    0.4306    0.2890   -0.1416 true    
+23         Hybrid  -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 true    
+79         Hybrid  -            1.0000    1.0000   +0.0000    1.0000    1.0000   +0.0000 false   
+83         Hybrid  -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 true    
+126        FastPath -            0.4080    0.3882   -0.0197    0.8365    0.8365   +0.0000 true    
+160        FastPath -            0.0000    0.0000   +0.0000    0.7156    0.7156   +0.0000 false   
+166        FastPath -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 true    
+218        Hybrid  -           -0.0000    0.1732   +0.1732   -0.0000    0.4517   +0.4517 true    
+224        Hybrid  -            0.0000    0.5079   +0.5079    0.0000    0.3903   +0.3903 true    
+225        Hybrid  -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 false   
+240        Hybrid  -            1.0000    1.0000   +0.0000    1.0000    1.0000   +0.0000 true    
+241        FastPath -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 false   
+252        Hybrid  -            1.0000    1.0000   +0.0000    0.9306    0.9306   +0.0000 true    
+256        Hybrid  -            0.0000    1.0000   +1.0000    0.0000    0.6422   +0.6422 true    
+295        Hybrid  -            0.0000    0.0000   +0.0000    0.0000    0.0000   +0.0000 true    
+387        Hybrid  -            1.0000    1.0000   +0.0000    1.0000    1.0000   +0.0000 true    
+437        Hybrid  -            0.6424    0.6755   +0.0331    0.6424    0.6424   +0.0000 true    
+440        FastPath -            0.7196    0.7196   +0.0000    0.7540    0.7540   +0.0000 true    
+461        Hybrid  -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 false   
+476        FastPath -           -0.0000   -0.0000   +0.0000   -0.0000   -0.0000   +0.0000 true    
+
+=== Solr run-to-run variance on an IDENTICAL query text (repeat_runs=5 each) ===
+mean per-query stdev of Solr NDCG across 5 repeated identical-text calls: baseline-query-text=0.000000  treatment-query-text=0.000000  (near-zero means Solr itself is deterministic here; the compiler-driven query-text change above is then the whole explanation for any Solr NDCG delta, not Solr nondeterminism)
+
+=== aggregate reproduction check (should track checkpoint 14's own -25.05% / +5.37%) ===
+baseline (hyponyms OFF): n=21, native NDCG@10=0.2953, solr NDCG@10=0.3939, relative gap=-25.05%
+treatment (hyponyms ON): n=21, native NDCG@10=0.3641, solr NDCG@10=0.4579, relative gap=-20.49%
+
+=== FastPath vs Hybrid split (treatment routing, production truth) ===
+FastPath: n=7, native NDCG@10=0.1583, solr NDCG@10=0.4670, relative gap=-66.11%
+Hybrid: n=14, native NDCG@10=0.4670, solr NDCG@10=0.4533, relative gap=+3.02%
+
+=== qualitative sample: 5 largest |native NDCG delta| queries (structural-routed cohort) ===
+query_id=256 text="high weight capacity bunk beds" baseline_ndcg=0.0000 treatment_ndcg=1.0000
+  baseline top-3 native ids:  ["34792", "10780", "2098"]
+  treatment top-3 native ids: ["18807", "18845", "27306"]
+query_id=224 text="twin over full bunk beds cool desins" baseline_ndcg=0.0000 treatment_ndcg=0.5079
+  baseline top-3 native ids:  ["5267", "36827", "25023"]
+  treatment top-3 native ids: ["14495", "25525", "18887"]
+query_id=14 text="beds that have leds" baseline_ndcg=0.4306 treatment_ndcg=0.1811
+  baseline top-3 native ids:  ["25999", "8579", "7929"]
+  treatment top-3 native ids: ["25999", "8579", "35802"]
+query_id=218 text="wand bunk beds" baseline_ndcg=-0.0000 treatment_ndcg=0.1732
+  baseline top-3 native ids:  []
+  treatment top-3 native ids: ["8824", "19183", "8822"]
+query_id=437 text="kitchen islands with seating" baseline_ndcg=0.6424 treatment_ndcg=0.6755
+  baseline top-3 native ids:  ["28553", "29104", "34428"]
+  treatment top-3 native ids: ["28553", "29104", "34428"]
