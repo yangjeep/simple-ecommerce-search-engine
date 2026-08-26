@@ -1,0 +1,17 @@
+=== Issue #55 Priority 2: ancestor-breadcrumb-structure promotion evidence (149 groups, 317 pairs) ===
+
+--- evidence source: top_level (ancestor-structure + product_class lookup) ---
+  promoted=202 unresolved_no_overlap=99 unresolved_no_evidence=16
+  false_promotions=[] (must be empty to pass the safety gate)
+  recall among resolvable non-known-bad candidates: 202/299 = 67.6%
+  safety gate: PASS
+  >=50% recall bar: PASS
+
+--- evidence source: level_2 (ancestor-structure + product_class lookup) ---
+  promoted=196 unresolved_no_overlap=105 unresolved_no_evidence=16
+  false_promotions=[] (must be empty to pass the safety gate)
+  recall among resolvable non-known-bad candidates: 196/299 = 65.6%
+  safety gate: PASS
+  >=50% recall bar: PASS
+
+resolvable non-known-bad pairs newly resolvable due to ancestor-structure evidence specifically: 250/299
