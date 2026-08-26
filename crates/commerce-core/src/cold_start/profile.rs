@@ -248,6 +248,36 @@ impl CatalogProfile {
 /// noisy per-product field at all (`round1_eval::catalog`'s own doc
 /// comment) — there is no equivalent noisy source to canonicalize away.
 pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> SemanticLexicon {
+    // Delegates to compile_lexicon_with_product_type_hyponyms(..., true)
+    // rather than duplicating its brand-loop, so "true is byte-identical to
+    // compile_lexicon" is compiler-enforced, not merely test-enforced (a
+    // future edit to one loop and not the other could otherwise silently
+    // break that invariant outside the narrow case the regression tests
+    // below exercise -- flagged by adversarial review of
+    // `docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`).
+    compile_lexicon_with_product_type_hyponyms(profile, min_enum_frequency, true)
+}
+
+/// Issue #55 checkpoint-14 follow-up
+/// (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`, Priority 1A
+/// of the Issue #55 falsification loop): identical to [`compile_lexicon`]
+/// except `ProductTypeAny` hyponym expansion
+/// ([`product_type_hyponym_groups`]) can be switched off, so evaluation
+/// tooling can build a "baseline" lexicon (plain per-id `ProductType`
+/// matching only, the pre-checkpoint-14 production behavior) and a
+/// "treatment" lexicon (current production, hyponym expansion on) from
+/// the exact same `CatalogProfile` and `min_enum_frequency`, isolating
+/// the one variable a paired before/after comparison needs held apart
+/// from everything else compile_lexicon does. `enable_product_type_hyponyms:
+/// true` is byte-identical to [`compile_lexicon`] (see
+/// `product_type_hyponym_toggle_true_matches_compile_lexicon` below) --
+/// this function does not change production behavior on its own; it
+/// only exposes the switch [`compile_lexicon`] always sets to `true`.
+pub fn compile_lexicon_with_product_type_hyponyms(
+    profile: &CatalogProfile,
+    min_enum_frequency: usize,
+    enable_product_type_hyponyms: bool,
+) -> SemanticLexicon {
     let mut lex = SemanticLexicon::new();
     for (name, id) in &profile.brand_names {
         if profile.brand_occurrence_count(name) < min_enum_frequency {
@@ -261,7 +291,12 @@ pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> S
             )],
         );
     }
-    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    compile_non_brand_lexicon(
+        profile,
+        min_enum_frequency,
+        enable_product_type_hyponyms,
+        &mut lex,
+    );
     lex
 }
 
@@ -308,7 +343,7 @@ pub fn compile_lexicon_with_brand_canonicalizer(
             )],
         );
     }
-    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    compile_non_brand_lexicon(profile, min_enum_frequency, true, &mut lex);
     lex
 }
 
@@ -426,7 +461,7 @@ pub fn compile_lexicon_with_alias_enforcement(
         }
     }
 
-    compile_non_brand_lexicon(profile, min_enum_frequency, &mut lex);
+    compile_non_brand_lexicon(profile, min_enum_frequency, true, &mut lex);
     lex
 }
 
@@ -507,6 +542,7 @@ pub fn product_type_hyponym_groups(
 fn compile_non_brand_lexicon(
     profile: &CatalogProfile,
     min_enum_frequency: usize,
+    enable_product_type_hyponyms: bool,
     lex: &mut SemanticLexicon,
 ) {
     // Issue #55 (`docs/experiments/ISSUE55_HYPONYM_LEAF_ONLY_PROTOCOL.md`):
@@ -517,7 +553,17 @@ fn compile_non_brand_lexicon(
     // removes that class of false positive by construction; see
     // `docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md` for the
     // re-audit this checkpoint's own verdict rests on.
-    let hyponym_groups = product_type_hyponym_groups(&profile.product_type_names);
+    //
+    // `enable_product_type_hyponyms=false` (only reachable via
+    // `compile_lexicon_with_product_type_hyponyms`, never via
+    // `compile_lexicon` itself) reproduces the pre-checkpoint-14 baseline
+    // -- plain per-id `ProductType` matching only -- for the paired
+    // comparator experiment (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`).
+    let hyponym_groups = if enable_product_type_hyponyms {
+        product_type_hyponym_groups(&profile.product_type_names)
+    } else {
+        BTreeMap::new()
+    };
     for (name, id) in &profile.product_type_names {
         let structural = match hyponym_groups.get(id) {
             Some(hyponyms) if !hyponyms.is_empty() => {
@@ -819,5 +865,59 @@ mod hyponym_tests {
                 }
             }
         }
+    }
+
+    /// Issue #55 checkpoint-14 follow-up
+    /// (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`): the new
+    /// `compile_lexicon_with_product_type_hyponyms` toggle must not change
+    /// production behavior on its own -- `enable_product_type_hyponyms:
+    /// true` has to be byte-identical (via `Debug` formatting, since
+    /// `SemanticLexicon` has no `PartialEq`) to plain `compile_lexicon`,
+    /// which always enables hyponym expansion. This is the regression
+    /// guard for the refactor that threaded the new bool parameter through
+    /// `compile_non_brand_lexicon`'s three existing call sites.
+    #[test]
+    fn product_type_hyponym_toggle_true_matches_compile_lexicon() {
+        let types = names(&[("recliners", 1), ("gray recliners", 2), ("sofas", 3)]);
+        let profile = CatalogProfile {
+            product_type_names: types,
+            ..Default::default()
+        };
+        let via_compile_lexicon = format!("{:?}", super::compile_lexicon(&profile, 1));
+        let via_toggle_true = format!(
+            "{:?}",
+            super::compile_lexicon_with_product_type_hyponyms(&profile, 1, true)
+        );
+        assert_eq!(via_compile_lexicon, via_toggle_true);
+    }
+
+    /// The other half of the same guard: `enable_product_type_hyponyms:
+    /// false` must produce plain per-id `ProductType` matching only --
+    /// never a `ProductTypeAny`, even where the vocabulary contains a
+    /// genuine hyponym pair the `true` path would expand.
+    #[test]
+    fn product_type_hyponym_toggle_false_never_produces_product_type_any() {
+        let types = names(&[("recliners", 1), ("gray recliners", 2), ("sofas", 3)]);
+        let profile = CatalogProfile {
+            product_type_names: types,
+            ..Default::default()
+        };
+        let baseline = super::compile_lexicon_with_product_type_hyponyms(&profile, 1, false);
+        let debug = format!("{baseline:?}");
+        assert!(
+            !debug.contains("ProductTypeAny"),
+            "baseline (hyponyms disabled) must never emit ProductTypeAny: {debug}"
+        );
+        assert!(
+            debug.contains("ProductType(ProductTypeId(1))"),
+            "baseline must still resolve \"recliners\" via plain ProductType matching: {debug}"
+        );
+        // Contrast: the same profile with hyponyms enabled DOES produce a
+        // ProductTypeAny for "recliners" (its own established behavior,
+        // `broader_term_admits_a_more_specific_whole_word_superset` above)
+        // -- confirms the two lexicons are actually different, not that
+        // this profile happens to never trigger the mechanism either way.
+        let treatment = super::compile_lexicon_with_product_type_hyponyms(&profile, 1, true);
+        assert!(format!("{treatment:?}").contains("ProductTypeAny"));
     }
 }

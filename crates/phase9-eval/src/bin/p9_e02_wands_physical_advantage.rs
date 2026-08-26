@@ -141,6 +141,33 @@ fn wands_solr_query_for(
                     ));
                 }
             }
+            // Issue #55 checkpoint-14 paired-comparator follow-up
+            // (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`):
+            // this arm was missing entirely until this fix -- `ProductTypeAny`
+            // did not exist as a reachable constraint kind against WANDS data
+            // when the comment on the old `_ => {}` catch-all below was
+            // written, and was never revisited when checkpoint 14's leaf-only
+            // hyponym expansion started producing it in production. The
+            // silent omission meant Solr received NO product-type filter at
+            // all for any query native resolved to `ProductTypeAny`,
+            // asymmetrically weakening the Solr side of exactly the
+            // treatment's own queries. Same OR-of-regex construction as the
+            // single-id `ProductType` arm above, applied to every id in the
+            // group.
+            ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(ids)) => {
+                let names: Vec<&String> = ids
+                    .iter()
+                    .filter_map(|id| product_type_name_by_id.get(id))
+                    .collect();
+                if !names.is_empty() {
+                    let alternation = names
+                        .iter()
+                        .map(|n| case_insensitive_field_regex(n))
+                        .collect::<Vec<_>>()
+                        .join("|");
+                    fq.push(format!("product_class:/({alternation})/"));
+                }
+            }
             ResolvedConstraint::Attribute(Constraint::Enum { attribute, value }) => {
                 fq.push(format!(
                     "{attribute}:/{}/",

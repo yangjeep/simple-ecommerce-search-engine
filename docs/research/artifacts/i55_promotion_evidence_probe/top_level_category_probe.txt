@@ -1,0 +1,12 @@
+BROAD 'beds' n=1112 top-levels=[('furniture', 1110), ('sale', 2)]
+   'beds'       -> 'adjustable beds'         n=  63 top-levels=[('bed & bath', 63)] verdict=UNRESOLVED
+   'beds'       -> 'cat beds'                n=   1 top-levels=[('pet', 1)] verdict=UNRESOLVED <-- KNOWN BAD (must stay UNRESOLVED, never PROMOTE)
+   'beds'       -> 'dog beds & mats'         n=  10 top-levels=[('pet', 10)] verdict=UNRESOLVED <-- KNOWN BAD (must stay UNRESOLVED, never PROMOTE)
+   'beds'       -> 'daybeds & guest beds'    n= 158 top-levels=[('furniture', 158)] verdict=PROMOTE
+   'beds'       -> 'kids beds'               n= 183 top-levels=[('baby & kids', 183)] verdict=UNRESOLVED
+   'beds'       -> 'teen beds'               n=   1 top-levels=[('baby & kids', 1)] verdict=UNRESOLVED
+BROAD 'recliners' n=435 top-levels=[('furniture', 435)]
+   'recliners'  -> 'gray recliners'          n=   0 top-levels=[] verdict=UNRESOLVED
+
+promoted=1 unresolved=6 false_promotions=0
+Zero-false-promotion bar: PASS (0/2 known-bad candidates were wrongly promoted)
