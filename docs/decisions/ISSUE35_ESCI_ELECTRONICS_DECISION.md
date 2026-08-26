@@ -140,6 +140,66 @@ rate, not asserted as either "never happens" or hidden.
   brand strings) is precisely the kind of shape most likely to expose a
   hidden vertical-specific assumption, had one existed.
 
+### Correction (2026-08-26) — the named brand-trust-filtering follow-up is already answered; withdrawn, not pursued
+
+This document's own "What this does and does not establish" section
+named a follow-up: "extending `min_enum_frequency`-style trust
+filtering... to brand-name discovery specifically." That follow-up is
+withdrawn, not pursued, after checking this project's own prior
+evidence rather than treating the idea as novel.
+
+Two corrections, found by reading `crates/commerce-core/src/cold_start/profile.rs`'s
+own doc comments and `docs/experiments/PHASE2_LOG.md` before writing
+any new code:
+
+1. **Factual correction**: brand names do **not** categorically bypass
+   `min_enum_frequency` filtering the way this document implied.
+   `compile_lexicon` (`crates/commerce-core/src/cold_start/profile.rs`)
+   already gates every brand through `brand_occurrence_count` at the
+   same `min_enum_frequency` threshold as every other value (added by
+   P2-E05, `docs/experiments/PHASE2_LOG.md`, after a real ESCI
+   integration run found the *opposite* of this document's claim was
+   the actual historical bug). This checkpoint's own binary used
+   `MIN_ENUM_FREQUENCY = 1` -- the same value every dataset in this
+   project uses by default -- at which that filter is a numerical
+   no-op for any value that occurs at all, not evidence that brands are
+   structurally exempt from frequency gating.
+2. **Substantive correction, the more important one**: this project
+   already ran an extensive, rigorous investigation into exactly this
+   class of problem -- distinguishing genuine brand strings from noisy
+   marketplace junk on the *real, full* ESCI catalog (206,227 distinct
+   raw brand strings, 49.4% singleton) -- across four independent
+   mechanisms (P2-E05's raw frequency threshold, P2-E08's
+   `HeuristicCanonicalizer` deterministic heuristic, P2-E09/P2-E10's
+   model-assisted classifier). **All three arrive at the same
+   conclusion**: trusting *more* strings as hard structural filters,
+   however intelligently chosen, costs more real Exact-relevance recall
+   than it gains in false-inclusion-rate improvement. `PHASE2_LOG.md`'s
+   own recorded verdict: **"CANONICALIZATION FRONTIER IS FUNDAMENTAL"**
+   -- the tension is inherent to enforcing brand matches as a *hard*
+   exact-match structural constraint at all, not to which classifier
+   decides which strings to trust. A bespoke stopword/short-string
+   blocklist targeting the specific `"IS"` collision this checkpoint
+   found would be exactly the kind of "smarter classifier" approach
+   this prior evidence already falsified as the wrong lever -- pursuing
+   it here would silently re-litigate an already-closed question rather
+   than build on it.
+
+The evidence-backed direction this prior work actually points to (and
+already partially shipped) is **softer enforcement, not smarter
+classification**: `PHASE2_LOG.md`'s own "Next" step named testing
+whether a *scored* or *alias-normalized* match beats an unconditional
+hard filter -- which is exactly what `StructuralConstraint::BrandAny`
+(Issue #6 P1-B, this session's own repeated precedent for `ProductTypeAny`)
+already is: a deterministic alias-group mechanism, not a wider blocklist.
+The `"IS"` collision this checkpoint found is a genuine, small, novel
+*data point* in that same well-established tension (a hard exact-match
+`Brand` constraint firing on a stopword collision is one more instance
+of "hard exact-match structural filters are fragile to real-world
+string noise"), but it does not call for new work -- it is additional
+confirmation of a conclusion this project already reached and partly
+acted on.
+
 ## Traceability
 
 Source: `crates/issue35-eval/` (new crate: `src/lib.rs` ingestion,

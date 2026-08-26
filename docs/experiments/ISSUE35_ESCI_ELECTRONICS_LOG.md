@@ -100,8 +100,12 @@ matches); 40/1,079 (3.7%) are otherwise short (<=3 characters, e.g.
 **not** violate the correctness hard gate (it produces zero results,
 not a wrong result), but it is real, disclosed evidence that this
 project's existing brand-discovery mechanism (`CatalogProfile`'s brand
-vocabulary, treated as always-trusted the same way `min_enum_frequency`
-explicitly does *not* apply to brand names) is safe on WANDS's
+vocabulary, gated through `min_enum_frequency` at the same threshold
+as every other value -- this checkpoint uses threshold 1, the same
+default every dataset in this project uses, at which that gate is a
+numerical no-op for any string that occurs at all; see the decision
+doc's dated correction for why raising it specifically to catch this
+case is not the right fix either) is safe on WANDS's
 single-curated-retailer data but carries a real, if rare, false-positive
 risk on noisier, open multi-seller marketplace metadata where any
 seller-entered string can become a `product_brand` value.
