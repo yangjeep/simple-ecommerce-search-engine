@@ -1,0 +1,722 @@
+=== Issue #55 checkpoint 19 follow-up: qualitative probe of electronics's Hybrid-routed relevance gap ===
+
+--- query="apple i mac touch screen computer" constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=17.853 title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    score=11.204 title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    score=11.020 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    score=7.450 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=7.450 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=3.097 title="Apple Lightning to Digital AV Adapter"
+    score=2.760 title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    score=2.694 title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=2.631 title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=2.571 title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+  solr top-10:
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    asin=B085CNGYV7 label=(unjudged) title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    asin=B08374BBQG label=(unjudged) title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    asin=B009WHV3BM label=(unjudged) title="Apple Lightning to Digital AV Adapter"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B07B8YBX7V label=(unjudged) title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    asin=B0784J8FXM label=(unjudged) title="Mid-2014 Apple MacBook Pro with 2.5GHz Intel Core i7 (15-inch, 16GB RAM, 512GB SSD Storage) (Renewed)"
+
+--- query="dell monitors" constraints=[Structural(Brand(BrandId(314)))] fq=["brand:/[dD][eE][lL][lL]/"] native_ndcg=0.3753 solr_ndcg=0.2562 ---
+  native top-10:
+    score=4.912 title="Dell UltraSharp U4919DW 49 inch Dual QHD Curved Monitor - 8ms Response Time, 2X HDMI, 1x DP, 5X USB Downstream, 2X USB Upstream 3.0, 1 x USB Type-C"
+    score=4.722 title="Dell P2419H 24 Inch LED-Backlit, Anti-Glare, 3H Hard Coating IPS Monitor - (8 ms Response, FHD 1920 x 1080 at 60Hz, 1000:1 Contrast, with ComfortView DisplayPort, VGA, HDMI and USB), Black"
+    score=4.145 title="Dell UltraSharp U3415W 34-Inch Curved LED-Lit Monitor"
+  solr top-10:
+    asin=B00PXYRMPE label=(unjudged) title="Dell UltraSharp U3415W 34-Inch Curved LED-Lit Monitor"
+    asin=B07KMQT7DB label=(unjudged) title="Dell UltraSharp U4919DW 49 inch Dual QHD Curved Monitor - 8ms Response Time, 2X HDMI, 1x DP, 5X USB Downstream, 2X USB Upstream 3.0, 1 x USB Type-C"
+    asin=B073FHWTPL label=(unjudged) title="MONITOR DELL 38  U3818DW ULTRASHARP CURVO 21:9,HDMI"
+    asin=B07F8XZN69 label=Exact title="Dell P2419H 24 Inch LED-Backlit, Anti-Glare, 3H Hard Coating IPS Monitor - (8 ms Response, FHD 1920 x 1080 at 60Hz, 1000:1 Contrast, with ComfortView DisplayPort, VGA, HDMI and USB), Black"
+    asin=B07GC6CGPL label=(unjudged) title="DELL 19in P1917S IPS BACKLIT LED LCD 1280X1024 5:4 SCREEN DESKTOP DISPLAY MONITOR (Renewed)"
+    asin=B088K23635 label=(unjudged) title="2020 Dell Inspiron 3000 15.6-inch HD Touchscreen Laptop PC, Intel 10th Gen Dual Core i3-1005G1 Processor, 8GB DDR4, 128GB SSD, 1TB HDD, Bluetooth, Windows 10, Black"
+    asin=B07T159Q9W label=(unjudged) title="Dell Chromebook 11 CB1C13 11.6inch Laptop Intel Celeron 2955U 1.40GHz 2GB 16GB SSD (Renewed)"
+    asin=B086SCHQJK label=(unjudged) title="Dell P2421D 24 Inch 1440p QHD, IPS Thin Bezel Monitor, HDMI, DisplayPort, VESA Certified, Black"
+    asin=B0742HZW9B label=(unjudged) title="(Refurbished) Dell ChromeBook 11 -Intel Celeron 2955U, 4GB Ram, 16GB SSD, WebCam, HDMI, (11.6 HD Screen 1366x768)"
+    asin=B084LB7RN2 label=(unjudged) title="Dell U4320Q 43 Inch 2160p 4K UltraSharp, IPS Thin Bezel Monitor, HDMI, DisplayPort, USB-C, VESA Certified, Black"
+
+--- query="hp monitor" constraints=[Structural(Brand(BrandId(1)))] fq=["brand:/[hH][pP]/"] native_ndcg=0.7722 solr_ndcg=0.8512 ---
+  native top-10:
+    score=5.977 title="HP 24-Inch FHD IPS Monitor with Tilt Adjustment and Anti-glare Panel (24yh, Black) - 3AU73AA#ABA"
+    score=5.941 title="HP 27er 27-Inch Full HD 1080p IPS LED Monitor with Frameless Bezel and VGA & HDMI (T3M88AA), White"
+    score=5.897 title="HP FHD IPS Monitor with Tilt Adjustment and Anti-Glare Panel- 32-Inch, Black/Silver"
+    score=5.865 title="HP V28 4K Monitor - Computer Monitor with 28-inch Diagonal Display, 3840 x 2160 at 60 Hz, and 1ms Response Time - AMD Freesync Technology - Dual HDMI and DisplayPort - Low Blue Light - 8WH57AA#ABA"
+    score=5.757 title="HP Pavilion 27q 27-inch QHD 2k 1440p IPS LED Monitor with AMD FreeSync Support, 100% sRGB, and VESA Mounting Bracket (1HR73AA#ABA) - Silver"
+    score=5.589 title="HP Pavilion 22cwa 21.5-Inch Full HD 1080p IPS LED Monitor, Tilt, VGA and HDMI (T4Q59AA) - Black"
+    score=5.552 title="HP VH240a 23.8-Inch Full HD 1080p IPS LED Monitor with Built-In Speakers and VESA Mounting, Rotating Portrait & Landscape, Tilt, and HDMI & VGA Ports (1KL30AA) - Black"
+    score=5.212 title="HP 24mh FHD Monitor - Computer Monitor with 23.8-Inch IPS Display (1080p) - Built-In Speakers and VESA Mounting - Height/Tilt Adjustment for Ergonomic Viewing - HDMI and DisplayPort - (1D0J9AA#ABA)"
+    score=4.999 title="HP Newest 27\" Widescreen IPS LED Full HD (1920x1080) Monitor, 5ms Response Time, 10,000,000:1 Contrast Ratio, FreeSync, 2X HDMI and 1x VGA Input, 178° View Angle, 75Hz Refresh Rate, Natural Silver"
+    score=3.739 title="HP 25x Gaming 24.5\" Full HD Monitor, 144hz, 1ms Response, HDMI and DisplayPort inputs, 1000:1 Contrast Ratio, Gray/Green + CUE Accessories"
+  solr top-10:
+    asin=B07K4QDNVX label=Exact title="HP Newest 27\" Widescreen IPS LED Full HD (1920x1080) Monitor, 5ms Response Time, 10,000,000:1 Contrast Ratio, FreeSync, 2X HDMI and 1x VGA Input, 178° View Angle, 75Hz Refresh Rate, Natural Silver"
+    asin=B07CZ6VK4F label=Exact title="HP 24-Inch FHD IPS Monitor with Tilt Adjustment and Anti-glare Panel (24yh, Black) - 3AU73AA#ABA"
+    asin=B0776RR4XQ label=Exact title="HP FHD IPS Monitor with Tilt Adjustment and Anti-Glare Panel- 32-Inch, Black/Silver"
+    asin=B01F6V704G label=Exact title="HP 27er 27-Inch Full HD 1080p IPS LED Monitor with Frameless Bezel and VGA & HDMI (T3M88AA), White"
+    asin=B08G5T5W76 label=(unjudged) title="HP V28 4K Monitor - Computer Monitor with 28-inch Diagonal Display, 3840 x 2160 at 60 Hz, and 1ms Response Time - AMD Freesync Technology - Dual HDMI and DisplayPort - Low Blue Light - 8WH57AA#ABA"
+    asin=B07VFC787T label=Exact title="HP P Series P274 | 27\" Monitor | Low Blue Light | HD IPS Screen | Black | 5QG36A8"
+    asin=B075SV7P3Q label=Exact title="HP Pavilion 27q 27-inch QHD 2k 1440p IPS LED Monitor with AMD FreeSync Support, 100% sRGB, and VESA Mounting Bracket (1HR73AA#ABA) - Silver"
+    asin=B015WCV70W label=Exact title="HP Pavilion 22cwa 21.5-Inch Full HD 1080p IPS LED Monitor, Tilt, VGA and HDMI (T4Q59AA) - Black"
+    asin=B072M34RQC label=Exact title="HP VH240a 23.8-Inch Full HD 1080p IPS LED Monitor with Built-In Speakers and VESA Mounting, Rotating Portrait & Landscape, Tilt, and HDMI & VGA Ports (1KL30AA) - Black"
+    asin=B089QFLFMN label=(unjudged) title="HP 25x Gaming 24.5\" Full HD Monitor, 144hz, 1ms Response, HDMI and DisplayPort inputs, 1000:1 Contrast Ratio, Gray/Green + CUE Accessories"
+
+--- query="led strip lights dreamcolor minger" constraints=[Structural(Brand(BrandId(8)))] fq=["brand:/[mM][iI][nN][gG][eE][rR]/"] native_ndcg=0.1265 solr_ndcg=0.2529 ---
+  native top-10:
+    score=14.068 title="MINGER LED Strip Lights 16.4ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+    score=14.012 title="MINGER RGB LED Strip Lights, 32.8ft Water Resistant 5050 LED Light Strip, 10m Color Changing Rope Lights with 44 Key IR Remote and 12V/3A ETL Adapter for Room, Home, Kitchen, Party, 2 rolls of 16.4ft"
+    score=11.701 title="MINGER LED Strip Lights 32.8ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+  solr top-10:
+    asin=B07JP2BJMR label=Exact title="MINGER LED Strip Lights 32.8ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+    asin=B07G56Q1M5 label=(unjudged) title="MINGER RGB LED Strip Lights, 32.8ft Water Resistant 5050 LED Light Strip, 10m Color Changing Rope Lights with 44 Key IR Remote and 12V/3A ETL Adapter for Room, Home, Kitchen, Party, 2 rolls of 16.4ft"
+    asin=B07JP5375R label=(unjudged) title="MINGER LED Strip Lights 16.4ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+
+--- query="A standard new laptop that is budget friendly and which has internet access, a windows operating system, large clean screen and user friendly " constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=2.986 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="I need a laptop that has 16 GB of RAM. A backlit keyboard is also essential. SSD preferred. Physical blemishes that create a discount are great." constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=5.405 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="samsung chrome book 3" constraints=[Structural(Brand(BrandId(194))), Attribute(Enum { attribute: "color", value: "Chrome" })] fq=["brand:/[sS][aA][mM][sS][uU][nN][gG]/", "color:/[cC][hH][rR][oO][mM][eE]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="samsung chromebook" constraints=[Structural(Brand(BrandId(194)))] fq=["brand:/[sS][aA][mM][sS][uU][nN][gG]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B08BWDR72V label=(unjudged) title="Samsung QN32LS03TB 32\" The Frame Ultra High Definition Smart QLED Smart TV with a Samsung VG-SCFT32BW 32\" Brown Customizable Bezel for The Frame TV (2020)"
+    asin=B07Q81HX3Q label=(unjudged) title="Samsung 50\" RU7100 LED Smart 4K UHD TV 2019 Model (UN50RU7100FXZA) with Slim Flat Wall Mount Kit Ultimate Bundle for 45-90 inch TVs, Screen Cleaner for LED TVs & SurgePro 6-Outlet Surge Adapter"
+    asin=B07F1T4JFB label=(unjudged) title="SAMSUNG 43\" 4K Smart LED TV, 2018 Model"
+    asin=B088GMZRK3 label=(unjudged) title="Samsung QN32Q50RA 32\" Class QLED 4K Smart Ultra HDTV with a 1 Year Extended Warranty (2019)"
+    asin=B00TWFHCLE label=(unjudged) title="Samsung Electronics UN32J4000C 32-Inch 720p LED TV (2015 Model)"
+    asin=B073JP6WK4 label=(unjudged) title="SAMSUNG Electronics UN32M4500A 32-Inch 720p Smart LED TV (2017 Model)"
+    asin=B072PCXS5T label=(unjudged) title="Samsung Electronics UN49M5300A 49-Inch 1080p Smart LED TV (2017 Model)"
+    asin=B07W5QYD2K label=(unjudged) title="SAMSUNG QN32Q50RAFXZA Flat 32\" QLED 4K 32Q50 Series Smart TV (2019 model)"
+    asin=B086VR4QR4 label=(unjudged) title="SAMSUNG 32-inch T55 Series - 1000R Curved Monitor: 75Hz, 4ms, 1080p (LC32T550FDNXZA)"
+    asin=B07DGCJ3KY label=(unjudged) title="SAMSUNG Electronics UN32M4500BFXZA 720P Smart LED TV, 32\" (2018), 17.3\" x 28.9\" x 3.1\""
+
+--- query="A laptop that is light weight and with high specifications which I could use for working when at home or when travelling." constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=17.093 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="For a replacement laptop, I would choose an Apple macbook" constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=19.318 title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    score=16.578 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    score=14.984 title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=14.882 title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=14.073 title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    score=13.714 title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    score=13.263 title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    score=12.913 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=12.913 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=12.879 title="Apple MacBook Pro 13.3-Inch Laptop with Retina Display MF843LL/A (3.1 GHz dual-core Intel Core i7 processor, 16 GB RAM, 1TB SSD hard drive) (Renewed)"
+  solr top-10:
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B07B8YBX7V label=(unjudged) title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    asin=B075K5C8K5 label=(unjudged) title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B07J2Q4N2G label=(unjudged) title="Apple MacBook Pro 13.3-Inch Laptop with Retina Display MF843LL/A (3.1 GHz dual-core Intel Core i7 processor, 16 GB RAM, 1TB SSD hard drive) (Renewed)"
+    asin=B07B8XX1Z1 label=(unjudged) title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    asin=B0784J8FXM label=(unjudged) title="Mid-2014 Apple MacBook Pro with 2.5GHz Intel Core i7 (15-inch, 16GB RAM, 512GB SSD Storage) (Renewed)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+
+--- query="I like to buy a low-mid range laptop. One that looks good, is light to carry and have a LCD screen. " constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=1.299 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="I want to buy a laptop that has a lot of features, and is of good quality." constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=1.299 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="I want to buy a powerful laptop to put linux on, so maybe a lenovo or dell with a clear screen and lightweight." constraints=[Structural(Brand(BrandId(212))), Attribute(Enum { attribute: "color", value: "Clear" })] fq=["brand:/[lL][eE][nN][oO][vV][oO]/", "color:/[cC][lL][eE][aA][rR]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="I would be looking for a laptop that is good value and lightweight with long battery life." constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=2.254 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="Its a Dell laptop with15 inch touch screen with 32g ram" constraints=[Structural(Brand(BrandId(314)))] fq=["brand:/[dD][eE][lL][lL]/"] native_ndcg=0.2372 solr_ndcg=0.2372 ---
+  native top-10:
+    score=21.735 title="2019 New Dell Inspiron 17 PC Laptop: 17.3 Inch FHD(1980x1080) Non-Touch IPS Display, Intel CPU-i3-7020u, 8GB RAM, 1TB HDD, WiFi, Bluetooth, HDMI, Webcam, DVDRW, Windows 10"
+    score=15.825 title="Fast Dell Latitude E5470 HD Business Laptop Notebook PC (Intel Core i5-6300U, 8GB Ram, 256GB Solid State SSD, HDMI, Camera, WiFi, SC Card Reader) Win 10 Pro (Renewed)"
+    score=15.370 title="Dell ChromeBook 11.6 Inch HD (1366 x 768) Laptop NoteBook PC, Intel Celeron N2840, Camera, HDMI, WIFI, USB 3.0, SD Card Reader (Renewed)"
+    score=15.114 title="Dell Inspiron 17 3793 2020 Premium 17.3” FHD Laptop Notebook Computer, 10th Gen 4-Core Intel Core i5-1035G1 1.0 GHz, 16GB RAM, 512GB SSD + 1TB HDD, DVD,Webcam,Bluetooth,Wi-Fi,HDMI, Win 10 Home"
+    score=14.021 title="2021 Dell Inspiron 15 3000 15.6\" HD Laptop Computer, Intel Celeron Processor 4205U, 8GB RAM, 256GB PCIe SSD, Intel UHD Graphics 610, Waves MaxxAudio, HD Webcam, Windows 10, Black"
+    score=13.298 title="Dell Chromebook 11 CB1C13 11.6inch Laptop Intel Celeron 2955U 1.40GHz 2GB 16GB SSD (Renewed)"
+    score=12.979 title="Dell Inspiron 2-in-1 14\" Full HD Touch-Screen Chromebook - Intel Core i3, 4GB Memory, 128GB eMMC Solid State Drive Urban Gray Chrome OS"
+    score=12.457 title="2019 New Dell Inspiron 11 Convertible 2 in 1 Chromebook , 11.6\" HD Backlight Touch IPS Display, Intel Celeron Dual Core N3060 Processor, 4GB Ram, 32GB EMMC, WiFi, HDMI, USB3.1, Chrome OS"
+    score=11.204 title="Latest_Dell Inspiron 2-in-1 5000 14.0\" HD LED-Backlit Touchscreen High Performance Laptop, Intel Core i3-8145U Processor,8GB DDR4 RAM,256GB Solid State Drive, Wifi+Bluetooth, HDMI, USB 3.1, Windows 10"
+    score=10.691 title="2020 Dell Inspiron 3000 15.6-inch HD Touchscreen Laptop PC, Intel 10th Gen Dual Core i3-1005G1 Processor, 8GB DDR4, 128GB SSD, 1TB HDD, Bluetooth, Windows 10, Black"
+  solr top-10:
+    asin=B07T159Q9W label=(unjudged) title="Dell Chromebook 11 CB1C13 11.6inch Laptop Intel Celeron 2955U 1.40GHz 2GB 16GB SSD (Renewed)"
+    asin=B07781S5L5 label=(unjudged) title="Dell ChromeBook 11.6 Inch HD (1366 x 768) Laptop NoteBook PC, Intel Celeron N2840, Camera, HDMI, WIFI, USB 3.0, SD Card Reader (Renewed)"
+    asin=B07R3H3PL3 label=(unjudged) title="2019 New Dell Inspiron 17 PC Laptop: 17.3 Inch FHD(1980x1080) Non-Touch IPS Display, Intel CPU-i3-7020u, 8GB RAM, 1TB HDD, WiFi, Bluetooth, HDMI, Webcam, DVDRW, Windows 10"
+    asin=B07D5N1PFY label=(unjudged) title="Fast Dell Latitude E5470 HD Business Laptop Notebook PC (Intel Core i5-6300U, 8GB Ram, 256GB Solid State SSD, HDMI, Camera, WiFi, SC Card Reader) Win 10 Pro (Renewed)"
+    asin=B08NWMXN7X label=Substitute title="2021 Dell Inspiron 15 3000 15.6\" HD Laptop Computer, Intel Celeron Processor 4205U, 8GB RAM, 256GB PCIe SSD, Intel UHD Graphics 610, Waves MaxxAudio, HD Webcam, Windows 10, Black"
+    asin=B0742HZW9B label=(unjudged) title="(Refurbished) Dell ChromeBook 11 -Intel Celeron 2955U, 4GB Ram, 16GB SSD, WebCam, HDMI, (11.6 HD Screen 1366x768)"
+    asin=B082MSPDL8 label=(unjudged) title="Dell Inspiron 17 3793 2020 Premium 17.3” FHD Laptop Notebook Computer, 10th Gen 4-Core Intel Core i5-1035G1 1.0 GHz, 16GB RAM, 512GB SSD + 1TB HDD, DVD,Webcam,Bluetooth,Wi-Fi,HDMI, Win 10 Home"
+    asin=B07WQL71QN label=(unjudged) title="Dell Inspiron 14 5482 14 Inch FHD 2-in-1 Touchscreen Laptop (Intel Core i7-8565U up to 4.6 GHz, 8GB RAM, 256GB SSD, Backlit Keyboard, Bluetooth, WiFi, HDMI, Windows 10, Grey) (Renewed)"
+    asin=B07XQ6VZMS label=(unjudged) title="2019 Dell Inspiron 7000 13.3\" FHD Touchscreen 2-in-1 Laptop, Intel Quad Core i5-8265U Upto 3.9GHz, 8GB DDR4 RAM, 256GB SSD, Backlit Keyboard, Fingerprint Reader, USB-C, HDMI, Windows 10"
+    asin=B07LDF5YX3 label=(unjudged) title="Dell Inspiron 2-in-1 14\" Full HD Touch-Screen Chromebook - Intel Core i3, 4GB Memory, 128GB eMMC Solid State Drive Urban Gray Chrome OS"
+
+--- query="My new laptop would be silver, have the best storage I can afford (hard drive) and be able to burn CDs. My current laptop does not have this facility." constraints=[Structural(Brand(BrandId(543)))] fq=["brand:/[cC][uU][rR][rR][eE][nN][tT]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.969 title="CURRENT USA Serene Aquarium Visual and Audio Aquatic Experience Kit | LED Background Light (72\")"
+    score=3.345 title="CURRENT USA Orbit Marine IC LED Saltwater Reef Aquarium Light | with Wireless Lighting & Wave Pump Control | Loop App - Bluetooth | Fits Fish Aquariums 48\"-60\""
+  solr top-10:
+    asin=B07PM96PCB label=(unjudged) title="CURRENT USA Serene Aquarium Visual and Audio Aquatic Experience Kit | LED Background Light (72\")"
+    asin=B07KWJF4HQ label=(unjudged) title="CURRENT USA Orbit Marine IC LED Saltwater Reef Aquarium Light | with Wireless Lighting & Wave Pump Control | Loop App - Bluetooth | Fits Fish Aquariums 48\"-60\""
+
+--- query="Not sure. Maybe a a standard size (15 or 17??) screen middle of the range laptop that is either black or purple. It might be a Dell or Acer " constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=6.871 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="The laptop I would choose would be a silver apple Macbook. It would be thin and easy to carry around." constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=19.674 title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    score=17.133 title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    score=16.410 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    score=15.960 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=15.960 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=15.116 title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    score=15.081 title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=14.935 title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=13.284 title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    score=12.493 title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+  solr top-10:
+    asin=B075K5C8K5 label=(unjudged) title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B07B8XX1Z1 label=(unjudged) title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    asin=B085CNGYV7 label=(unjudged) title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    asin=B08374BBQG label=(unjudged) title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    asin=B07B8YBX7V label=(unjudged) title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+
+--- query="acer aspire 5 8gb" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.5013 solr_ndcg=0.6053 ---
+  native top-10:
+    score=18.841 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=13.268 title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+    score=10.397 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=8.672 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=6.195 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=5.002 title="Acer K202HQL Abi 19.5\" HD Monitor (HDMI & VGA port), Black, 19.5 Inch"
+    score=4.103 title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    score=4.013 title="Acer KA220HQ bi 22\" (21.5” viewable) Full HD (1920 x 1080) TN Monitor (HDMI & VGA port),Black"
+    score=3.832 title="Acer Gaming Monitor 24.5\" KG251Q bmiix 1920 x 1080 1ms Response Time AMD FREESYNC Technology (2 x HDMI & VGA Ports),Black"
+    score=3.829 title="Acer SB220Q bi 21.5 Inches Full HD (1920 x 1080) IPS Ultra-Thin Zero Frame Monitor (HDMI & VGA Port), Black"
+  solr top-10:
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    asin=B07RF1XD36 label=Substitute title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B08FHTJ3DJ label=(unjudged) title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+    asin=B0852XG6LM label=Substitute title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    asin=B086KKKT15 label=(unjudged) title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B07X4B9DBC label=(unjudged) title="Acer K202HQL Abi 19.5\" HD Monitor (HDMI & VGA port), Black, 19.5 Inch"
+    asin=B07JR9MQJ2 label=(unjudged) title="Acer R251 bid 25\" Full HD (1920 x 1080) IPS Monitor (HDMI, DVI & VGA ports)"
+
+--- query="acer laptop" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.3695 solr_ndcg=0.2786 ---
+  native top-10:
+    score=6.114 title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    score=5.533 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=2.580 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=2.470 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=2.470 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=2.370 title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+  solr top-10:
+    asin=B088DGM9ZH label=(unjudged) title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    asin=B0852XG6LM label=(unjudged) title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    asin=B07RF1XD36 label=Exact title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    asin=B086KKKT15 label=Exact title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    asin=B08FHTJ3DJ label=(unjudged) title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+
+--- query="acer laptop i5" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.4307 solr_ndcg=0.3155 ---
+  native top-10:
+    score=6.114 title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    score=5.533 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=2.580 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=2.470 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=2.470 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=2.370 title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+  solr top-10:
+    asin=B088DGM9ZH label=(unjudged) title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    asin=B0852XG6LM label=(unjudged) title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    asin=B07RF1XD36 label=Substitute title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    asin=B086KKKT15 label=(unjudged) title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    asin=B08FHTJ3DJ label=(unjudged) title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+
+--- query="acer nitro 7 gaming laptop" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=13.337 title="Acer Nitro XZ270 Xbmiipx 27\" 1500R Curved Full HD (1920 x 1080) VA Zero-Frame Gaming Monitor with Adaptive Sync, 240Hz Refresh Rate and 1ms VRB (Display Port & 2 x HDMI 2.0 Ports) , Black"
+    score=9.714 title="Acer Nitro XZ342CK Pbmiiphx 34\" 1500R Curved WQHD (3440 x 1440) VA Gaming Monitor with AMD Radeon Freesync, VESA Certified DisplayHDR400, 95% sRGB, 144Hz, 1ms VRB (Display Port & 2 x HDMI 2.0 Ports)"
+    score=8.044 title="Acer Predator XB253Q Gxbmiiprzx 24.5\" FHD (1920 x 1080) IPS NVIDIA G-SYNC Compatible Gaming Monitor, VESA Certified DisplayHDR400, Up to 0.5ms (G to G), 240Hz, 99% sRGB (1 x Display Port & 2 x HDMI)"
+    score=7.987 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=7.281 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=7.254 title="Acer Nitro XV340CK Pbmiipphzx 34\" QHD (3440 x 1440) IPS Gaming Monitor with AMD Radeon FREESYNC, 144Hz, 1ms VRB, HDR10 Technology, (2 x Display Ports, 2 x HDMI 2.0 & 2 x USB 3.0 Ports), Black"
+    score=7.163 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=7.156 title="Acer Nitro VG272 Xbmiipx 27\" Full HD (1920 x 1080) IPS AMD Radeon FreeSync and G-SYNC Compatible Gaming Monitor, 240Hz, Up to 0.1ms Response Time, (1 x Display Port & 2 x HDMI 2.0 Ports), Black"
+    score=7.062 title="Acer Nitro XF272 Xbmiiprzx 27\" Full HD (1920 x 1080) TN Gaming Monitor with AMD Radeon FreeSync Technology, 240Hz, Up to 0.2ms Response Time, HDR Ready (1 x DP, 2 x HDMI & & 4 x 3.0 Ports), Black"
+    score=6.162 title="acer Predator XB2 27in Gaming Monitor NVIDIA G-SYNC 240 Hz Full HD 1 ms TN Film , XB272 bmiprz (Renewed)"
+  solr top-10:
+    asin=B08R7PQ4JW label=(unjudged) title="Acer Nitro XZ270 Xbmiipx 27\" 1500R Curved Full HD (1920 x 1080) VA Zero-Frame Gaming Monitor with Adaptive Sync, 240Hz Refresh Rate and 1ms VRB (Display Port & 2 x HDMI 2.0 Ports) , Black"
+    asin=B08BW3XS12 label=(unjudged) title="Acer Nitro XZ342CK Pbmiiphx 34\" 1500R Curved WQHD (3440 x 1440) VA Gaming Monitor with AMD Radeon Freesync, VESA Certified DisplayHDR400, 95% sRGB, 144Hz, 1ms VRB (Display Port & 2 x HDMI 2.0 Ports)"
+    asin=B08BG4GWRL label=(unjudged) title="Acer Nitro XV340CK Pbmiipphzx 34\" QHD (3440 x 1440) IPS Gaming Monitor with AMD Radeon FREESYNC, 144Hz, 1ms VRB, HDR10 Technology, (2 x Display Ports, 2 x HDMI 2.0 & 2 x USB 3.0 Ports), Black"
+    asin=B07YGZ54RB label=(unjudged) title="Acer Nitro VG272 Xbmiipx 27\" Full HD (1920 x 1080) IPS AMD Radeon FreeSync and G-SYNC Compatible Gaming Monitor, 240Hz, Up to 0.1ms Response Time, (1 x Display Port & 2 x HDMI 2.0 Ports), Black"
+    asin=B07W7NDHQP label=(unjudged) title="Acer Nitro XF272 Xbmiiprzx 27\" Full HD (1920 x 1080) TN Gaming Monitor with AMD Radeon FreeSync Technology, 240Hz, Up to 0.2ms Response Time, HDR Ready (1 x DP, 2 x HDMI & & 4 x 3.0 Ports), Black"
+    asin=B075LQLJ52 label=(unjudged) title="Acer Gaming Monitor 37.5\" Ultra Wide Curved XR382CQK bmijqphuzx 3840 x 1600 1ms Response Time AMD FREESYNC Technology (Display, HDMI & MHL Ports)"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B07MQBPMJ2 label=(unjudged) title="Acer Nitro XV272U Pbmiiprzx 27\" WQHD (2560 x 1440) IPS G-SYNC Compatible Monitor, 144Hz, 1ms VRB, VESA Certified DisplayHDR400, DCI-P3, Delta E<2"
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    asin=B08PPR6H2B label=(unjudged) title="Acer Predator X38 Pbmiphzx 2300R Curved 37.5\" UltraWide QHD+ (3840 x 1600) Gaming Monitor | NVIDIA G-SYNC | Agile Splendor IPS | Up to 175Hz | DCI-P3 98% | DisplayHDR 400 | Display Port & HDMI, Black"
+
+--- query="acer predator helios 300 gaming laptop 17.3 monitor" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=19.814 title="Acer Predator X38 Pbmiphzx 2300R Curved 37.5\" UltraWide QHD+ (3840 x 1600) Gaming Monitor | NVIDIA G-SYNC | Agile Splendor IPS | Up to 175Hz | DCI-P3 98% | DisplayHDR 400 | Display Port & HDMI, Black"
+    score=15.150 title="acer Predator XB2 27in Gaming Monitor NVIDIA G-SYNC 240 Hz Full HD 1 ms TN Film , XB272 bmiprz (Renewed)"
+    score=13.180 title="Acer Predator XB273 Xbmiprzx 27\" FHD (1920 x 1080) IPS NVIDIA G-SYNC Gaming Monitor with Up to 0.1ms (G to G), 240Hz, 99% sRGB (1 x Display Port & 1 x HDMI Port), Black"
+    score=12.891 title="Acer Predator XB253Q Gxbmiiprzx 24.5\" FHD (1920 x 1080) IPS NVIDIA G-SYNC Compatible Gaming Monitor, VESA Certified DisplayHDR400, Up to 0.5ms (G to G), 240Hz, 99% sRGB (1 x Display Port & 2 x HDMI)"
+    score=10.923 title="Acer Nitro XZ270 Xbmiipx 27\" 1500R Curved Full HD (1920 x 1080) VA Zero-Frame Gaming Monitor with Adaptive Sync, 240Hz Refresh Rate and 1ms VRB (Display Port & 2 x HDMI 2.0 Ports) , Black"
+    score=9.926 title="Acer G276HL Kbix 27\" Full HD (1920 x 1080) VA Zero Frame Monitor (HDMI & VGA Ports)"
+    score=7.807 title="Acer XF270HU Cbmiiprx 27” WQHD (2560 x 1440) TN AMD FreeSync Gaming Monitor, 144Hz Refresh Rate, 1ms, (Display Port 1.2 & 2 x HDMI Ports),Black"
+    score=7.539 title="Acer XF250Q Cbmiiprx 24.5\" Full HD (1920 x 1080) Zero Frame TN Gaming AMD FreeSync Compatible Monitor - 1ms | 240Hz Refresh (Display, HDMI 2.0, HDMI 1.4 Ports), Black"
+    score=7.270 title="Acer XF270H Bbmiiprx 27\" Full HD (1920 x 1080) Zero Frame TN AMD FreeSync and NVIDIA G-SYNC Compatible Gaming Monitor - 1ms | 144Hz Refresh (Display Port 1.2 & 2 x HDMI 2.0 Ports),Black"
+    score=7.213 title="Acer EB321HQ Awi 32\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port),White"
+  solr top-10:
+    asin=B08PPR6H2B label=(unjudged) title="Acer Predator X38 Pbmiphzx 2300R Curved 37.5\" UltraWide QHD+ (3840 x 1600) Gaming Monitor | NVIDIA G-SYNC | Agile Splendor IPS | Up to 175Hz | DCI-P3 98% | DisplayHDR 400 | Display Port & HDMI, Black"
+    asin=B073WXQB54 label=(unjudged) title="acer Predator XB2 27in Gaming Monitor NVIDIA G-SYNC 240 Hz Full HD 1 ms TN Film , XB272 bmiprz (Renewed)"
+    asin=B087GCYTLL label=(unjudged) title="Acer Predator XB273 Xbmiprzx 27\" FHD (1920 x 1080) IPS NVIDIA G-SYNC Gaming Monitor with Up to 0.1ms (G to G), 240Hz, 99% sRGB (1 x Display Port & 1 x HDMI Port), Black"
+    asin=B087GCFMS1 label=(unjudged) title="Acer Predator XB253Q Gxbmiiprzx 24.5\" FHD (1920 x 1080) IPS NVIDIA G-SYNC Compatible Gaming Monitor, VESA Certified DisplayHDR400, Up to 0.5ms (G to G), 240Hz, 99% sRGB (1 x Display Port & 2 x HDMI)"
+    asin=B0797M3SVG label=(unjudged) title="Acer EB321HQ Awi 32\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port),White"
+    asin=B0742D9CDX label=(unjudged) title="Acer G276HL Kbix 27\" Full HD (1920 x 1080) VA Zero Frame Monitor (HDMI & VGA Ports)"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B08R7PQ4JW label=(unjudged) title="Acer Nitro XZ270 Xbmiipx 27\" 1500R Curved Full HD (1920 x 1080) VA Zero-Frame Gaming Monitor with Adaptive Sync, 240Hz Refresh Rate and 1ms VRB (Display Port & 2 x HDMI 2.0 Ports) , Black"
+
+--- query="acer swift 3" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.9551 solr_ndcg=0.9283 ---
+  native top-10:
+    score=8.481 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=3.428 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=2.596 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=2.446 title="Acer Flagship CB3-532 15.6inch HD Premium Chromebook - Intel Dual-Core Celeron N3060 up to 2.48GH.z, 2GB RAM, 16GB SSD, Wireless AC, HDMI, USB 3.0, Webcam, Chrome OS (Renewed)"
+    score=2.418 title="Acer Nitro XV340CK Pbmiipphzx 34\" QHD (3440 x 1440) IPS Gaming Monitor with AMD Radeon FREESYNC, 144Hz, 1ms VRB, HDR10 Technology, (2 x Display Ports, 2 x HDMI 2.0 & 2 x USB 3.0 Ports), Black"
+    score=2.374 title="Acer Nitro XF272 Xbmiiprzx 27\" Full HD (1920 x 1080) TN Gaming Monitor with AMD Radeon FreeSync Technology, 240Hz, Up to 0.2ms Response Time, HDR Ready (1 x DP, 2 x HDMI & & 4 x 3.0 Ports), Black"
+    score=1.125 title="Acer R13 13.3in Convertible 2-in-1 FHD IPS Touchscreen Chromebook - Intel Quad-Core MediaTek MT8173C 2.1GHz, 4GB RAM, 32GB SSD, Bluetooth, HDMI, Chrome OS (Renewed)"
+    score=0.895 title="2018 Newest Acer Convertible 2-in-1 Chromebook-11.6 inches HD IPS Touchscreen, Intel Celeron Quad-Core Processor Up to 2.08Ghz, 4GB RAM, 32GB SSD, HDMI, WiFi, Chrome OS-Metal Black (Renewed)"
+    score=0.879 title="Acer Nitro XZ342CK Pbmiiphx 34\" 1500R Curved WQHD (3440 x 1440) VA Gaming Monitor with AMD Radeon Freesync, VESA Certified DisplayHDR400, 95% sRGB, 144Hz, 1ms VRB (Display Port & 2 x HDMI 2.0 Ports)"
+    score=0.872 title="Acer Nitro XV272U Pbmiiprzx 27\" WQHD (2560 x 1440) IPS G-SYNC Compatible Monitor, 144Hz, 1ms VRB, VESA Certified DisplayHDR400, DCI-P3, Delta E<2"
+  solr top-10:
+    asin=B086KKKT15 label=Exact title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B088DGM9ZH label=(unjudged) title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    asin=B07RF1XD36 label=Substitute title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    asin=B075LQLJ52 label=(unjudged) title="Acer Gaming Monitor 37.5\" Ultra Wide Curved XR382CQK bmijqphuzx 3840 x 1600 1ms Response Time AMD FREESYNC Technology (Display, HDMI & MHL Ports)"
+    asin=B07NFJ6M3R label=(unjudged) title="Acer EI491CR Pbmiiipx 49\" Curved DFHD (3840 x 1080) VA Monitor with AMD Radeon FreeSync2 Technology ,144Hz, VESA Certified DisplayHDR400, DCI-P3,Black"
+    asin=B0852XG6LM label=(unjudged) title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+
+--- query="acer thin laptop" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.8066 solr_ndcg=0.6131 ---
+  native top-10:
+    score=10.937 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    score=10.026 title="Acer SB220Q bi 21.5 Inches Full HD (1920 x 1080) IPS Ultra-Thin Zero Frame Monitor (HDMI & VGA Port), Black"
+    score=6.114 title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    score=5.533 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=5.180 title="Acer R251 bid 25\" Full HD (1920 x 1080) IPS Monitor (HDMI, DVI & VGA ports)"
+    score=4.572 title="Acer SB270 Bbix 27\" Full HD (1920 x 1080) IPS Ultra-Thin Zero Frame Monitor with AMD Radeon FREESYNC Technology - 1ms | 75Hz Refresh (HDMI & VGA Ports)"
+    score=2.580 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=2.470 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=2.370 title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+  solr top-10:
+    asin=B086KKKT15 label=Exact title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+    asin=B07JR9MQJ2 label=(unjudged) title="Acer R251 bid 25\" Full HD (1920 x 1080) IPS Monitor (HDMI, DVI & VGA ports)"
+    asin=B07CVL2D2S label=(unjudged) title="Acer SB220Q bi 21.5 Inches Full HD (1920 x 1080) IPS Ultra-Thin Zero Frame Monitor (HDMI & VGA Port), Black"
+    asin=B088DGM9ZH label=(unjudged) title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07KQKGP6W label=(unjudged) title="Acer SB270 Bbix 27\" Full HD (1920 x 1080) IPS Ultra-Thin Zero Frame Monitor with AMD Radeon FREESYNC Technology - 1ms | 75Hz Refresh (HDMI & VGA Ports)"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+
+--- query="acer touch screen laptop" constraints=[Structural(Brand(BrandId(14)))] fq=["brand:/[aA][cC][eE][rR]/"] native_ndcg=0.4306 solr_ndcg=0.0000 ---
+  native top-10:
+    score=13.324 title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    score=5.870 title="Acer R13 13.3in Convertible 2-in-1 FHD IPS Touchscreen Chromebook - Intel Quad-Core MediaTek MT8173C 2.1GHz, 4GB RAM, 32GB SSD, Bluetooth, HDMI, Chrome OS (Renewed)"
+    score=5.533 title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+    score=4.353 title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+    score=2.607 title="Acer Flagship CB3-532 15.6inch HD Premium Chromebook - Intel Dual-Core Celeron N3060 up to 2.48GH.z, 2GB RAM, 16GB SSD, Wireless AC, HDMI, USB 3.0, Webcam, Chrome OS (Renewed)"
+    score=2.580 title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    score=2.566 title="Acer R240HY bidx 23.8-Inch IPS HDMI DVI VGA (1920 x 1080) Widescreen Monitor, Black"
+    score=2.470 title="Acer Aspire 5 Slim Laptop, 15.6 inches Full HD IPS Display, AMD Ryzen 3 3200U, Vega 3 Graphics, 4GB DDR4, 128GB SSD, Backlit Keyboard, Windows 10 in S Mode, A515-43-R19L, Silver"
+    score=2.470 title="Acer Swift 3 Thin & Light Laptop, 14\" Full HD IPS, AMD Ryzen 7 4700U Octa-Core with Radeon Graphics, 8GB LPDDR4, 512GB NVMe SSD, Wi-Fi 6, Backlit KB, Fingerprint Reader, Alexa Built-in"
+  solr top-10:
+    asin=B088DGM9ZH label=(unjudged) title="2020 Newest Acer Chromebook 15 15.6 Inch Non-Touch Premium Laptop, Intel Celeron N3060 up to 2.48 GHz, 4GB LPDDR3 RAM, 16GB SSD, WiFi, HDMI, Chrome OS + NexiGo 128GB MicroSD Card Bundle"
+    asin=B07M7SLZKK label=(unjudged) title="Acer R13 13.3in Convertible 2-in-1 FHD IPS Touchscreen Chromebook - Intel Quad-Core MediaTek MT8173C 2.1GHz, 4GB RAM, 32GB SSD, Bluetooth, HDMI, Chrome OS (Renewed)"
+    asin=B07YGY3RLN label=(unjudged) title="Acer EZ321Q wi 31.5\" Full HD (1920 x 1080) IPS Monitor (HDMI & VGA port), White"
+    asin=B07QPBXVBQ label=(unjudged) title="Acer KB272HL bix 27 inches\" Full HD (1920 x 1080) Acer Vision Care VA Monitor with Flicker-less, Blue Light Filter and AMD FREESYNC Technology (HDMI & VGA Port),Black"
+    asin=B07MG85X1M label=(unjudged) title="Acer KG241Q Pbiip 23.6\" Full HD (1920 x 1080) TN 144Hz 1ms Monitor with AMD FreeSync Technology (Display Port & 2 x HDMI)"
+    asin=B08FHTJ3DJ label=(unjudged) title="Newest Acer Aspire 1 15.6\" FHD laptop business and student, Intel Celeron N4020(Up to 2.8 GHz), 4GB RAM, 64GB eMMC, Up to 10-Hours Battery Life, Microsoft 365 Personal, Win10 w/Ghost Manta Accessories"
+    asin=B01F5PSKGA label=(unjudged) title="(Renewed) Acer C720 11.6in Chromebook Intel Celeron 1.40GHz Dual Core Processor, 2GB RAM, 16GB W/Chrome OS"
+    asin=B0148NNKTC label=(unjudged) title="Acer R240HY bidx 23.8-Inch IPS HDMI DVI VGA (1920 x 1080) Widescreen Monitor, Black"
+    asin=B07Z11X58J label=(unjudged) title="Acer Aspire 5 Slim Laptop, 15.6\" Full HD IPS Display, AMD Ryzen 7 3700U, RX Vega 10 Graphics, 8GB DDR4, 512GB SSD, Backlit Keyboard, Windows 10 Home, A515-43-R6DE"
+    asin=B0852XG6LM label=(unjudged) title="Acer 2020 Aspire 3 14 Inch HD Laptop, AMD Dual Core A9-9420e, AMD Radeon R5, 12GB DDR4 RAM, 128GB SSD, HDMI, WiFi, Windows 10 S, W/ Legendary Computer Backpack & Mouse Pad Bundle"
+
+--- query="asus laptop" constraints=[Structural(Brand(BrandId(196)))] fq=["brand:/[aA][sS][uU][sS]/"] native_ndcg=0.4051 solr_ndcg=0.3136 ---
+  native top-10:
+    score=4.706 title="Asus Vivobook Thin and Light 15.6 Inch Touchscreen 2-in-1 Laptop Bundle with Woov Accessory, Intel Quad Core i5-8265U, 12GB RAM, 512GB SSD, Backlit Keyboard, WiFi, HDMI, Windows 10"
+    score=2.700 title="2020 Newest ASUS VivoBook 15.6\" Full HD Laptop AMD Ryzen 7 3700U 12GB RAM 512GB SSD Radeon RX Vega HDMI WiFi Bluetooth 10 Windows 10 Home Silver"
+    score=2.619 title="ASUS 15.6\" FHD Touchscreen 2-in-1 Laptop, Intel Quad-Core i5-8265u, Backlit Keyboard, HDMI, 802.11 AC, Windows 10, Light Gray + CUE Accessories (12GB DDR4, 256GB SSD)"
+    score=2.580 title="ASUS ZenBook 13 Ultra-Slim Laptop, 13.3” Full HD WideView, 8th Gen Intel Core i5-8265U, 8GB LPDDR3, 512GB PCIe SSD, Backlit KB, Fingerprint, Slate Gray, Windows 10, UX331FA-AS51"
+    score=2.307 title="ASUS VivoBook 17 17.3\" HD+ Windows 10 Pro Business Laptop Computer, AMD Quad-Core Ryzen 7-3700U up to 4.0GHz (Beats i7-8565U), 12GB DDR4 RAM, 1TB PCIe SSD, AC WiFi, Type-C, BROAGE 64GB Flash Drive"
+  solr top-10:
+    asin=B089CS577H label=(unjudged) title="Asus Vivobook Thin and Light 15.6 Inch Touchscreen 2-in-1 Laptop Bundle with Woov Accessory, Intel Quad Core i5-8265U, 12GB RAM, 512GB SSD, Backlit Keyboard, WiFi, HDMI, Windows 10"
+    asin=B088KR8FZR label=(unjudged) title="2020 Newest ASUS VivoBook 15.6\" Full HD Laptop AMD Ryzen 7 3700U 12GB RAM 512GB SSD Radeon RX Vega HDMI WiFi Bluetooth 10 Windows 10 Home Silver"
+    asin=B01N9K7PS0 label=(unjudged) title="ASUS VA325H 31.5” Full HD 1080p 5ms IPS HDMI VGA Eye Care Monitor"
+    asin=B01JGYM5H6 label=(unjudged) title="ASUS VG245H 24 inchFull HD 1080p 1ms Dual HDMI Eye Care Console Gaming Monitor with FreeSync/Adaptive Sync, Black, 24-inch"
+    asin=B088YKH31L label=(unjudged) title="ASUS 15.6\" FHD Touchscreen 2-in-1 Laptop, Intel Quad-Core i5-8265u, Backlit Keyboard, HDMI, 802.11 AC, Windows 10, Light Gray + CUE Accessories (12GB DDR4, 256GB SSD)"
+    asin=B083FMP35T label=(unjudged) title="ASUS VP249QGR 23.8” Gaming Monitor 144Hz Full HD (1920 x 1080) IPS 1ms FreeSync ELMB Eye Care DisplayPort HDMI VGA"
+    asin=B07QXKW89P label=Exact title="ASUS ZenBook 13 Ultra-Slim Laptop, 13.3” Full HD WideView, 8th Gen Intel Core i5-8265U, 8GB LPDDR3, 512GB PCIe SSD, Backlit KB, Fingerprint, Slate Gray, Windows 10, UX331FA-AS51"
+    asin=B07Z8TC28F label=(unjudged) title="Asus VA24EHE 23.8” Monitor, 1080P, Full HD, IPS, 75Hz, HDMI D-Sub DVI-D, Adaptive-Sync / FreeSync, VESA wall mountable, Eye Care, Flicker-free and Low Blue Light"
+    asin=B0817JCFJN label=(unjudged) title="ASUS TUF Gaming 25\" 1080P Monitor (VG259Q) - Full HD, IPS, 144Hz, 1ms, Extreme Low Motion Blur, Speaker, Adaptive-Sync, G-SYNC Compatible, VESA Mountable, DisplayPort, HDMI, Height Tilt Adjustable"
+    asin=B01707HMEM label=(unjudged) title="ASUS Designo 25” 1440P Eye Care Monitor (MX25AQ) - QHD (2560 x 1440), 100% sRGB, IPS, DisplayPort, HDMI"
+
+--- query="dell laptop" constraints=[Structural(Brand(BrandId(314)))] fq=["brand:/[dD][eE][lL][lL]/"] native_ndcg=0.5949 solr_ndcg=0.5949 ---
+  native top-10:
+    score=6.053 title="2020 Dell Inspiron 3000 15.6-inch HD Touchscreen Laptop PC, Intel 10th Gen Dual Core i3-1005G1 Processor, 8GB DDR4, 128GB SSD, 1TB HDD, Bluetooth, Windows 10, Black"
+    score=4.887 title="Dell Inspiron 14 5000 2 in 1 Convertible Laptop, 14\" Full HD IPS Touchscreen, AMD Quad-Core Ryzen 7 3700U (>i7-7500U), 16GB DDR4 512GB SSD, Backlit KB FP Win 10 (Silver)"
+    score=3.315 title="Dell Chromebook 11 CB1C13 11.6inch Laptop Intel Celeron 2955U 1.40GHz 2GB 16GB SSD (Renewed)"
+    score=2.831 title="Dell ChromeBook 11.6 Inch HD (1366 x 768) Laptop NoteBook PC, Intel Celeron N2840, Camera, HDMI, WIFI, USB 3.0, SD Card Reader (Renewed)"
+    score=2.659 title="Fast Dell Latitude E5470 HD Business Laptop Notebook PC (Intel Core i5-6300U, 8GB Ram, 256GB Solid State SSD, HDMI, Camera, WiFi, SC Card Reader) Win 10 Pro (Renewed)"
+    score=2.619 title="2021 Dell Inspiron 15 3000 15.6\" HD Laptop Computer, Intel Celeron Processor 4205U, 8GB RAM, 256GB PCIe SSD, Intel UHD Graphics 610, Waves MaxxAudio, HD Webcam, Windows 10, Black"
+    score=2.580 title="2019 New Dell Inspiron 17 PC Laptop: 17.3 Inch FHD(1980x1080) Non-Touch IPS Display, Intel CPU-i3-7020u, 8GB RAM, 1TB HDD, WiFi, Bluetooth, HDMI, Webcam, DVDRW, Windows 10"
+    score=2.470 title="Dell Inspiron 14 5482 14 Inch FHD 2-in-1 Touchscreen Laptop (Intel Core i7-8565U up to 4.6 GHz, 8GB RAM, 256GB SSD, Backlit Keyboard, Bluetooth, WiFi, HDMI, Windows 10, Grey) (Renewed)"
+    score=2.470 title="2019 Dell Inspiron 7000 13.3\" FHD Touchscreen 2-in-1 Laptop, Intel Quad Core i5-8265U Upto 3.9GHz, 8GB DDR4 RAM, 256GB SSD, Backlit Keyboard, Fingerprint Reader, USB-C, HDMI, Windows 10"
+    score=2.402 title="Latest_Dell Inspiron 2-in-1 5000 14.0\" HD LED-Backlit Touchscreen High Performance Laptop, Intel Core i3-8145U Processor,8GB DDR4 RAM,256GB Solid State Drive, Wifi+Bluetooth, HDMI, USB 3.1, Windows 10"
+  solr top-10:
+    asin=B088K23635 label=Exact title="2020 Dell Inspiron 3000 15.6-inch HD Touchscreen Laptop PC, Intel 10th Gen Dual Core i3-1005G1 Processor, 8GB DDR4, 128GB SSD, 1TB HDD, Bluetooth, Windows 10, Black"
+    asin=B07T159Q9W label=(unjudged) title="Dell Chromebook 11 CB1C13 11.6inch Laptop Intel Celeron 2955U 1.40GHz 2GB 16GB SSD (Renewed)"
+    asin=B073FHWTPL label=(unjudged) title="MONITOR DELL 38  U3818DW ULTRASHARP CURVO 21:9,HDMI"
+    asin=B07GC6CGPL label=(unjudged) title="DELL 19in P1917S IPS BACKLIT LED LCD 1280X1024 5:4 SCREEN DESKTOP DISPLAY MONITOR (Renewed)"
+    asin=B0863V41TF label=(unjudged) title="Dell Inspiron 14 5000 2 in 1 Convertible Laptop, 14\" Full HD IPS Touchscreen, AMD Quad-Core Ryzen 7 3700U (>i7-7500U), 16GB DDR4 512GB SSD, Backlit KB FP Win 10 (Silver)"
+    asin=B07781S5L5 label=(unjudged) title="Dell ChromeBook 11.6 Inch HD (1366 x 768) Laptop NoteBook PC, Intel Celeron N2840, Camera, HDMI, WIFI, USB 3.0, SD Card Reader (Renewed)"
+    asin=B08NWMXN7X label=(unjudged) title="2021 Dell Inspiron 15 3000 15.6\" HD Laptop Computer, Intel Celeron Processor 4205U, 8GB RAM, 256GB PCIe SSD, Intel UHD Graphics 610, Waves MaxxAudio, HD Webcam, Windows 10, Black"
+    asin=B07D5N1PFY label=(unjudged) title="Fast Dell Latitude E5470 HD Business Laptop Notebook PC (Intel Core i5-6300U, 8GB Ram, 256GB Solid State SSD, HDMI, Camera, WiFi, SC Card Reader) Win 10 Pro (Renewed)"
+    asin=B07R3H3PL3 label=(unjudged) title="2019 New Dell Inspiron 17 PC Laptop: 17.3 Inch FHD(1980x1080) Non-Touch IPS Display, Intel CPU-i3-7020u, 8GB RAM, 1TB HDD, WiFi, Bluetooth, HDMI, Webcam, DVDRW, Windows 10"
+    asin=B07XQ6VZMS label=(unjudged) title="2019 Dell Inspiron 7000 13.3\" FHD Touchscreen 2-in-1 Laptop, Intel Quad Core i5-8265U Upto 3.9GHz, 8GB DDR4 RAM, 256GB SSD, Backlit Keyboard, Fingerprint Reader, USB-C, HDMI, Windows 10"
+
+--- query="hp laptop" constraints=[Structural(Brand(BrandId(1)))] fq=["brand:/[hH][pP]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=6.417 title="HP 2020 Flagship 17 Laptop Computer, 17.3 inch HD+ Touchscreen\u{a0}Display, Intel Quad-Core i5-8265U (Beats i7-7500U), 8GB DDR4 256GB PCIe SSD + 1TB HDD, DVD Win 10 (Silver)+ 16GB Micro SD Card"
+    score=6.180 title="HP 17.3\" HD+ Touchscreen Laptop, Intel Core i5-8265U Processor, 8GB Memory, 256GB SSD, Optical Drive, 2 Year Warranty Care Pack with Accidental Damage Protection"
+    score=6.146 title="Latest 2020 HP Pavilion X360 11 2 in 1 Laptop 11.6\" HD IPS Touchscreen Intel Quad-Core Pentium Silver N5000 4GB DDR4 128GB SSD HP Audio Boost WiFi HDMI + Pen"
+    score=6.091 title="HP Envy X360 2020 Premium 2 in 1 Laptop I 15.6\"\u{a0}FHD IPS Touchscreen I AMD Octa-Core Ryzen 7 4700U (>i7-10510U) I 32GB DDR4 512GB PCIe SSD I B & O Alexa\u{a0}Backlit FP Win 10 + 16GB Micro SD Card"
+    score=5.623 title="HP 2020 Newest 17.3 Inch Flagship Laptop?Computer (8th Gen?Intel Core i5-8265U 3.9GHz, 16GB RAM, 256GB SSD, Intel HD 620, WiFi, Bluetooth, DVD, Windows 10)"
+    score=5.350 title="Flagship HP 17 Laptop Computer 17.3\" HD+ SVA Display 8th Gen Intel Quad-Core i5-8265U (Beats\u{a0}i7-7500U) 8GB DDR4 256GB SSD Intel UHD Graphics 620 WiFi HDMI DVD Webcam Win 10 + Wireless Mouse"
+    score=4.995 title="HP Premium 17\" HD+ WLED Business Laptop, Intel Core i5-7200U Up to 3.1GHz, 8GB DDR4, 1TB HDD, HD Graphics 620, 802.11BGN, Bluetooth, HDMI, USB 3.0, Stereo Speakers, Card Reader, Windows 10"
+    score=4.822 title="HP 2020 Newest Pavilion X360 2-in-1 Convertible 14\" HD Touch-Screen Laptop, 10th Gen Intel Core i3-1005G1, 8GB Ram, 128GB Ssd, Wifi, Webcam, Win 10 S"
+    score=4.744 title="2020 Newest HP Pavilion 17.3 Inch Laptop (Intel Quad-Core i5-8265U up to 3.9 GHz, 16GB RAM, 256GB SSD, Webcam, DVD, Windows 10) (Black) + NexiGo Wireless Mouse Bundle"
+    score=4.554 title="2017 HP 17.3\" Business Flagship Laptop PC HD+ WLED-backlit Display Intel i3-7100U Processor 8GB DDR4 RAM 1TB HDD Intel 520 Graphics DVD-RW 802.11AC Wifi Webcam HDMI Windows 10-Silver"
+  solr top-10:
+    asin=B08DCSFNM6 label=(unjudged) title="HP Envy X360 2020 Premium 2 in 1 Laptop I 15.6\"\u{a0}FHD IPS Touchscreen I AMD Octa-Core Ryzen 7 4700U (>i7-10510U) I 32GB DDR4 512GB PCIe SSD I B & O Alexa\u{a0}Backlit FP Win 10 + 16GB Micro SD Card"
+    asin=B084X6Q19L label=(unjudged) title="HP 2020 Flagship 17 Laptop Computer, 17.3 inch HD+ Touchscreen\u{a0}Display, Intel Quad-Core i5-8265U (Beats i7-7500U), 8GB DDR4 256GB PCIe SSD + 1TB HDD, DVD Win 10 (Silver)+ 16GB Micro SD Card"
+    asin=B075X4KK58 label=(unjudged) title="Newest HP 14-inch Chromebook HD SVA (1366 x 768) Display, Intel Dual Core Celeron N2840 2.16GHz, 4GB DD3L RAM, 16GB eMMc Hard Drive, Bluetooth, HDMI, Stereo Speakers, HD Webcam, Google Chrome OS"
+    asin=B081K4RH9W label=(unjudged) title="HP 17.3\" HD+ Touchscreen Laptop, Intel Core i5-8265U Processor, 8GB Memory, 256GB SSD, Optical Drive, 2 Year Warranty Care Pack with Accidental Damage Protection"
+    asin=B08BFV1KB4 label=(unjudged) title="Latest 2020 HP Pavilion X360 11 2 in 1 Laptop 11.6\" HD IPS Touchscreen Intel Quad-Core Pentium Silver N5000 4GB DDR4 128GB SSD HP Audio Boost WiFi HDMI + Pen"
+    asin=B08BRGT471 label=(unjudged) title="Flagship HP 17 Laptop Computer 17.3\" HD+ SVA Display 8th Gen Intel Quad-Core i5-8265U (Beats\u{a0}i7-7500U) 8GB DDR4 256GB SSD Intel UHD Graphics 620 WiFi HDMI DVD Webcam Win 10 + Wireless Mouse"
+    asin=B081RBM8C9 label=(unjudged) title="HP 17.3 Laptop i5-8265u 16GB SSD Drive (16GB/1TB SSD)"
+    asin=B07Q13XR2H label=(unjudged) title="New HP 14\" Full HD IPS 1080p Crisp Screen Light and Fast Laptop PC, Backlit Keyboard, 8th Gen Intel i3-8130U Dual-Core Processor 4GB RAM 128GB SSD 802.11ac Bluetooth 4.2 HDMI Windows 10 - Silver"
+    asin=B082XD5HB5 label=(unjudged) title="HP Elitebook 1030 X360 G2 2-in-1 13.3” Full HD FHD(1920x1080) Privacy Touchscreen Business Laptop (Intel i7-7600U, 16GB RAM, 512GB PCIe NVMe SSD) Thunderbolt, Fingerprint, Windows 10 Pro (Renewed)"
+    asin=B08966H6XJ label=(unjudged) title="2020 Newest HP ENVY x360 2-in-1 Laptop, 15.6\" Full HD Touchscreen, AMD Ryzen 5 4500U Processor up to 4.0GHz, 8GB Memory, 256GB PCIe SSD, Backlit Keyboard, HDMI, Wi-Fi, Windows 10 Home, Nightfall Black"
+
+--- query="$60 ps4 that’s not gonna be on amazon" constraints=[Structural(Brand(BrandId(860)))] fq=["brand:/[aA][mM][aA][zZ][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B074TC662N label=(unjudged) title="Amazon Ethernet Adapter for Amazon Fire TV Devices"
+
+--- query="'module' object is not callable" constraints=[Structural(Brand(BrandId(1023)))] fq=["brand:/[iI][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=10.266 title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+  solr top-10:
+    asin=B01M0E6SQM label=(unjudged) title="3V Relay Power Switch Board, Icstation 1 Channel Optocoupler Module Opto Isolation High Level Trigger for IOT ESP8266 Development Board (Pack of 5)"
+
+--- query="govee led strip lights" constraints=[Structural(Brand(BrandId(33)))] fq=["brand:/[gG][oO][vV][eE][eE]/"] native_ndcg=0.9783 solr_ndcg=0.8232 ---
+  native top-10:
+    score=15.494 title="Govee LED Strip Lights, 16.4ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen"
+    score=15.087 title="Govee LED Strip Lights, 32.8ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen 2 Rolls of 16.4ft"
+    score=14.977 title="Govee 32.8FT LED Strip Lights RGBIC, WiFi Wireless Smart LED Light Strip 5050 LED Lights Sync to Music, Work with Alexa, Google Assistant, Android iOS (Not Support 5G WiFi), Waterproof 2x16.4ft"
+    score=14.960 title="Govee LED Strip Lights 16.4ft Waterproof Color Changing Light Strips with Remote, Multicolor RGB LED Lights for Room, Bedroom, Kitchen, Yard, Party, Ceiling, Christmas"
+    score=14.783 title="Govee RGB LED Strip Lights, 65.6ft Bluetooth LED Lights with App Control, Color-Changing, 64 Scenes and Music Sync LED Lights for Bedroom, Room, Kitchen, Party, ETL Listed Adapter, 2 Rolls of 32.8ft"
+    score=14.576 title="Govee 16.4ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party"
+    score=14.232 title="Govee 32.8ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party, 2 Rolls of 16.4ft"
+    score=13.840 title="Govee Smart LED Strip Lights, 16.4ft WiFi LED Lights Work with Alexa and Google Assistant, RGB Color Changing, 16 Million Colors with App Control and Music Sync for Home, Kitchen, TV, Party"
+    score=13.250 title="Govee LED Strip Lights, 65.6ft RGB Light Strip with Remote Control, 600 Bright LEDs, DIY Color Options with ETL Listed Adapter for Bedroom, Ceiling, Under Cabinet (2 Rolls of 32.8ft)"
+  solr top-10:
+    asin=B08Y8MPSCZ label=(unjudged) title="Govee RGB LED Strip Lights, 65.6ft Bluetooth LED Lights with App Control, Color-Changing, 64 Scenes and Music Sync LED Lights for Bedroom, Room, Kitchen, Party, ETL Listed Adapter, 2 Rolls of 32.8ft"
+    asin=B07N1CMGQQ label=Exact title="Govee Smart LED Strip Lights, 16.4ft WiFi LED Lights Work with Alexa and Google Assistant, RGB Color Changing, 16 Million Colors with App Control and Music Sync for Home, Kitchen, TV, Party"
+    asin=B07N1BVVC7 label=Exact title="Govee 32.8FT LED Strip Lights RGBIC, WiFi Wireless Smart LED Light Strip 5050 LED Lights Sync to Music, Work with Alexa, Google Assistant, Android iOS (Not Support 5G WiFi), Waterproof 2x16.4ft"
+    asin=B07PCR7LPS label=Exact title="Govee LED Strip Lights 16.4ft Waterproof Color Changing Light Strips with Remote, Multicolor RGB LED Lights for Room, Bedroom, Kitchen, Yard, Party, Ceiling, Christmas"
+    asin=B07XJVQHPV label=Exact title="Govee LED Strip Lights, 65.6ft RGB Light Strip with Remote Control, 600 Bright LEDs, DIY Color Options with ETL Listed Adapter for Bedroom, Ceiling, Under Cabinet (2 Rolls of 32.8ft)"
+    asin=B07XBSN3Y5 label=Exact title="Govee 16.4ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party"
+    asin=B07XBSP6BJ label=Exact title="Govee 32.8ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party, 2 Rolls of 16.4ft"
+    asin=B07RY76LGX label=Exact title="Govee LED Strip Lights, 16.4ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen"
+    asin=B07RX57HDL label=Exact title="Govee LED Strip Lights, 32.8ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen 2 Rolls of 16.4ft"
+
+--- query="purchased from daybetter" constraints=[Structural(Brand(BrandId(7)))] fq=["brand:/[dD][aA][yY][bB][eE][tT][tT][eE][rR]/"] native_ndcg=0.0000 solr_ndcg=0.9338 ---
+  native top-10:
+    score=1.054 title="DAYBETTER Smart WiFi Led Lights 100ft, Tuya App Controlled Led Strip Lights, Work with Alexa and Google Assistant, Timer Schedule Led Lights Strip, Color Changing Led Lights for Bedroom Party Kitchen"
+  solr top-10:
+    asin=B07WC26QC9 label=Exact title="DAYBETTER Infrared Remote Control Led Strip Lights Kit"
+    asin=B07SPJM29G label=Exact title="DAYBETTER Led Strip Lights 16.4ft W/ Remote Controller and Power Supply"
+    asin=B07VNG9ZLM label=Exact title="DAYBETTER 16.4ft 5m Led Strip Lights, Flexible Color Changing 5050 RGB 150 LEDs Light Strips Kit Work with App"
+    asin=B08NP8WRJ9 label=(unjudged) title="DAYBETTER Smart WiFi Led Lights 100ft, Tuya App Controlled Led Strip Lights, Work with Alexa and Google Assistant, Timer Schedule Led Lights Strip, Color Changing Led Lights for Bedroom Party Kitchen"
+    asin=B07SPZ2HGT label=(unjudged) title="DAYBETTER Led Strip Lights 32.8ft 5050 RGB 300 LEDs Color Changing Lights Strip for Bedroom, Desk, Home Decoration, with Remote and 12V Power Supply"
+    asin=B08KGDS4LM label=(unjudged) title="DAYBETTER 65.6ft WiFi Smart Led Lights Strip with Tuya App Control for Bedroom Decoration Work with Alexa and Google Assistant(2 Rolls of 32.8ft)"
+    asin=B01IQOV13G label=Exact title="Daybetter Waterproof Led Strip Lights 32.8ft Flexible Color Change RGB with 44 Keys Remote Controller and 12volts Power Supply for Bedroom, Kitchen, Home Decoration"
+    asin=B08M657VV1 label=(unjudged) title="LED Strip Lights, DAYBETTER LED Lights 100ft with Music Sync, 2 Rolls of 50ft RGB Color Changing Led Light Strips with Controller for Bedroom Decoration"
+    asin=B08JSQVBDQ label=(unjudged) title="DAYBETTER Led Strip Lights 100ft (2 Rolls of 50ft) Smart Light Strips with App Control Remote, 5050 RGB Led Lights for Bedroom, Music Sync Color Changing Lights for Room Party"
+    asin=B07JN28KP3 label=Exact title="Led Strip Lights Waterproof, DAYBETTER 32.8ft LED Tape Lights Color Changing 300 LEDs Light Strips Kit with 44 Keys Ir Remote Controller and 12v Power Supply for Indoor Outdoor Use"
+
+--- query="minger led light strip 32.8 ft" constraints=[Structural(Brand(BrandId(8)))] fq=["brand:/[mM][iI][nN][gG][eE][rR]/"] native_ndcg=0.8753 solr_ndcg=0.8753 ---
+  native top-10:
+    score=11.899 title="MINGER RGB LED Strip Lights, 32.8ft Water Resistant 5050 LED Light Strip, 10m Color Changing Rope Lights with 44 Key IR Remote and 12V/3A ETL Adapter for Room, Home, Kitchen, Party, 2 rolls of 16.4ft"
+    score=10.985 title="MINGER LED Strip Lights 32.8ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+    score=10.088 title="MINGER LED Strip Lights 16.4ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+  solr top-10:
+    asin=B07JP2BJMR label=Exact title="MINGER LED Strip Lights 32.8ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+    asin=B07G56Q1M5 label=Exact title="MINGER RGB LED Strip Lights, 32.8ft Water Resistant 5050 LED Light Strip, 10m Color Changing Rope Lights with 44 Key IR Remote and 12V/3A ETL Adapter for Room, Home, Kitchen, Party, 2 rolls of 16.4ft"
+    asin=B07JP5375R label=(unjudged) title="MINGER LED Strip Lights 16.4ft, RGB Color Changing LED Lights for Home, Kitchen, Room, Bedroom, Dorm Room, Bar, with IR Remote Control, 5050 LEDs, DIY Mode"
+
+--- query="led strip lights dreamcolor, govee 9.85ft" constraints=[Structural(Brand(BrandId(33)))] fq=["brand:/[gG][oO][vV][eE][eE]/"] native_ndcg=0.1413 solr_ndcg=0.1815 ---
+  native top-10:
+    score=15.494 title="Govee LED Strip Lights, 16.4ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen"
+    score=15.087 title="Govee LED Strip Lights, 32.8ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen 2 Rolls of 16.4ft"
+    score=14.977 title="Govee 32.8FT LED Strip Lights RGBIC, WiFi Wireless Smart LED Light Strip 5050 LED Lights Sync to Music, Work with Alexa, Google Assistant, Android iOS (Not Support 5G WiFi), Waterproof 2x16.4ft"
+    score=14.960 title="Govee LED Strip Lights 16.4ft Waterproof Color Changing Light Strips with Remote, Multicolor RGB LED Lights for Room, Bedroom, Kitchen, Yard, Party, Ceiling, Christmas"
+    score=14.783 title="Govee RGB LED Strip Lights, 65.6ft Bluetooth LED Lights with App Control, Color-Changing, 64 Scenes and Music Sync LED Lights for Bedroom, Room, Kitchen, Party, ETL Listed Adapter, 2 Rolls of 32.8ft"
+    score=14.576 title="Govee 16.4ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party"
+    score=14.232 title="Govee 32.8ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party, 2 Rolls of 16.4ft"
+    score=13.840 title="Govee Smart LED Strip Lights, 16.4ft WiFi LED Lights Work with Alexa and Google Assistant, RGB Color Changing, 16 Million Colors with App Control and Music Sync for Home, Kitchen, TV, Party"
+    score=13.250 title="Govee LED Strip Lights, 65.6ft RGB Light Strip with Remote Control, 600 Bright LEDs, DIY Color Options with ETL Listed Adapter for Bedroom, Ceiling, Under Cabinet (2 Rolls of 32.8ft)"
+  solr top-10:
+    asin=B08Y8MPSCZ label=(unjudged) title="Govee RGB LED Strip Lights, 65.6ft Bluetooth LED Lights with App Control, Color-Changing, 64 Scenes and Music Sync LED Lights for Bedroom, Room, Kitchen, Party, ETL Listed Adapter, 2 Rolls of 32.8ft"
+    asin=B07N1CMGQQ label=(unjudged) title="Govee Smart LED Strip Lights, 16.4ft WiFi LED Lights Work with Alexa and Google Assistant, RGB Color Changing, 16 Million Colors with App Control and Music Sync for Home, Kitchen, TV, Party"
+    asin=B07N1BVVC7 label=(unjudged) title="Govee 32.8FT LED Strip Lights RGBIC, WiFi Wireless Smart LED Light Strip 5050 LED Lights Sync to Music, Work with Alexa, Google Assistant, Android iOS (Not Support 5G WiFi), Waterproof 2x16.4ft"
+    asin=B07PCR7LPS label=(unjudged) title="Govee LED Strip Lights 16.4ft Waterproof Color Changing Light Strips with Remote, Multicolor RGB LED Lights for Room, Bedroom, Kitchen, Yard, Party, Ceiling, Christmas"
+    asin=B07XJVQHPV label=Substitute title="Govee LED Strip Lights, 65.6ft RGB Light Strip with Remote Control, 600 Bright LEDs, DIY Color Options with ETL Listed Adapter for Bedroom, Ceiling, Under Cabinet (2 Rolls of 32.8ft)"
+    asin=B07XBSN3Y5 label=(unjudged) title="Govee 16.4ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party"
+    asin=B07XBSP6BJ label=(unjudged) title="Govee 32.8ft Color Changing LED Strip Lights, Bluetooth LED Lights with App Control, Remote, Control Box, 64 Scenes and Music Sync Lights for Bedroom, Room, Kitchen, Party, 2 Rolls of 16.4ft"
+    asin=B07RY76LGX label=(unjudged) title="Govee LED Strip Lights, 16.4ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen"
+    asin=B07RX57HDL label=(unjudged) title="Govee LED Strip Lights, 32.8ft RGB LED Lights with Remote Control, 20 Colors and DIY Mode Color Changing LED Lights, Easy Installation Light Strip for Bedroom, Ceiling, Kitchen 2 Rolls of 16.4ft"
+
+--- query="bluetooth speaker bose" constraints=[Structural(Brand(BrandId(300)))] fq=["brand:/[bB][oO][sS][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=15.354 title="Bose S1 Pro Portable Bluetooth Speaker System with Battery, Black"
+    score=10.510 title="The Bose SoundLink Revolve, the Portable Bluetooth Speaker with 360 Wireless Surround Sound, Lux Gray"
+  solr top-10:
+    asin=B07BLZX73S label=(unjudged) title="Bose S1 Pro Portable Bluetooth Speaker System with Battery, Black"
+    asin=B06XCYGH1C label=(unjudged) title="The Bose SoundLink Revolve, the Portable Bluetooth Speaker with 360 Wireless Surround Sound, Lux Gray"
+
+--- query="bose bluetooth speaker" constraints=[Structural(Brand(BrandId(300)))] fq=["brand:/[bB][oO][sS][eE]/"] native_ndcg=0.9407 solr_ndcg=0.9407 ---
+  native top-10:
+    score=15.354 title="Bose S1 Pro Portable Bluetooth Speaker System with Battery, Black"
+    score=10.510 title="The Bose SoundLink Revolve, the Portable Bluetooth Speaker with 360 Wireless Surround Sound, Lux Gray"
+  solr top-10:
+    asin=B07BLZX73S label=Exact title="Bose S1 Pro Portable Bluetooth Speaker System with Battery, Black"
+    asin=B06XCYGH1C label=(unjudged) title="The Bose SoundLink Revolve, the Portable Bluetooth Speaker with 360 Wireless Surround Sound, Lux Gray"
+
+--- query="echo dot for .99 and 1 month of amazon music unlimited" constraints=[Structural(Brand(BrandId(860)))] fq=["brand:/[aA][mM][aA][zZ][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B074TC662N label=(unjudged) title="Amazon Ethernet Adapter for Amazon Fire TV Devices"
+
+--- query="samsung galaxy 7.0 tablet tiger case" constraints=[Structural(Brand(BrandId(194)))] fq=["brand:/[sS][aA][mM][sS][uU][nN][gG]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.045 title="Samsung 50\" RU7100 LED Smart 4K UHD TV 2019 Model (UN50RU7100FXZA) with Slim Flat Wall Mount Kit Ultimate Bundle for 45-90 inch TVs, Screen Cleaner for LED TVs & SurgePro 6-Outlet Surge Adapter"
+  solr top-10:
+    asin=B07Q81HX3Q label=(unjudged) title="Samsung 50\" RU7100 LED Smart 4K UHD TV 2019 Model (UN50RU7100FXZA) with Slim Flat Wall Mount Kit Ultimate Bundle for 45-90 inch TVs, Screen Cleaner for LED TVs & SurgePro 6-Outlet Surge Adapter"
+    asin=B08BWDR72V label=(unjudged) title="Samsung QN32LS03TB 32\" The Frame Ultra High Definition Smart QLED Smart TV with a Samsung VG-SCFT32BW 32\" Brown Customizable Bezel for The Frame TV (2020)"
+    asin=B07F1T4JFB label=(unjudged) title="SAMSUNG 43\" 4K Smart LED TV, 2018 Model"
+    asin=B088GMZRK3 label=(unjudged) title="Samsung QN32Q50RA 32\" Class QLED 4K Smart Ultra HDTV with a 1 Year Extended Warranty (2019)"
+    asin=B00TWFHCLE label=(unjudged) title="Samsung Electronics UN32J4000C 32-Inch 720p LED TV (2015 Model)"
+    asin=B073JP6WK4 label=(unjudged) title="SAMSUNG Electronics UN32M4500A 32-Inch 720p Smart LED TV (2017 Model)"
+    asin=B072PCXS5T label=(unjudged) title="Samsung Electronics UN49M5300A 49-Inch 1080p Smart LED TV (2017 Model)"
+    asin=B07W5QYD2K label=(unjudged) title="SAMSUNG QN32Q50RAFXZA Flat 32\" QLED 4K 32Q50 Series Smart TV (2019 model)"
+    asin=B086VR4QR4 label=(unjudged) title="SAMSUNG 32-inch T55 Series - 1000R Curved Monitor: 75Hz, 4ms, 1080p (LC32T550FDNXZA)"
+    asin=B07DGCJ3KY label=(unjudged) title="SAMSUNG Electronics UN32M4500BFXZA 720P Smart LED TV, 32\" (2018), 17.3\" x 28.9\" x 3.1\""
+
+--- query="irwin tools" constraints=[Structural(Brand(BrandId(64)))] fq=["brand:/[iI][rR][wW][iI][nN]/"] native_ndcg=-0.0000 solr_ndcg=1.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B000JNNWQ2 label=Exact title="IRWIN Vise-Grip Wire Stripping Tool / Wire Cutter, 8-Inch (2078309)"
+
+--- query="hdmi to apple adapter" constraints=[Attribute(Enum { attribute: "color", value: "HDMI" }), Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/", "color:/[hH][dD][mM][iI]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="amazon basic mini display port to hdmi cable" constraints=[Structural(Brand(BrandId(860))), Attribute(Enum { attribute: "color", value: "HDMI" })] fq=["brand:/[aA][mM][aA][zZ][oO][nN]/", "color:/[hH][dD][mM][iI]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="Macbook or any apple product because I have an iPhone and iPad and all my work syncs" constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=0.0000 solr_ndcg=0.4307 ---
+  native top-10:
+    score=18.664 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    score=16.520 title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    score=16.388 title="Mid-2014 Apple MacBook Pro with 2.5GHz Intel Core i7 (15-inch, 16GB RAM, 512GB SSD Storage) (Renewed)"
+    score=15.390 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=15.390 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=14.547 title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    score=14.542 title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    score=14.172 title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=13.218 title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    score=12.991 title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+  solr top-10:
+    asin=B0784J8FXM label=(unjudged) title="Mid-2014 Apple MacBook Pro with 2.5GHz Intel Core i7 (15-inch, 16GB RAM, 512GB SSD Storage) (Renewed)"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    asin=B009WHV3BM label=Complement title="Apple Lightning to Digital AV Adapter"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B075K5C8K5 label=(unjudged) title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    asin=B085CNGYV7 label=(unjudged) title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    asin=B08374BBQG label=(unjudged) title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+
+--- query="apple lightning adapter" constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=22.176 title="Apple Lightning to Digital AV Adapter"
+    score=2.267 title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    score=1.920 title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+    score=1.779 title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    score=1.737 title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=1.696 title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    score=1.696 title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    score=1.696 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=1.696 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=1.657 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+  solr top-10:
+    asin=B009WHV3BM label=Exact title="Apple Lightning to Digital AV Adapter"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    asin=B085CNGYV7 label=(unjudged) title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    asin=B08374BBQG label=(unjudged) title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    asin=B07B8YBX7V label=(unjudged) title="Apple MacBook Pro Retina MF843LL/A 13” Laptop, 3.1GHz Intel Core i7, 16GB Memory, 512GB SSD, macOS 10.14 Mojave (Renewed)"
+    asin=B075K5C8K5 label=(unjudged) title="Apple MacBook Pro 15in Laptop Intel Quad Core i7 2.7GHz (ME665LL/A) Retina Display, 16GB Memory, 512GB Solid State Drive, (Renewed)"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+
+--- query="apple lightning cable" constraints=[Structural(Brand(BrandId(79)))] fq=["brand:/[aA][pP][pP][lL][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=17.624 title="Apple Lightning to Digital AV Adapter"
+    score=1.064 title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    score=1.064 title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    score=1.064 title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    score=1.040 title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+  solr top-10:
+    asin=B009WHV3BM label=Exact title="Apple Lightning to Digital AV Adapter"
+    asin=B091V55WNY label=(unjudged) title="Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"
+    asin=B083747SX2 label=(unjudged) title="Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042"
+    asin=B085CNGYV7 label=(unjudged) title="Apple MacBook Pro 16-in 2.3GHz 8-core i9 32GB 1TB 5500M 4GB Space Gray (CTO)"
+    asin=B08374BBQG label=(unjudged) title="Apple MacBook Pro 16-in 2.4GHz 8-core i9 32GB 1TB 5500M 8GB Space Gray (CTO)"
+    asin=B07DRQCQ4L label=(unjudged) title="Apple MacBook Pro MC975LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B079C8TPRX label=(unjudged) title="Apple MacBook Pro ME294LL/A 15.4-Inch Laptop with Retina Display (OLD VERSION) (Renewed)"
+    asin=B07B8XX1Z1 label=(unjudged) title="Apple MacBook Pro 15in Core i7 2.8GHz Retina (MGXG2LL/A), 16GB RAM, 1TB Solid State Drive (Renewed)"
+    asin=B0784J8FXM label=(unjudged) title="Mid-2014 Apple MacBook Pro with 2.5GHz Intel Core i7 (15-inch, 16GB RAM, 512GB SSD Storage) (Renewed)"
+    asin=B07ZFZ33SK label=(unjudged) title="Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)"
+
+--- query="smart refrigerator samsung" constraints=[Structural(Brand(BrandId(194)))] fq=["brand:/[sS][aA][mM][sS][uU][nN][gG]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=7.012 title="Samsung QN32LS03TB 32\" The Frame Ultra High Definition Smart QLED Smart TV with a Samsung VG-SCFT32BW 32\" Brown Customizable Bezel for The Frame TV (2020)"
+    score=6.759 title="SAMSUNG 43\" 4K Smart LED TV, 2018 Model"
+    score=6.617 title="Samsung Electronics UN49M5300A 49-Inch 1080p Smart LED TV (2017 Model)"
+    score=6.551 title="Samsung QN32Q50RA 32\" Class QLED 4K Smart Ultra HDTV with a 1 Year Extended Warranty (2019)"
+    score=6.536 title="SAMSUNG Electronics UN32M4500A 32-Inch 720p Smart LED TV (2017 Model)"
+    score=6.496 title="SAMSUNG QN32Q50RAFXZA Flat 32\" QLED 4K 32Q50 Series Smart TV (2019 model)"
+    score=6.182 title="SAMSUNG Electronics UN32M4500BFXZA 720P Smart LED TV, 32\" (2018), 17.3\" x 28.9\" x 3.1\""
+    score=6.152 title="Samsung 50\" RU7100 LED Smart 4K UHD TV 2019 Model (UN50RU7100FXZA) with Slim Flat Wall Mount Kit Ultimate Bundle for 45-90 inch TVs, Screen Cleaner for LED TVs & SurgePro 6-Outlet Surge Adapter"
+    score=6.025 title="Samsung Flat 49-Inch 4K 8 Series UHD Smart TV with HDR and Alexa Compatibility - 2019 Model"
+    score=5.806 title="Samsung 43-inch TU-7000 Series Class Smart TV | Crystal UHD - 4K HDR - with Alexa Built-in | UN43TU7000FXZA, 2020 Model"
+  solr top-10:
+    asin=B08BWDR72V label=(unjudged) title="Samsung QN32LS03TB 32\" The Frame Ultra High Definition Smart QLED Smart TV with a Samsung VG-SCFT32BW 32\" Brown Customizable Bezel for The Frame TV (2020)"
+    asin=B07Q81HX3Q label=(unjudged) title="Samsung 50\" RU7100 LED Smart 4K UHD TV 2019 Model (UN50RU7100FXZA) with Slim Flat Wall Mount Kit Ultimate Bundle for 45-90 inch TVs, Screen Cleaner for LED TVs & SurgePro 6-Outlet Surge Adapter"
+    asin=B07F1T4JFB label=(unjudged) title="SAMSUNG 43\" 4K Smart LED TV, 2018 Model"
+    asin=B088GMZRK3 label=(unjudged) title="Samsung QN32Q50RA 32\" Class QLED 4K Smart Ultra HDTV with a 1 Year Extended Warranty (2019)"
+    asin=B073JP6WK4 label=(unjudged) title="SAMSUNG Electronics UN32M4500A 32-Inch 720p Smart LED TV (2017 Model)"
+    asin=B072PCXS5T label=(unjudged) title="Samsung Electronics UN49M5300A 49-Inch 1080p Smart LED TV (2017 Model)"
+    asin=B07W5QYD2K label=(unjudged) title="SAMSUNG QN32Q50RAFXZA Flat 32\" QLED 4K 32Q50 Series Smart TV (2019 model)"
+    asin=B07DGCJ3KY label=(unjudged) title="SAMSUNG Electronics UN32M4500BFXZA 720P Smart LED TV, 32\" (2018), 17.3\" x 28.9\" x 3.1\""
+    asin=B07NC6M3VT label=(unjudged) title="Samsung Flat 49-Inch 4K 8 Series UHD Smart TV with HDR and Alexa Compatibility - 2019 Model"
+    asin=B08YP9TRG9 label=(unjudged) title="Samsung QN65QN90AAFXZA 65 Inch Neo QLED 4K Smart TV 2021 Bundle with Premium 1 Year Extended Protection Plan"
+
+--- query="intex air pump for inflatables" constraints=[Structural(Brand(BrandId(507)))] fq=["brand:/[iI][nN][tT][eE][xX]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=22.362 title="Intex Quick-Fill DC Electric Air Pump, 12V, Max. Air Flow 650 L/min"
+  solr top-10:
+    asin=B07F3QF4B4 label=(unjudged) title="Intex Quick-Fill DC Electric Air Pump, 12V, Max. Air Flow 650 L/min"
+
+--- query="lg 77 inch oled wall mount" constraints=[Structural(Brand(BrandId(354)))] fq=["brand:/[lL][gG]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=12.530 title="LG 32MA68HY-P 32-Inch IPS Monitor with Display Port and HDMI Inputs"
+    score=10.705 title="LG Electronics 24LM530S-PU 24-Inch HD webOS 3.5 Smart TV"
+    score=6.297 title="LG 24in Class 720p 60Hz LED HDTV - 24LF454B (Renewed)"
+    score=5.442 title="LG 32MP58HQ-P 32-Inch IPS Monitor with Screen Split, Black"
+    score=5.353 title="LG Electronics 24LH4830-PU 24-Inch Smart LED TV"
+    score=4.946 title="LG Electronics 24LJ4540 24-Inch 720p LED TV"
+    score=4.917 title="LG 32UK550-B 32 Inch 4K UHD Monitor with Radeon Freesync Technology and HDR 10,Black"
+    score=4.696 title="LG 38WK95C-W 38-Inch Class 21:9 Curved UltraWide WQHD+ Monitor with HDR 10 (2018)"
+    score=4.683 title="LG 32UK50T-W 32-Inch 4K UHD (3840 X 2160) with Radeon Freesync Technology and DCI-P3 95% Color Gamut, Silver"
+    score=2.713 title="LG 24M47VQ 24-Inch LED-lit Monitor, Black"
+  solr top-10:
+    asin=B086XL48ZF label=(unjudged) title="LG Electronics 24LM530S-PU 24-Inch HD webOS 3.5 Smart TV"
+    asin=B01IA9FXAO label=(unjudged) title="LG 32MA68HY-P 32-Inch IPS Monitor with Display Port and HDMI Inputs"
+    asin=B074PDYLCZ label=(unjudged) title="LG 24in Class 720p 60Hz LED HDTV - 24LF454B (Renewed)"
+    asin=B07GC8X5YN label=(unjudged) title="LG UltraGear 32-inch QHD Gaming Monitor (32GK850F-B) with Radeon Freesync 2 Technology"
+    asin=B01LXHXGZX label=(unjudged) title="LG Electronics 24LH4830-PU 24-Inch Smart LED TV"
+    asin=B01BV1X9DG label=(unjudged) title="LG 32MP58HQ-P 32-Inch IPS Monitor with Screen Split, Black"
+    asin=B01N2Z17MS label=(unjudged) title="LG Electronics 24LJ4540 24-Inch 720p LED TV"
+    asin=B00W95RR32 label=(unjudged) title="LG 24M47VQ 24-Inch LED-lit Monitor, Black"
+    asin=B01MU5RPQ5 label=(unjudged) title="LG Electronics 24LJ4540-WU 24-Inch 720p LED HD TV, white"
+    asin=B07FFC14SZ label=(unjudged) title="LG 27MK600M-B 27\" Full HD IPS Monitor with Radeon FreeSync Technology and Virtually Borderless Design"
+
+=== 48 Hybrid-routed, NDCG-scoreable electronics queries printed above ===
+=== zero-hit mechanism check: 8/48 returned literally zero native hits (empty candidate result, not just low-ranked); of those, 1 had Solr find a real judged-relevant (non-Irrelevant) product under the identical Brand/color fq -- a 'native missed a recoverable answer' case, not 'no relevant product exists' ===

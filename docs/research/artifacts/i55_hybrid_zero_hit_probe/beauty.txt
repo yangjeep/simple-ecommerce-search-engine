@@ -1,0 +1,302 @@
+=== Issue #55 checkpoint 19 follow-up: qualitative probe of beauty's Hybrid-routed relevance gap ===
+
+--- query="juliette has a gun not a perfume" constraints=[Structural(Brand(BrandId(1)))] fq=["brand:/[jJ][uU][lL][iI][eE][tT][tT][eE] [hH][aA][sS] [aA] [gG][uU][nN]/"] native_ndcg=0.9525 solr_ndcg=0.8861 ---
+  native top-10:
+    score=3.984 title="Juliette Has a Gun Not A Perfume Eau de Parfum Spray, 0.25 Fl Oz"
+    score=3.984 title="Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 3.3 Fl Oz"
+    score=3.984 title="Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 1.7 Fl Oz"
+    score=3.497 title="Juliette Has A Gun Juliette Has a Gun Discovery Set, 0.23 fl. oz."
+    score=3.101 title="Juliette Has A Gun Moscow Mule Eau De Parfum Spray, 3.3 Fl Oz"
+    score=3.101 title="Juliette Has A Gun Vanilla Vibes Eau De Parfum Spray, 3.3 Fl Oz"
+  solr top-10:
+    asin=B0157V6USM label=Exact title="Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 3.3 Fl Oz"
+    asin=B09226QJ4P label=(unjudged) title="Juliette Has A Gun Juliette Has a Gun Discovery Set, 0.23 fl. oz."
+    asin=B07B3XQZ42 label=Exact title="Juliette Has a Gun Not A Perfume Eau de Parfum Spray, 0.25 Fl Oz"
+    asin=B0130MFX74 label=Exact title="Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 1.7 Fl Oz"
+    asin=B07CD5T5QV label=Exact title="Juliette Has A Gun Moscow Mule Eau De Parfum Spray, 3.3 Fl Oz"
+    asin=B07QPTMJFN label=Exact title="Juliette Has A Gun Vanilla Vibes Eau De Parfum Spray, 3.3 Fl Oz"
+
+--- query="neutrogena naturals lotion" constraints=[Structural(Brand(BrandId(3))), Attribute(Enum { attribute: "color", value: "Lotion" })] fq=["brand:/[nN][eE][uU][tT][rR][oO][gG][eE][nN][aA]/", "color:/[lL][oO][tT][iI][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="neutrogena sunscreen" constraints=[Structural(Brand(BrandId(3)))] fq=["brand:/[nN][eE][uU][tT][rR][oO][gG][eE][nN][aA]/"] native_ndcg=0.9280 solr_ndcg=0.7028 ---
+  native top-10:
+    score=10.385 title="Neutrogena Sensitive Skin Mineral Sunscreen Lotion with Broad Spectrum SPF 60+ & Zinc Oxide, Water-Resistant, Hypoallergenic, Fragrance- & Oil-Free Gentle Sunscreen Formula, 3 fl. oz"
+    score=10.268 title="Neutrogena Age Shield Face Lotion Sunscreen with Broad Spectrum SPF 110, Oil-Free & Non-Comedogenic Moisturizing Sunscreen to Prevent Signs of Aging, 3 fl. oz"
+    score=10.212 title="Neutrogena Clear Face Liquid Sunscreen for Acne-Prone Skin, Broad Spectrum SPF 30 Sunscreen Lotion with Helioplex, Oxybenzone-Free, Oil-Free, Fragrance-Free; Non-Comedogenic, 3 fl. oz"
+    score=10.152 title="Neutrogena Beach Defense Water Resistant Sunscreen Lotion with Broad Spectrum SPF 70, Oil-Free and PABA-Free Fast-Absorbing Sunscreen Lotion, UVA/UVB Sun Protection, SPF 70, 6.7 oz"
+    score=9.964 title="Neutrogena Clear Face Liquid Lotion Sunscreen for Acne-Prone Skin, Broad Spectrum SPF 50 UVA/UVB Protection, Oil-, Fragrance- & Oxybenzone-Free Facial Sunscreen, Non-Comedogenic, 3 fl. oz (Pack of 3)"
+    score=9.000 title="Neutrogena Ultra Sheer Dry-Touch Water Resistant and Non-Greasy Sunscreen Lotion with Broad Spectrum SPF 100+, 3 Fl Oz (Pack of 1)"
+    score=8.873 title="Neutrogena Ultra Sheer Dry-Touch Sunscreen Lotion, Broad Spectrum UVA/UVB Protection, Oxybenzone-Free, Light, Water Resistant, Non-Comedogenic & Non-Greasy, Travel Size, SPF 55, 3 Fl Oz"
+    score=8.682 title="Neutrogena Ultra Sheer Dry-Touch Water Resistant and Non-Greasy Sunscreen Lotion with Broad Spectrum SPF 45, TSA-Compliant travel Size, 3 Fl Oz, Pack of 2, 6 Fl Oz"
+  solr top-10:
+    asin=B08MFNJ8LF label=(unjudged) title="Neutrogena Clear Face Liquid Lotion Sunscreen for Acne-Prone Skin, Broad Spectrum SPF 50 UVA/UVB Protection, Oil-, Fragrance- & Oxybenzone-Free Facial Sunscreen, Non-Comedogenic, 3 fl. oz (Pack of 3)"
+    asin=B004D2C5FY label=(unjudged) title="Neutrogena Clear Face Liquid Sunscreen for Acne-Prone Skin, Broad Spectrum SPF 30 Sunscreen Lotion with Helioplex, Oxybenzone-Free, Oil-Free, Fragrance-Free; Non-Comedogenic, 3 fl. oz"
+    asin=B00AEN4QZ8 label=Exact title="Neutrogena Beach Defense Water Resistant Sunscreen Lotion with Broad Spectrum SPF 70, Oil-Free and PABA-Free Fast-Absorbing Sunscreen Lotion, UVA/UVB Sun Protection, SPF 70, 6.7 oz"
+    asin=B0037LOQQI label=Exact title="Neutrogena Age Shield Face Lotion Sunscreen with Broad Spectrum SPF 110, Oil-Free & Non-Comedogenic Moisturizing Sunscreen to Prevent Signs of Aging, 3 fl. oz"
+    asin=B002JAYMEE label=Exact title="Neutrogena Ultra Sheer Dry-Touch Water Resistant and Non-Greasy Sunscreen Lotion with Broad Spectrum SPF 100+, 3 Fl Oz (Pack of 1)"
+    asin=B001P97U6C label=Exact title="Neutrogena Sensitive Skin Mineral Sunscreen Lotion with Broad Spectrum SPF 60+ & Zinc Oxide, Water-Resistant, Hypoallergenic, Fragrance- & Oil-Free Gentle Sunscreen Formula, 3 fl. oz"
+    asin=B004D2DR0Q label=Exact title="Neutrogena Ultra Sheer Dry-Touch Water Resistant and Non-Greasy Sunscreen Lotion with Broad Spectrum SPF 45, TSA-Compliant travel Size, 3 Fl Oz, Pack of 2, 6 Fl Oz"
+    asin=B000EPA4GQ label=Exact title="Neutrogena Ultra Sheer Dry-Touch Sunscreen Lotion, Broad Spectrum UVA/UVB Protection, Oxybenzone-Free, Light, Water Resistant, Non-Comedogenic & Non-Greasy, Travel Size, SPF 55, 3 Fl Oz"
+    asin=B07T9JV956 label=(unjudged) title="Neutrogena Gentle OilFree Eye Makeup Remover Cleanser for Sensitive Eyes NonGreasy Remover Removes Waterproof Mascara Dermatologist Ophthalmologist Tested, 8 Fl Oz"
+    asin=B00NR1YQKO label=(unjudged) title="Neutrogena Oil Free Acne Facial Moisturizer with.5% Salicylic Acid Acne Treatment, Pink Grapefruit Acne Fighting Face Lotion for Breakouts, Non-Greasy & Non-Comedogenic, 4 fl. oz"
+
+--- query="shea moisture shampoo" constraints=[Structural(Brand(BrandId(196)))] fq=["brand:/[sS][hH][eE][aA] [mM][oO][iI][sS][tT][uU][rR][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.445 title="Shea Moisture Superfruit 10-in-1 Renewal System Hair Masque, 355ml"
+  solr top-10:
+    asin=B01HOD3ZRU label=(unjudged) title="Shea Moisture Superfruit 10-in-1 Renewal System Hair Masque, 355ml"
+    asin=B00MXD6GBY label=(unjudged) title="Shea Moisture Jamaican Black Castor Oil Strengthen/Grow and Restore Leave-In Conditioner"
+
+--- query="palmer's fade cream with retinol" constraints=[Structural(Brand(BrandId(284))), Attribute(Enum { attribute: "color", value: "Cream" })] fq=["brand:/[pP][aA][lL][mM][eE][rR]'[sS]/", "color:/[cC][rR][eE][aA][mM]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="garnier color creme" constraints=[Structural(Brand(BrandId(14))), Attribute(Enum { attribute: "color", value: "Creme" })] fq=["brand:/[gG][aA][rR][nN][iI][eE][rR]/", "color:/[cC][rR][eE][mM][eE]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="cerave eye cream" constraints=[Structural(Brand(BrandId(24))), Attribute(Enum { attribute: "color", value: "Cream" })] fq=["brand:/[cC][eE][rR][aA][vV][eE]/", "color:/[cC][rR][eE][aA][mM]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="cerave pm facial moisturizing lotion" constraints=[Structural(Brand(BrandId(24))), Attribute(Enum { attribute: "color", value: "Moisturizing Lotion" })] fq=["brand:/[cC][eE][rR][aA][vV][eE]/", "color:/[mM][oO][iI][sS][tT][uU][rR][iI][zZ][iI][nN][gG] [lL][oO][tT][iI][oO][nN]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=4.390 title="CeraVe Daily Moisturizing Lotion for Dry Skin | Body Lotion & Facial Moisturizer with Hyaluronic Acid and Ceramides | 12 Ounce"
+  solr top-10:
+    asin=B000YJ2SLG label=(unjudged) title="CeraVe Daily Moisturizing Lotion for Dry Skin | Body Lotion & Facial Moisturizer with Hyaluronic Acid and Ceramides | 12 Ounce"
+
+--- query="aveeno lotion daily moisturizing" constraints=[Structural(Brand(BrandId(25))), Attribute(Enum { attribute: "color", value: "Lotion" })] fq=["brand:/[aA][vV][eE][eE][nN][oO]/", "color:/[lL][oO][tT][iI][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="aveeno skin relief lotion" constraints=[Structural(Brand(BrandId(25))), Attribute(Enum { attribute: "color", value: "Lotion" })] fq=["brand:/[aA][vV][eE][eE][nN][oO]/", "color:/[lL][oO][tT][iI][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="grow long marc anthony" constraints=[Structural(Brand(BrandId(625)))] fq=["brand:/[mM][aA][rR][cC] [aA][nN][tT][hH][oO][nN][yY]/"] native_ndcg=0.9407 solr_ndcg=0.9407 ---
+  native top-10:
+    score=8.598 title="Marc Anthony Grow Long Biotin Leave In Conditioner Spray & Detangler for Shine, Breakage & Hair Growth– Vitamin E, Sulfate Free Anti Frizz Color Safe Deep Conditioner– Dry Damaged Curly Hair Product"
+    score=1.663 title="Marc Anthony Strictly Curls Deep Hydrating Mask 10 Ounce Tub, Deep Hydration Treatment for Curly Hair"
+  solr top-10:
+    asin=B076FHJ3K5 label=Exact title="Marc Anthony Grow Long Biotin Leave In Conditioner Spray & Detangler for Shine, Breakage & Hair Growth– Vitamin E, Sulfate Free Anti Frizz Color Safe Deep Conditioner– Dry Damaged Curly Hair Product"
+    asin=B076FH3TKH label=(unjudged) title="Marc Anthony Strictly Curls Deep Hydrating Mask 10 Ounce Tub, Deep Hydration Treatment for Curly Hair"
+
+--- query="living proof dry shampoo" constraints=[Structural(Brand(BrandId(29)))] fq=["brand:/[lL][iI][vV][iI][nN][gG] [pP][rR][oO][oO][fF]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=11.317 title="Living Proof Dry Shampoo, Perfect hair Day, Dry Shampoo for Women and Men, 7.3 oz"
+  solr top-10:
+    asin=B0858KYNY2 label=Exact title="Living Proof Dry Shampoo, Perfect hair Day, Dry Shampoo for Women and Men, 7.3 oz"
+
+--- query="shampoo living proof" constraints=[Structural(Brand(BrandId(29)))] fq=["brand:/[lL][iI][vV][iI][nN][gG] [pP][rR][oO][oO][fF]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=5.705 title="Living Proof Dry Shampoo, Perfect hair Day, Dry Shampoo for Women and Men, 7.3 oz"
+  solr top-10:
+    asin=B0858KYNY2 label=Exact title="Living Proof Dry Shampoo, Perfect hair Day, Dry Shampoo for Women and Men, 7.3 oz"
+
+--- query="vaseline kids" constraints=[Structural(Brand(BrandId(38)))] fq=["brand:/[vV][aA][sS][eE][lL][iI][nN][eE]/"] native_ndcg=-0.0000 solr_ndcg=1.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B00NYQSIY2 label=Exact title="Vaseline Lip Balm for Instantly Soft Smooth Lips Crème Brûlée Lip Balm Locks In Moisture to Improve Hydration 0.25 oz"
+    asin=B01HTJTV0E label=(unjudged) title="Vaseline Intensive Care hand and body lotion For Dehydrated Skin Soothing Hydration Dry Skin Lotion With 100% Pure Aloe Extract 20.3 oz 3 count"
+
+--- query="it's a 10 miracle leave in product" constraints=[Structural(Brand(BrandId(623)))] fq=["brand:/[iI][tT]'[sS] [aA] 10/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=13.616 title="it's a 10 Miracle Deep Conditioner plus Keratin 5 oz (Pack of 4)"
+    score=13.471 title="It's A 10 Miracle Deep Conditioner Plus Keratin for Unisex, 17.5 Ounce"
+    score=11.749 title="It's A 10 Miracle Deep Conditioner Plus Keratin for Unisex, 17.5 Ounce by It's A 10"
+    score=5.337 title="It's a 10 Haircare Potion Miracle Repair Hair Mask, 8 fl. oz."
+  solr top-10:
+    asin=B01IAEMLYK label=(unjudged) title="it's a 10 Miracle Deep Conditioner plus Keratin 5 oz (Pack of 4)"
+    asin=B01LMNPGIE label=(unjudged) title="It's A 10 Miracle Deep Conditioner Plus Keratin for Unisex, 17.5 Ounce by It's A 10"
+    asin=B0092FEZZ0 label=(unjudged) title="It's A 10 Miracle Deep Conditioner Plus Keratin for Unisex, 17.5 Ounce"
+    asin=B01GU9V9KO label=(unjudged) title="It's a 10 Haircare Potion Miracle Repair Hair Mask, 8 fl. oz."
+
+--- query="fab lip therapy" constraints=[Structural(Brand(BrandId(503)))] fq=["brand:/[tT][hH][eE][rR][aA][pP][yY]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B01JZX6K1U label=(unjudged) title="Therapy Stainless Steel Cleaner Kit | Plant-Based, Solvent-Free, Natural Essential Oils | Removes Fingerprints, Water Marks, Residue and Grease from Appliances (Single)"
+
+--- query="dove deoderant" constraints=[Structural(Brand(BrandId(624)))] fq=["brand:/[dD][oO][vV][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B01INE0KWC label=(unjudged) title="Dove Nutritive Solutions for Dry Hair, Intensive Repair, Deep Conditioner, 12 Fl Oz (Pack of 4)"
+
+--- query="dove men care thick and strong" constraints=[Structural(Brand(BrandId(624)))] fq=["brand:/[dD][oO][vV][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B01INE0KWC label=(unjudged) title="Dove Nutritive Solutions for Dry Hair, Intensive Repair, Deep Conditioner, 12 Fl Oz (Pack of 4)"
+
+--- query="sport tide laundry detergent" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=26.757 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Substitute title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="tide free and gentle" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=15.594 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Exact title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="tide laundry detergent" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=26.757 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Exact title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="tide pods" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=22.137 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Exact title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="tide pods laundry detergent" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=48.894 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Exact title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="tide pods with oxi clean & downy" constraints=[Structural(Brand(BrandId(99)))] fq=["brand:/[tT][iI][dD][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=24.018 title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+  solr top-10:
+    asin=B07JMK7STT label=Substitute title="Tide PODS Free and Gentle, Laundry Detergent Soap PODS, HE, 96 Count - Unscented and Hypoallergenic for Sensitive Skin, Free and Clear of Dyes and Perfumes"
+
+--- query="doterra throat drops on guard" constraints=[Structural(Brand(BrandId(113)))] fq=["brand:/[dD][oO][tT][eE][rR][rR][aA]/"] native_ndcg=-0.0000 solr_ndcg=1.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B00KTQ7UJY label=Substitute title="doTERRA Peppermint Essential Oil Beadlets 125 ct (2 Pack)"
+
+--- query="now solutions oil diffuser humidifier" constraints=[Structural(Brand(BrandId(704))), Attribute(Enum { attribute: "color", value: "Oil" })] fq=["brand:/[nN][oO][wW]/", "color:/[oO][iI][lL]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="hot tools hair straightener" constraints=[Structural(Brand(BrandId(335)))] fq=["brand:/[hH][oO][tT] [tT][oO][oO][lL][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=1.884 title="Hot Tools Signature Series Ceramic Digital Flat Iron, 1 Inch"
+  solr top-10:
+    asin=B07SCDVZ5D label=(unjudged) title="Hot Tools Signature Series Ceramic Digital Flat Iron, 1 Inch"
+
+--- query="revlon ionic hair dryer" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=1.0000 solr_ndcg=0.9877 ---
+  native top-10:
+    score=15.429 title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    score=13.985 title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    score=8.985 title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    score=1.852 title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+  solr top-10:
+    asin=B001AFFBCG label=Exact title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B01LSUQSB0 label=Substitute title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+
+--- query="hair straightener conair" constraints=[Structural(Brand(BrandId(122)))] fq=["brand:/[cC][oO][nN][aA][iI][rR]/"] native_ndcg=0.0000 solr_ndcg=0.1640 ---
+  native top-10:
+    score=4.836 title="Conair 1875 Watt Worldwide Travel Hair Dryer with Smart Voltage Technology and Folding Handle"
+    score=2.491 title="Conair Instant Heat 1 1/2-Inch Curling Iron"
+    score=2.484 title="INFINITIPRO BY CONAIR Tourmaline 1 1/2-Inch Ceramic Curling Iron"
+    score=2.484 title="INFINITIPRO BY CONAIR Tourmaline Ceramic Curling Wand; 1-Inch to 1/2-Inch"
+    score=2.472 title="INFINITIPRO BY CONAIR Rainbow Titanium 1.25-Inch Curling Wand"
+    score=2.472 title="INFINITIPRO BY CONAIR Rose Gold Titanium 1 1/2-Inch Curling Iron"
+    score=2.471 title="INFINITIPRO BY CONAIR Titanium Ceramic Hot Air Brush, 1 Inch Drying & Styling Hot Air Brush"
+    score=2.458 title="Conair Double Ceramic Curling Wand, 1 Inch Curling Wand, White / Rose Gold"
+    score=2.458 title="Conair 2-in-1 Hot Air Curling Combo, Includes 1.5-inch Curl Brush and 1-inch Aluminum Bristle Brush"
+    score=2.444 title="Conair Instant Heat Styling Brush, 1 1/4-Inch"
+  solr top-10:
+    asin=B07HB2ZRNJ label=(unjudged) title="Conair 1875 Watt Worldwide Travel Hair Dryer with Smart Voltage Technology and Folding Handle"
+    asin=B07CKKGR83 label=(unjudged) title="Conair Double Ceramic 1-Inch Curling Iron"
+    asin=B003F2T0M4 label=(unjudged) title="INFINITIPRO BY CONAIR Tourmaline Ceramic Curling Wand; 1-Inch to 1/2-Inch"
+    asin=B00LXVVTDM label=(unjudged) title="Conair Double Ceramic Flat Iron, 1 1/2 Inch"
+    asin=B00006WNL8 label=(unjudged) title="Conair Instant Heat 1 1/2-Inch Curling Iron"
+    asin=B07D4LCF94 label=(unjudged) title="INFINITIPRO BY CONAIR Rainbow Titanium 1.25-Inch Curling Wand"
+    asin=B00LUAL54O label=(unjudged) title="Conair Double Ceramic 1/2-Inch Curling Iron"
+    asin=B001BO0KMC label=(unjudged) title="Conair Instant Heat Styling Brush, 1 1/4-Inch"
+    asin=B07D2JQMG1 label=(unjudged) title="Conair Double Ceramic Curling Wand, 1 Inch Curling Wand, White / Rose Gold"
+    asin=B015Z6WHYU label=Exact title="Conair Double Ceramic Flat Iron, 1 Inch, White/Rose Gold"
+
+--- query="revlon hair dryer brush" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=0.6131 solr_ndcg=0.6131 ---
+  native top-10:
+    score=21.739 title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    score=8.593 title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    score=3.088 title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+    score=1.876 title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    score=1.852 title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+  solr top-10:
+    asin=B01LSUQSB0 label=Exact title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    asin=B001AFFBCG label=(unjudged) title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+
+--- query="revlon one step" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=18.652 title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+  solr top-10:
+    asin=B01LSUQSB0 label=Exact title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+    asin=B001AFFBCG label=(unjudged) title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+
+--- query="revlon one step hair dryer and styler" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=0.9407 solr_ndcg=0.9407 ---
+  native top-10:
+    score=32.637 title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    score=8.593 title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    score=1.876 title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    score=1.852 title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+  solr top-10:
+    asin=B01LSUQSB0 label=Exact title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    asin=B001AFFBCG label=(unjudged) title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+
+--- query="revlon one step hair dryer and styler volumizer" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=0.9407 solr_ndcg=0.9407 ---
+  native top-10:
+    score=46.698 title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    score=8.593 title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    score=1.876 title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    score=1.852 title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+  solr top-10:
+    asin=B01LSUQSB0 label=Exact title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+    asin=B001AFFBCG label=(unjudged) title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+
+--- query="revlon tools eye" constraints=[Structural(Brand(BrandId(136)))] fq=["brand:/[rR][eE][vV][lL][oO][nN]/"] native_ndcg=-0.0000 solr_ndcg=0.3869 ---
+  native top-10:
+  solr top-10:
+    asin=B07GDY6W8K label=(unjudged) title="Revlon PhotoReady Candid Natural Finish Foundation, with Anti-Pollution, Antioxidant, Anti-Blue Light Ingredients, 150 Crème Brulee, 0.75 fl. oz."
+    asin=B001AFFBCG label=(unjudged) title="REVLON 1875W Compact Folding Handle Travel Hair Dryer"
+    asin=B0751KJ2PN label=(unjudged) title="REVLON Perfect Straight Smooth Brilliance Ceramic Flat Iron, 1 inch"
+    asin=B0751KQ3HT label=(unjudged) title="REVLON Copper +\u{a0} Ceramic Digital Extra Long Flat Iron, 1 inch"
+    asin=B01LSUQSB0 label=Complement title="REVLON One-Step Hair Dryer And Volumizer Hot Air Brush, Black"
+
+--- query="prime 10 off code" constraints=[Structural(Brand(BrandId(1218)))] fq=["brand:/[pP][rR][iI][mM][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B0022NH42A label=(unjudged) title="Prime EC680509L 4/3 SPT-3 Air Conditioner Extension Cord, 9 Feet, Gray"
+
+--- query="honest wipes" constraints=[Structural(Brand(BrandId(321)))] fq=["brand:/[hH][oO][nN][eE][sS][tT]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B08PXV12BX label=(unjudged) title="The Honest Company Mama Care Body Lotion, 8 Fl Oz"
+    asin=B01LDZJHAE label=(unjudged) title="The Honest Company Truly Calming Lavender Bubble Bath Tear Free Kids Bubble Bath Naturally Derived Ingredients & Essential Oils Sulfate & Paraben Free Baby Bath 12 Fl Oz"
+
+--- query="pampers wipes 9" constraints=[Structural(Brand(BrandId(151)))] fq=["brand:/[pP][aA][mM][pP][eE][rR][sS]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=16.716 title="Baby Wipes, Pampers Sensitive Water Based Baby Diaper Wipes, Hypoallergenic and Unscented, 8 Pop-Top Packs with 4 Refill Packs for Dispenser Tub, 864 Total Wipes (Packaging May Vary)"
+  solr top-10:
+    asin=B07JRBSPZ3 label=Substitute title="Baby Wipes, Pampers Sensitive Water Based Baby Diaper Wipes, Hypoallergenic and Unscented, 8 Pop-Top Packs with 4 Refill Packs for Dispenser Tub, 864 Total Wipes (Packaging May Vary)"
+
+--- query="pampers wipes pop top packs" constraints=[Structural(Brand(BrandId(151)))] fq=["brand:/[pP][aA][mM][pP][eE][rR][sS]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=47.506 title="Baby Wipes, Pampers Sensitive Water Based Baby Diaper Wipes, Hypoallergenic and Unscented, 8 Pop-Top Packs with 4 Refill Packs for Dispenser Tub, 864 Total Wipes (Packaging May Vary)"
+  solr top-10:
+    asin=B07JRBSPZ3 label=Exact title="Baby Wipes, Pampers Sensitive Water Based Baby Diaper Wipes, Hypoallergenic and Unscented, 8 Pop-Top Packs with 4 Refill Packs for Dispenser Tub, 864 Total Wipes (Packaging May Vary)"
+
+=== 38 Hybrid-routed, NDCG-scoreable beauty queries printed above ===
+=== zero-hit mechanism check: 15/38 returned literally zero native hits (empty candidate result, not just low-ranked); of those, 3 had Solr find a real judged-relevant (non-Irrelevant) product under the identical Brand/color fq -- a 'native missed a recoverable answer' case, not 'no relevant product exists' ===

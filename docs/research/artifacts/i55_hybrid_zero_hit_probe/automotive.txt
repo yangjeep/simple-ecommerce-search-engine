@@ -1,0 +1,323 @@
+=== Issue #55 checkpoint 19 follow-up: qualitative probe of automotive's Hybrid-routed relevance gap ===
+
+--- query="honeywell truefresh filters" constraints=[Structural(Brand(BrandId(289)))] fq=["brand:/[hH][oO][nN][eE][yY][wW][eE][lL][lL]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=2.042 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+  solr top-10:
+    asin=B000I0O8LE label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    asin=B003IGNRPI label=(unjudged) title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    asin=B008B80OB8 label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+
+--- query="detroit axle wheel bearing" constraints=[Structural(Brand(BrandId(32)))] fq=["brand:/[dD][eE][tT][rR][oO][iI][tT] [aA][xX][lL][eE]/"] native_ndcg=0.5239 solr_ndcg=0.5066 ---
+  native top-10:
+    score=17.340 title="Detroit Axle - Front Wheel Hub & Bearing Assembly Replacement for 2012-2018 Dodge Ram 1500-2pc Set"
+    score=17.025 title="Detroit Axle - Front Wheel Hub and Bearing Replacement for 1997-2000 Ford Expedition Lincoln Navigator - 2pc Set"
+    score=16.829 title="Detroit Axle - 4-Wheel ABS 5-Lug Front Wheel Hub Bearing Assembly for 2006-2008 Dodge Ram 1500-2pc Set"
+    score=16.203 title="Detroit Axle - Non-ABS 5-Lug Front Wheel Hub & Bearing Assembly Replacement for 2002-2008 Dodge Ram 1500-2pc Set"
+    score=16.049 title="Detroit Axle - Front Wheel Hub & Bearing Assembly Replacement for Town & Country Dodge Grand Caravan VW Routan Ram C/V - 1pc Set"
+    score=15.934 title="Detroit Axle - Front Wheel Hub and Bearing Assembly for Olds Alero Cutlass Pontiac Grand AM Chevy Malibu Classic - 2pc Set"
+    score=14.498 title="Detroit Axle - 4WD 8-Lug Front Wheel Hub Bearing Assembly for 2012 2013 Ram 2500 3500 515148-2pc Set"
+    score=14.194 title="Detroit Axle - 4WD Front Wheel Bearing and Hub Assembly Replacement for 2007-2014 Chevrolet Suburban Tahoe Silverado GMC Yukon Sierra 1500 Cadillac Escalade - 2pc Set"
+    score=14.194 title="Detroit Axle - 4WD Front Wheel Bearing and Hub Assembly Replacement for 2007-2014 Chevrolet Suburban Tahoe Silverado GMC Yukon Sierra 1500 Cadillac Escalade - 1pc Set"
+    score=9.934 title="Detroit Axle - 4WD 6-Lug Front Wheel Bearings & Hub Assembly Replacement for Chevy Silverado GMC Yukon Tahoe K1500 Suburban - 2pc Set"
+  solr top-10:
+    asin=B072DYHPTR label=(unjudged) title="Detroit Axle - Non-ABS 5-Lug Front Wheel Hub & Bearing Assembly Replacement for 2002-2008 Dodge Ram 1500-2pc Set"
+    asin=B076H8MZT6 label=(unjudged) title="Detroit Axle - Front Wheel Hub & Bearing Assembly Replacement for 2012-2018 Dodge Ram 1500-2pc Set"
+    asin=B071X58544 label=(unjudged) title="Detroit Axle - 4WD 8-Lug Front Wheel Hub Bearing Assembly for 2012 2013 Ram 2500 3500 515148-2pc Set"
+    asin=B00I44US6U label=Exact title="Detroit Axle - 4-Wheel ABS 5-Lug Front Wheel Hub Bearing Assembly for 2006-2008 Dodge Ram 1500-2pc Set"
+    asin=B079LYSK9T label=(unjudged) title="Detroit Axle - Front Wheel Hub and Bearing Replacement for 1997-2000 Ford Expedition Lincoln Navigator - 2pc Set"
+    asin=B00I3RC186 label=(unjudged) title="Detroit Axle - Front Wheel Hub & Bearing Assembly Replacement for Town & Country Dodge Grand Caravan VW Routan Ram C/V - 1pc Set"
+    asin=B00HHGT34E label=Exact title="Detroit Axle - 4WD Front Wheel Bearing and Hub Assembly Replacement for 2007-2014 Chevrolet Suburban Tahoe Silverado GMC Yukon Sierra 1500 Cadillac Escalade - 2pc Set"
+    asin=B006WQRGI0 label=Exact title="Detroit Axle - 4WD Front Wheel Bearing and Hub Assembly Replacement for 2007-2014 Chevrolet Suburban Tahoe Silverado GMC Yukon Sierra 1500 Cadillac Escalade - 1pc Set"
+    asin=B01FUR7KXW label=(unjudged) title="Detroit Axle - Front Wheel Hub and Bearing Assembly for Olds Alero Cutlass Pontiac Grand AM Chevy Malibu Classic - 2pc Set"
+    asin=B07ZQRY8WT label=(unjudged) title="Detroit Axle - Front Struts Replacement for Toyota Highlander Lexus RX330 RX350 RX400h, Coil Springs and Stabilizer Bars Suspension Kit - 4pc Set"
+
+--- query="fh group seat covers neoprene" constraints=[Structural(Brand(BrandId(38)))] fq=["brand:/[fF][hH] [gG][rR][oO][uU][pP]/"] native_ndcg=0.3541 solr_ndcg=0.9703 ---
+  native top-10:
+    score=13.533 title="FH Group Premium PU Leather Car Seat Covers Full Set, Airbag Compatible and Split Ready with Gift– Universal Fit for Cars Trucks and SUVs (Black)"
+    score=11.645 title="FH Group Light Breathable Durable Washable Flat Foam Padding Cloth Full Set Car Seat Covers, Airbag & Split Compatible w Gift - Universal Fit for Cars Trucks and SUVs (Beige/Black)"
+    score=9.915 title="FH Group FB102BURGUNDY114 Classic Full Set High Back Flat Cloth Car Seat Covers, Burgundy/Black- Fit Most Car, Truck, SUV, or Van"
+    score=9.771 title="FH Group Premium 3D Air Mesh Front Set Car Seat Covers Beige Front Set with Gift - Universal Fit for Cars, Trucks & SUVs"
+    score=9.291 title="FH Group - FB050BEIGE102-A Universal Fit Flat Cloth Pair Bucket Seat Cover, (Beige/Black) (FH-FB050102, Fit Most Car, Truck, Suv, or Van)"
+    score=9.037 title="FH Group Universal Fit Full Set Flat Cloth Fabric Car Seat Cover (Beige/Black) (FH-FB050114, Fit Most Car, Truck, Suv, or Van)"
+    score=8.895 title="FH Group FB083BLACK115 Full Set Seat Cover (Neoprene Waterproof Airbag Compatible and Split Bench Black)"
+    score=7.617 title="FH Group FB036BEIGE115 Seat Cover (Airbag Compatible and Split Bench Beige)"
+    score=7.301 title="FH Group FB032BLACK114 Black Unique Flat Cloth Car Seat Cover with 4 Detachable Headrests and Solid Bench"
+    score=7.174 title="FH Group - FB030GRAYBLACK115-SEAT FB030GRAYBLACK115 full seat cover (Side Airbag Compatible with Split Bench Gray/Black)"
+  solr top-10:
+    asin=B01HUTSJSI label=Exact title="FH Group FB083BLACK115 Full Set Seat Cover (Neoprene Waterproof Airbag Compatible and Split Bench Black)"
+    asin=B01HUTSCAS label=(unjudged) title="FH Group FB036BEIGE115 Seat Cover (Airbag Compatible and Split Bench Beige)"
+    asin=B00MWNSIN4 label=(unjudged) title="FH Group - FB050BEIGE102-A Universal Fit Flat Cloth Pair Bucket Seat Cover, (Beige/Black) (FH-FB050102, Fit Most Car, Truck, Suv, or Van)"
+    asin=B00NV5OC5K label=(unjudged) title="FH Group Universal Fit Full Set Flat Cloth Fabric Car Seat Cover (Beige/Black) (FH-FB050114, Fit Most Car, Truck, Suv, or Van)"
+    asin=B00S8KQF9Y label=(unjudged) title="FH Group FB032BLACK114 Black Unique Flat Cloth Car Seat Cover with 4 Detachable Headrests and Solid Bench"
+    asin=B01HUTS8FW label=(unjudged) title="FH Group - FB030GRAYBLACK115-SEAT FB030GRAYBLACK115 full seat cover (Side Airbag Compatible with Split Bench Gray/Black)"
+    asin=B01LX4MHX4 label=(unjudged) title="FH Group Premium PU Leather Car Seat Covers Full Set, Airbag Compatible and Split Ready with Gift– Universal Fit for Cars Trucks and SUVs (Black)"
+    asin=B01NAFVQ2Z label=Substitute title="FH Group Premium 3D Air Mesh Front Set Car Seat Covers Beige Front Set with Gift - Universal Fit for Cars, Trucks & SUVs"
+    asin=B07NJPSHV5 label=(unjudged) title="FH Group FB102BURGUNDY114 Classic Full Set High Back Flat Cloth Car Seat Covers, Burgundy/Black- Fit Most Car, Truck, SUV, or Van"
+    asin=B018GU3O44 label=(unjudged) title="FH Group Light Breathable Durable Washable Flat Foam Padding Cloth Full Set Car Seat Covers, Airbag & Split Compatible w Gift - Universal Fit for Cars Trucks and SUVs (Beige/Black)"
+
+--- query="honda ridgeline accessories" constraints=[Structural(Brand(BrandId(124)))] fq=["brand:/[hH][oO][nN][dD][aA]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B0039OZF4K label=(unjudged) title="Honda Pro Honda GN4 Motor Oil - 10W40 - 1 Quart/--"
+    asin=B01J8DMQ92 label=(unjudged) title="HONDA 08C35-A141L01 Honda Pro GN4 Motor Oil, 10W40, 1 gal"
+    asin=B07WRF66F8 label=(unjudged) title="Honda Genuine 0W-20 Full Synthetic Oil Change Kit w/A02 Filter & Drain Washer"
+    asin=B00NO0QZMU label=(unjudged) title="Honda Pro GN4 Motor Oil - 10W30-1 Gallon/-"
+    asin=B0073W3SD4 label=(unjudged) title="Honda 08207-10W30 Motor Oil"
+    asin=B01H2FWWSI label=(unjudged) title="HONDA MOTOR OIL 10W30 QT"
+
+--- query="honda sterringwheelcovers" constraints=[Structural(Brand(BrandId(124)))] fq=["brand:/[hH][oO][nN][dD][aA]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B0039OZF4K label=(unjudged) title="Honda Pro Honda GN4 Motor Oil - 10W40 - 1 Quart/--"
+    asin=B01J8DMQ92 label=(unjudged) title="HONDA 08C35-A141L01 Honda Pro GN4 Motor Oil, 10W40, 1 gal"
+    asin=B07WRF66F8 label=(unjudged) title="Honda Genuine 0W-20 Full Synthetic Oil Change Kit w/A02 Filter & Drain Washer"
+    asin=B00NO0QZMU label=(unjudged) title="Honda Pro GN4 Motor Oil - 10W30-1 Gallon/-"
+    asin=B0073W3SD4 label=(unjudged) title="Honda 08207-10W30 Motor Oil"
+    asin=B01H2FWWSI label=(unjudged) title="HONDA MOTOR OIL 10W30 QT"
+
+--- query="motor trend floor mat" constraints=[Structural(Brand(BrandId(31)))] fq=["brand:/[mM][oO][tT][oO][rR] [tT][rR][eE][nN][dD]/"] native_ndcg=0.6509 solr_ndcg=0.5250 ---
+  native top-10:
+    score=10.000 title="Motor Trend Original FlexTough Black Rubber Car Floor Mats with Trunk Cargo Liner - All Weather Automotive Floor Mats, Heavy Duty Trim to Fit Design, Odorless Floor Liners for Cars Truck Van SUV"
+    score=8.740 title="Motor Trend Original FlexTough Black Rubber Car Floor Mats for 3 Row Vehicles, Front & Rear 2nd Row Deep Dish All Weather Automotive Heavy Duty Trim to Fit, Odorless Liners for Cars Truck Van SUV"
+    score=8.649 title="Motor Trend 923-GR Gray FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit"
+    score=8.649 title="Motor Trend 923-BK Black FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit"
+    score=8.563 title="Motor Trend 923-BG Beige FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit (Tan Beige)"
+    score=7.511 title="Motor Trend FlexTough Performance All Weather Rubber Car Floor Mats - 3 Piece Odorless Floor Mats for Cars Truck SUV, BPA-Free Automotive Floor Mats, Heavy-Duty Waterproof Liners (Gray)"
+    score=2.509 title="Motor Trend Gray Faux Leather Car Seat Covers for Front Seats, 2-Pack – Universal Padded Car Seat Cushions with Storage Pockets, Premium Interior Accessories for Auto Truck Van SUV"
+  solr top-10:
+    asin=B01J6E2IC8 label=(unjudged) title="Motor Trend Original FlexTough Black Rubber Car Floor Mats with Trunk Cargo Liner - All Weather Automotive Floor Mats, Heavy Duty Trim to Fit Design, Odorless Floor Liners for Cars Truck Van SUV"
+    asin=B01A1IJ678 label=(unjudged) title="Motor Trend 923-GR Gray FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit"
+    asin=B01A5TLGJ4 label=Exact title="Motor Trend 923-BK Black FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit"
+    asin=B01A1IJ5KG label=(unjudged) title="Motor Trend 923-BG Beige FlexTough Contour Liners-Deep Dish Heavy Duty Rubber Floor Mats for Car SUV Truck & Van-All Weather Protection, Universal Trim to Fit (Tan Beige)"
+    asin=B01EW0BEAS label=(unjudged) title="Motor Trend FlexTough Performance All Weather Rubber Car Floor Mats - 3 Piece Odorless Floor Mats for Cars Truck SUV, BPA-Free Automotive Floor Mats, Heavy-Duty Waterproof Liners (Gray)"
+    asin=B07NMKT9XG label=Exact title="Motor Trend Original FlexTough Black Rubber Car Floor Mats for 3 Row Vehicles, Front & Rear 2nd Row Deep Dish All Weather Automotive Heavy Duty Trim to Fit, Odorless Liners for Cars Truck Van SUV"
+    asin=B087799LBP label=(unjudged) title="Motor Trend Gray Faux Leather Car Seat Covers for Front Seats, 2-Pack – Universal Padded Car Seat Cushions with Storage Pockets, Premium Interior Accessories for Auto Truck Van SUV"
+    asin=B073WNK55V label=(unjudged) title="Motor Trend AquaShield Car Seat Covers for Front Seats, Gray – Two-Tone Waterproof Seat Covers, Premium Neoprene Seat Protectors, Universal Fit Accessories for Auto Truck Van SUV"
+
+--- query="honda element bug" constraints=[Structural(Brand(BrandId(124)))] fq=["brand:/[hH][oO][nN][dD][aA]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B0039OZF4K label=(unjudged) title="Honda Pro Honda GN4 Motor Oil - 10W40 - 1 Quart/--"
+    asin=B01J8DMQ92 label=(unjudged) title="HONDA 08C35-A141L01 Honda Pro GN4 Motor Oil, 10W40, 1 gal"
+    asin=B07WRF66F8 label=(unjudged) title="Honda Genuine 0W-20 Full Synthetic Oil Change Kit w/A02 Filter & Drain Washer"
+    asin=B00NO0QZMU label=(unjudged) title="Honda Pro GN4 Motor Oil - 10W30-1 Gallon/-"
+    asin=B0073W3SD4 label=(unjudged) title="Honda 08207-10W30 Motor Oil"
+    asin=B01H2FWWSI label=(unjudged) title="HONDA MOTOR OIL 10W30 QT"
+
+--- query="09 honda odyssey struts without spring and shocks" constraints=[Structural(Brand(BrandId(124)))] fq=["brand:/[hH][oO][nN][dD][aA]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B00NO0QZMU label=(unjudged) title="Honda Pro GN4 Motor Oil - 10W30-1 Gallon/-"
+    asin=B0039OZF4K label=(unjudged) title="Honda Pro Honda GN4 Motor Oil - 10W40 - 1 Quart/--"
+    asin=B07WRF66F8 label=(unjudged) title="Honda Genuine 0W-20 Full Synthetic Oil Change Kit w/A02 Filter & Drain Washer"
+    asin=B01J8DMQ92 label=(unjudged) title="HONDA 08C35-A141L01 Honda Pro GN4 Motor Oil, 10W40, 1 gal"
+    asin=B0073W3SD4 label=(unjudged) title="Honda 08207-10W30 Motor Oil"
+    asin=B01H2FWWSI label=(unjudged) title="HONDA MOTOR OIL 10W30 QT"
+
+--- query="royal purple 5w 30" constraints=[Structural(Brand(BrandId(129))), Attribute(Enum { attribute: "color", value: "30" })] fq=["brand:/[rR][oO][yY][aA][lL] [pP][uU][rR][pP][lL][eE]/", "color:/30/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="castrol 10w30" constraints=[Structural(Brand(BrandId(7)))] fq=["brand:/[cC][aA][sS][tT][rR][oO][lL]/"] native_ndcg=-0.0000 solr_ndcg=0.4791 ---
+  native top-10:
+  solr top-10:
+    asin=B00TS9ZW3Y label=(unjudged) title="Castrol 03060 GTX MAGNATEC 0W-20 Full Synthetic Motor Oil, Green, 5 Quart"
+    asin=B00TS9ZWAW label=(unjudged) title="Castrol 03063 GTX MAGNATEC 5W-20 Full Synthetic Motor Oil, Green, 5 Quart"
+    asin=B00GTORDWY label=Exact title="Castrol 03093 GTX 10W-30 Motor Oil, 5 Quart"
+    asin=B00JGQLSH8 label=(unjudged) title="Castrol 03095 GTX 20W-50 Conventional Motor Oil - 5 Quart"
+    asin=B00JGQLZJ4 label=(unjudged) title="Castrol 03124 Edge 0W-20 Advanced Full Synthetic Motor Oil, 5 Quart"
+    asin=B00JGQM1WO label=(unjudged) title="Castrol 1598EF Edge Extended Performance 5W-20 Advanced Full Synthetic Motor Oil, 5 Quart"
+    asin=B00IPS3GMI label=Substitute title="Castrol 1597B1 Edge Extended Performance 5W-30 Advanced Full Synthetic Motor Oil, 5 Quart"
+    asin=B01CRYHNEW label=(unjudged) title="Castrol 03129C Edge High Mileage 10W-30 Advanced Full Synthetic Motor Oil, Black, 5 Quart"
+    asin=B00JGQLZSU label=(unjudged) title="Castrol 03101 EDGE 0W-40 A3/B4 Advanced Full Synthetic Motor Oil, 5 quart, 1 pack"
+
+--- query="mobil 1 extended performance oil" constraints=[Structural(Brand(BrandId(203)))] fq=["brand:/[mM][oO][bB][iI][lL] 1 [eE][xX][tT][eE][nN][dD][eE][dD] [pP][eE][rR][fF][oO][rR][mM][aA][nN][cC][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.645 title="Mobil 1 Extended Performance 120767-1 Extended Performance 10W-30; 5QT, Gray"
+  solr top-10:
+    asin=B07C6P53YJ label=(unjudged) title="Mobil 1 Extended Performance 120767-1 Extended Performance 10W-30; 5QT, Gray"
+
+--- query="rockford fosgate amplifier" constraints=[Structural(Brand(BrandId(140)))] fq=["brand:/[rR][oO][cC][kK][fF][oO][rR][dD] [fF][oO][sS][gG][aA][tT][eE]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=19.896 title="Rockford Fosgate R500X1D Prime 1-Channel Class D Amplifier,BLACK"
+  solr top-10:
+    asin=B00BF6HYDE label=Exact title="Rockford Fosgate R500X1D Prime 1-Channel Class D Amplifier,BLACK"
+
+--- query="bosch 26” wiper blades" constraints=[Structural(Brand(BrandId(89)))] fq=["brand:/[bB][oO][sS][cC][hH]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=9.133 title="Bosch Clear Advantage Wiper Blade (28\") - 2 Pack, Bundled with Rain-X Wipe (3 Items)"
+  solr top-10:
+    asin=B07FDFHHB7 label=(unjudged) title="Bosch Clear Advantage Wiper Blade (28\") - 2 Pack, Bundled with Rain-X Wipe (3 Items)"
+    asin=B008HZOZ5G label=(unjudged) title="Bosch BC906 QuietCast Premium Ceramic Disc Brake Pad Set For: Lexus ES300, ES330; Toyota Avalon, Camry, Sienna, Solara, Tacoma, Front"
+
+--- query="air purifiers honeywell" constraints=[Structural(Brand(BrandId(289)))] fq=["brand:/[hH][oO][nN][eE][yY][wW][eE][lL][lL]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.009 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    score=1.571 title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    score=1.428 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+  solr top-10:
+    asin=B000I0O8LE label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    asin=B003IGNRPI label=(unjudged) title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    asin=B008B80OB8 label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+
+--- query="honeywell air purifier" constraints=[Structural(Brand(BrandId(289)))] fq=["brand:/[hH][oO][nN][eE][yY][wW][eE][lL][lL]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=3.009 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    score=1.571 title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    score=1.428 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+  solr top-10:
+    asin=B000I0O8LE label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    asin=B003IGNRPI label=(unjudged) title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    asin=B008B80OB8 label=(unjudged) title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+
+--- query="bosch wiper blades clear advantage 18 in" constraints=[Structural(Brand(BrandId(89))), Attribute(Enum { attribute: "color", value: "Clear" })] fq=["brand:/[bB][oO][sS][cC][hH]/", "color:/[cC][lL][eE][aA][rR]/"] native_ndcg=-0.0000 solr_ndcg=-0.0000 ---
+  native top-10:
+  solr top-10:
+
+--- query="1.5 honda civic distributor" constraints=[Structural(Brand(BrandId(124)))] fq=["brand:/[hH][oO][nN][dD][aA]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B0039OZF4K label=(unjudged) title="Honda Pro Honda GN4 Motor Oil - 10W40 - 1 Quart/--"
+    asin=B01J8DMQ92 label=(unjudged) title="HONDA 08C35-A141L01 Honda Pro GN4 Motor Oil, 10W40, 1 gal"
+    asin=B07WRF66F8 label=(unjudged) title="Honda Genuine 0W-20 Full Synthetic Oil Change Kit w/A02 Filter & Drain Washer"
+    asin=B00NO0QZMU label=(unjudged) title="Honda Pro GN4 Motor Oil - 10W30-1 Gallon/-"
+    asin=B0073W3SD4 label=(unjudged) title="Honda 08207-10W30 Motor Oil"
+    asin=B01H2FWWSI label=(unjudged) title="HONDA MOTOR OIL 10W30 QT"
+
+--- query="squeegee 6 inch oxo" constraints=[Structural(Brand(BrandId(182)))] fq=["brand:/[oO][xX][oO]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=9.246 title="OXO Good Grips Wiper Blade Squeegee"
+  solr top-10:
+    asin=B00MNAYWUE label=Substitute title="OXO Good Grips Wiper Blade Squeegee"
+
+--- query="hanes girls underwear size 16" constraints=[Structural(Brand(BrandId(173))), Attribute(Numeric { attribute: "size", op: Eq, value: 16.0 })] fq=["brand:/[hH][aA][nN][eE][sS]/"] native_ndcg=-0.0000 solr_ndcg=1.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B000J429GU label=Substitute title="Hanes Women's Cotton Brief Underwear, Available in Regular and Plus Sizes, 6 Pack-Assorted, 7"
+    asin=B000J429EM label=(unjudged) title="Hanes Women's Cotton Briefs 6 Pack Size: 9 Color: White"
+    asin=B00FZR1C4Q label=(unjudged) title="Hanes Women's Cotton Brief Panties, Available in Multiple Packs, 10 Pack-Assorted, 8"
+
+--- query="women panties size 7" constraints=[Attribute(Numeric { attribute: "size", op: Eq, value: 7.0 })] fq=[] native_ndcg=-0.0000 solr_ndcg=0.6309 ---
+  native top-10:
+  solr top-10:
+    asin=B097D5F8VL label=(unjudged) title="FRSH MNT Womens Sexy Underwear Lace Panties High Waisted Plus Size Ladies Brief for Women"
+    asin=B000J429GU label=Exact title="Hanes Women's Cotton Brief Underwear, Available in Regular and Plus Sizes, 6 Pack-Assorted, 7"
+    asin=B000J429EM label=(unjudged) title="Hanes Women's Cotton Briefs 6 Pack Size: 9 Color: White"
+    asin=B07MBNM7LZ label=(unjudged) title="Super Soft Faux Fur Sheepskin Rug Shaggy Round Area Rugs Floor Mat Home Decorator Carpets 0.9/1.4/1.9/ft Diameter (Gray, 0.9ft)"
+    asin=B07V3DJQFC label=(unjudged) title="14\" 15\" 16\" Black Steering Wheel Cover Universal Anti-Slip Silicone Steering Wheels Cover with W. Grip & Pattern Massaging Grip Leather Texture for Car Truck SUV Van"
+    asin=B07WS62XTM label=(unjudged) title="Alusbell Crystal Diamond Steering Wheel Cover Soft Velvet Feel Bling Steering Wheel Cover for Women Universal 15 inch Plush Wheel Cover for Escape Fusion Focus Accord Prius Rav4 Sapphire Blue"
+    asin=B07NQ3CVLN label=(unjudged) title="New Diamond Leather Steering Wheel Cover with Bling Bling Crystal Rhinestones, Universal Fit 15 Inch Car Wheel Protector for Women Girls,Black"
+    asin=B086C9P2PY label=(unjudged) title="Fluffy Carprt 4040CM Thickened Circular Rug Mats Dining Room Bedroom Carpet Floor Mat Home Decor Gray"
+    asin=B08GPYBHKV label=(unjudged) title="Valleycomfy Steering Wheel Cover for Women Men Bling Bling Crystal Diamond Sparkling Car SUV Wheel Protector Universal Fit 15 Inch (Black with Black Diamond, Standard Size(14\" 1/2-15\" 1/4))"
+    asin=B07QNN1M3W label=(unjudged) title="Crystal Diamond Steering Wheel Cover, PU Leather with Colorful Leopard Bling Bling Rhinestones, Universal 15inch / 38cm for Women Girls, Beige"
+
+--- query="2 stroke dirt bike 250cc" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=11.801 title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+  solr top-10:
+    asin=B085733V6D label=(unjudged) title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+--- query="amazon basics air filter" constraints=[Structural(Brand(BrandId(126)))] fq=["brand:/[aA][mM][aA][zZ][oO][nN] [bB][aA][sS][iI][cC][sS]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=6.195 title="Amazon Basics Merv 11 AC Furnace Air Filter, 20'' x 30'' x 1'', 6-Pack"
+    score=6.195 title="Amazon Basics Merv 8 AC Furnace Air Filter - 20'' x 30'' x 1'', 6-Pack"
+  solr top-10:
+    asin=B088BY6ZNQ label=(unjudged) title="Amazon Basics Merv 11 AC Furnace Air Filter, 20'' x 30'' x 1'', 6-Pack"
+    asin=B088BY7X9C label=(unjudged) title="Amazon Basics Merv 8 AC Furnace Air Filter - 20'' x 30'' x 1'', 6-Pack"
+    asin=B07R2FGGRS label=(unjudged) title="Amazon Basics Folding Puzzle Exercise Gym Mat, Black"
+    asin=B07CG384GQ label=(unjudged) title="Amazon Basics Full Synthetic Motor Oil - 0W-20 - 5 Quart"
+
+--- query="2 in 1 elliptical and exercise bike" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+    score=4.231 title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+  solr top-10:
+    asin=B085733V6D label=(unjudged) title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+--- query="e dirt bike" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B085733V6D label=(unjudged) title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+--- query="x-pro titan 250cc dirt bike" constraints=[Structural(Brand(BrandId(213)))] fq=["brand:/[xX]-[pP][rR][oO]/"] native_ndcg=0.6509 solr_ndcg=0.6241 ---
+  native top-10:
+    score=38.541 title="X-PRO Titan 250cc Dirt Bike with LED Light Zongshen Engine Pit Bike Gas Dirt Bikes Adult Dirt Pitbike 250cc Gas Dirt Pit Bike, Big 21\"/18\" Wheels!（Black）"
+    score=17.683 title="X-PRO Hawk 250 Dirt Bike Motorcycle Bike Dirt Bike Enduro Street Bike Motorcycle Bike with Cover, Bluetooth Speaker and Phone Bracket! (Black)"
+    score=8.139 title="X-PRO 12\" Rear Wheel Rim Tire 3.0-12 with 12mm Bearing Assembly for Dirt Bikes"
+    score=3.893 title="X-PRO 250 Motorcycle Scooter Gas Moped Scooter 229cc Adults Motorcycle Street Scooter，White"
+    score=3.236 title="X-PRO 50cc Gas Moped Scooter Adult Scooter Bike Street Scooter Moped 50cc with 10\" Aluminum Wheels! (Blue)"
+    score=3.170 title="X-PRO X22 50cc Moped Scooter Street Scooter Gas Moped 50cc Adult Scooter Bike with 10\" Aluminum Wheels! (Red)"
+    score=2.499 title="X-PRO 125cc 4-stroke ATV Engine Semi-Auto Transmission with Reverse, Electric Start for most China made 125cc ATVs & upgrading 50cc-110cc ATVs"
+  solr top-10:
+    asin=B08CN5N3JM label=(unjudged) title="X-PRO Titan 250cc Dirt Bike with LED Light Zongshen Engine Pit Bike Gas Dirt Bikes Adult Dirt Pitbike 250cc Gas Dirt Pit Bike, Big 21\"/18\" Wheels!（Black）"
+    asin=B08Q44QVKD label=Substitute title="X-PRO Hawk 250 Dirt Bike Motorcycle Bike Dirt Bike Enduro Street Bike Motorcycle Bike with Cover, Bluetooth Speaker and Phone Bracket! (Black)"
+    asin=B08PCS2PCG label=(unjudged) title="X-PRO 50cc Gas Moped Scooter Adult Scooter Bike Street Scooter Moped 50cc with 10\" Aluminum Wheels! (Blue)"
+    asin=B08NDF3YLX label=(unjudged) title="X-PRO X22 50cc Moped Scooter Street Scooter Gas Moped 50cc Adult Scooter Bike with 10\" Aluminum Wheels! (Red)"
+    asin=B07SX24FZS label=Substitute title="X-PRO 250 Motorcycle Scooter Gas Moped Scooter 229cc Adults Motorcycle Street Scooter，White"
+    asin=B01MFFTIZA label=(unjudged) title="X-PRO 12\" Rear Wheel Rim Tire 3.0-12 with 12mm Bearing Assembly for Dirt Bikes"
+    asin=B014R2GBOK label=(unjudged) title="X-PRO 125cc 4-stroke ATV Engine Semi-Auto Transmission with Reverse, Electric Start for most China made 125cc ATVs & upgrading 50cc-110cc ATVs"
+    asin=B00MVL2ITW label=(unjudged) title="X-PRO 110cc ATVs Go Karts 4-stroke Engine Motor Auto Transmission Electric Start for 50cc, 70cc,90cc,110cc ATVs and Go Karts"
+
+--- query="2 stroke motorized bike kit" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=0.2201 solr_ndcg=0.2201 ---
+  native top-10:
+    score=21.899 title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+  solr top-10:
+    asin=B085733V6D label=Exact title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+--- query="kelty tent" constraints=[Structural(Brand(BrandId(349)))] fq=["brand:/[kK][eE][lL][tT][yY]/"] native_ndcg=1.0000 solr_ndcg=1.0000 ---
+  native top-10:
+    score=15.446 title="Kelty Salida Camping and Backpacking Tent, 2 Person"
+  solr top-10:
+    asin=B00NFCFO0Q label=Exact title="Kelty Salida Camping and Backpacking Tent, 2 Person"
+
+--- query="ridgeway by kelty" constraints=[Structural(Brand(BrandId(349)))] fq=["brand:/[kK][eE][lL][tT][yY]/"] native_ndcg=-0.0000 solr_ndcg=1.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B00NFCFO0Q label=Exact title="Kelty Salida Camping and Backpacking Tent, 2 Person"
+
+--- query="shimano 6bolt disc rotors gold" constraints=[Structural(Brand(BrandId(275)))] fq=["brand:/[sS][hH][iI][mM][aA][nN][oO]/"] native_ndcg=0.0000 solr_ndcg=0.2044 ---
+  native top-10:
+    score=13.984 title="SHIMANO Centerlock Bicycle Hydraulic Disc Brake Rotor - SM-RT54-180MM - ESMRT54ME"
+    score=12.374 title="SHIMANO Centerlock Bicycle Disc Brake Rotor - SM-RT54 - S 160mm - ESMRT54SE"
+    score=11.866 title="SHIMANO XTR/Dura-Ace Centerlock Disc Rotor Gray/Black, 160mm"
+    score=4.686 title="SHIMANO Dura-Ace SM-RT900 Rotor - Centerlock One Color, 160 mm"
+    score=4.686 title="SHIMANO Dura-Ace SM-RT900 Rotor - Centerlock One Color, 140mm"
+    score=4.089 title="Deore Brake Disc SM-RT64, 160 mm, Silver"
+    score=3.984 title="SHIMANO SM-RT76 6-Bolt Disc Brake Rotor, 203mm"
+    score=3.884 title="SHIMANO RT-64 Deore Disc Brake Rotor (203-mm CenterLock)"
+    score=3.884 title="SHIMANO SM-RT56 Disc Brake Rotor 6-Bolt (180-mm)"
+    score=3.789 title="SHIMANO SM-RT66 SLX 6-Bolt Disc Brake Rotor (203-mm)"
+  solr top-10:
+    asin=B07YMYGFFV label=(unjudged) title="SHIMANO Centerlock Bicycle Hydraulic Disc Brake Rotor - SM-RT54-180MM - ESMRT54ME"
+    asin=B084GPNYCS label=(unjudged) title="SHIMANO XTR/Dura-Ace Centerlock Disc Rotor Gray/Black, 160mm"
+    asin=B07YMNT534 label=(unjudged) title="SHIMANO Centerlock Bicycle Disc Brake Rotor - SM-RT54 - S 160mm - ESMRT54SE"
+    asin=B08L8LGYXK label=(unjudged) title="SHIMANO Dura-Ace SM-RT900 Rotor - Centerlock One Color, 160 mm"
+    asin=B08SMQWPJV label=(unjudged) title="SHIMANO Dura-Ace SM-RT900 Rotor - Centerlock One Color, 140mm"
+    asin=B007Q4O45U label=(unjudged) title="SHIMANO SM-RT66 SLX 6-Bolt Disc Brake Rotor (203-mm)"
+    asin=B007Q4N2LC label=Exact title="SHIMANO SM-RT66 SLX 6-Bolt Disc Brake Rotor (160-mm)"
+    asin=B006FCG39O label=(unjudged) title="SHIMANO RT-64 Deore Disc Brake Rotor (203-mm CenterLock)"
+    asin=B007Q4NW58 label=(unjudged) title="SHIMANO SM-RT56 Disc Brake Rotor 6-Bolt (180-mm)"
+    asin=B00AEUXKW6 label=(unjudged) title="SHIMANO SM-RT76 6-Bolt Disc Brake Rotor, 203mm"
+
+--- query="20x25x4 filter honeywell" constraints=[Structural(Brand(BrandId(289)))] fq=["brand:/[hH][oO][nN][eE][yY][wW][eE][lL][lL]/"] native_ndcg=0.5435 solr_ndcg=0.5435 ---
+  native top-10:
+    score=3.161 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    score=1.562 title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    score=1.420 title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+  solr top-10:
+    asin=B000I0O8LE label=Exact title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"
+    asin=B003IGNRPI label=(unjudged) title="Honeywell FC100A1029 16 x 25 Media Air Filter (MERV 11)"
+    asin=B008B80OB8 label=Exact title="Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13 (2 Pack)"
+
+--- query="20” boys bike" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B085733V6D label=(unjudged) title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+--- query="20” girls bike" constraints=[Structural(Brand(BrandId(345)))] fq=["brand:/[bB][iI][kK][eE]/"] native_ndcg=-0.0000 solr_ndcg=0.0000 ---
+  native top-10:
+  solr top-10:
+    asin=B085733V6D label=(unjudged) title="Ziloco Full Set 80cc Bicycle Engine kit, 2 Stroke Motorized Bike Petrol Gas Engine Kit, Turn Your Pedal Bike Into an Electric Bike (Black)"
+
+=== 32 Hybrid-routed, NDCG-scoreable automotive queries printed above ===
+=== zero-hit mechanism check: 14/32 returned literally zero native hits (empty candidate result, not just low-ranked); of those, 4 had Solr find a real judged-relevant (non-Irrelevant) product under the identical Brand/color fq -- a 'native missed a recoverable answer' case, not 'no relevant product exists' ===
