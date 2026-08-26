@@ -49,8 +49,7 @@ const DECOY_CATEGORY: u32 = 9999;
 /// `i51_e00_catalog_scale_diagnostic.rs`'s decoy helper either).
 fn scaled_catalog(base: &Catalog, decoy_count: usize) -> Catalog {
     let mut products = base.products.clone();
-    let mut next_id = 1_000_000u64;
-    for _ in 0..decoy_count {
+    for next_id in (1_000_000u64..).take(decoy_count) {
         let decoy = Product {
             id: ProductId(next_id),
             product_type: ProductTypeId(DECOY_PRODUCT_TYPE),
@@ -66,7 +65,6 @@ fn scaled_catalog(base: &Catalog, decoy_count: usize) -> Catalog {
             }],
         };
         products.push(decoy);
-        next_id += 1;
     }
     Catalog { products }
 }
