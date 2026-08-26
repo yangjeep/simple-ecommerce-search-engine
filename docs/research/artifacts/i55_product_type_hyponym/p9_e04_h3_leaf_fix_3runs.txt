@@ -1,0 +1,21 @@
+Three independent p9_e04_isolated_ranking_and_execution runs after the
+leaf-only ProductTypeAny fix, H3 section only (full run 1 saved
+separately as p9_e04_after_leaf_fix.txt; runs 2-3 are H3-only spot
+checks after confirming H1/recall were stable on run 1):
+
+Run 1: native=0.9278ms solr=1.7881ms ratio=1.93x (H3 FALSIFIED, just under 2x)
+Run 2: native=0.8322ms solr=1.7043ms ratio=2.05x (H3 CONFIRMED)
+Run 3: native=1.0087ms solr=2.0562ms ratio=2.04x (H3 CONFIRMED)
+
+Mean ratio ~2.01x, median 2.04x. 2/3 runs individually clear >=2x;
+all three are close to the threshold. Contrast with checkpoint 11's
+own final full-path-version measurement: native=0.9091ms
+solr=2.3116ms ratio=2.54x (a comfortable margin). This is a real,
+disclosed narrowing of H3's margin under the leaf-only fix, most
+plausibly attributable to Solr's own well-documented run-to-run JVM
+latency variance (ISSUE43_DECISION.md's "Solr-JVM-warmup confound")
+rather than a new, systematic native-side regression: native's own
+absolute latency (0.83-1.01ms across the 3 runs) is comparable to or
+lower than the full-path version's 0.9091ms, while Solr's absolute
+latency varied more (1.70-2.31ms across all 4 runs total, including
+the pre-fix comparison point).

@@ -201,68 +201,55 @@ fn hand_curated_and_catalog_derived_lexicons_are_independently_comparable() {
     );
 }
 
-/// Regression guard for `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`
-/// (REJECT): a P9-E08 audit of the real WANDS vocabulary found that a
-/// whole-word "hyponym" heuristic -- admit a broader product-type name's
-/// query to any other real product-type name whose word set is a superset
-/// -- produces confirmed cross-family false positives (e.g. "beds"
-/// admitting "cat beds"/"dog beds & mats"; "candles" admitting "scented
-/// oils & diffusers" purely via an unrelated sibling's ancestor breadcrumb).
-/// `compile_non_brand_lexicon` was deliberately never wired to that
-/// heuristic in production. This fixture reproduces the exact word-subset
-/// shape ("boots" / "hiking boots") that would trigger it, so a future
-/// change that silently re-wires the heuristic without solving the
-/// false-positive problem fails this test immediately.
-#[test]
-fn product_types_with_a_whole_word_subset_relationship_never_merge_into_one_constraint() {
-    fn product_type_only_catalog() -> (Catalog, Vec<ProductType>) {
-        let boots = Product {
-            id: ProductId(1),
-            product_type: ProductTypeId(1),
-            brand: BrandId(1),
-            category: CategoryId(1),
-            title: "Trail Boots".to_string(),
+fn product_type_pair_catalog(name_a: &str, name_b: &str) -> (Catalog, Vec<ProductType>) {
+    let product_a = Product {
+        id: ProductId(1),
+        product_type: ProductTypeId(1),
+        brand: BrandId(1),
+        category: CategoryId(1),
+        title: format!("Sample {name_a}"),
+        attributes: attributes([]),
+        variants: vec![Variant {
+            id: VariantId(1),
             attributes: attributes([]),
-            variants: vec![Variant {
-                id: VariantId(1),
-                attributes: attributes([]),
-                price: Price::usd(4_999),
-                inventory: Inventory::in_stock(1),
-            }],
-        };
-        let hiking_boots = Product {
-            id: ProductId(2),
-            product_type: ProductTypeId(2),
-            brand: BrandId(1),
-            category: CategoryId(1),
-            title: "Summit Hiking Boots".to_string(),
+            price: Price::usd(4_999),
+            inventory: Inventory::in_stock(1),
+        }],
+    };
+    let product_b = Product {
+        id: ProductId(2),
+        product_type: ProductTypeId(2),
+        brand: BrandId(1),
+        category: CategoryId(1),
+        title: format!("Sample {name_b}"),
+        attributes: attributes([]),
+        variants: vec![Variant {
+            id: VariantId(2),
             attributes: attributes([]),
-            variants: vec![Variant {
-                id: VariantId(2),
-                attributes: attributes([]),
-                price: Price::usd(8_999),
-                inventory: Inventory::in_stock(1),
-            }],
-        };
-        let types = vec![
-            ProductType {
-                id: ProductTypeId(1),
-                name: "Boots".to_string(),
-            },
-            ProductType {
-                id: ProductTypeId(2),
-                name: "Hiking Boots".to_string(),
-            },
-        ];
-        (
-            Catalog {
-                products: vec![boots, hiking_boots],
-            },
-            types,
-        )
-    }
+            price: Price::usd(8_999),
+            inventory: Inventory::in_stock(1),
+        }],
+    };
+    let types = vec![
+        ProductType {
+            id: ProductTypeId(1),
+            name: name_a.to_string(),
+        },
+        ProductType {
+            id: ProductTypeId(2),
+            name: name_b.to_string(),
+        },
+    ];
+    (
+        Catalog {
+            products: vec![product_a, product_b],
+        },
+        types,
+    )
+}
 
-    let (catalog, product_types) = product_type_only_catalog();
+fn compile_lexicon_for_types(name_a: &str, name_b: &str) -> commerce_core::ir::SemanticLexicon {
+    let (catalog, product_types) = product_type_pair_catalog(name_a, name_b);
     let brands = vec![Brand {
         id: BrandId(1),
         name: "Aerowalk".to_string(),
@@ -272,25 +259,67 @@ fn product_types_with_a_whole_word_subset_relationship_never_merge_into_one_cons
         name: "Footwear".to_string(),
     }];
     let profile = CatalogProfile::build(&catalog, &brands, &product_types, &categories);
-    let lexicon = compile_lexicon(&profile, 1);
+    compile_lexicon(&profile, 1)
+}
 
-    // "boots" (a whole-word subset of "hiking boots") must resolve to
-    // exactly its own `ProductType`, never a `ProductTypeAny` (or anything
-    // else) that would also admit "hiking boots" products.
+/// Supersedes the original REJECT-era assertion here (checkpoint 11,
+/// `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`): the
+/// leaf-only-restricted mechanism
+/// (`docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md`) is now
+/// re-wired into production, and "boots"/"hiking boots" was never one
+/// of the confirmed false-positive shapes (neither name is a
+/// breadcrumb path, so leaf-only restriction changes nothing for this
+/// pair) -- hiking boots genuinely are a kind of boots, so "boots" is
+/// now expected, correctly, to admit "hiking boots" products too.
+#[test]
+fn clean_whole_word_subset_product_types_now_merge_via_leaf_only_hyponym_expansion() {
+    let lexicon = compile_lexicon_for_types("Boots", "Hiking Boots");
+
     let compiled = compile("boots", &lexicon);
     assert_eq!(compiled.constraints.len(), 1, "{compiled:?}");
     assert_eq!(
         compiled.constraints[0],
-        ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
-        "\"boots\" must resolve to its own exact product type only, \
-         never merged with the superset \"hiking boots\": {compiled:?}"
+        ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(vec![
+            ProductTypeId(1),
+            ProductTypeId(2)
+        ])),
+        "\"boots\" must now admit the genuine hyponym \"hiking boots\" too: {compiled:?}"
     );
 
+    // The more specific term has no hyponyms of its own here, so it
+    // still resolves to exactly its own type.
     let compiled_hiking = compile("hiking boots", &lexicon);
     assert_eq!(compiled_hiking.constraints.len(), 1, "{compiled_hiking:?}");
     assert_eq!(
         compiled_hiking.constraints[0],
         ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(2))),
         "{compiled_hiking:?}"
+    );
+}
+
+/// Regression guard for the actual defect checkpoint 11's audit found
+/// (`docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`): a clean
+/// broader term must never merge with a product type whose name is a
+/// breadcrumb path, when the broader term's word only appears in that
+/// path's *ancestor* segment, not its leaf -- the real "candles"
+/// admitting "...candles & holders / scented oils & diffusers" false
+/// positive, reproduced end-to-end through `compile_lexicon`/`compile`
+/// (complementing `cold_start::profile::hyponym_tests`'s own
+/// pure-function-level coverage of the same shape).
+#[test]
+fn ancestor_only_word_match_on_a_path_derived_product_type_never_merges() {
+    let lexicon = compile_lexicon_for_types(
+        "Candles",
+        "Décor & Pillows / Candles & Holders / Scented Oils & Diffusers",
+    );
+
+    let compiled = compile("candles", &lexicon);
+    assert_eq!(compiled.constraints.len(), 1, "{compiled:?}");
+    assert_eq!(
+        compiled.constraints[0],
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
+        "\"candles\" must resolve to its own exact product type only -- it must not admit a \
+         product whose leaf is \"scented oils & diffusers\" just because \"candles\" appears in \
+         that product's ancestor breadcrumb: {compiled:?}"
     );
 }
