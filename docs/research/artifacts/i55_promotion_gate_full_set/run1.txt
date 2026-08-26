@@ -1,0 +1,19 @@
+=== Issue #55 Priority 2: full-set promotion-gate evidence test (149 groups, 317 pairs) ===
+
+--- evidence source: top_level ---
+  promoted=15 unresolved_no_overlap=36 unresolved_no_evidence=266
+  false_promotions=[] (must be empty to pass the safety gate)
+  recall among resolvable non-known-bad candidates: 15/49 = 30.6%
+  safety gate: PASS
+  >=50% recall bar: FAIL
+
+--- evidence source: level_2 ---
+  promoted=11 unresolved_no_overlap=40 unresolved_no_evidence=266
+  false_promotions=[] (must be empty to pass the safety gate)
+  recall among resolvable non-known-bad candidates: 11/49 = 22.4%
+  safety gate: PASS
+  >=50% recall bar: FAIL
+
+--- comparative claim: does level_2 promote strictly more non-known-bad resolvable candidates than top_level? ---
+  top_level=15 level_2=11
+  level_2 does NOT promote strictly more (no added value over top_level at this scale)
