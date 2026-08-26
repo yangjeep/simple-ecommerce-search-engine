@@ -184,6 +184,32 @@ did.
   not the primary recall/NDCG/latency numbers this decision is based on,
   which were computed identically before and after that particular fix.
 
+### Update (2026-08-26) — the named follow-up is done: leaf-only restriction fixes all three false positives, mechanism now KEPT
+
+`docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md` implemented a
+simpler fix than either of the two directions sketched above: rather
+than true category-hierarchy prefix containment (direction 1) or
+contiguous-phrase containment (direction 2), it restricts the
+whole-word comparison to each name's own trailing path segment (leaf)
+rather than the full ancestor-inclusive path -- cheaper to implement
+than direction 1, and unlike direction 2 (which would still admit
+`"candles"` trivially, being a single word) it directly targets the
+actual root cause this document diagnosed (ancestor-segment word
+bleed). A re-audit confirmed all three named false
+positives ("beds"→pet products was never claimed fixable by this
+restriction and remains a disclosed residual risk; "candles"→diffusers,
+"hot tubs"→saunas, and "bed accessories"/"bath accessories"→shower
+curtains are gone), while retaining 94.1% of this checkpoint's own
++24.06pp recall win and continuing to pass the H1 ranking-quality
+check. **The mechanism is now KEPT and wired into production**,
+superseding this document's own REJECT for the corrected version (the
+unconditional, full-path version described above remains rejected and
+was never re-enabled). See that decision for the full account,
+including a major incidental finding: `structural_routed` NDCG turns
+positive for the first time this session (+5.37% vs. Solr, was
+-25.05%), at a disclosed latency cost that keeps the overall
+`structural_routed` verdict at REVISE rather than GO.
+
 ## Traceability
 
 Source: `crates/commerce-core/src/ir/structural.rs`,

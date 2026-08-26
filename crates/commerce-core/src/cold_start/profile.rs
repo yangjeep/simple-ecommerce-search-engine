@@ -430,20 +430,51 @@ pub fn compile_lexicon_with_alias_enforcement(
     lex
 }
 
-/// Issue #55 (`docs/experiments/ISSUE55_PRODUCT_TYPE_HYPONYM_PROTOCOL.md`):
+/// A product-type name's own trailing path segment: for a name built
+/// from `effective_product_class`'s ancestor-breadcrumb-path fallback
+/// (e.g. `"furniture / bedroom furniture / beds & headboards / beds"`,
+/// `" / "`-joined -- WANDS's own raw `category_depth_N` format), this is
+/// the leaf (`"beds"`); for a clean `product_class`-derived name with no
+/// `" / "` at all (e.g. `"recliners"`), this is the whole name,
+/// unchanged.
+fn leaf_segment(name: &str) -> &str {
+    name.rsplit(" / ").next().unwrap_or(name)
+}
+
+/// Issue #55 (`docs/experiments/ISSUE55_HYPONYM_LEAF_ONLY_PROTOCOL.md`,
+/// superseding the first, REJECTed attempt in
+/// `docs/experiments/ISSUE55_PRODUCT_TYPE_HYPONYM_PROTOCOL.md`):
 /// product type `B` is a whole-word hyponym of `A` when every
-/// whitespace-separated word of `A`'s name also appears in `B`'s name
-/// and `B` has at least one additional word -- e.g. `"beds"` is a
-/// hyponym-parent of `"kids beds"` (real WANDS vocabulary: a query
-/// resolving to the broader "beds" type should also admit the more
-/// specific "kids beds" products, which a shopper would reasonably
-/// expect). Deliberately **whole-word**, computed via
-/// `split_whitespace`, not raw substring containment: `"table"` must
-/// never match inside `"turntable"` (one word, no space) the way
-/// substring containment would allow, since a turntable is not a kind
-/// of table. Built once from real catalog vocabulary already collected
-/// by `CatalogProfile` -- no new data, no model call, fully
-/// deterministic.
+/// whitespace-separated word of `A`'s name also appears in **`B`'s own
+/// leaf segment** ([`leaf_segment`]) and that leaf has at least one
+/// additional word -- e.g. `"recliners"` is a hyponym-parent of
+/// `".../ recliners / gray recliners"` (leaf `"gray recliners"`, real
+/// WANDS vocabulary: a query resolving to the broader "recliners" type
+/// should also admit the more specific "gray recliners" products).
+///
+/// **Leaf-only, not full-path, comparison**: the first version of this
+/// function compared full names, which let a word appearing only in an
+/// *ancestor* breadcrumb segment (e.g. `"candles"` in the parent
+/// category `"candles & holders"`) spuriously match an unrelated
+/// sibling leaf (`"scented oils & diffusers"`) -- a confirmed,
+/// real-vocabulary cross-family false positive
+/// (`docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`).
+/// Restricting to each name's own leaf segment removes that whole class
+/// of false positive by construction (an ancestor segment's words no
+/// longer participate in the comparison at all) while preserving
+/// genuine within-branch hyponymy. **Deliberately not a complete fix**:
+/// two *clean* (non-path) names can still collide on genuine
+/// cross-vertical lexical polysemy (e.g. `"beds"` vs. pet `"cat
+/// beds"`) -- `leaf_segment` is the identity for either, so this
+/// specific risk is unchanged and must be measured/disclosed
+/// separately, not assumed away.
+///
+/// Still deliberately **whole-word**, computed via `split_whitespace`
+/// on each leaf, not raw substring containment: `"table"` must never
+/// match inside `"turntable"` (one word, no space) the way substring
+/// containment would allow, since a turntable is not a kind of table.
+/// Built once from real catalog vocabulary already collected by
+/// `CatalogProfile` -- no new data, no model call, fully deterministic.
 /// Exposed (beyond `compile_non_brand_lexicon`'s internal use) so
 /// evaluation tooling can audit which pairs a catalog's real vocabulary
 /// actually produces -- e.g. to check for cross-family false positives
@@ -453,7 +484,7 @@ pub fn product_type_hyponym_groups(
 ) -> BTreeMap<ProductTypeId, Vec<ProductTypeId>> {
     let word_sets: Vec<(ProductTypeId, BTreeSet<&str>)> = product_type_names
         .iter()
-        .map(|(name, id)| (*id, name.split_whitespace().collect()))
+        .map(|(name, id)| (*id, leaf_segment(name).split_whitespace().collect()))
         .collect();
     let mut groups: BTreeMap<ProductTypeId, Vec<ProductTypeId>> = BTreeMap::new();
     for (a_id, a_words) in &word_sets {
@@ -463,8 +494,8 @@ pub fn product_type_hyponym_groups(
             }
             // Strict subset (not equal): `b_words` must have strictly
             // more words than `a_words`, so two distinct names with the
-            // exact same word set (rare, but not ruled out by the domain
-            // model) never form a spurious hyponym pair either way.
+            // exact same leaf word set (rare, but not ruled out by the
+            // domain model) never form a spurious hyponym pair either way.
             if a_words.len() < b_words.len() && a_words.is_subset(b_words) {
                 groups.entry(*a_id).or_default().push(*b_id);
             }
@@ -478,21 +509,28 @@ fn compile_non_brand_lexicon(
     min_enum_frequency: usize,
     lex: &mut SemanticLexicon,
 ) {
-    // NOT wired to `product_type_hyponym_groups` -- see
-    // `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md` (REJECT).
-    // A real-vocabulary audit (P9-E08) found the whole-word bag-of-words
-    // test produces confirmed cross-family false positives when applied
-    // to this catalog's real product-type-name vocabulary (some of which
-    // are full ancestor-breadcrumb paths, not bare leaf terms), e.g.
-    // "beds" pulling in "cat beds"/"dog beds & mats", and "candles"
-    // pulling in "scented oils & diffusers" purely because "candles"
-    // appears in an unrelated sibling's ancestor path segment. Each
-    // product type still gets its own precise `ProductType` constraint.
+    // Issue #55 (`docs/experiments/ISSUE55_HYPONYM_LEAF_ONLY_PROTOCOL.md`):
+    // re-wired to the leaf-only-restricted `product_type_hyponym_groups`
+    // after the original full-path-comparison version was REJECTed
+    // (`docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`) for
+    // confirmed cross-family false positives. The leaf restriction
+    // removes that class of false positive by construction; see
+    // `docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md` for the
+    // re-audit this checkpoint's own verdict rests on.
+    let hyponym_groups = product_type_hyponym_groups(&profile.product_type_names);
     for (name, id) in &profile.product_type_names {
+        let structural = match hyponym_groups.get(id) {
+            Some(hyponyms) if !hyponyms.is_empty() => {
+                let mut ids = vec![*id];
+                ids.extend(hyponyms.iter().copied());
+                StructuralConstraint::ProductTypeAny(ids)
+            }
+            _ => StructuralConstraint::ProductType(*id),
+        };
         lex.insert(
             name,
             vec![Candidate::constraint(
-                ResolvedConstraint::Structural(StructuralConstraint::ProductType(*id)),
+                ResolvedConstraint::Structural(structural),
                 1.0,
             )],
         );
@@ -606,6 +644,92 @@ mod hyponym_tests {
     #[test]
     fn empty_vocabulary_produces_no_groups() {
         assert!(product_type_hyponym_groups(&BTreeMap::new()).is_empty());
+    }
+
+    #[test]
+    fn leaf_segment_returns_the_whole_name_when_there_is_no_path_separator() {
+        assert_eq!(leaf_segment("recliners"), "recliners");
+        assert_eq!(leaf_segment("kids beds"), "kids beds");
+    }
+
+    #[test]
+    fn leaf_segment_returns_only_the_trailing_path_component() {
+        assert_eq!(
+            leaf_segment("furniture / bedroom furniture / beds & headboards / beds"),
+            "beds"
+        );
+        assert_eq!(
+            leaf_segment("décor & pillows / candles & holders / scented oils & diffusers"),
+            "scented oils & diffusers"
+        );
+    }
+
+    /// A clean (non-path) broader term must still admit a path-derived
+    /// narrower name when the broader term's words are a subset of the
+    /// narrower name's own *leaf* segment -- the flagship real-WANDS
+    /// case (`docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`'s
+    /// "recliners" example) that the leaf-only restriction must
+    /// preserve, not merely avoid regressing.
+    #[test]
+    fn clean_broader_term_still_admits_a_path_names_matching_leaf() {
+        let types = names(&[
+            ("recliners", 1),
+            (
+                "furniture / living room furniture / chairs & seating / recliners / gray recliners",
+                2,
+            ),
+        ]);
+        let groups = product_type_hyponym_groups(&types);
+        assert_eq!(
+            groups.get(&ProductTypeId(1)),
+            Some(&vec![ProductTypeId(2)]),
+            "\"recliners\" must still admit the path name whose leaf is \"gray recliners\""
+        );
+    }
+
+    /// The regression this checkpoint exists to fix
+    /// (`docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`'s
+    /// "candles" -> "scented oils & diffusers" real-vocabulary false
+    /// positive): a clean broader term whose word only appears in a
+    /// path name's *ancestor* segment (not its leaf) must NOT be
+    /// admitted, even though the full-path version of this function
+    /// (checkpoint 11's rejected implementation) admitted it.
+    #[test]
+    fn clean_broader_term_does_not_match_a_path_names_ancestor_segment() {
+        let types = names(&[
+            ("candles", 1),
+            (
+                "décor & pillows / candles & holders / scented oils & diffusers",
+                2,
+            ),
+        ]);
+        let groups = product_type_hyponym_groups(&types);
+        assert!(
+            groups.get(&ProductTypeId(1)).is_none_or(|v| v.is_empty()),
+            "\"candles\" must not admit a product whose leaf is \"scented oils & diffusers\" \
+             just because \"candles\" appears in that product's ancestor breadcrumb"
+        );
+    }
+
+    /// A second real-vocabulary regression case
+    /// (`"bed accessories"`/`"bath accessories"` both spuriously
+    /// admitting `"...shower curtain hooks"` under full-path
+    /// comparison, because "bed"/"bath" and "accessories" each appeared
+    /// in different, non-adjacent ancestor segments): neither must be
+    /// admitted once only the leaf participates in the comparison.
+    #[test]
+    fn scattered_ancestor_words_no_longer_form_a_false_hyponym_pair() {
+        let types = names(&[
+            ("bed accessories", 1),
+            ("bath accessories", 2),
+            (
+                "bed & bath / shower curtains & accessories / shower curtain hooks",
+                3,
+            ),
+        ]);
+        let groups = product_type_hyponym_groups(&types);
+        assert!(groups.get(&ProductTypeId(1)).is_none_or(|v| v.is_empty()));
+        assert!(groups.get(&ProductTypeId(2)).is_none_or(|v| v.is_empty()));
     }
 
     /// RED/property test: for 500 randomized synthetic vocabularies, every
