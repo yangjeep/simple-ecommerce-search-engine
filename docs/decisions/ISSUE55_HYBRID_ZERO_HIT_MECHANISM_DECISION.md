@@ -95,15 +95,49 @@ free win. Named below, not implemented here.
 - Not a claim about WANDS, which does carry real `ProductType` data and
   is therefore not subject to mechanism (b) at all.
 
+## Dated addendum (same-session, before any implementation was attempted): the "just accept Brand too" framing below is incomplete
+
+Before scoping next-question 1 as an implementable experiment, checked
+whether `residual_fallback_hits`'s *other* precondition (condition 4,
+"every residual token classifies `Preferred`" via `ResidualPolicy::classify`)
+could ever pass on ESCI data even if condition 3 were relaxed to accept
+`Brand`. It cannot, for a third, independent, structural reason:
+`ResidualPolicy::classify` (`crates/commerce-core/src/plan/residual.rs`)
+requires a token to be observed under `CROSS_TYPE_BREADTH_THRESHOLD` (2)
+or more *distinct* `ProductTypeId`s anywhere in the compiled catalog to
+ever classify `Preferred` (never `Required`). Since ESCI ingestion
+assigns every product the same unregistered `UNKNOWN_PRODUCT_TYPE`
+sentinel, `ResidualPolicy::compile`'s `type_occurrences` map can never
+contain more than one distinct `ProductTypeId` for *any* token in an
+ESCI catalog -- `classify` would return `Required` for every token,
+always, regardless of what that token actually is. This was confirmed
+by reading `ResidualPolicy::compile`/`classify` directly (not run live,
+since `run_vertical_eval` never constructs a `ResidualPolicy` at all --
+this addendum concerns whether a *future* attempt to wire one up could
+possibly work, not a claim about code that executed this session).
+
+This means next-question 1 as originally scoped (relax condition 3
+alone) would be a no-op: even with `Brand` accepted as a corroborator,
+condition 4 would still unconditionally block the fallback on any
+product-type-sparse catalog. A real fix would have to replace the
+cross-*type*-breadth signal itself for such catalogs (e.g. a
+cross-*brand*-breadth signal, or an explicit escape hatch keyed on "this
+catalog registers fewer than 2 product types") -- a materially bigger
+redesign than "accept one more constraint kind," and correctly scoped
+as future, dedicated-session work, not a quick follow-up. Revised
+next-question 1 below reflects this.
+
 ## Next questions (named, not implemented here)
 
-1. **Precision-safe residual-fallback broadening**: preregister and test
-   whether accepting `Brand` (not just `ProductType`) as
-   `residual_fallback_hits`'s corroborating constraint recovers some of
-   the quantified recoverable-miss cases without degrading precision on
-   queries where Brand alone is a weak corroborator (e.g. a very large
-   brand with unrelated sub-categories) -- a real design question, not
-   a mechanical fix.
+1. **Precision-safe residual-fallback broadening, including the
+   classification signal itself**: any experiment here must redesign
+   `ResidualPolicy`'s breadth signal for product-type-sparse catalogs
+   (see the addendum above), not just relax `residual_fallback_hits`'s
+   corroboration precondition -- a two-part design question (what
+   evidence source replaces cross-`ProductType` breadth when a catalog
+   registers 0-1 product types, and does accepting `Brand` as a
+   corroborator recover the quantified recoverable-miss cases without a
+   precision cost) sized for a dedicated session, not implemented here.
 2. **Delegate tokenization robustness**: does adding a normalization
    step (e.g. stripping/collapsing hyphens in both indexed titles and
    query tokens, or a word-delimiter-style filter) for alphanumeric
