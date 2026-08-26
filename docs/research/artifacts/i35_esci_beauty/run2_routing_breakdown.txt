@@ -1,0 +1,26 @@
+=== Issue #35: unseen-vertical (real ESCI beauty) discovery + routing test ===
+catalog: 2093 products, 1231 distinct brands discovered (from real product_brand data), 0 product types/categories (none exist in this vertical's data -- left unregistered, not fabricated)
+
+=== discovery/routing (descriptive, no pass/fail threshold) ===
+routing distribution: {"FastPath": 8, "Hybrid": 38, "Punt": 554}
+queries with ambiguity: 32/600, queries with residual lexical text: 592/600, queries with a Brand structural constraint: 46/600
+
+=== correctness hard gate ===
+PASS: zero wrong-family violations across 46 Brand-constrained queries
+
+=== relevance (n=489 queries with >=1 non-Irrelevant judgment, of 600 total real queries in this slice) ===
+native NDCG@10=0.4162  solr NDCG@10=0.4220
+relative gap (native vs solr): -1.38%
+=== H0: native is within the preregistered <=15% relative gap -- the delegate-fallback path carries real ranking quality on this unseen vertical ===
+
+=== relevance by routing outcome (Issue #55 ISSUE55_PAIRED_COMPARATOR_DECISION.md's own named next question: does the WANDS FastPath-worse/Hybrid-better split replicate on an independent vertical?) ===
+FastPath: n=8, native NDCG@10=0.6491, solr NDCG@10=0.7916, relative gap=-18.00%
+Hybrid: n=38, native NDCG@10=0.4557, solr NDCG@10=0.7173, relative gap=-36.48%
+Punt: n=443, native NDCG@10=0.4086, solr NDCG@10=0.3900, relative gap=+4.77%
+
+=== qualitative sample (first 5 queries with a Brand constraint) ===
+query="juliette has a gun not a perfume" constraints=[Structural(Brand(BrandId(1)))] top-3 titles=["Juliette Has a Gun Not A Perfume Eau de Parfum Spray, 0.25 Fl Oz", "Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 3.3 Fl Oz", "Juliette Has A Gun Not A Perfume Eau de Parfum Spray, 1.7 Fl Oz"]
+query="neutrogena naturals lotion" constraints=[Structural(Brand(BrandId(3))), Attribute(Enum { attribute: "color", value: "Lotion" })] top-3 titles=[]
+query="neutrogena sunscreen" constraints=[Structural(Brand(BrandId(3)))] top-3 titles=["Neutrogena Sensitive Skin Mineral Sunscreen Lotion with Broad Spectrum SPF 60+ & Zinc Oxide, Water-Resistant, Hypoallergenic, Fragrance- & Oil-Free Gentle Sunscreen Formula, 3 fl. oz", "Neutrogena Age Shield Face Lotion Sunscreen with Broad Spectrum SPF 110, Oil-Free & Non-Comedogenic Moisturizing Sunscreen to Prevent Signs of Aging, 3 fl. oz", "Neutrogena Clear Face Liquid Sunscreen for Acne-Prone Skin, Broad Spectrum SPF 30 Sunscreen Lotion with Helioplex, Oxybenzone-Free, Oil-Free, Fragrance-Free; Non-Comedogenic, 3 fl. oz"]
+query="shea moisture" constraints=[Structural(Brand(BrandId(196)))] top-3 titles=["Shea Moisture Jamaican Black Castor Oil Strengthen/Grow and Restore Leave-In Conditioner", "Shea Moisture Superfruit 10-in-1 Renewal System Hair Masque, 355ml"]
+query="shea moisture shampoo" constraints=[Structural(Brand(BrandId(196)))] top-3 titles=["Shea Moisture Superfruit 10-in-1 Renewal System Hair Masque, 355ml"]

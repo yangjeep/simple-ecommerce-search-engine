@@ -14,11 +14,12 @@
 use std::collections::BTreeMap;
 
 use commerce_core::cold_start::{compile_lexicon, CatalogProfile};
-use commerce_core::domain::{BrandId, ProductId};
+use commerce_core::domain::{BrandId, Constraint, ProductId};
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
 use commerce_core::plan::{execute_planned, ExecutionOutcome, LexicalDelegate, PlannerPolicy};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate};
+use round1_eval::solr::case_insensitive_field_regex;
 
 use crate::{build_catalog, label_gain, load_products, load_queries};
 
@@ -73,17 +74,33 @@ enum SolrLookup {
     ParseError(String),
 }
 
-fn solr_search(base_url: &str, q: &str, rows: usize) -> SolrLookup {
+/// `fq` mirrors the exact structural (Brand/color) constraints native's own
+/// `execute_planned` enforces internally via `restrict_to`/`query.matches_variant`
+/// for this same query -- without it, a Brand- or color-constrained Hybrid/
+/// FastPath query hands Solr an *easier*, unrestricted-pool question than
+/// the one native actually answers (native ranks only within the narrowed
+/// set; Solr would rank the whole catalog), silently inflating Solr's NDCG
+/// relative to native. This is the same class of unfair-comparator defect
+/// `docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md` found and fixed
+/// for WANDS's `p9_e02` (a missing `ProductTypeAny` fq arm there; a missing
+/// Brand/color fq here), caught before publishing any routing-outcome
+/// conclusion from this harness -- see this file's `run_vertical_eval`.
+fn solr_search(base_url: &str, q: &str, fq: &[String], rows: usize) -> SolrLookup {
     let url = format!("{base_url}/select");
+    let rows_str = rows.to_string();
+    let mut form: Vec<(&str, &str)> = vec![
+        ("q", q),
+        ("defType", "edismax"),
+        ("qf", "title description bullet_point"),
+        ("rows", &rows_str),
+        ("fl", "id"),
+    ];
+    for f in fq {
+        form.push(("fq", f.as_str()));
+    }
     let resp = ureq::post(&url)
         .timeout(std::time::Duration::from_secs(30))
-        .send_form(&[
-            ("q", q),
-            ("defType", "edismax"),
-            ("qf", "title description bullet_point"),
-            ("rows", &rows.to_string()),
-            ("fl", "id"),
-        ]);
+        .send_form(&form);
     let resp = match resp {
         Ok(resp) => resp,
         Err(e) => return SolrLookup::TransportError(format!("HTTP request failed: {e}")),
@@ -169,6 +186,15 @@ pub fn run_vertical_eval(
     let mut wrong_family_violations: Vec<String> = Vec::new();
     let mut native_ndcgs: Vec<f64> = Vec::new();
     let mut solr_ndcgs: Vec<f64> = Vec::new();
+    // Issue #55 (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`'s
+    // own named next question): does that decision's WANDS-only finding
+    // (FastPath native materially worse than Solr, Hybrid roughly at
+    // parity) replicate on independent, non-WANDS verticals? Tracked
+    // per routing outcome alongside the existing aggregate vectors
+    // above (which remain exactly as before -- this is additive, not a
+    // replacement of the aggregate computation).
+    let mut native_ndcgs_by_routing: BTreeMap<&'static str, Vec<f64>> = BTreeMap::new();
+    let mut solr_ndcgs_by_routing: BTreeMap<&'static str, Vec<f64>> = BTreeMap::new();
     let mut evaluated_queries = 0usize;
     // Preregistered rule (`docs/decisions/ISSUE35_SOLR_HARNESS_HARDENING_DECISION.md`):
     // this is a same-host, locally-controlled Solr core, not a flaky
@@ -193,6 +219,15 @@ pub fn run_vertical_eval(
         .iter()
         .map(|p| (p.id, p.brand))
         .collect();
+    // For the Solr `fq` fairness fix below: the real, original-cased
+    // brand string Solr's own `brand` field holds (a `solr.StrField`, no
+    // case-folding), keyed by the same `BrandId` native's own compiled
+    // `Brand(id)` constraint resolves to.
+    let brand_name_by_id: BTreeMap<BrandId, &str> = ingested
+        .brands
+        .iter()
+        .map(|b| (b.id, b.name.as_str()))
+        .collect();
 
     for q in &raw_queries {
         let compiled = compile(&q.query, &lexicon);
@@ -215,6 +250,25 @@ pub fn run_vertical_eval(
             brand_constrained_count += 1;
         }
 
+        // Same shape as `round1_eval::solr::solr_query_for` (P2-E13's
+        // already-reviewed Brand/color fq construction): every structural/
+        // attribute constraint native enforces as a hard filter gets the
+        // matching Solr `fq`, so Solr answers the identically-scoped
+        // question native does, not a broader one.
+        let mut solr_fq: Vec<String> = Vec::new();
+        for brand_id in &brand_ids {
+            if let Some(name) = brand_name_by_id.get(brand_id) {
+                solr_fq.push(format!("brand:/{}/", case_insensitive_field_regex(name)));
+            }
+        }
+        for c in &compiled.constraints {
+            if let ResolvedConstraint::Attribute(Constraint::Enum { attribute, value }) = c {
+                if attribute == "color" {
+                    solr_fq.push(format!("color:/{}/", case_insensitive_field_regex(value)));
+                }
+            }
+        }
+
         let (planned, hits) = execute_planned(
             &compiled,
             &ingested.catalog,
@@ -224,13 +278,12 @@ pub fn run_vertical_eval(
             &policy,
             None,
         );
-        *routing_counts
-            .entry(match planned.outcome {
-                ExecutionOutcome::FastPath => "FastPath",
-                ExecutionOutcome::Hybrid => "Hybrid",
-                ExecutionOutcome::Punt => "Punt",
-            })
-            .or_insert(0) += 1;
+        let routing_label = match planned.outcome {
+            ExecutionOutcome::FastPath => "FastPath",
+            ExecutionOutcome::Hybrid => "Hybrid",
+            ExecutionOutcome::Punt => "Punt",
+        };
+        *routing_counts.entry(routing_label).or_insert(0) += 1;
 
         // Correctness hard gate: every hit for a Brand-constrained query
         // must carry that exact brand.
@@ -272,7 +325,7 @@ pub fn run_vertical_eval(
             // enters the native-vs-Solr comparison when Solr actually
             // answered it, so an infra failure can never masquerade as a
             // Solr relevance loss (see `solr_search`'s `SolrLookup`).
-            match solr_search(solr_base_url, &q.query, K) {
+            match solr_search(solr_base_url, &q.query, &solr_fq, K) {
                 SolrLookup::Success(solr_hit_asins) => {
                     let solr_ranked: Vec<String> = solr_hit_asins
                         .iter()
@@ -286,6 +339,14 @@ pub fn run_vertical_eval(
                     let solr_ndcg = ndcg_at_k_graded(&solr_ranked, &gains, K).unwrap_or(0.0);
                     native_ndcgs.push(ndcg);
                     solr_ndcgs.push(solr_ndcg);
+                    native_ndcgs_by_routing
+                        .entry(routing_label)
+                        .or_default()
+                        .push(ndcg);
+                    solr_ndcgs_by_routing
+                        .entry(routing_label)
+                        .or_default()
+                        .push(solr_ndcg);
                 }
                 SolrLookup::TransportError(detail) => {
                     solr_transport_errors += 1;
@@ -376,6 +437,37 @@ pub fn run_vertical_eval(
         );
     }
 
+    println!(
+        "\n=== relevance by routing outcome (Issue #55 ISSUE55_PAIRED_COMPARATOR_DECISION.md's \
+         own named next question: does the WANDS FastPath-worse/Hybrid-better split replicate on \
+         an independent vertical?) ==="
+    );
+    for routing_label in ["FastPath", "Hybrid", "Punt"] {
+        let native_bucket = native_ndcgs_by_routing
+            .get(routing_label)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        let solr_bucket = solr_ndcgs_by_routing
+            .get(routing_label)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        if native_bucket.is_empty() {
+            println!("{routing_label}: n=0 (no evaluated queries routed here)");
+            continue;
+        }
+        let native_bucket_mean = mean(native_bucket);
+        let solr_bucket_mean = mean(solr_bucket);
+        let bucket_gap = if solr_bucket_mean > 0.0 {
+            100.0 * (native_bucket_mean - solr_bucket_mean) / solr_bucket_mean
+        } else {
+            0.0
+        };
+        println!(
+            "{routing_label}: n={}, native NDCG@10={native_bucket_mean:.4}, solr NDCG@10={solr_bucket_mean:.4}, relative gap={bucket_gap:+.2}%",
+            native_bucket.len()
+        );
+    }
+
     println!("\n=== qualitative sample (first 5 queries with a Brand constraint) ===");
     for q in raw_queries
         .iter()
@@ -448,10 +540,40 @@ mod tests {
         format!("http://{addr}/solr/fake_core")
     }
 
+    /// Like `fake_solr_base_url`, but also hands back the raw bytes of the
+    /// request `solr_search` actually sent -- so a test can assert on what
+    /// was on the wire, not just on how the fixed response was parsed.
+    /// Exists to give the Solr-fairness fix (structural `fq` for Brand/
+    /// color, `docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`'s own
+    /// named unfair-comparator defect class) a real RED-before-fix-style
+    /// regression test, not just a compile check.
+    fn fake_solr_capturing_request(
+        status_line: &'static str,
+        body: &'static str,
+    ) -> (String, std::sync::mpsc::Receiver<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind ephemeral port");
+        let addr = listener.local_addr().expect("local_addr");
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            if let Ok((mut stream, _)) = listener.accept() {
+                let mut buf = [0u8; 8192];
+                let n = stream.read(&mut buf).unwrap_or(0);
+                let _ = tx.send(String::from_utf8_lossy(&buf[..n]).into_owned());
+                let response = format!(
+                    "{status_line}\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes());
+                let _ = stream.flush();
+            }
+        });
+        (format!("http://{addr}/solr/fake_core"), rx)
+    }
+
     #[test]
     fn connection_refused_is_transport_error_not_empty_success() {
         let url = closed_port_base_url();
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::TransportError(_) => {}
             other => panic!("expected TransportError, got {other:?}"),
         }
@@ -460,7 +582,7 @@ mod tests {
     #[test]
     fn invalid_json_body_is_parse_error_not_empty_success() {
         let url = fake_solr_base_url("HTTP/1.1 200 OK", "this is not json {{{");
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::ParseError(_) => {}
             other => panic!("expected ParseError, got {other:?}"),
         }
@@ -469,7 +591,7 @@ mod tests {
     #[test]
     fn missing_response_docs_shape_is_parse_error_not_empty_success() {
         let url = fake_solr_base_url("HTTP/1.1 200 OK", r#"{"responseHeader":{"status":0}}"#);
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::ParseError(_) => {}
             other => panic!("expected ParseError, got {other:?}"),
         }
@@ -481,7 +603,7 @@ mod tests {
             "HTTP/1.1 200 OK",
             r#"{"responseHeader":{"status":400},"error":{"msg":"bad query"}}"#,
         );
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::TransportError(_) => {}
             other => panic!("expected TransportError, got {other:?}"),
         }
@@ -493,7 +615,7 @@ mod tests {
             "HTTP/1.1 200 OK",
             r#"{"responseHeader":{"status":0},"response":{"numFound":0,"start":0,"docs":[]}}"#,
         );
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::Success(ids) => assert!(ids.is_empty()),
             other => panic!("expected Success(empty), got {other:?}"),
         }
@@ -505,11 +627,56 @@ mod tests {
             "HTTP/1.1 200 OK",
             r#"{"responseHeader":{"status":0},"response":{"numFound":2,"start":0,"docs":[{"id":"B001"},{"id":"B002"}]}}"#,
         );
-        match solr_search(&url, "widget", 10) {
+        match solr_search(&url, "widget", &[], 10) {
             SolrLookup::Success(ids) => {
                 assert_eq!(ids, vec!["B001".to_string(), "B002".to_string()])
             }
             other => panic!("expected Success, got {other:?}"),
         }
+    }
+
+    /// The Solr-fairness fix's actual claim: when `run_vertical_eval`
+    /// derives a Brand/color `fq` from a query's compiled structural
+    /// constraints (mirroring what native's own `execute_planned` enforces
+    /// via `restrict_to`), that `fq` must really reach Solr on the wire --
+    /// not just type-check. Before this fix, `solr_search` had no `fq`
+    /// parameter at all, so this assertion would have been impossible to
+    /// even express against the old signature.
+    #[test]
+    fn fq_parameters_reach_the_wire_when_present() {
+        let (url, rx) = fake_solr_capturing_request(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":0,"start":0,"docs":[]}}"#,
+        );
+        let fq = vec![
+            "brand:/[Nn][Ii][Kk][Ee]/".to_string(),
+            "color:/[Bb][Ll][Aa][Cc][Kk]/".to_string(),
+        ];
+        let _ = solr_search(&url, "widget", &fq, 10);
+        let request = rx
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .expect("fake Solr should have received a request");
+        assert_eq!(
+            request.matches("fq=").count(),
+            2,
+            "expected exactly 2 fq params on the wire, got request: {request}"
+        );
+    }
+
+    #[test]
+    fn no_fq_parameters_are_sent_when_the_query_has_no_structural_constraints() {
+        let (url, rx) = fake_solr_capturing_request(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":0,"start":0,"docs":[]}}"#,
+        );
+        let _ = solr_search(&url, "widget", &[], 10);
+        let request = rx
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .expect("fake Solr should have received a request");
+        assert_eq!(
+            request.matches("fq=").count(),
+            0,
+            "expected no fq params on the wire, got request: {request}"
+        );
     }
 }
