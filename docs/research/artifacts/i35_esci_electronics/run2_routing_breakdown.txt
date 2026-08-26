@@ -1,0 +1,26 @@
+=== Issue #35: unseen-vertical (real ESCI electronics) discovery + routing test ===
+catalog: 2075 products, 1079 distinct brands discovered (from real product_brand data), 0 product types/categories (none exist in this vertical's data -- left unregistered, not fabricated)
+
+=== discovery/routing (descriptive, no pass/fail threshold) ===
+routing distribution: {"FastPath": 1, "Hybrid": 58, "Punt": 541}
+queries with ambiguity: 6/600, queries with residual lexical text: 599/600, queries with a Brand structural constraint: 59/600
+
+=== correctness hard gate ===
+PASS: zero wrong-family violations across 59 Brand-constrained queries
+
+=== relevance (n=490 queries with >=1 non-Irrelevant judgment, of 600 total real queries in this slice) ===
+native NDCG@10=0.3041  solr NDCG@10=0.2792
+relative gap (native vs solr): +8.93%
+=== H0: native is within the preregistered <=15% relative gap -- the delegate-fallback path carries real ranking quality on this unseen vertical ===
+
+=== relevance by routing outcome (Issue #55 ISSUE55_PAIRED_COMPARATOR_DECISION.md's own named next question: does the WANDS FastPath-worse/Hybrid-better split replicate on an independent vertical?) ===
+FastPath: n=0 (no evaluated queries routed here)
+Hybrid: n=48, native NDCG@10=0.2279, solr NDCG@10=0.2694, relative gap=-15.40%
+Punt: n=442, native NDCG@10=0.3124, solr NDCG@10=0.2802, relative gap=+11.47%
+
+=== qualitative sample (first 5 queries with a Brand constraint) ===
+query="apple i mac touch screen computer" constraints=[Structural(Brand(BrandId(79)))] top-3 titles=["Apple Macbook Pro MJLQ2LL/A 15-inch Laptop, Intel Core i7 Processor, 16GB RAM, 256GB SSD, Mac OS X (Renewed)", "Apple MacBook Pro 16\" with Touch Bar, 9th-Gen 8-Core Intel i9 2.3GHz, 32GB RAM, 1TB SSD, AMD Radeon Pro 5500M 8GB, Silver, Late 2019 Z0Y300042", "Apple MacBook Pro 13-in M1 8-core GPU 16GB 512GB Silver (CTO)"]
+query="dell monitors" constraints=[Structural(Brand(BrandId(314)))] top-3 titles=["Dell UltraSharp U4919DW 49 inch Dual QHD Curved Monitor - 8ms Response Time, 2X HDMI, 1x DP, 5X USB Downstream, 2X USB Upstream 3.0, 1 x USB Type-C", "Dell P2419H 24 Inch LED-Backlit, Anti-Glare, 3H Hard Coating IPS Monitor - (8 ms Response, FHD 1920 x 1080 at 60Hz, 1000:1 Contrast, with ComfortView DisplayPort, VGA, HDMI and USB), Black", "Dell UltraSharp U3415W 34-Inch Curved LED-Lit Monitor"]
+query="hp memory ram" constraints=[Structural(Brand(BrandId(1)))] top-3 titles=["HP Chromebook 11 G4 11.6 Inch Laptop (Intel N2840 Dual-Core, 2GB RAM, 16GB Flash SSD, Chrome OS), Black (Renewed)", "2020 Newest HP Pavilion 17.3 Inch Laptop (Intel Quad-Core i5-8265U up to 3.9 GHz, 16GB RAM, 256GB SSD, Webcam, DVD, Windows 10) (Black) + NexiGo Wireless Mouse Bundle", "2020 Newest HP ENVY x360 2-in-1 Laptop, 15.6\" Full HD Touchscreen, AMD Ryzen 5 4500U Processor up to 4.0GHz, 8GB Memory, 256GB PCIe SSD, Backlit Keyboard, HDMI, Wi-Fi, Windows 10 Home, Nightfall Black"]
+query="hp monitor" constraints=[Structural(Brand(BrandId(1)))] top-3 titles=["HP 24-Inch FHD IPS Monitor with Tilt Adjustment and Anti-glare Panel (24yh, Black) - 3AU73AA#ABA", "HP 27er 27-Inch Full HD 1080p IPS LED Monitor with Frameless Bezel and VGA & HDMI (T3M88AA), White", "HP FHD IPS Monitor with Tilt Adjustment and Anti-Glare Panel- 32-Inch, Black/Silver"]
+query="a cord of three strands is not easily broken wedding" constraints=[Structural(Brand(BrandId(1023)))] top-3 titles=[]

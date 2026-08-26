@@ -9,6 +9,11 @@ description = "Issue #35: first-pass unseen-vertical slice (real ESCI electronic
 [dependencies]
 commerce-core = { path = "../commerce-core" }
 phase9-eval = { path = "../phase9-eval" }
+# Reuses `round1_eval::solr::case_insensitive_field_regex`, the same
+# already-adversarially-reviewed (P2-E13) Brand/color Solr fq construction
+# every other Solr comparator in this project uses, rather than
+# re-deriving (and potentially re-breaking) it a second time.
+round1-eval = { path = "../round1-eval" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ureq = { version = "2", features = ["json"] }
