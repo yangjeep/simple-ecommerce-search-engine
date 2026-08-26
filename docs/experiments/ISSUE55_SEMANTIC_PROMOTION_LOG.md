@@ -157,3 +157,30 @@ enumerates (or its current-mechanism equivalent), not a hand-picked
 subset. This is the natural, concrete next step for Priority 2, sized
 appropriately for a dedicated session rather than squeezed into this
 one's remaining scope.
+
+## Dated correction (later session): the "currently live candidate set" claim above was factually wrong
+
+This log's own "Result" section states the currently-live candidate set
+is exactly `{"beds": [...], "recliners": [...]}` (2 groups), "verified
+fresh" via `p9_e08` immediately before writing it; this "Next question"
+section separately cites "the full 245-group candidate set." **Neither
+number is correct.** Running `p9_e08_hyponym_group_false_family_audit`
+directly against current production (same mechanism, same
+`dataset_cache/wands/catalog.jsonl`, unchanged since checkpoint 14)
+reproduces **149 groups, 317 broader/narrower pairs** -- confirmed
+byte-identical against checkpoint 14's own saved artifact
+(`docs/research/artifacts/i55_product_type_hyponym/p9_e08_after_leaf_fix.txt`),
+so this is not a regression or drift since this log was written; the
+mechanism has produced 149 groups continuously since checkpoint 14
+landed. This log's own "beds"/"recliners" claim appears to have been a
+misreading of `p9_e08`'s output, not a real, verified state of the
+mechanism at any point.
+
+This does not invalidate the probe's own numeric result for the two
+groups it actually tested (top-level overlap did recover 1/6 there) --
+only its claim about how much of the live candidate set that
+represented. `docs/decisions/ISSUE55_PROMOTION_GATE_FULL_SET_DECISION.md`
+and `docs/decisions/ISSUE55_HYPONYM_REACHABILITY_AUDIT_DECISION.md`
+independently re-verified the full 149-group/317-pair set from scratch
+before this correction was written, so later work already used the
+correct scope regardless of this log's error.
