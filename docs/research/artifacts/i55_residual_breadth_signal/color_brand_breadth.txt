@@ -1,0 +1,23 @@
+457 distinct color values in electronics
+  color='black'              distinct_brands=259
+  color='white'              distinct_brands=85
+  color='blue'               distinct_brands=51
+  color='rgb (red, green, blue)' distinct_brands=39
+  color='silver'             distinct_brands=36
+  color='multicolor'         distinct_brands=30
+  color='red'                distinct_brands=20
+  color='grey'               distinct_brands=19
+  color='warm white'         distinct_brands=11
+  color='green'              distinct_brands=10
+  color='gray'               distinct_brands=9
+  color='daylight white'     distinct_brands=7
+  color='yellow'             distinct_brands=6
+  color='negro'              distinct_brands=5
+  color='rose gold'          distinct_brands=5
+...
+  color='black'              distinct_brands=259
+  color='white'              distinct_brands=85
+  color='blue'               distinct_brands=51
+  color='red'                distinct_brands=20
+  color='silver'             distinct_brands=36
+  color='gold'               distinct_brands=1
