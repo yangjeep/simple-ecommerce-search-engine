@@ -1,0 +1,21 @@
+=== Issue #35: unseen-vertical (real ESCI automotive) discovery + routing test ===
+catalog: 1056 products, 502 distinct brands discovered (from real product_brand data), 0 product types/categories (none exist in this vertical's data -- left unregistered, not fabricated)
+
+=== discovery/routing (descriptive, no pass/fail threshold) ===
+routing distribution: {"FastPath": 4, "Hybrid": 33, "Punt": 563}
+queries with ambiguity: 12/600, queries with residual lexical text: 596/600, queries with a Brand structural constraint: 37/600
+
+=== correctness hard gate ===
+PASS: zero wrong-family violations across 37 Brand-constrained queries
+
+=== relevance (n=503 queries with >=1 non-Irrelevant judgment, of 600 total real queries in this slice) ===
+native NDCG@10=0.4396  solr NDCG@10=0.4511
+relative gap (native vs solr): -2.55%
+=== H0: native is within the preregistered <=15% relative gap -- the delegate-fallback path carries real ranking quality on this unseen vertical ===
+
+=== qualitative sample (first 5 queries with a Brand constraint) ===
+query="acdelco" constraints=[Structural(Brand(BrandId(24)))] top-3 titles=["ACDelco GM Original Equipment PF2232 Engine Oil Filter", "ACDelco Professional 18FR983 Front Passenger Side Disc Brake Caliper Assembly (Friction Ready Non-Coated), Remanufactured", "ACDelco Gold 335-1091 Alternator"]
+query="motor trend digital tire gauge safety tool" constraints=[Structural(Brand(BrandId(31)))] top-3 titles=[]
+query="honeywell truefresh filters" constraints=[Structural(Brand(BrandId(289)))] top-3 titles=["Honeywell 20\" X 25\" X 4\" FC200E1037 Air Filter Replacement - MERV 13"]
+query="detroit axle wheel bearing" constraints=[Structural(Brand(BrandId(32)))] top-3 titles=["Detroit Axle - Front Wheel Hub & Bearing Assembly Replacement for 2012-2018 Dodge Ram 1500-2pc Set", "Detroit Axle - Front Wheel Hub and Bearing Replacement for 1997-2000 Ford Expedition Lincoln Navigator - 2pc Set", "Detroit Axle - 4-Wheel ABS 5-Lug Front Wheel Hub Bearing Assembly for 2006-2008 Dodge Ram 1500-2pc Set"]
+query="fh group seat covers neoprene" constraints=[Structural(Brand(BrandId(38)))] top-3 titles=["FH Group Premium PU Leather Car Seat Covers Full Set, Airbag Compatible and Split Ready with Gift– Universal Fit for Cars Trucks and SUVs (Black)", "FH Group Light Breathable Durable Washable Flat Foam Padding Cloth Full Set Car Seat Covers, Airbag & Split Compatible w Gift - Universal Fit for Cars Trucks and SUVs (Beige/Black)", "FH Group FB102BURGUNDY114 Classic Full Set High Back Flat Cloth Car Seat Covers, Burgundy/Black- Fit Most Car, Truck, SUV, or Van"]

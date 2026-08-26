@@ -1,0 +1,15 @@
+=== Issue #35: unseen-vertical (real ESCI electronics) discovery + routing test ===
+catalog: 2075 products, 1079 distinct brands discovered (from real product_brand data), 0 product types/categories (none exist in this vertical's data -- left unregistered, not fabricated)
+
+=== SOLR HARNESS FAILURE: 490 of 490 evaluated queries got no legitimate Solr answer (490 transport, 0 parse) -- excluded from the native-vs-Solr comparison below, NOT scored as Solr NDCG=0.0 ===
+  query="00m vesa mounting pattern mounting bracket not included" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="19 inch monitor hdmi" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="24 inch monitor" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="25 inch monitor" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="Nice new top of the range laptop with maybe where the screen comes away on it's own" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="apple i mac touch screen computer" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="computer monitor" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="computer monitors" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="curve led monitor" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+  query="curved computer monitor" transport_error=HTTP request failed: http://localhost:9999/solr/nonexistent_core/select: Connection Failed: Connect error: Connection refused (os error 111)
+Preregistered rule (docs/decisions/ISSUE35_SOLR_HARNESS_HARDENING_DECISION.md): this Solr core is same-host and locally controlled, so any transport/parse failure is a real infrastructure defect, not expected flakiness. Fix the infrastructure and rerun -- the numbers below are NOT a certified comparison.
