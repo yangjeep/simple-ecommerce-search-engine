@@ -540,6 +540,48 @@ mod tests {
         format!("http://{addr}/solr/fake_core")
     }
 
+    /// A single `TcpStream::read` call is NOT guaranteed to return an
+    /// entire HTTP request in one shot -- it returns whatever the OS
+    /// socket buffer currently holds, which can split a request's headers
+    /// from its body across multiple reads depending on network/scheduler
+    /// timing. `fake_solr_capturing_request` below originally did one bare
+    /// `read` call and passed reliably on this developer's machine but
+    /// failed in CI (`fq_parameters_reach_the_wire_when_present` saw an
+    /// empty body, 0 `fq=` occurrences) -- a real bug in the test, not
+    /// flakiness to route around: this loops, parsing the declared
+    /// `Content-Length` once headers are complete, until that many body
+    /// bytes have actually arrived.
+    fn read_full_http_request(stream: &mut std::net::TcpStream) -> String {
+        let mut buf: Vec<u8> = Vec::new();
+        let mut chunk = [0u8; 8192];
+        loop {
+            let n = stream.read(&mut chunk).unwrap_or(0);
+            if n == 0 {
+                break;
+            }
+            buf.extend_from_slice(&chunk[..n]);
+            let Some(header_end) = buf.windows(4).position(|w| w == b"\r\n\r\n") else {
+                continue;
+            };
+            let headers = String::from_utf8_lossy(&buf[..header_end]);
+            let content_length: usize = headers
+                .lines()
+                .find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.trim()
+                        .eq_ignore_ascii_case("content-length")
+                        .then(|| value.trim().parse().ok())
+                        .flatten()
+                })
+                .unwrap_or(0);
+            let body_len = buf.len() - (header_end + 4);
+            if body_len >= content_length {
+                break;
+            }
+        }
+        String::from_utf8_lossy(&buf).into_owned()
+    }
+
     /// Like `fake_solr_base_url`, but also hands back the raw bytes of the
     /// request `solr_search` actually sent -- so a test can assert on what
     /// was on the wire, not just on how the fixed response was parsed.
@@ -556,9 +598,9 @@ mod tests {
         let (tx, rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
             if let Ok((mut stream, _)) = listener.accept() {
-                let mut buf = [0u8; 8192];
-                let n = stream.read(&mut buf).unwrap_or(0);
-                let _ = tx.send(String::from_utf8_lossy(&buf[..n]).into_owned());
+                let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(5)));
+                let request = read_full_http_request(&mut stream);
+                let _ = tx.send(request);
                 let response = format!(
                     "{status_line}\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}",
                     body.len()
