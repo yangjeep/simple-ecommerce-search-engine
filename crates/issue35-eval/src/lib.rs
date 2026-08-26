@@ -28,6 +28,8 @@
 
 use std::collections::BTreeMap;
 
+pub mod eval;
+
 use commerce_core::domain::{
     attributes, AttributeValue, Brand, BrandId, Catalog, CategoryId, Inventory, Price, Product,
     ProductId, ProductTypeId, Variant, VariantId,
