@@ -8,10 +8,26 @@
 //! implies short broader terms matter most; this makes that assumption
 //! mechanically checked rather than just eyeballed, for every one of the
 //! 149 live groups, not a hand-picked sample.
+//!
+//! Issue #55 A1 (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`):
+//! `compile_lexicon`'s default promoted set is now empty, so it would
+//! never produce a `ProductTypeAny` for anything, making this audit's own
+//! "reachable via literal text" question vacuous under the plain default.
+//! Reachability here means something independent of promotion status --
+//! "if this candidate WERE promoted, could it ever fire at query time at
+//! all, or is the broader term itself shadowed by an unrelated
+//! `Preference` regardless" -- so this now compiles against a lexicon
+//! built via `promote_all_hyponym_candidates_unadjudicated` (every
+//! syntactic candidate hypothetically promoted), matching this binary's
+//! pre-A1 behavior exactly and preserving the meaning of every existing
+//! reachability finding this audit's own decision doc records.
 
 use std::collections::BTreeMap;
 
-use commerce_core::cold_start::{compile_lexicon, product_type_hyponym_groups, CatalogProfile};
+use commerce_core::cold_start::{
+    compile_lexicon_with_promoted_hyponyms, product_type_hyponym_groups,
+    promote_all_hyponym_candidates_unadjudicated, CatalogProfile,
+};
 use commerce_core::domain::ProductTypeId;
 use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
 
@@ -27,7 +43,12 @@ fn main() {
         &ingested.product_types,
         &ingested.categories,
     );
-    let lexicon = compile_lexicon(&profile, MIN_ENUM_FREQUENCY);
+    let all_candidates_promoted = promote_all_hyponym_candidates_unadjudicated(&profile);
+    let lexicon = compile_lexicon_with_promoted_hyponyms(
+        &profile,
+        MIN_ENUM_FREQUENCY,
+        &all_candidates_promoted,
+    );
 
     let names_by_id: BTreeMap<ProductTypeId, &str> = profile
         .product_type_names_with_ids()

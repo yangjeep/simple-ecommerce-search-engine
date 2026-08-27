@@ -312,7 +312,11 @@ fn clean_whole_word_subset_product_types_require_explicit_promotion_to_merge() {
     );
     let treatment_lexicon = compile_lexicon_with_promoted_hyponyms(&profile, 1, &promoted);
     let compiled_treatment = compile("boots", &treatment_lexicon);
-    assert_eq!(compiled_treatment.constraints.len(), 1, "{compiled_treatment:?}");
+    assert_eq!(
+        compiled_treatment.constraints.len(),
+        1,
+        "{compiled_treatment:?}"
+    );
     assert_eq!(
         compiled_treatment.constraints[0],
         ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(vec![
