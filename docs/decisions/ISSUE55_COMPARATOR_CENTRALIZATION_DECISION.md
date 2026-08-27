@@ -112,7 +112,17 @@ precedent) into a reusable, tested contract:
   `record_translation_failure` instead. `finish()` mirrors
   `issue35_eval`'s abort-before-publishing discipline; `finish_partial()`
   is a named, auditable escape hatch for a binary that deliberately
-  wants disclosed partial reporting instead.
+  wants disclosed partial reporting instead. **Disclosed honestly**: none
+  of the five migrated binaries below actually use this type in
+  production — each has its own multi-dimension aggregation (per query
+  class, per routing outcome, per matched/control/broad population) that
+  does not fit a flat native/other pair, so each implements the same
+  fail-loud/disclosed-partial discipline directly with a local
+  `Vec<String>` failure list instead. `PairedComparison` is exercised only
+  by its own 4 unit tests today; it is real, tested, reusable
+  infrastructure for a future binary whose structure is a flat paired
+  comparison (e.g. the un-migrated `phase3-eval` NDCG sites named below),
+  not yet a call site of its own.
 
 30 unit tests total, `cargo clippy --all-targets --all-features -- -D
 warnings` clean.
