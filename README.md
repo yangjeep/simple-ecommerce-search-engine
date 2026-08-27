@@ -39,7 +39,7 @@ flowchart LR
 | **Faster** | Structural execution can be dramatically cheaper than generic retrieval, but only in measured workload regions. Faceting also showed that the right physical algorithm matters more than language/runtime alone. |
 | **More flexible** | A dynamically discovered merchant schema can compile into the same physical operators as hand-written code without meaningful hot-path overhead in the tested case; mixed/unseen synthetic catalogs did not require vertical-specific serving branches. |
 | **More accurate** | The project rejected the original whole-engine replacement thesis because mature lexical ranking was better. The current design delegates open-ended relevance and only promotes specialized paths when correctness/relevance survives explicit gates. |
-| **More stable** | LLM proposals are useful but stochastic. Deterministic validation/canonicalization substantially reduces that instability and prevents confirmed unsafe promotions; adaptive consensus is the current research frontier. |
+| **More stable** | LLM proposals are useful but stochastic. Deterministic validation/canonicalization substantially reduces that instability and prevents confirmed unsafe promotions — concretely: inferred `ProductType` hyponym relations (e.g. "beds") now require an explicit, auditable PROMOTE verdict before they can become a live serving filter, closing a real defect where an unvalidated relation (`"beds"` admitting `"cat beds"`) shipped as a hard default. Adaptive-consensus model-capability tradeoffs were tested to a REVISE conclusion (Issue #47, closed) rather than remaining an open frontier. |
 
 A few representative measurements, with full caveats preserved in the decision records:
 
@@ -49,6 +49,7 @@ A few representative measurements, with full caveats preserved in the decision r
 - E2b feature discovery: **LLM + deterministic validator macro F1 0.7697 vs. 0.5366** for statistics-only.
 - E2c: true raw full-descriptor agreement was **74.96%**; deterministic canonicalization raised it to **95.20%** for a single-proposal reading and **100%** for the measured ensemble reading. The experiment still concluded **REVISE**, not GO.
 - Multi-tenant pooling looked economically promising in steady state, but rebuild churn and a shared lexical backend produced real tail-latency isolation gaps that became worse/more reliable under correlated bursts.
+- An audit of every Solr-comparator eval binary found the fairness-affecting defect class it was looking for shipped live twice: a transport/parse failure silently scored as a native-favoring `NDCG=0.0` in one decision-relevant checkpoint, and a stale query-builder copy silently missing a structural filter arm in another. Fixed via a new shared, tested comparator crate; three of five migrated binaries reverified against live Solr reproduce previously-published numbers byte-for-byte (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`).
 
 ## The architecture being tested
 
@@ -94,11 +95,9 @@ The boundary is deliberate: **models propose; deterministic code decides what ma
 
 ## What is being tested now
 
-The active control-plane experiment is **[Issue #47](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/47)**:
+The active work is **[Issue #55](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/55)**, an architecture-falsification loop (PR #56): close semantic-promotion-lifecycle, comparator-fairness, and documentation gaps found while running the loop, then recover public datasets previously degraded by network restrictions. **[Issue #57](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/57)** is the stage gate immediately after: one frozen, full-matrix end-to-end benchmark (native vs. Solr vs. Elasticsearch vs. Havenask) across every recovered dataset, deciding among strong-architecture / narrow-specialization / control-plane-only / thesis-fails outcomes.
 
-> **How much model do we actually need once semantic compilation is deterministic?**
-
-It tests adaptive consensus first, then freezes the controller and measures a model capability/cost frontier. A separate follow-up, **[#51](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/51)**, keeps the remaining typed-ambiguity serving question independent from that experiment.
+**[Issue #47](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/47)** (adaptive semantic consensus / proposal-model capability-cost frontier) is **closed**: both phases concluded REVISE — the adaptive controller missed its own call-reduction target, and a cheap-model escalation cascade consumed *more* tokens than the strong-model baseline it was meant to replace. No architecture GO resulted. **[Issue #51](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/51)** keeps the remaining typed-ambiguity serving question independent, as a backlog item.
 
 ## Repository map
 

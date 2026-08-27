@@ -29,13 +29,17 @@ Read [`README.md`](README.md) and [`docs/README.md`](docs/README.md) before star
 
 ## Current research
 
-The active learned-control-plane experiment is **GitHub Issue #47**: adaptive semantic consensus and proposal-model capability/cost frontier.
+The active experiment is **GitHub Issue #55**, an architecture-falsification loop running on PR #56: close out semantic-promotion-lifecycle/comparator-fairness/documentation hygiene (A1-A4), then recover public datasets previously degraded by network restrictions (B). Issue #55 is an orchestrator over prior work, not a replacement for it.
 
-The clean baseline for that experiment is recorded in the issue itself. Start new research branches from current `main`; do not continue historical stacked branches.
+**GitHub Issue #57** is the stage gate immediately after #55/#56 close: one frozen, full-matrix end-to-end benchmark (native vs. Solr vs. Elasticsearch vs. Havenask) across every recovered dataset. Do not begin #57's measured matrix before #55/#56 are closed.
 
-Issue #51 is a separate R1b serving-contract follow-up. Do not silently fold it into #47.
+Issue #47 (adaptive semantic consensus / proposal-model capability-cost frontier) is **closed**: both Phase A (adaptive consensus controller) and Phase B (capability/cost frontier) concluded REVISE — the controller missed its own efficiency bar, and a cheap-model cascade consumed *more* tokens than the strong-model baseline it was meant to reduce, not fewer. No architecture GO resulted. Do not describe #47 as active or reopen it without a new, explicitly scoped follow-up issue.
 
-Other open issues are independent backlog unless the user explicitly asks to work them.
+Issue #35 (generalize the specialization methodology across unseen verticals) reached its own stated "at least three materially different verticals" bar (real ESCI electronics/automotive/beauty slices, `docs/decisions/README.md`'s `ISSUE35_*_DECISION.md` rows); its evidence feeds Issue #55/#57 rather than remaining a separate open thread.
+
+Issue #51 is a separate R1b serving-contract follow-up. Do not silently fold it into #47 or #55.
+
+Start new research branches from current `main`; do not continue historical stacked branches. Other open issues are independent backlog unless the user explicitly asks to work them.
 
 ## Research discipline
 

@@ -69,8 +69,8 @@ Everything named `*-eval` is research infrastructure, not production dependency 
 
 The current mainline question is no longer “can an LLM infer a merchant schema?” The experiments already show useful semantic signal and also show why raw model output cannot be installed directly.
 
-The active question (#47) is whether **adaptive consensus + deterministic compilation lets cheaper models handle most semantic problems while escalating only the hard ones**.
+That question (#47) was tested and closed: adaptive consensus + deterministic compilation did **not** let cheaper models handle most semantic problems while escalating only the hard ones — both the adaptive controller and a cheap-first escalation cascade REVISE'd, the cascade consuming more tokens than the strong-model baseline it targeted. No architecture GO resulted.
 
-A separate R1b follow-up (#51) asks whether typed ambiguity can be corroborated using precomputed ingestion-time state rather than an expensive query-time catalog scan.
+The active work is Issue #55, an architecture-falsification loop (PR #56) closing semantic-promotion-lifecycle and comparator-fairness gaps before Issue #57's frozen full-matrix cross-engine benchmark. A separate R1b follow-up (#51) asks whether typed ambiguity can be corroborated using precomputed ingestion-time state rather than an expensive query-time catalog scan; it remains independent backlog.
 
 For current architecture details, see [`architecture/README.md`](architecture/README.md). For the chronological research verdicts, see [`decisions/`](decisions/).
