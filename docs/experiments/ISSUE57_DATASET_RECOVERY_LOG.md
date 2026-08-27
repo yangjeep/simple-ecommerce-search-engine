@@ -335,12 +335,103 @@ to re-verify what was never blocked.
 
 ## New datasets sought (beyond re-retrying known blockers)
 
-A parallel search for additional real commerce datasets adding new schema
-physics (Product/Variant depth, automotive fitment/YMM, industrial/B2B,
-multilingual/cross-border, taxonomy depth) was run in this session; see the
-follow-up commit/update to this log for its findings and this document's
-final frozen candidate list, since that search was still in flight when
-this entry was written.
+A parallel search (live web search + direct fetch verification, not just
+listing pages) for additional real commerce datasets adding new schema
+physics ran this session. None of its candidates clear the bar for
+immediate inclusion — every one carries at least one unresolved or
+disqualifying issue (license conflict, unstated license, dead canonical
+host, an explicit anti-ML-training clause, or Kaggle competition gating
+this session could not verify past its JS-rendered listing page). Recorded
+here in full rather than silently dropped, per "do not fabricate
+unavailable structure" and "do not add a dataset merely to increase
+dataset count":
+
+```
+1. Amazon Berkeley Objects (ABO) -- amazon-berkeley-objects.s3.amazonaws.com,
+   147,702 listings, real typed attributes + multilingual text +
+   heuristic variant grouping. LICENSE CONFLICT: the canonical S3 page
+   says CC BY 4.0; the AWS Open Data registry entry and the CVPR/arXiv
+   paper both say CC BY-NC 4.0. Disagreement not resolved. Verdict:
+   BLOCKED pending license resolution (contact/confirm with the
+   publisher); real value if resolved (multilingual + variant grouping,
+   dimension 1/5).
+
+2. H&M Personalized Fashion Recommendations (Kaggle) -- 105,542 articles,
+   1.37M customers, 31.8M transactions, real product_code -> article_id
+   color/style variants. Kaggle-restricted license (competition rules,
+   non-commercial, no redistribution) not independently confirmed past
+   the JS-gated listing page. Verdict: BLOCKED pending credentialed
+   verification.
+
+3. NHTSA vPIC (vpic.nhtsa.dot.gov) -- real US-federal Year/Make/Model/
+   Trim/engine/body-type reference data. data.gov license field is
+   literally tagged "unknown-license"; likely public-domain as a US
+   federal work but not confirmed. Also NOT itself a parts-fitment
+   table -- only the YMM reference axis a fitment table would join
+   against; does not alone satisfy the "automotive fitment/OEM part
+   number" dimension. Verdict: USE FOR TARGETED VALIDATION ONLY (as a
+   joinable YMM reference), license status still needs resolving.
+
+4. Amazon-M2 / KDD Cup 2023 multilingual shopping sessions -- ~2.6M real
+   sessions across EN/DE/JP/FR/IT/ES, genuine cross-locale product sets
+   (not just translated text). No dataset license found on the AIcrowd
+   challenge page, its rules subpage, or the companion GitHub repo (only
+   the *submission code* is Apache-2.0). Verdict: BLOCKED pending license
+   confirmation from Amazon/AIcrowd; real value if resolved (dimension 5,
+   multilingual/cross-border).
+
+5. Diginetica / CIKM Cup 2016 -- the one candidate found with a genuine
+   query -> click -> purchase chain (Retailrocket has behavior but no
+   query text at all). Official host (cikm2016.cs.iupui.edu) is DNS-dead;
+   only an unverified Kaggle mirror remains. Verdict: REJECT / BLOCKED --
+   provenance broken, do not use without a license-clear re-publication.
+
+6. MercadoLibre Data Challenge 2019 -- real LatAm (es/pt) marketplace
+   product-to-category data. Official site returned HTTP 403; Kaggle
+   mirror not independently verifiable. Verdict: BLOCKED pending a
+   working access path.
+
+7. Icecat / Open Icecat -- manufacturer-sponsored typed technical
+   datasheets (dimension 3), 70+ languages, 18M+ products. Its own
+   license text (iceclog.com/open-content-license-opl), read directly,
+   explicitly bars use for machine-learning training as a condition of
+   the free tier. Verdict: REJECT -- structurally incompatible with this
+   project's own methodology (model proposals over catalog data), not
+   merely undesirable.
+
+8. GS1 Global Product Classification (GPC) -- the real, deep,
+   industry-standard taxonomy dimension 6 asks for. Page reachable; full
+   brick-level codeset appears to require GS1 membership, free-tier
+   boundary not confirmed. Verdict: USE FOR TARGETED VALIDATION ONLY /
+   BLOCKED pending confirming what is actually free.
+
+9. Home Depot product-search-relevance (Kaggle) -- real human relevance
+   judgments + a technical attributes.csv, structurally closest analog to
+   WANDS with typed specs attached. Same Kaggle JS-gating as #2; terms
+   not independently confirmed. Verdict: BLOCKED pending credentialed
+   verification (same open question as #7 in the original blocked-source
+   table above -- do not assume the Retailrocket anonymous-download
+   result generalizes to a *competition* dataset).
+```
+
+Explicitly rejected, not padding the candidate list further:
+**Rakuten France/SIGIR eCom** (strict confidentiality agreement, 2-year
+post-challenge restriction), **Instacart 2017** (canonical source now
+returns 404 -- confirmed withdrawn, not merely slow), **Myntra fashion
+scrapes** (no stated license, scraped without permission), **Yoochoose**
+(license is fine -- CC BY-NC-ND 4.0 -- but its session-click-buy schema is
+structurally redundant with Retailrocket's, no new schema physics),
+**UNSPSC** (a free classification codeset, not an actual product catalog
+with real listing rows -- a supplementary reference only, not a primary
+candidate).
+
+**Two of the eight priority dimensions came back genuinely empty**, stated
+plainly rather than forced: no license-clear, publicly downloadable real
+automotive fitment/OEM-part-number compatibility table was found (every
+real one located is a paid commercial product), and no credible open B2B/
+industrial catalog with MOQ/unit-of-measure structure was found either.
+This is real, disclosed negative evidence for #57's dataset search, not an
+oversight.
 
 ## Summary: dataset recovery decisions
 
@@ -356,13 +447,28 @@ this entry was written.
 | H&M / Home Depot (Kaggle competitions) | BLOCKED (kaggle.com 403) | kaggle.com open; competition-gate status unverified | BLOCKED pending credentialed retry |
 | eCommerceSearchBench | never blocked, unexplored | unchanged | REJECT / LOW INFORMATION GAIN for #57 |
 | WANDS / ESCI (full + 3 slices) / Magento / local Solr | never blocked | unchanged | already INCLUDED |
+| Amazon Berkeley Objects | not previously considered | reachable, license conflict (CC BY vs. CC BY-NC across sources) | BLOCKED pending license resolution |
+| Amazon-M2 (multilingual sessions) | not previously considered | reachable, no dataset license found | BLOCKED pending license confirmation |
+| NHTSA vPIC | not previously considered | reachable, license tag "unknown"; not a fitment table by itself | VALIDATION ONLY (joinable YMM reference) |
+| Diginetica / CIKM Cup 2016 | not previously considered | canonical host DNS-dead | REJECT / BLOCKED (broken provenance) |
+| MercadoLibre Data Challenge 2019 | not previously considered | official site HTTP 403 | BLOCKED |
+| Icecat / Open Icecat | not previously considered | reachable, but license explicitly bars ML-training use | **REJECT** (incompatible with project methodology) |
+| GS1 GPC | not previously considered | reachable, full codeset likely membership-gated | VALIDATION ONLY / BLOCKED |
+| automotive fitment/OEM part-number tables | sought | **none found** with a clear open license | genuine unmet gap, disclosed |
+| B2B/industrial MOQ catalogs | sought | **none found** with a clear open license | genuine unmet gap, disclosed |
 
-## Frozen candidate dataset set proposed for Issue #57 (interim — pending the new-dataset search's own results)
+## Frozen candidate dataset set proposed for Issue #57
 
 - WANDS (full corpus)
 - ESCI (full corpus + electronics/automotive/beauty slices)
 - Magento configurable-product sample (real Product/Variant)
-- **Retailrocket** (newly recovered — behavior/browse/marketplace-noise workload classes)
+- **Retailrocket** (newly recovered — behavior/browse/marketplace-noise workload classes; CC BY-NC-SA 4.0, research/benchmark use)
 - Engines: commerce-native, Solr 9.10.1 (local), Elasticsearch 8.15.0 (embedded), OpenSearch 2.17.0 (embedded), **Havenask** (newly confirmed runnable — official single-node quickstart via the `ha3_runtime` container)
 
-Not included in the frozen set (explicit, not silent): Amazon Reviews 2023 full corpus, Open Food Facts, H&M, Home Depot, eCommerceSearchBench — each named above with its specific reason and recommended next step.
+Not included in the frozen set (explicit, not silent): Amazon Reviews 2023
+full corpus, Open Food Facts, H&M, Home Depot, eCommerceSearchBench, and
+every newly-searched candidate above (Amazon Berkeley Objects, Amazon-M2,
+NHTSA vPIC, Diginetica, MercadoLibre, Icecat, GS1 GPC) — each named with
+its specific reason and, where one exists, a recommended next step to
+resolve it. Real Product/Variant-fitment and B2B/MOQ data remain
+disclosed, unmet gaps rather than forced weak substitutes.
