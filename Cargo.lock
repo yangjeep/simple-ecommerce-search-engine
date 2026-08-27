@@ -203,6 +203,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "comparator-eval"
+version = "0.1.0"
+dependencies = [
+ "commerce-core",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -656,6 +665,7 @@ name = "issue55-eval"
 version = "0.1.0"
 dependencies = [
  "commerce-core",
+ "comparator-eval",
  "issue35-eval",
  "phase6a-eval",
  "phase9-eval",
@@ -889,6 +899,7 @@ version = "0.1.0"
 dependencies = [
  "bench-harness",
  "commerce-core",
+ "comparator-eval",
  "round1-eval",
  "serde",
  "serde_json",
@@ -973,6 +984,7 @@ version = "0.1.0"
 dependencies = [
  "bench-harness",
  "commerce-core",
+ "comparator-eval",
  "phase6a-eval",
  "roaring",
  "round1-eval",
@@ -1171,6 +1183,7 @@ name = "round1-eval"
 version = "0.1.0"
 dependencies = [
  "commerce-core",
+ "comparator-eval",
  "serde",
  "serde_json",
  "ureq",

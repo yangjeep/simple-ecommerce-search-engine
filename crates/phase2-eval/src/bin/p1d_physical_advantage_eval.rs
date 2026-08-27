@@ -153,13 +153,6 @@ fn percent_encode(s: &str) -> String {
     out
 }
 
-/// Builds a Lucene `RegexpQuery` pattern that matches `s` case-
-/// insensitively, anchored to the *entire* field value (Lucene's regex
-/// queries on a `StrField`/`strings` field are implicitly whole-term-
-/// anchored, confirmed directly against this run's own Solr instance:
-/// `brand:/[Nn][Ii][Kk][Ee]/` returns exactly the ASCII-case variants of
-/// "Nike," not substring matches like "Nike Inc").
-///
 /// **Why this exists at all** (P2-E13, `docs/experiments/PHASE2_LOG.md`):
 /// this harness originally filtered on a field named `brand_lower`,
 /// assumed to be a Solr-side lowercased copy field. Verified directly
@@ -178,24 +171,13 @@ fn percent_encode(s: &str) -> String {
 /// `brand_lower` field nor a single exact-case `brand:"Nike"` query would
 /// (the latter would miss real "NIKE"/"nike" casing variants that
 /// `commerce_core` correctly treats as the same brand).
-fn case_insensitive_field_regex(s: &str) -> String {
-    const REGEX_METACHARS: &str = "\\.?+*|{}[]()\"#@&<>~^$/";
-    let mut out = String::with_capacity(s.len() * 4);
-    for c in s.chars() {
-        if c.is_ascii_alphabetic() {
-            out.push('[');
-            out.push(c.to_ascii_lowercase());
-            out.push(c.to_ascii_uppercase());
-            out.push(']');
-        } else if REGEX_METACHARS.contains(c) {
-            out.push('\\');
-            out.push(c);
-        } else {
-            out.push(c);
-        }
-    }
-    out
-}
+///
+/// Issue #55 A3: `case_insensitive_field_regex` itself is now a re-export
+/// of `comparator_eval::solr::case_insensitive_field_regex` (this file
+/// predates the extraction into `round1_eval::solr` and was never
+/// migrated -- see `docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`)
+/// instead of a fourth independent copy of the same implementation.
+use comparator_eval::solr::case_insensitive_field_regex;
 
 struct SolrResult {
     /// Server-side-only `QTime` from `responseHeader` (ms) -- excludes
@@ -636,6 +618,7 @@ fn main() -> tantivy::Result<()> {
     let mut weighted_ndcg: BTreeMap<Method, f64> = BTreeMap::new();
     let mut weighted_n: BTreeMap<Method, usize> = BTreeMap::new();
     let mut all_latency_samples: BTreeMap<Method, Vec<f64>> = BTreeMap::new();
+    let mut total_solr_failures = 0usize;
 
     for &class in &QueryClass9::all() {
         let Some(qids) = by_class.get(&class) else {
@@ -661,6 +644,13 @@ fn main() -> tantivy::Result<()> {
         let mut ts_correctness = ClassCorrectness::default();
         let mut solr_correctness = ClassCorrectness::default();
         let mut outcome_counts: BTreeMap<&str, usize> = BTreeMap::new();
+        // Issue #55 A3 (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`):
+        // a Solr transport/parse failure previously vanished silently here
+        // (no `else` branch at all), producing a `solr_correctness.n`
+        // smaller than `cn_correctness.n`/`ts_correctness.n` with no
+        // indication why -- the exact "disappears from the denominator"
+        // defect class this centralization exists to make visible.
+        let mut solr_class_failures = 0usize;
 
         for &qid in &sample {
             let (text, judged) = &judged_by_query[&qid];
@@ -715,16 +705,19 @@ fn main() -> tantivy::Result<()> {
                     brand.as_deref(),
                     color.as_deref(),
                 );
-                if let Some(sr) = solr_search(&solr_base_url, &q, &fq, K) {
-                    let (ndcg, recall, mrr) = ndcg_recall_mrr(&sr.ids, judged, K);
-                    solr_correctness.record(
-                        ndcg,
-                        recall,
-                        mrr,
-                        sr.ids.len(),
-                        sr.num_found,
-                        Some(sr.qtime_ms),
-                    );
+                match solr_search(&solr_base_url, &q, &fq, K) {
+                    Some(sr) => {
+                        let (ndcg, recall, mrr) = ndcg_recall_mrr(&sr.ids, judged, K);
+                        solr_correctness.record(
+                            ndcg,
+                            recall,
+                            mrr,
+                            sr.ids.len(),
+                            sr.num_found,
+                            Some(sr.qtime_ms),
+                        );
+                    }
+                    None => solr_class_failures += 1,
                 }
             }
         }
@@ -734,6 +727,16 @@ fn main() -> tantivy::Result<()> {
         ts_correctness.print(Method::TantivyStandalone.label());
         if solr_available {
             solr_correctness.print(Method::Solr.label());
+            if solr_class_failures > 0 {
+                println!(
+                    "    {:<20} WARNING: {solr_class_failures} of {} sampled queries got no \
+                     legitimate Solr answer (transport/parse failure) -- excluded above, NOT \
+                     scored as relevance loss; solr_correctness.n is smaller than \
+                     cn_correctness.n/ts_correctness.n for this class as a result",
+                    "",
+                    sample.len()
+                );
+            }
         } else {
             println!(
                 "    {:<20} SKIPPED (Solr unreachable)",
@@ -755,6 +758,7 @@ fn main() -> tantivy::Result<()> {
             *weighted_ndcg.entry(Method::Solr).or_insert(0.0) += solr_correctness.ndcg_sum;
             *weighted_n.entry(Method::Solr).or_insert(0) += solr_correctness.n;
         }
+        total_solr_failures += solr_class_failures;
 
         // --- repeated-measurement latency sub-experiment ---
         let latency_sample: Vec<u64> = sample
@@ -905,6 +909,16 @@ fn main() -> tantivy::Result<()> {
                 );
             }
         }
+    }
+
+    if total_solr_failures > 0 {
+        println!(
+            "\n=== SOLR COMPARATOR WARNING: {total_solr_failures} sampled queries (across all \
+             classes) got no legitimate Solr answer and were excluded from every Solr number \
+             above, NOT scored as relevance loss -- Solr's weighted n is smaller than \
+             commerce-native's/Tantivy-standalone's as a result \
+             (docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md) ==="
+        );
     }
 
     println!("\n=== traffic-weighted aggregate (across all classified+sampled real queries) ===");

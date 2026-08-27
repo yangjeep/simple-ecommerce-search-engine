@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/commerce-core",
+    "crates/comparator-eval",
     "crates/round1-eval",
     "crates/phase2-eval",
     "crates/realtime-eval",

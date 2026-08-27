@@ -37,24 +37,14 @@ fn percent_encode(s: &str) -> String {
 /// unpopulated lowercased copy-field nor a single exact-case
 /// `brand:"Nike"` query would (the latter misses real "NIKE"/"nike"
 /// casing variants `commerce_core` correctly treats as the same brand).
-pub fn case_insensitive_field_regex(s: &str) -> String {
-    const REGEX_METACHARS: &str = "\\.?+*|{}[]()\"#@&<>~^$/";
-    let mut out = String::with_capacity(s.len() * 4);
-    for c in s.chars() {
-        if c.is_ascii_alphabetic() {
-            out.push('[');
-            out.push(c.to_ascii_lowercase());
-            out.push(c.to_ascii_uppercase());
-            out.push(']');
-        } else if REGEX_METACHARS.contains(c) {
-            out.push('\\');
-            out.push(c);
-        } else {
-            out.push(c);
-        }
-    }
-    out
-}
+///
+/// Issue #55 A3: this is now a re-export of
+/// `comparator_eval::solr::case_insensitive_field_regex`, the same
+/// implementation moved to the new centralized comparator crate, rather
+/// than a second copy maintained here. Kept as a `pub use` (not removed)
+/// so every existing `round1_eval::solr::case_insensitive_field_regex`
+/// call site in this workspace keeps compiling unchanged.
+pub use comparator_eval::solr::case_insensitive_field_regex;
 
 pub struct SolrResult {
     /// Server-side-only `QTime` from `responseHeader` (ms) -- excludes

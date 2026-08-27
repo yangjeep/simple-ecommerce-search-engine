@@ -22,9 +22,10 @@ use commerce_core::domain::{BrandId, Constraint, ProductId};
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
 use commerce_core::plan::{execute_planned, ExecutionOutcome, LexicalDelegate, PlannerPolicy};
+use comparator_eval::outcome::EngineLookup;
+use comparator_eval::solr::case_insensitive_field_regex;
 use issue35_eval::{build_catalog, label_gain, load_products, load_queries};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate};
-use round1_eval::solr::case_insensitive_field_regex;
 
 const K: usize = 10;
 const MIN_ENUM_FREQUENCY: usize = 1;
@@ -50,29 +51,19 @@ fn ndcg_at_k_graded(ranked_ids: &[String], gains: &BTreeMap<String, f64>, k: usi
     Some(dcg / idcg)
 }
 
-fn solr_search(base_url: &str, q: &str, fq: &[String], rows: usize) -> Option<Vec<String>> {
-    let url = format!("{base_url}/select");
-    let rows_str = rows.to_string();
-    let mut form: Vec<(&str, &str)> = vec![
-        ("q", q),
-        ("defType", "edismax"),
-        ("qf", "title description bullet_point"),
-        ("rows", &rows_str),
-        ("fl", "id"),
-    ];
-    for f in fq {
-        form.push(("fq", f.as_str()));
-    }
-    let resp = ureq::post(&url)
-        .timeout(std::time::Duration::from_secs(30))
-        .send_form(&form)
-        .ok()?;
-    let body: serde_json::Value = resp.into_json().ok()?;
-    let docs = body["response"]["docs"].as_array()?;
-    Some(
-        docs.iter()
-            .filter_map(|d| d["id"].as_str().map(str::to_string))
-            .collect(),
+/// Issue #55 A3 (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`):
+/// previously a third independent private `ureq` client (`.ok()?` x2, no
+/// `responseHeader.status` check), and this file's own call site
+/// silently `continue`d past any failure with no counter or trace at
+/// all. Now a thin wrapper over the shared hardened transport.
+fn solr_search(base_url: &str, q: &str, fq: &[String], rows: usize) -> EngineLookup {
+    comparator_eval::solr::solr_search(
+        base_url,
+        "title description bullet_point",
+        q,
+        fq,
+        rows,
+        std::time::Duration::from_secs(30),
     )
 }
 
@@ -142,6 +133,7 @@ fn main() {
     let mut printed = 0usize;
     let mut native_zero_hit = 0usize;
     let mut native_zero_hit_solr_found_real_relevance = 0usize;
+    let mut solr_failures: Vec<String> = Vec::new();
     for q in &raw_queries {
         let compiled = compile(&q.query, &lexicon);
 
@@ -194,8 +186,16 @@ fn main() {
         let Some(native_ndcg) = ndcg_at_k_graded(&native_ranked, &gains, K) else {
             continue;
         };
-        let Some(solr_hit_asins) = solr_search(solr_base_url, &q.query, &solr_fq, K) else {
-            continue;
+        let solr_hit_asins: Vec<String> = match solr_search(solr_base_url, &q.query, &solr_fq, K) {
+            EngineLookup::Success(ids) => ids,
+            other => {
+                solr_failures.push(format!(
+                    "query={:?} solr_lookup_failure={:?}",
+                    q.query,
+                    other.failure_description()
+                ));
+                continue;
+            }
         };
         let solr_ranked: Vec<String> = solr_hit_asins
             .iter()
@@ -236,6 +236,22 @@ fn main() {
             println!("    asin={asin} label={label} title={title:?}");
         }
         println!();
+    }
+
+    if !solr_failures.is_empty() {
+        eprintln!(
+            "\n=== SOLR COMPARATOR FAILURE: {} queries got no legitimate Solr answer -- previously \
+             silently dropped with no trace, now surfaced \
+             (docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md) ===",
+            solr_failures.len()
+        );
+        for failure in &solr_failures {
+            eprintln!("  {failure}");
+        }
+        eprintln!(
+            "Fix the infrastructure and rerun -- the examples above are NOT a complete sample."
+        );
+        std::process::exit(1);
     }
 
     println!(

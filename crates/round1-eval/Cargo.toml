@@ -8,6 +8,7 @@ description = "Round 1 realistic-evidence experiments (real catalog/query ingest
 
 [dependencies]
 commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Issue #14 (Phase 3): shared Solr query-construction/HTTP helpers

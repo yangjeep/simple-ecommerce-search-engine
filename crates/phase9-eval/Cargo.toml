@@ -9,6 +9,7 @@ description = "Phase 9 (Issue #34) evidence closure: fix Phase 2's two disclosed
 [dependencies]
 bench-harness = { path = "../bench-harness" }
 commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
 round1-eval = { path = "../round1-eval" }
 phase6a-eval = { path = "../phase6a-eval" }
 tantivy = "0.22"

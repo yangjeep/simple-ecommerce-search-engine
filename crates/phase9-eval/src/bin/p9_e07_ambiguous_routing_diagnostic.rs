@@ -21,13 +21,15 @@
 use std::collections::{BTreeMap, HashMap};
 
 use commerce_core::cold_start::{compile_lexicon, CatalogProfile};
-use commerce_core::domain::{CategoryId, Constraint, ProductId, ProductTypeId};
+use commerce_core::domain::{BrandId, CategoryId, ProductId, ProductTypeId};
 use commerce_core::index::CatalogIndex;
-use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
+use commerce_core::ir::{compile, ResolvedConstraint};
 use commerce_core::plan::{execute_planned, ExecutionOutcome, PlannerPolicy};
+use comparator_eval::outcome::EngineLookup;
+use comparator_eval::solr::solr_search;
+use comparator_eval::translate::{translate_all, SolrFieldMap, StructuralNames};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate, BuiltIndex};
 use phase9_eval::wands_relevance::{ndcg_recall_mrr, WandsLabel};
-use round1_eval::solr::{case_insensitive_field_regex, solr_search};
 
 const CATALOG_PATH: &str = "dataset_cache/wands/catalog.jsonl";
 const QUERY_PATH: &str = "dataset_cache/wands/query.csv";
@@ -80,47 +82,57 @@ fn load_labels(path: &str) -> BTreeMap<String, BTreeMap<String, WandsLabel>> {
     judged
 }
 
-/// Identical to `p9_e02_wands_physical_advantage`'s own
-/// `wands_solr_query_for` -- kept as its own copy (matching this
-/// project's own eval-binary convention of light duplication over a
-/// shared crate for one-off diagnostics) so this experiment's Solr query
-/// construction is provably the same one every other Issue #55/#34
-/// checkpoint's numbers were measured with.
+/// `StructuralNames` for the WANDS catalog (no brand data). See
+/// `p9_e02_wands_physical_advantage.rs`'s identical struct.
+struct WandsNames<'a> {
+    category_name_by_id: &'a HashMap<CategoryId, String>,
+    product_type_name_by_id: &'a HashMap<ProductTypeId, String>,
+}
+
+impl StructuralNames for WandsNames<'_> {
+    fn brand_name(&self, _id: BrandId) -> Option<&str> {
+        None
+    }
+    fn product_type_name(&self, id: ProductTypeId) -> Option<&str> {
+        self.product_type_name_by_id.get(&id).map(String::as_str)
+    }
+    fn category_name(&self, id: CategoryId) -> Option<&str> {
+        self.category_name_by_id.get(&id).map(String::as_str)
+    }
+}
+
+fn wands_field_map() -> SolrFieldMap {
+    SolrFieldMap {
+        brand: None,
+        product_type: Some("product_class"),
+        category: Some("category_leaf"),
+        price_cents: None,
+    }
+}
+
+/// Issue #55 A3 (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`):
+/// this function's fq-building previously carried its own local copy of
+/// `p9_e02_wands_physical_advantage`'s constraint match, and that copy
+/// had drifted out of sync with it -- it was missing the
+/// `ProductTypeAny` arm entirely (silently sending Solr no product-type
+/// filter at all for any query native resolved to `ProductTypeAny`, the
+/// exact asymmetric-fq defect class this whole centralization closes).
+/// Now delegates to the same shared, exhaustive
+/// `comparator_eval::translate::translate_all` `p9_e02` uses, so the two
+/// binaries' Solr query construction is provably identical again -- not
+/// by convention, but because it is the same code.
 fn wands_solr_query_for(
     query_text: &str,
     residual_lexical: &[String],
     constraints: &[ResolvedConstraint],
     category_name_by_id: &HashMap<CategoryId, String>,
     product_type_name_by_id: &HashMap<ProductTypeId, String>,
-) -> (String, Vec<String>) {
-    let mut fq = Vec::new();
-    for c in constraints {
-        match c {
-            ResolvedConstraint::Structural(StructuralConstraint::Category(id)) => {
-                if let Some(name) = category_name_by_id.get(id) {
-                    fq.push(format!(
-                        "category_leaf:/{}/",
-                        case_insensitive_field_regex(name)
-                    ));
-                }
-            }
-            ResolvedConstraint::Structural(StructuralConstraint::ProductType(id)) => {
-                if let Some(name) = product_type_name_by_id.get(id) {
-                    fq.push(format!(
-                        "product_class:/{}/",
-                        case_insensitive_field_regex(name)
-                    ));
-                }
-            }
-            ResolvedConstraint::Attribute(Constraint::Enum { attribute, value }) => {
-                fq.push(format!(
-                    "{attribute}:/{}/",
-                    case_insensitive_field_regex(value)
-                ));
-            }
-            _ => {}
-        }
-    }
+) -> (String, Vec<String>, Vec<String>) {
+    let names = WandsNames {
+        category_name_by_id,
+        product_type_name_by_id,
+    };
+    let (fq, translation_failures) = translate_all(constraints, &wands_field_map(), &names);
     let text = if residual_lexical.is_empty() {
         query_text.to_string()
     } else {
@@ -131,7 +143,7 @@ fn wands_solr_query_for(
     } else {
         format!("{{!edismax qf=\"title description\"}}{}", text)
     };
-    (q, fq)
+    (q, fq, translation_failures)
 }
 
 fn mean(v: &[f64]) -> f64 {
@@ -244,6 +256,9 @@ fn main() {
     // different checkpoint's run.
     let mut rest_native_ndcg = Vec::new();
     let mut rest_solr_ndcg = Vec::new();
+    // Issue #55 A3: excluded (never silently scored 0.0), see the
+    // abort-before-printing check after this loop.
+    let mut solr_failures: Vec<String> = Vec::new();
 
     for q in &queries {
         let Some(query_judged) = judged.get(&q.query_id) else {
@@ -274,15 +289,39 @@ fn main() {
             .collect();
         let (n_ndcg, _, _) = ndcg_recall_mrr(&native_ids, query_judged, K);
 
-        let (solr_q, solr_fq) = wands_solr_query_for(
+        let (solr_q, solr_fq, translation_failures) = wands_solr_query_for(
             &q.text,
             &compiled.residual_lexical,
             &compiled.constraints,
             &category_name_by_id,
             &product_type_name_by_id,
         );
-        let solr_result = solr_search(&solr_base_url, &solr_q, &solr_fq, K);
-        let solr_ids: Vec<String> = solr_result.map(|r| r.ids).unwrap_or_default();
+        if !translation_failures.is_empty() {
+            solr_failures.push(format!(
+                "query={:?} fq_translation_failed={translation_failures:?}",
+                q.text
+            ));
+            continue;
+        }
+        let solr_result = solr_search(
+            &solr_base_url,
+            "title description",
+            &solr_q,
+            &solr_fq,
+            K,
+            std::time::Duration::from_secs(30),
+        );
+        let solr_ids: Vec<String> = match &solr_result {
+            EngineLookup::Success(ids) => ids.clone(),
+            other => {
+                solr_failures.push(format!(
+                    "query={:?} solr_lookup_failure={:?}",
+                    q.text,
+                    other.failure_description()
+                ));
+                continue;
+            }
+        };
         let (s_ndcg, _, _) = ndcg_recall_mrr(&solr_ids, query_judged, K);
 
         if is_pattern_match {
@@ -315,6 +354,20 @@ fn main() {
             broad_native_ndcg.push(n_ndcg);
             broad_solr_ndcg.push(s_ndcg);
         }
+    }
+
+    if !solr_failures.is_empty() {
+        eprintln!(
+            "\n=== SOLR COMPARATOR FAILURE: {} queries got no legitimate, symmetric Solr answer \
+             -- excluded from every population above, NOT scored as Solr NDCG=0.0 \
+             (docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md) ===",
+            solr_failures.len()
+        );
+        for failure in &solr_failures {
+            eprintln!("  {failure}");
+        }
+        eprintln!("Fix the infrastructure/comparator and rerun -- the numbers below are NOT a certified comparison.");
+        std::process::exit(1);
     }
 
     println!(

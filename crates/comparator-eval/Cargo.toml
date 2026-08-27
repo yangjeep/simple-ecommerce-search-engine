@@ -1,0 +1,14 @@
+[package]
+name = "comparator-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #55 A3: centralized, hardened comparator infrastructure (transport/parse/query-error handling, symmetric structural-constraint-to-fq translation, paired-comparison failure accounting) shared by every evaluation binary that measures native vs. an external search engine. Designed so the same fairness/error contract extends to Elasticsearch/Havenask adapters for Issue #57, not just Solr."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
+
+[dev-dependencies]

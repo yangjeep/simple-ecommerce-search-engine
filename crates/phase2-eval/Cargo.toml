@@ -9,6 +9,7 @@ description = "Phase 2 (Issue #6, ROUND1_DECISION_TREE.md's NARROW THE PRODUCT b
 [dependencies]
 bench-harness = { path = "../bench-harness" }
 commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
 round1-eval = { path = "../round1-eval" }
 tantivy = "0.22"
 serde = { version = "1", features = ["derive"] }
