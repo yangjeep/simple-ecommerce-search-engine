@@ -1,0 +1,2855 @@
+[
+  {
+    "broader": "accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / arm accent chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / barrel accent chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / lounge accent chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / side accent chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "china cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "dartboards and cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "disclosed low-practical-risk edge case: reachable only via an exact taxonomy-label string a free-text query would essentially never produce (ISSUE55_HYPONYM_REACHABILITY_AUDIT_DECISION.md)"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "filing cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "furniture / living room furniture / cabinets & chests",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "furniture / living room furniture / cabinets & chests / black cabinets & chests",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "furniture / office furniture / office storage cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "garage storage cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "medicine cabinets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "office storage cabinets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "pantry cabinets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "storage & organization / bathroom storage & organization / bathroom cabinets & shelving",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "storage & organization / bathroom storage & organization / bathroom cabinets & shelving / cabinet bathroom cabinets & shelving",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "storage & organization / garage & outdoor storage & organization / garage storage cabinets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent chests / cabinets",
+    "narrower": "tool cabinets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "accent pillows",
+    "narrower": "teen accent pillows",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "appliances / kitchen appliances / wine & beverage coolers / water coolers",
+    "narrower": "water coolers & dispensers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "appliances / washers & dryers / washer & dryer sets",
+    "narrower": "appliances / washers & dryers / washer & dryer sets / white washer & dryer sets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "area rugs",
+    "narrower": "rugs / area rugs / 3' x 5' area rugs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "baby & kids / toddler & kids bedroom furniture / baby & kids dressers",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / baby & kids dressers / grey baby & kids dressers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "bar & wine tools",
+    "narrower": "kitchen & tabletop / tableware & drinkware / barware / bar & wine tools / all bar & wine tools",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bar stools",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / bar stools & counter stools / all bar stools & counter stools",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bar stools",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / bar stools & counter stools / all bar stools & counter stools / bar (28\"-33\") bar stools & counter stools",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bar stools",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / bar stools & counter stools / all bar stools & counter stools / counter (24\"-27\") bar stools & counter stools",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bar stools",
+    "narrower": "outdoor / outdoor & patio furniture / patio bar furniture / patio bar stools",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bar stools",
+    "narrower": "patio bar stools",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bars & bar sets",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / home bars & bar sets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bars & bar sets",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / home bars & bar sets / wine home bars & bar sets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "basketball games",
+    "narrower": "furniture / game tables & game room furniture / indoor basketball games",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bath accessories",
+    "narrower": "bed & bath / bathroom accessories & organization / countertop bath accessories",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bathroom sink faucets",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets / single hole bathroom sink faucets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bathroom sink faucets",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets / widespread bathroom sink faucets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bed & bath / bedding essentials / bed pillows",
+    "narrower": "standard bed pillows",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "bed & bath / mattresses & foundations / innerspring mattresses",
+    "narrower": "bed & bath / mattresses & foundations / innerspring mattresses / twin innerspring mattresses",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "bed & bath / shower curtains & accessories / shower curtain hooks",
+    "narrower": "shower curtain hooks and accessories",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "bedding accessories",
+    "narrower": "crib bedding accessories",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bedding sets",
+    "narrower": "baby & kids / nursery bedding / crib bedding sets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bedding sets",
+    "narrower": "crib bedding sets",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "beds",
+    "narrower": "adjustable beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "beds",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "beds",
+    "narrower": "bed & bath / mattresses & foundations / adjustable beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "beds",
+    "narrower": "cat beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "REJECT",
+    "reason": "confirmed cross-family false positive (ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md / ISSUE55_HYPONYM_REACHABILITY_AUDIT_DECISION.md)"
+  },
+  {
+    "broader": "beds",
+    "narrower": "daybeds & guest beds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "beds",
+    "narrower": "dog beds & mats",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "REJECT",
+    "reason": "confirmed cross-family false positive (ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md / ISSUE55_HYPONYM_REACHABILITY_AUDIT_DECISION.md)"
+  },
+  {
+    "broader": "beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / full & double beds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / king size beds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / queen size beds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / twin beds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "beds",
+    "narrower": "kids beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "beds",
+    "narrower": "teen beds",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "benches",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / outdoor benches / storage outdoor benches",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "benches",
+    "narrower": "patio benches",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "benches",
+    "narrower": "potting benches & tables",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "benches",
+    "narrower": "reception benches",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "benches",
+    "narrower": "shower benches",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bird cages",
+    "narrower": "pet / bird / all bird cages",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "bookcases",
+    "narrower": "baby & kids / baby & kids storage / baby & kids bookcases",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bookcases",
+    "narrower": "kids bookcases",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "bookcases",
+    "narrower": "teen bookcases",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "cabinet organization",
+    "narrower": "kitchen & tabletop / kitchen organization / cabinet & pantry organization / all cabinet organization",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "carts & stands",
+    "narrower": "commercial business furniture / commercial office furniture / office storage & filing / office carts & stands / all carts & stands",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "carts & stands",
+    "narrower": "commercial business furniture / commercial office furniture / office storage & filing / office carts & stands / all carts & stands / utility carts & stands",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "ceiling fans",
+    "narrower": "lighting / ceiling fans / all ceiling fans",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "ceiling fans",
+    "narrower": "lighting / ceiling fans / all ceiling fans / bronze blades ceiling fans",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "chandeliers",
+    "narrower": "lighting / ceiling lights / chandeliers / candle-style chandeliers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "christmas trees",
+    "narrower": "holiday décor / christmas / christmas trees / all christmas trees",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "christmas trees",
+    "narrower": "holiday décor / christmas / christmas trees / all christmas trees / slender christmas trees",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "commercial business furniture / commercial office furniture / office seating / waiting room chairs",
+    "narrower": "commercial business furniture / commercial office furniture / office seating / waiting room chairs / metal waiting room chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "cooking utensils",
+    "narrower": "kitchen & tabletop / kitchen utensils & tools / cooking utensils / all cooking utensils",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "coolers",
+    "narrower": "appliances / kitchen appliances / wine & beverage coolers / water coolers",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "coolers",
+    "narrower": "beverage refrigerators & coolers",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "coolers",
+    "narrower": "outdoor / outdoor cooking & tableware / outdoor serving & tableware / coolers, baskets & tubs / coolers / picnic coolers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "coolers",
+    "narrower": "picnic baskets & coolers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "coolers",
+    "narrower": "water coolers & dispensers",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "curtain hardware & accessories",
+    "narrower": "décor & pillows / window treatments / curtain hardware & accessories / single rod curtain hardware & accessories",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "curtains & drapes",
+    "narrower": "décor & pillows / window treatments / curtains & drapes / 108 inch curtains & drapes",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "deck boxes",
+    "narrower": "storage & organization / garage & outdoor storage & organization / deck boxes & patio storage",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "desks",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids desks",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "desks",
+    "narrower": "classroom desks",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "desks",
+    "narrower": "commercial desks",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "desks",
+    "narrower": "furniture / office furniture / desks / writing desks",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "desks",
+    "narrower": "kids desks",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "desks",
+    "narrower": "reception desks",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "desks",
+    "narrower": "school furniture and supplies / school furniture / school desks / classroom desks",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "desks",
+    "narrower": "teen desks",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "dining chairs",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dining chairs",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining chairs / side kitchen & dining chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dining chairs",
+    "narrower": "patio dining chairs",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "dining tables",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining tables",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dining tables",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining tables / 4 seat kitchen & dining tables",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dollhouses",
+    "narrower": "baby & kids / toddler & kids playroom / indoor play / dollhouses & accessories",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / black dressers & chests",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / silver dressers & chests",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / white dressers & chests",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dressers & chests",
+    "narrower": "kids dressers & chests",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "dryers",
+    "narrower": "appliances / washers & dryers / dryers / all dryers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "dryers",
+    "narrower": "appliances / washers & dryers / dryers / all dryers / electric dryers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "décor & pillows / art / all wall art",
+    "narrower": "baby & kids / baby & kids décor & lighting / all baby & kids wall art",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "décor & pillows / wall décor / wall accents",
+    "narrower": "décor & pillows / wall décor / wall accents / blue wall accents",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "décor & pillows / wall décor / wall accents",
+    "narrower": "décor & pillows / wall décor / wall accents / silver wall accents",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "décor & pillows / window treatments / curtain hardware & accessories",
+    "narrower": "décor & pillows / window treatments / curtain hardware & accessories / single rod curtain hardware & accessories",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "décor & pillows / window treatments / curtains & drapes",
+    "narrower": "décor & pillows / window treatments / curtains & drapes / 108 inch curtains & drapes",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "end tables",
+    "narrower": "furniture / living room furniture / coffee tables & end tables / end & side tables",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "fabric",
+    "narrower": "storage & organization / cleaning & laundry organization / crafts & sewing / fabric by the yard",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "folding tables",
+    "narrower": "school furniture and supplies / school furniture / school tables / folding tables / wood folding tables",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "fountains",
+    "narrower": "outdoor / outdoor décor / outdoor fountains",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "adjustable beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "bed & bath / mattresses & foundations / adjustable beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "cat beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "daybeds & guest beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "dog beds & mats",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / full & double beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / king size beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / queen size beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "furniture / bedroom furniture / beds & headboards / beds / twin beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "kids beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / beds",
+    "narrower": "teen beds",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / headboards",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids headboards",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / headboards",
+    "narrower": "furniture / bedroom furniture / beds & headboards / headboards / upholstered headboards",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / headboards",
+    "narrower": "kids headboards",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / beds & headboards / headboards",
+    "narrower": "teens headboards",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / daybeds",
+    "narrower": "daybeds & guest beds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / black dressers & chests",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / silver dressers & chests",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / dressers & chests",
+    "narrower": "furniture / bedroom furniture / dressers & chests / white dressers & chests",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / dressers & chests",
+    "narrower": "kids dressers & chests",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / nightstands",
+    "narrower": "kids nightstands",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / bedroom furniture / nightstands",
+    "narrower": "teen nightstands",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / game tables & game room furniture / theater seating",
+    "narrower": "home theater seating",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / kitchen & dining furniture / bar furniture / home bars & bar sets",
+    "narrower": "furniture / kitchen & dining furniture / bar furniture / home bars & bar sets / wine home bars & bar sets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining chairs",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining chairs / side kitchen & dining chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining tables",
+    "narrower": "furniture / kitchen & dining furniture / dining tables & seating / kitchen & dining tables / 4 seat kitchen & dining tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / bookcases",
+    "narrower": "baby & kids / baby & kids storage / baby & kids bookcases",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / bookcases",
+    "narrower": "kids bookcases",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / bookcases",
+    "narrower": "teen bookcases",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / cabinets & chests",
+    "narrower": "furniture / living room furniture / cabinets & chests / black cabinets & chests",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / arm accent chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / barrel accent chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / lounge accent chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / accent chairs",
+    "narrower": "furniture / living room furniture / chairs & seating / accent chairs / side accent chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / benches",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / outdoor benches / storage outdoor benches",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / benches",
+    "narrower": "patio benches",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / benches",
+    "narrower": "potting benches & tables",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / benches",
+    "narrower": "reception benches",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / benches",
+    "narrower": "shower benches",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / chaise lounge chairs",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / outdoor chaise & lounge chairs",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / recliners",
+    "narrower": "baby & kids / nursery furniture / nursery gliders, rockers & recliners",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / recliners",
+    "narrower": "furniture / living room furniture / chairs & seating / recliners / gray recliners",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / chairs & seating / rocking chairs",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio rocking chairs & gliders",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / coffee tables & end tables / coffee tables",
+    "narrower": "coffee & cocktail tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / coffee tables & end tables / coffee tables",
+    "narrower": "furniture / living room furniture / coffee tables & end tables / coffee tables / oval coffee tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / coffee tables & end tables / coffee tables",
+    "narrower": "furniture / living room furniture / coffee tables & end tables / coffee tables / rectangle coffee tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / console tables",
+    "narrower": "furniture / living room furniture / console tables / brown console tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / console tables",
+    "narrower": "furniture / living room furniture / console tables / grey console tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / console tables",
+    "narrower": "sofa & console tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / living room sets",
+    "narrower": "living room table sets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / ottomans & poufs",
+    "narrower": "furniture / living room furniture / ottomans & poufs / round ottomans & poufs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sectionals",
+    "narrower": "furniture / living room furniture / sectionals / modular sectionals",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sectionals",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sectionals",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sofas",
+    "narrower": "patio sofas",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / sofas",
+    "narrower": "reception sofas & loveseats",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers",
+    "narrower": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers / cottage & country tv stands & entertainment centers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers",
+    "narrower": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers / modern & contemporary tv stands & entertainment centers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "classroom desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "commercial desks",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "furniture / office furniture / desks / writing desks",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "kids desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "reception desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "school furniture and supplies / school furniture / school desks / classroom desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / desks",
+    "narrower": "teen desks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / office chairs",
+    "narrower": "commercial office chairs",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / office chairs",
+    "narrower": "furniture / office furniture / office chairs / executive office chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture / office furniture / office chairs",
+    "narrower": "furniture / office furniture / office chairs / task office chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "furniture covers",
+    "narrower": "storage & organization / garage & outdoor storage & organization / outdoor covers / patio furniture covers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "furniture parts",
+    "narrower": "institutional furniture parts & accessories",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "garden accents",
+    "narrower": "outdoor / garden / garden décor / lawn & garden accents",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "gliders",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio rocking chairs & gliders",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "gliders",
+    "narrower": "patio rockers & gliders",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "hampers & baskets",
+    "narrower": "storage & organization / bathroom storage & organization / hampers & laundry baskets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "hampers & baskets",
+    "narrower": "storage & organization / bathroom storage & organization / hampers & laundry baskets / laundry bags hampers & laundry baskets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "hampers & baskets",
+    "narrower": "storage & organization / bathroom storage & organization / hampers & laundry baskets / laundry hampers & laundry baskets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "headboards",
+    "narrower": "baby & kids / toddler & kids bedroom furniture / kids headboards",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "headboards",
+    "narrower": "furniture / bedroom furniture / beds & headboards / headboards / upholstered headboards",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "headboards",
+    "narrower": "kids headboards",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "headboards",
+    "narrower": "teens headboards",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets / single hole bathroom sink faucets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom sinks & faucet components / bathroom sink faucets / widespread bathroom sink faucets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / bathroom remodel & bathroom fixtures / showers & bathtubs / shower & bathtub doors",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / showers & bathtubs / shower & bathtub doors / hinged shower & bathtub doors",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / bathroom remodel & bathroom fixtures / showers & bathtubs / shower & bathtub doors",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / showers & bathtubs / shower & bathtub doors / pivot shower & bathtub doors",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles",
+    "narrower": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles / ceramic floor tiles & wall tiles",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles",
+    "narrower": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles / porcelain floor tiles & wall tiles",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles",
+    "narrower": "home improvement / flooring, walls & ceiling / floor tiles & wall tiles / shell floor tiles & wall tiles",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork",
+    "narrower": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork / ceiling molding & millwork",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork",
+    "narrower": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork / wall molding & millwork",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "home improvement / kitchen remodel & kitchen fixtures / smoke detectors",
+    "narrower": "smoke & co detectors",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "hooks",
+    "narrower": "bed & bath / shower curtains & accessories / shower curtain hooks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "hooks",
+    "narrower": "coat racks and hooks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "hooks",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / towel storage / towel & robe hooks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "hooks",
+    "narrower": "shower curtain hooks and accessories",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "hooks",
+    "narrower": "towel & robe hooks",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "innerspring mattresses",
+    "narrower": "bed & bath / mattresses & foundations / innerspring mattresses / twin innerspring mattresses",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "key organizers",
+    "narrower": "storage & organization / wall shelving & organization / mail & key wall organizers",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "key organizers",
+    "narrower": "wall organizers, wall baskets, and key organizers",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kids bookcases",
+    "narrower": "baby & kids / baby & kids storage / baby & kids bookcases",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "kids chairs",
+    "narrower": "baby & kids / toddler & kids playroom / playroom furniture / toddler & kids chairs & seating",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "kitchen & tabletop / cookware & bakeware / pots, pans & skillets / sauce pans",
+    "narrower": "kitchen & tabletop / cookware & bakeware / pots, pans & skillets / sauce pans / 0 - 2 quart sauce pans",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / dinnerware sets",
+    "narrower": "dinnerware sets & place settings",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / plates",
+    "narrower": "burners & hot plates",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / plates",
+    "narrower": "decorative plates & bowls",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / plates",
+    "narrower": "home improvement / hardware / home hardware / switch plates",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / plates",
+    "narrower": "plates & saucers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / dinnerware / plates",
+    "narrower": "wall plates",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / flatware & cutlery / flatware sets",
+    "narrower": "flatware & silverware sets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / flatware & cutlery / flatware single pieces",
+    "narrower": "flatware & silverware single pieces",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen & tabletop / tableware & drinkware / table & kitchen linens / kitchen linens / aprons",
+    "narrower": "kitchen aprons",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "kitchen islands",
+    "narrower": "furniture / kitchen & dining furniture / kitchen islands & carts",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "kitchen islands",
+    "narrower": "furniture / kitchen & dining furniture / kitchen islands & carts / kitchen carts kitchen islands & carts",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "landscape lighting",
+    "narrower": "lighting / outdoor lighting / landscape lighting / all landscape lighting",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "laundry accessories",
+    "narrower": "laundry accessories & storage",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "light bulbs",
+    "narrower": "lighting / light bulbs & hardware / light bulbs / all light bulbs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "light bulbs",
+    "narrower": "lighting / light bulbs & hardware / light bulbs / all light bulbs / incandescent light bulbs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "light bulbs",
+    "narrower": "lighting / light bulbs & hardware / light bulbs / all light bulbs / led light bulbs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "lighting / ceiling lights / chandeliers",
+    "narrower": "lighting / ceiling lights / chandeliers / candle-style chandeliers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "lighting / ceiling lights / pendant lighting",
+    "narrower": "lighting / ceiling lights / pendant lighting / cluster pendant lighting",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "lighting / wall lights / bathroom vanity lighting",
+    "narrower": "lighting / wall lights / bathroom vanity lighting / modern & contemporary bathroom vanity lighting",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "lighting / wall lights / bathroom vanity lighting",
+    "narrower": "lighting / wall lights / bathroom vanity lighting / traditional bathroom vanity lighting",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "lighting / wall lights / bathroom vanity lighting",
+    "narrower": "sale / closeout / bathroom vanity lighting / coastal bathroom vanity lighting",
+    "reachable": false,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "living room sets",
+    "narrower": "living room table sets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "makeup vanities",
+    "narrower": "furniture / bedroom furniture / bedroom and makeup vanities",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "molding & millwork",
+    "narrower": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork / ceiling molding & millwork",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "molding & millwork",
+    "narrower": "home improvement / flooring, walls & ceiling / flooring installation & accessories / molding & millwork / wall molding & millwork",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "nightstands",
+    "narrower": "kids nightstands",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "nightstands",
+    "narrower": "teen nightstands",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "novelty lighting",
+    "narrower": "teen novelty lighting",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "office chairs",
+    "narrower": "commercial office chairs",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "office chairs",
+    "narrower": "furniture / office furniture / office chairs / executive office chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "office chairs",
+    "narrower": "furniture / office furniture / office chairs / task office chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "office sets",
+    "narrower": "furniture / office furniture / office furniture sets",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "ottomans",
+    "narrower": "furniture / living room furniture / ottomans & poufs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "ottomans",
+    "narrower": "furniture / living room furniture / ottomans & poufs / round ottomans & poufs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "ottomans",
+    "narrower": "patio ottomans",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "outdoor / garden / planters",
+    "narrower": "outdoor / garden / planters / plastic planters",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "outdoor / outdoor & patio furniture / patio furniture sets / patio conversation sets",
+    "narrower": "outdoor / outdoor & patio furniture / patio furniture sets / patio conversation sets / 2 person patio conversation sets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "outdoor / outdoor cooking & tableware / outdoor serving & tableware / coolers, baskets & tubs / coolers / picnic coolers",
+    "narrower": "picnic baskets & coolers",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "outdoor / outdoor décor / statues & sculptures",
+    "narrower": "outdoor / outdoor décor / statues & sculptures / animal statues & sculptures",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "outdoor / outdoor décor / statues & sculptures",
+    "narrower": "outdoor / outdoor décor / statues & sculptures / plant and flower statues & sculptures",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "patio sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "patio sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "patio tables",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor tables / all patio tables",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "picture frames",
+    "narrower": "décor & pillows / picture frames & albums / all picture frames",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "planters",
+    "narrower": "outdoor / garden / planters / plastic planters",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "play kitchen sets",
+    "narrower": "baby & kids / toddler & kids playroom / indoor play / play kitchen sets & accessories",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "range hoods",
+    "narrower": "appliances / kitchen appliances / range hoods / all range hoods",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "range hoods",
+    "narrower": "appliances / kitchen appliances / range hoods / all range hoods / under cabinet range hoods",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "range hoods",
+    "narrower": "appliances / kitchen appliances / range hoods / all range hoods / wall mount range hoods",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "recliners",
+    "narrower": "baby & kids / nursery furniture / nursery gliders, rockers & recliners",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "recliners",
+    "narrower": "furniture / living room furniture / chairs & seating / recliners / gray recliners",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "refrigerators",
+    "narrower": "appliances / kitchen appliances / refrigerators & freezers / all refrigerators",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "refrigerators",
+    "narrower": "beverage refrigerators & coolers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "refrigerators",
+    "narrower": "wine refrigerators",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "ride-on toys",
+    "narrower": "outdoor / outdoor recreation / backyard play / kids cars & ride-on toys",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "rocking chairs",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio rocking chairs & gliders",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "rugs / area rugs",
+    "narrower": "rugs / area rugs / 3' x 5' area rugs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "school furniture and supplies / facilities & maintenance / trash & recycling",
+    "narrower": "trash cans & recycling",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "school furniture and supplies / school furniture / school chairs & seating / stackable chairs",
+    "narrower": "school furniture and supplies / school furniture / school chairs & seating / stackable chairs / green stackable chairs",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "school furniture and supplies / school furniture / school tables / folding tables",
+    "narrower": "school furniture and supplies / school furniture / school tables / folding tables / wood folding tables",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "sectionals",
+    "narrower": "furniture / living room furniture / sectionals / modular sectionals",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "sectionals",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "sectionals",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "sheds",
+    "narrower": "storage & organization / garage & outdoor storage & organization / sheds / storage sheds",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "shelving & racks",
+    "narrower": "food service racks & shelving",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "shelving & racks",
+    "narrower": "storage & organization / garage & outdoor storage & organization / storage racks & shelving units",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "shoe storage",
+    "narrower": "storage & organization / shoe storage / all shoe storage",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "shower curtains",
+    "narrower": "bed & bath / shower curtains & accessories / shower curtains & shower liners",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "slides",
+    "narrower": "bounce houses & inflatable slides",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "slides",
+    "narrower": "climbing toys & slides",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "slides",
+    "narrower": "outdoor / outdoor recreation / backyard play / climbing toys & slides",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "sofas",
+    "narrower": "outdoor / outdoor & patio furniture / outdoor seating & patio chairs / patio seating / patio sofas & sectionals / sectional patio sofas & sectionals",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "sofas",
+    "narrower": "patio sofas",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "sofas",
+    "narrower": "reception sofas & loveseats",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "stackable chairs",
+    "narrower": "school furniture and supplies / school furniture / school chairs & seating / stackable chairs / green stackable chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "storage & organization / bathroom storage & organization / bathroom cabinets & shelving",
+    "narrower": "storage & organization / bathroom storage & organization / bathroom cabinets & shelving / cabinet bathroom cabinets & shelving",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "storage & organization / bathroom storage & organization / hampers & laundry baskets",
+    "narrower": "storage & organization / bathroom storage & organization / hampers & laundry baskets / laundry bags hampers & laundry baskets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "storage & organization / bathroom storage & organization / hampers & laundry baskets / laundry hampers & laundry baskets",
+    "narrower": "storage & organization / bathroom storage & organization / hampers & laundry baskets / laundry bags hampers & laundry baskets",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "storage & organization / closet storage & organization / closet accessories",
+    "narrower": "closet organizer accessories",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "storage & organization / garage & outdoor storage & organization / sheds",
+    "narrower": "storage & organization / garage & outdoor storage & organization / sheds / storage sheds",
+    "reachable": false,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "table accessories",
+    "narrower": "game table accessories",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "table accessories",
+    "narrower": "table top games & accessories",
+    "reachable": false,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "unreachable: broader term does not compile to ProductTypeAny via its own literal text even when hypothetically fully promoted, so promoting this pair would have no query-time effect"
+  },
+  {
+    "broader": "trunks",
+    "narrower": "storage & organization / storage furniture / storage trunks",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "tv stands & entertainment centers",
+    "narrower": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers / cottage & country tv stands & entertainment centers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "tv stands & entertainment centers",
+    "narrower": "furniture / living room furniture / tv stands & media storage furniture / tv stands & entertainment centers / modern & contemporary tv stands & entertainment centers",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanities",
+    "narrower": "furniture / bedroom furniture / bedroom and makeup vanities",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "vanities",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom vanities / all bathroom vanities",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanities",
+    "narrower": "home improvement / bathroom remodel & bathroom fixtures / bathroom vanities / all bathroom vanities / modern & contemporary bathroom vanities",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanities",
+    "narrower": "makeup vanities",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "vanity lighting",
+    "narrower": "lighting / wall lights / bathroom vanity lighting",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanity lighting",
+    "narrower": "lighting / wall lights / bathroom vanity lighting / modern & contemporary bathroom vanity lighting",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanity lighting",
+    "narrower": "lighting / wall lights / bathroom vanity lighting / traditional bathroom vanity lighting",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "vanity lighting",
+    "narrower": "sale / closeout / bathroom vanity lighting / coastal bathroom vanity lighting",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "waiting room chairs",
+    "narrower": "commercial business furniture / commercial office furniture / office seating / waiting room chairs / metal waiting room chairs",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "wall art",
+    "narrower": "baby & kids / baby & kids décor & lighting / all baby & kids wall art",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "wall art",
+    "narrower": "décor & pillows / art / all wall art",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "wall art",
+    "narrower": "décor & pillows / art / all wall art / yellow wall art",
+    "reachable": true,
+    "top_level_overlap": true,
+    "level_2_overlap": true,
+    "verdict": "PROMOTE",
+    "reason": "reachable, and both independent category-hierarchy evidence sources (top-level and 2-level ancestor overlap) agree"
+  },
+  {
+    "broader": "wall art",
+    "narrower": "teen wall art",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  },
+  {
+    "broader": "wall décor",
+    "narrower": "kids wall décor",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "wall décor",
+    "narrower": "outdoor / outdoor décor / outdoor wall décor",
+    "reachable": true,
+    "top_level_overlap": false,
+    "level_2_overlap": false,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but the two evidence sources disagree or neither shows ancestor overlap"
+  },
+  {
+    "broader": "wall décor",
+    "narrower": "teen wall décor",
+    "reachable": true,
+    "top_level_overlap": null,
+    "level_2_overlap": null,
+    "verdict": "UNRESOLVED",
+    "reason": "reachable, but no category-hierarchy evidence exists for one or both names"
+  }
+]

@@ -207,3 +207,22 @@ Priority-2 question (PROMOTE/REJECT/UNRESOLVED evidence for the full
 done. This entry is a pointer, not a duplicate: see the decision doc
 above for the full mechanism, verification, and disclosed
 consequences.
+
+## A2 implemented (same later session): the oracle itself
+
+Full verdict: `docs/decisions/ISSUE55_A2_PROMOTION_ORACLE_DECISION.md`.
+Artifact: `docs/research/artifacts/i55_a2_promotion_oracle/oracle_v1.json`.
+
+Directly answers this log's own "Next question" section above
+("agreement among >=2 independent sources" was named there and never
+implemented): a new binary requires the `top_level` AND `level_2`
+ancestor-overlap evidence sources to independently agree before a
+reachable candidate pair is PROMOTEd, with explicit REJECT/UNRESOLVED
+overrides for the two known-bad pairs and the one disclosed ambiguous
+edge case, and UNRESOLVED for every unreachable pair (moot -- promoting
+those has no query-time effect). Result: 113/181 reachable pairs (62.4%)
+PROMOTEd, zero known false promotions, cross-validated against this same
+log's full-scale single-source numbers (202/196 top-level/level-2
+overlap counts reproduced exactly). A real bug (double-concatenated
+category-depth paths, an 8x promotion undercount) was found and fixed
+before trusting the result -- see the decision doc for the full account.
