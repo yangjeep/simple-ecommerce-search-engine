@@ -22,8 +22,8 @@ pub use prefill::{
 };
 pub use profile::{
     compile_lexicon, compile_lexicon_with_alias_enforcement,
-    compile_lexicon_with_brand_canonicalizer, compile_lexicon_with_product_type_hyponyms,
-    product_type_hyponym_groups, CatalogProfile,
+    compile_lexicon_with_brand_canonicalizer, compile_lexicon_with_promoted_hyponyms,
+    product_type_hyponym_groups, promote_all_hyponym_candidates_unadjudicated, CatalogProfile,
 };
 
 use crate::ir::{compile, SemanticLexicon};

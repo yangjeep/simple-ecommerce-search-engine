@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::alias;
 use super::canonicalize::{CanonicalizationEvidence, VocabularyCanonicalizer};
+use crate::control_plane::{HyponymRelation, PromotedHyponyms, RuleProvenance};
 use crate::domain::{
     AttributeMap, AttributeValue, Brand, BrandId, Catalog, Category, CategoryId, Constraint,
     ProductType, ProductTypeId,
@@ -248,35 +249,52 @@ impl CatalogProfile {
 /// noisy per-product field at all (`round1_eval::catalog`'s own doc
 /// comment) — there is no equivalent noisy source to canonicalize away.
 pub fn compile_lexicon(profile: &CatalogProfile, min_enum_frequency: usize) -> SemanticLexicon {
-    // Delegates to compile_lexicon_with_product_type_hyponyms(..., true)
-    // rather than duplicating its brand-loop, so "true is byte-identical to
-    // compile_lexicon" is compiler-enforced, not merely test-enforced (a
-    // future edit to one loop and not the other could otherwise silently
-    // break that invariant outside the narrow case the regression tests
-    // below exercise -- flagged by adversarial review of
+    // Delegates to compile_lexicon_with_promoted_hyponyms(..., &default())
+    // rather than duplicating its brand-loop, so "the empty set is
+    // byte-identical to compile_lexicon" is compiler-enforced, not merely
+    // test-enforced (a future edit to one loop and not the other could
+    // otherwise silently break that invariant outside the narrow case the
+    // regression tests below exercise -- flagged by adversarial review of
     // `docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`).
-    compile_lexicon_with_product_type_hyponyms(profile, min_enum_frequency, true)
+    //
+    // Issue #55 A1 (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`):
+    // this used to unconditionally pass `true`, auto-installing EVERY
+    // syntactically-valid `product_type_hyponym_groups` candidate --
+    // including the confirmed cross-family false positive `"beds"` ->
+    // `"cat beds"`/`"dog beds & mats"` -- as a live `ProductTypeAny`
+    // serving route with no adjudication gate at all. The empty
+    // `PromotedHyponyms::default()` is the safe fallback: a catalog with
+    // no recorded PROMOTE verdicts gets plain per-id `ProductType`
+    // matching only, never an unvalidated `ProductTypeAny` expansion.
+    compile_lexicon_with_promoted_hyponyms(
+        profile,
+        min_enum_frequency,
+        &PromotedHyponyms::default(),
+    )
 }
 
 /// Issue #55 checkpoint-14 follow-up
 /// (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`, Priority 1A
-/// of the Issue #55 falsification loop): identical to [`compile_lexicon`]
-/// except `ProductTypeAny` hyponym expansion
-/// ([`product_type_hyponym_groups`]) can be switched off, so evaluation
-/// tooling can build a "baseline" lexicon (plain per-id `ProductType`
-/// matching only, the pre-checkpoint-14 production behavior) and a
-/// "treatment" lexicon (current production, hyponym expansion on) from
-/// the exact same `CatalogProfile` and `min_enum_frequency`, isolating
-/// the one variable a paired before/after comparison needs held apart
-/// from everything else compile_lexicon does. `enable_product_type_hyponyms:
-/// true` is byte-identical to [`compile_lexicon`] (see
-/// `product_type_hyponym_toggle_true_matches_compile_lexicon` below) --
-/// this function does not change production behavior on its own; it
-/// only exposes the switch [`compile_lexicon`] always sets to `true`.
-pub fn compile_lexicon_with_product_type_hyponyms(
+/// of the Issue #55 falsification loop), regated by A1
+/// (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`):
+/// identical to [`compile_lexicon`] except the set of `ProductTypeAny`
+/// hyponym expansions ([`product_type_hyponym_groups`]) actually
+/// installed is controlled explicitly via `promoted_hyponyms`, so
+/// evaluation tooling can build a "baseline" lexicon
+/// (`&PromotedHyponyms::default()`, plain per-id `ProductType` matching
+/// only, current production behavior) and a "treatment" lexicon (a
+/// `PromotedHyponyms` populated from a real adjudication set) from the
+/// exact same `CatalogProfile` and `min_enum_frequency`, isolating the
+/// one variable a paired before/after comparison needs held apart from
+/// everything else compile_lexicon does. `&PromotedHyponyms::default()`
+/// is byte-identical to [`compile_lexicon`] (see
+/// `promoted_hyponyms_empty_matches_compile_lexicon` below) -- this
+/// function does not change production behavior on its own; it only
+/// exposes the promotion set [`compile_lexicon`] always holds empty.
+pub fn compile_lexicon_with_promoted_hyponyms(
     profile: &CatalogProfile,
     min_enum_frequency: usize,
-    enable_product_type_hyponyms: bool,
+    promoted_hyponyms: &PromotedHyponyms,
 ) -> SemanticLexicon {
     let mut lex = SemanticLexicon::new();
     for (name, id) in &profile.brand_names {
@@ -291,13 +309,47 @@ pub fn compile_lexicon_with_product_type_hyponyms(
             )],
         );
     }
-    compile_non_brand_lexicon(
-        profile,
-        min_enum_frequency,
-        enable_product_type_hyponyms,
-        &mut lex,
-    );
+    compile_non_brand_lexicon(profile, min_enum_frequency, promoted_hyponyms, &mut lex);
     lex
+}
+
+/// Builds a [`PromotedHyponyms`] that promotes **every** candidate
+/// [`product_type_hyponym_groups`] produces for `profile`'s product
+/// types, with no adjudication at all. This is deliberately NOT exposed
+/// as a production default (see [`compile_lexicon`]'s A1 fix) -- its
+/// only legitimate use is reproducing the pre-A1 unconditional-auto-
+/// install behavior for evaluation code that is specifically measuring
+/// the leaf-only hyponym expansion *mechanism* in isolation from
+/// promotion adjudication (e.g. `i55_e14_paired_comparator_freeze`'s
+/// checkpoint-14 reproduction), not for anything that claims the result
+/// is safe to serve.
+pub fn promote_all_hyponym_candidates_unadjudicated(profile: &CatalogProfile) -> PromotedHyponyms {
+    let product_type_names: BTreeMap<String, ProductTypeId> = profile
+        .product_type_names_with_ids()
+        .map(|(name, id)| (name.to_string(), id))
+        .collect();
+    let names_by_id: BTreeMap<ProductTypeId, &str> = product_type_names
+        .iter()
+        .map(|(name, id)| (*id, name.as_str()))
+        .collect();
+    let relations = product_type_hyponym_groups(&product_type_names)
+        .into_iter()
+        .flat_map(|(broader_id, narrower_ids)| {
+            let broader_name = names_by_id.get(&broader_id).copied().unwrap_or_default();
+            narrower_ids
+                .into_iter()
+                .map(move |narrower_id| (broader_name, narrower_id))
+        })
+        .filter_map(|(broader_name, narrower_id)| {
+            names_by_id
+                .get(&narrower_id)
+                .map(|narrower_name| (broader_name, *narrower_name))
+        })
+        .map(|(broader_name, narrower_name)| {
+            HyponymRelation::candidate(broader_name, narrower_name, RuleProvenance::Catalog, 1.0)
+                .promote()
+        });
+    PromotedHyponyms::compile(0, relations)
 }
 
 /// Issue #9: identical to [`compile_lexicon`] for every field except
@@ -343,7 +395,12 @@ pub fn compile_lexicon_with_brand_canonicalizer(
             )],
         );
     }
-    compile_non_brand_lexicon(profile, min_enum_frequency, true, &mut lex);
+    compile_non_brand_lexicon(
+        profile,
+        min_enum_frequency,
+        &PromotedHyponyms::default(),
+        &mut lex,
+    );
     lex
 }
 
@@ -461,7 +518,12 @@ pub fn compile_lexicon_with_alias_enforcement(
         }
     }
 
-    compile_non_brand_lexicon(profile, min_enum_frequency, true, &mut lex);
+    compile_non_brand_lexicon(
+        profile,
+        min_enum_frequency,
+        &PromotedHyponyms::default(),
+        &mut lex,
+    );
     lex
 }
 
@@ -542,7 +604,7 @@ pub fn product_type_hyponym_groups(
 fn compile_non_brand_lexicon(
     profile: &CatalogProfile,
     min_enum_frequency: usize,
-    enable_product_type_hyponyms: bool,
+    promoted_hyponyms: &PromotedHyponyms,
     lex: &mut SemanticLexicon,
 ) {
     // Issue #55 (`docs/experiments/ISSUE55_HYPONYM_LEAF_ONLY_PROTOCOL.md`):
@@ -554,24 +616,43 @@ fn compile_non_brand_lexicon(
     // `docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md` for the
     // re-audit this checkpoint's own verdict rests on.
     //
-    // `enable_product_type_hyponyms=false` (only reachable via
-    // `compile_lexicon_with_product_type_hyponyms`, never via
-    // `compile_lexicon` itself) reproduces the pre-checkpoint-14 baseline
-    // -- plain per-id `ProductType` matching only -- for the paired
-    // comparator experiment (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`).
-    let hyponym_groups = if enable_product_type_hyponyms {
-        product_type_hyponym_groups(&profile.product_type_names)
-    } else {
-        BTreeMap::new()
-    };
+    // Issue #55 A1 (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`):
+    // `product_type_hyponym_groups` is a pure, syntactic *candidate*
+    // generator ("RIB" in Issue #55's own terms) -- every candidate it
+    // produces used to become a live `ProductTypeAny` route
+    // unconditionally, which is exactly how the confirmed cross-family
+    // false positive `"beds"` -> `"cat beds"`/`"dog beds & mats"` shipped
+    // as a hard default with no gate at all. Each candidate hyponym is
+    // now filtered through `promoted_hyponyms.contains(broader, narrower)`
+    // before it may contribute to a `ProductTypeAny`; an empty
+    // `PromotedHyponyms` (the default `compile_lexicon` uses) reproduces
+    // the pre-checkpoint-14 baseline -- plain per-id `ProductType`
+    // matching only -- exactly as `enable_product_type_hyponyms=false`
+    // used to.
+    let hyponym_groups = product_type_hyponym_groups(&profile.product_type_names);
+    let names_by_id: BTreeMap<ProductTypeId, &str> = profile
+        .product_type_names
+        .iter()
+        .map(|(name, id)| (*id, name.as_str()))
+        .collect();
     for (name, id) in &profile.product_type_names {
-        let structural = match hyponym_groups.get(id) {
-            Some(hyponyms) if !hyponyms.is_empty() => {
-                let mut ids = vec![*id];
-                ids.extend(hyponyms.iter().copied());
-                StructuralConstraint::ProductTypeAny(ids)
-            }
-            _ => StructuralConstraint::ProductType(*id),
+        let promoted_narrower: Vec<ProductTypeId> = hyponym_groups
+            .get(id)
+            .into_iter()
+            .flatten()
+            .copied()
+            .filter(|narrower_id| {
+                names_by_id
+                    .get(narrower_id)
+                    .is_some_and(|narrower_name| promoted_hyponyms.contains(name, narrower_name))
+            })
+            .collect();
+        let structural = if promoted_narrower.is_empty() {
+            StructuralConstraint::ProductType(*id)
+        } else {
+            let mut ids = vec![*id];
+            ids.extend(promoted_narrower);
+            StructuralConstraint::ProductTypeAny(ids)
         };
         lex.insert(
             name,
@@ -868,56 +949,82 @@ mod hyponym_tests {
     }
 
     /// Issue #55 checkpoint-14 follow-up
-    /// (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`): the new
-    /// `compile_lexicon_with_product_type_hyponyms` toggle must not change
-    /// production behavior on its own -- `enable_product_type_hyponyms:
-    /// true` has to be byte-identical (via `Debug` formatting, since
-    /// `SemanticLexicon` has no `PartialEq`) to plain `compile_lexicon`,
-    /// which always enables hyponym expansion. This is the regression
-    /// guard for the refactor that threaded the new bool parameter through
+    /// (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`), regated by
+    /// A1 (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`):
+    /// `compile_lexicon_with_promoted_hyponyms` must not change production
+    /// behavior on its own -- an empty `PromotedHyponyms` has to be
+    /// byte-identical (via `Debug` formatting, since `SemanticLexicon` has
+    /// no `PartialEq`) to plain `compile_lexicon`, which always compiles
+    /// with an empty promoted set. This is the regression guard for the
+    /// refactor that threaded `&PromotedHyponyms` through
     /// `compile_non_brand_lexicon`'s three existing call sites.
     #[test]
-    fn product_type_hyponym_toggle_true_matches_compile_lexicon() {
+    fn promoted_hyponyms_empty_matches_compile_lexicon() {
         let types = names(&[("recliners", 1), ("gray recliners", 2), ("sofas", 3)]);
         let profile = CatalogProfile {
             product_type_names: types,
             ..Default::default()
         };
         let via_compile_lexicon = format!("{:?}", super::compile_lexicon(&profile, 1));
-        let via_toggle_true = format!(
+        let via_empty_promoted = format!(
             "{:?}",
-            super::compile_lexicon_with_product_type_hyponyms(&profile, 1, true)
+            super::compile_lexicon_with_promoted_hyponyms(
+                &profile,
+                1,
+                &PromotedHyponyms::default()
+            )
         );
-        assert_eq!(via_compile_lexicon, via_toggle_true);
+        assert_eq!(via_compile_lexicon, via_empty_promoted);
     }
 
-    /// The other half of the same guard: `enable_product_type_hyponyms:
-    /// false` must produce plain per-id `ProductType` matching only --
-    /// never a `ProductTypeAny`, even where the vocabulary contains a
-    /// genuine hyponym pair the `true` path would expand.
+    /// The other half of the same guard, and the direct regression test
+    /// for A1's own fix: an empty (default) `PromotedHyponyms` must
+    /// produce plain per-id `ProductType` matching only -- never a
+    /// `ProductTypeAny` -- even where the vocabulary contains a genuine
+    /// syntactic hyponym candidate. `product_type_hyponym_groups` staying
+    /// a pure candidate generator is not enough on its own; this confirms
+    /// `compile_non_brand_lexicon` actually gates on promotion status
+    /// rather than re-trusting every syntactic candidate the way the
+    /// pre-A1 `enable_product_type_hyponyms: bool` toggle did.
     #[test]
-    fn product_type_hyponym_toggle_false_never_produces_product_type_any() {
+    fn default_promoted_hyponyms_never_produces_product_type_any() {
         let types = names(&[("recliners", 1), ("gray recliners", 2), ("sofas", 3)]);
         let profile = CatalogProfile {
             product_type_names: types,
             ..Default::default()
         };
-        let baseline = super::compile_lexicon_with_product_type_hyponyms(&profile, 1, false);
+        let baseline = super::compile_lexicon_with_promoted_hyponyms(
+            &profile,
+            1,
+            &PromotedHyponyms::default(),
+        );
         let debug = format!("{baseline:?}");
         assert!(
             !debug.contains("ProductTypeAny"),
-            "baseline (hyponyms disabled) must never emit ProductTypeAny: {debug}"
+            "default (no promoted relations) must never emit ProductTypeAny: {debug}"
         );
         assert!(
             debug.contains("ProductType(ProductTypeId(1))"),
             "baseline must still resolve \"recliners\" via plain ProductType matching: {debug}"
         );
-        // Contrast: the same profile with hyponyms enabled DOES produce a
-        // ProductTypeAny for "recliners" (its own established behavior,
+        // Contrast: the same profile with "recliners" -> "gray recliners"
+        // actually PROMOTED does produce a ProductTypeAny for "recliners"
+        // (its own established syntactic behavior,
         // `broader_term_admits_a_more_specific_whole_word_superset` above)
-        // -- confirms the two lexicons are actually different, not that
-        // this profile happens to never trigger the mechanism either way.
-        let treatment = super::compile_lexicon_with_product_type_hyponyms(&profile, 1, true);
+        // -- confirms the two lexicons are actually different because a
+        // real promotion was recorded, not that this profile happens to
+        // never trigger the mechanism either way.
+        let promoted = PromotedHyponyms::compile(
+            1,
+            [HyponymRelation::candidate(
+                "recliners",
+                "gray recliners",
+                RuleProvenance::Catalog,
+                1.0,
+            )
+            .promote()],
+        );
+        let treatment = super::compile_lexicon_with_promoted_hyponyms(&profile, 1, &promoted);
         assert!(format!("{treatment:?}").contains("ProductTypeAny"));
     }
 }
