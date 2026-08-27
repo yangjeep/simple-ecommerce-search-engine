@@ -8,6 +8,7 @@ description = "Issue #55 Architecture Falsification Loop: H3 (variant-aware exec
 
 [dependencies]
 commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
 round1-eval = { path = "../round1-eval" }
 phase6a-eval = { path = "../phase6a-eval" }
 phase9-eval = { path = "../phase9-eval" }

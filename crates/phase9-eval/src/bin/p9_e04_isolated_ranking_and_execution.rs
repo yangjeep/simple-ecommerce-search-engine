@@ -99,36 +99,35 @@ fn load_labels(
     judged
 }
 
-/// POSTs to Solr's `/select` handler (form-encoded, not GET) specifically
-/// so a `{!terms f=id}` filter listing thousands of ids never hits a URL
-/// length limit -- Solr's own standard handler accepts POSTed form params
-/// identically to GET query params.
+/// Issue #55 A3 (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`):
+/// previously a private, unhardened `ureq` client (`.ok()?` collapsing
+/// every transport/parse failure into one indistinguishable `None`, and
+/// this file's own call site silently `continue`d past a failure with no
+/// counter or trace at all -- the quietest variant of the "comparator
+/// failure disappears from the denominator" defect this centralization
+/// closes). Now a thin latency-measuring wrapper around
+/// `comparator_eval::solr::solr_search`, the same hardened transport
+/// every other migrated comparator binary uses; POSTs (not GET)
+/// specifically so a `{!terms f=id}` filter listing thousands of ids
+/// never hits a URL length limit.
 fn solr_search_restricted(
     base_url: &str,
     q: &str,
     allowed_ids: &[String],
     rows: usize,
-) -> Option<(f64, Vec<String>)> {
+) -> (f64, comparator_eval::outcome::EngineLookup) {
     let terms_fq = format!("{{!terms f=id}}{}", allowed_ids.join(","));
-    let url = format!("{base_url}/select");
     let t0 = std::time::Instant::now();
-    let resp = ureq::post(&url)
-        .timeout(std::time::Duration::from_secs(30))
-        .send_form(&[
-            ("q", q),
-            ("fq", terms_fq.as_str()),
-            ("rows", &rows.to_string()),
-            ("fl", "id"),
-        ])
-        .ok()?;
+    let lookup = comparator_eval::solr::solr_search(
+        base_url,
+        "title description",
+        q,
+        &[terms_fq],
+        rows,
+        std::time::Duration::from_secs(30),
+    );
     let elapsed_ms = t0.elapsed().as_secs_f64() * 1000.0;
-    let body: serde_json::Value = resp.into_json().ok()?;
-    let ids: Vec<String> = body["response"]["docs"]
-        .as_array()?
-        .iter()
-        .filter_map(|d| d["id"].as_str().map(str::to_string))
-        .collect();
-    Some((elapsed_ms, ids))
+    (elapsed_ms, lookup)
 }
 
 fn mean(v: &[f64]) -> f64 {
@@ -231,6 +230,9 @@ fn main() {
     let mut native_ms = Vec::new();
     let mut solr_ms = Vec::new();
     let mut candidate_sizes = Vec::new();
+    // Issue #55 A3: excluded (never silently dropped with no trace), see
+    // the abort-before-printing check after the measured loop.
+    let mut solr_failures: Vec<String> = Vec::new();
     // Issue #55 whole-workload diagnostic: P9-E02's own FastPath-only vs
     // Hybrid-only breakdown showed FastPath's real end-to-end latency
     // staying high post-fix while Hybrid's dropped sharply -- the opposite
@@ -463,10 +465,18 @@ fn main() {
         } else {
             format!("{{!edismax qf=\"title description\"}}{text}")
         };
-        let Some((solr_latency_ms, solr_ids)) =
-            solr_search_restricted(&solr_base_url, &solr_q, &allowed_wands_ids, K)
-        else {
-            continue;
+        let (solr_latency_ms, solr_lookup) =
+            solr_search_restricted(&solr_base_url, &solr_q, &allowed_wands_ids, K);
+        let solr_ids: Vec<String> = match &solr_lookup {
+            comparator_eval::outcome::EngineLookup::Success(ids) => ids.clone(),
+            other => {
+                solr_failures.push(format!(
+                    "query={:?} solr_lookup_failure={:?}",
+                    q.text,
+                    other.failure_description()
+                ));
+                continue;
+            }
         };
         let (s_ndcg, _, _) = ndcg_recall_mrr(&solr_ids, query_judged, K);
 
@@ -475,6 +485,22 @@ fn main() {
         native_ms.push(native_latency_ms);
         solr_ms.push(solr_latency_ms);
         evaluated += 1;
+    }
+
+    if !solr_failures.is_empty() {
+        eprintln!(
+            "\n=== SOLR COMPARATOR FAILURE: {} queries got no legitimate Solr answer -- excluded \
+             from every aggregate above, NOT silently dropped with no trace \
+             (docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md) ===",
+            solr_failures.len()
+        );
+        for failure in &solr_failures {
+            eprintln!("  {failure}");
+        }
+        eprintln!(
+            "Fix the infrastructure and rerun -- the numbers below are NOT a certified comparison."
+        );
+        std::process::exit(1);
     }
 
     candidate_sizes.sort_unstable();

@@ -46,14 +46,15 @@
 use std::collections::{BTreeMap, HashMap};
 
 use commerce_core::cold_start::{compile_lexicon, CatalogProfile};
-use commerce_core::domain::{CategoryId, Constraint, ProductId, ProductTypeId};
+use commerce_core::domain::{BrandId, CategoryId, ProductId, ProductTypeId};
 use commerce_core::index::CatalogIndex;
-use commerce_core::ir::{compile, ResolvedConstraint, StructuralConstraint};
+use commerce_core::ir::{compile, ResolvedConstraint};
 use commerce_core::plan::{execute_planned, PlannerPolicy};
+use comparator_eval::solr::solr_search;
+use comparator_eval::translate::{translate_all, SolrFieldMap, StructuralNames};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate, BuiltIndex};
 use phase9_eval::wands_relevance::{ndcg_recall_mrr, WandsLabel};
 use round1_eval::query_taxonomy::{classify9, QueryClass9};
-use round1_eval::solr::{case_insensitive_field_regex, solr_search};
 
 const CATALOG_PATH: &str = "dataset_cache/wands/catalog.jsonl";
 const QUERY_PATH: &str = "dataset_cache/wands/query.csv";
@@ -107,82 +108,64 @@ fn load_labels(path: &str) -> BTreeMap<String, BTreeMap<String, WandsLabel>> {
     judged
 }
 
-/// Builds the Solr `(q, fq)` pair for a compiled query against the
-/// `wands_bench` schema (`scripts/datasets/solr_index_wands.py`):
-/// `title`/`description` are the only free-text fields (no `all_text`
-/// copy field on this core, unlike the ESCI `wands_bench` naming
-/// coincidence with round1_eval's own `all_text`-based schema), and
-/// structural constraints map to WANDS's own docValues string fields.
-/// Case-insensitive regex is used uniformly for every structural fq
-/// (not just where casing is known to vary) -- simpler and strictly safe.
+/// `StructuralNames` for the WANDS catalog: no `Brand` data exists at
+/// all (WANDS has no brand field), so `brand_name` always returns
+/// `None` -- combined with `wands_field_map`'s `brand: None` below, any
+/// `Brand`/`BrandAny` constraint (which a generic compiler should never
+/// actually produce against this catalog) translates to
+/// `Translation::NotApplicable`, not a fabricated filter.
+struct WandsNames<'a> {
+    category_name_by_id: &'a HashMap<CategoryId, String>,
+    product_type_name_by_id: &'a HashMap<ProductTypeId, String>,
+}
+
+impl StructuralNames for WandsNames<'_> {
+    fn brand_name(&self, _id: BrandId) -> Option<&str> {
+        None
+    }
+    fn product_type_name(&self, id: ProductTypeId) -> Option<&str> {
+        self.product_type_name_by_id.get(&id).map(String::as_str)
+    }
+    fn category_name(&self, id: CategoryId) -> Option<&str> {
+        self.category_name_by_id.get(&id).map(String::as_str)
+    }
+}
+
+/// Issue #55 A3: `fq` is now built by `comparator_eval::translate::translate_all`,
+/// the single, exhaustively-matched (no wildcard arm) constraint
+/// translator shared across every comparator binary in this workspace --
+/// replacing this function's own local match, whose missing
+/// `ProductTypeAny` arm (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`)
+/// is exactly the defect class the shared translator exists to make
+/// impossible to reintroduce (a new `ResolvedConstraint`/`StructuralConstraint`
+/// variant now fails to *compile* in the shared translator rather than
+/// silently falling through a local `_ => {}`). `wands_field_map` declares
+/// which Solr fields this core actually has (`category_leaf`,
+/// `product_class`; no `brand`/price field), matching this function's
+/// previous behavior for every constraint kind WANDS data can produce.
+/// The free-text `q` construction (`title`/`description`, no `all_text`
+/// copy field on this core) is unchanged.
+fn wands_field_map() -> SolrFieldMap {
+    SolrFieldMap {
+        brand: None,
+        product_type: Some("product_class"),
+        category: Some("category_leaf"),
+        price_cents: None,
+    }
+}
+
 fn wands_solr_query_for(
     query_text: &str,
     residual_lexical: &[String],
     constraints: &[ResolvedConstraint],
     category_name_by_id: &HashMap<CategoryId, String>,
     product_type_name_by_id: &HashMap<ProductTypeId, String>,
-) -> (String, Vec<String>) {
-    let mut fq = Vec::new();
-    for c in constraints {
-        match c {
-            ResolvedConstraint::Structural(StructuralConstraint::Category(id)) => {
-                if let Some(name) = category_name_by_id.get(id) {
-                    fq.push(format!(
-                        "category_leaf:/{}/",
-                        case_insensitive_field_regex(name)
-                    ));
-                }
-            }
-            ResolvedConstraint::Structural(StructuralConstraint::ProductType(id)) => {
-                if let Some(name) = product_type_name_by_id.get(id) {
-                    fq.push(format!(
-                        "product_class:/{}/",
-                        case_insensitive_field_regex(name)
-                    ));
-                }
-            }
-            // Issue #55 checkpoint-14 paired-comparator follow-up
-            // (`docs/decisions/ISSUE55_PAIRED_COMPARATOR_DECISION.md`):
-            // this arm was missing entirely until this fix -- `ProductTypeAny`
-            // did not exist as a reachable constraint kind against WANDS data
-            // when the comment on the old `_ => {}` catch-all below was
-            // written, and was never revisited when checkpoint 14's leaf-only
-            // hyponym expansion started producing it in production. The
-            // silent omission meant Solr received NO product-type filter at
-            // all for any query native resolved to `ProductTypeAny`,
-            // asymmetrically weakening the Solr side of exactly the
-            // treatment's own queries. Same OR-of-regex construction as the
-            // single-id `ProductType` arm above, applied to every id in the
-            // group.
-            ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(ids)) => {
-                let names: Vec<&String> = ids
-                    .iter()
-                    .filter_map(|id| product_type_name_by_id.get(id))
-                    .collect();
-                if !names.is_empty() {
-                    let alternation = names
-                        .iter()
-                        .map(|n| case_insensitive_field_regex(n))
-                        .collect::<Vec<_>>()
-                        .join("|");
-                    fq.push(format!("product_class:/({alternation})/"));
-                }
-            }
-            ResolvedConstraint::Attribute(Constraint::Enum { attribute, value }) => {
-                fq.push(format!(
-                    "{attribute}:/{}/",
-                    case_insensitive_field_regex(value)
-                ));
-            }
-            // WANDS has no Brand/MultiEnum/Boolean/Numeric/Text/Price data
-            // to compile a real constraint of these shapes from -- if the
-            // generic compiler ever produced one anyway (e.g. a query
-            // literally containing "under $50"), it is intentionally not
-            // translated into a Solr fq here rather than fabricating a
-            // filter against data that does not exist.
-            _ => {}
-        }
-    }
+) -> (String, Vec<String>, Vec<String>) {
+    let names = WandsNames {
+        category_name_by_id,
+        product_type_name_by_id,
+    };
+    let (fq, translation_failures) = translate_all(constraints, &wands_field_map(), &names);
     let text = if residual_lexical.is_empty() {
         query_text.to_string()
     } else {
@@ -193,7 +176,7 @@ fn wands_solr_query_for(
     } else {
         format!("{{!edismax qf=\"title description\"}}{}", text)
     };
-    (q, fq)
+    (q, fq, translation_failures)
 }
 
 struct ResultPoint {
@@ -335,14 +318,21 @@ fn main() {
             &policy,
             None,
         );
-        let (solr_q, solr_fq) = wands_solr_query_for(
+        let (solr_q, solr_fq, _translation_failures) = wands_solr_query_for(
             &q.text,
             &compiled.residual_lexical,
             &compiled.constraints,
             &category_name_by_id,
             &product_type_name_by_id,
         );
-        let _ = solr_search(&solr_base_url, &solr_q, &solr_fq, K);
+        let _ = solr_search(
+            &solr_base_url,
+            "title description",
+            &solr_q,
+            &solr_fq,
+            K,
+            std::time::Duration::from_secs(30),
+        );
     }
 
     let mut results: BTreeMap<QueryClass9, ClassResult> = BTreeMap::new();
@@ -352,6 +342,15 @@ fn main() {
     let mut outcome_counts: BTreeMap<&'static str, usize> = BTreeMap::new();
     let mut zero_constraint_examples: Vec<String> = Vec::new();
     let mut variant_scoped_examples: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
+    // Issue #55 A3 (`docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`):
+    // a Solr transport/query/parse failure, or a constraint this run
+    // could not symmetrically translate to `fq`, must never be scored as
+    // native-favoring NDCG=0.0 (the confirmed bug this file previously
+    // had) -- every such query is excluded from every aggregate below and
+    // recorded here instead; a non-empty list aborts the run before any
+    // number is printed, matching `issue35_eval::eval::run_vertical_eval`'s
+    // existing discipline.
+    let mut solr_failures: Vec<String> = Vec::new();
 
     for q in &queries {
         let Some(query_judged) = judged.get(&q.query_id) else {
@@ -388,23 +387,47 @@ fn main() {
         let (native_ndcg, native_recall, native_mrr) =
             ndcg_recall_mrr(&native_ids, query_judged, K);
 
-        let (solr_q, solr_fq) = wands_solr_query_for(
+        let (solr_q, solr_fq, translation_failures) = wands_solr_query_for(
             &q.text,
             &compiled.residual_lexical,
             &compiled.constraints,
             &category_name_by_id,
             &product_type_name_by_id,
         );
+        if !translation_failures.is_empty() {
+            solr_failures.push(format!(
+                "query={:?} fq_translation_failed={translation_failures:?}",
+                q.text
+            ));
+            continue;
+        }
         let t1 = std::time::Instant::now();
-        let solr_result = solr_search(&solr_base_url, &solr_q, &solr_fq, K);
+        let solr_result = solr_search(
+            &solr_base_url,
+            "title description",
+            &solr_q,
+            &solr_fq,
+            K,
+            std::time::Duration::from_secs(30),
+        );
         let solr_latency_ms = t1.elapsed().as_secs_f64() * 1000.0;
-        let solr_ids: Vec<String> = solr_result
-            .as_ref()
-            .map(|r| r.ids.clone())
-            .unwrap_or_default();
-        let (solr_ndcg, solr_recall, solr_mrr) = match &solr_result {
-            Some(r) => ndcg_recall_mrr(&r.ids, query_judged, K),
-            None => (0.0, 0.0, 0.0),
+        // A real, legitimate zero-result Solr answer is scored 0.0 here --
+        // that is a true relevance measurement. A transport/query/parse
+        // failure is a different case entirely and is excluded above (via
+        // `continue`) rather than reaching this match at all.
+        let (solr_ids, solr_ndcg, solr_recall, solr_mrr) = match &solr_result {
+            comparator_eval::outcome::EngineLookup::Success(ids) => {
+                let (ndcg, recall, mrr) = ndcg_recall_mrr(ids, query_judged, K);
+                (ids.clone(), ndcg, recall, mrr)
+            }
+            other => {
+                solr_failures.push(format!(
+                    "query={:?} solr_lookup_failure={:?}",
+                    q.text,
+                    other.failure_description()
+                ));
+                continue;
+            }
         };
 
         if class == QueryClass9::VariantScoped && variant_scoped_examples.len() < 3 {
@@ -439,6 +462,26 @@ fn main() {
             push_result(&mut by_routing, outcome_label, &point);
         }
         evaluated += 1;
+    }
+
+    if !solr_failures.is_empty() {
+        eprintln!(
+            "\n=== SOLR COMPARATOR FAILURE: {} of {} attempted queries got no legitimate, \
+             symmetric Solr answer -- excluded from every aggregate above, NOT scored as Solr \
+             NDCG=0.0 (docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md) ===",
+            solr_failures.len(),
+            evaluated + solr_failures.len()
+        );
+        for failure in &solr_failures {
+            eprintln!("  {failure}");
+        }
+        eprintln!(
+            "This Solr core is same-host and locally controlled, so any transport/query/parse \
+             failure indicates a real infrastructure or comparator-construction defect, not \
+             expected flakiness. Fix it and rerun -- the numbers below are NOT a certified \
+             comparison."
+        );
+        std::process::exit(1);
     }
 
     println!("evaluated {evaluated} queries ({skipped_no_judgments} skipped, no judgments found)");
