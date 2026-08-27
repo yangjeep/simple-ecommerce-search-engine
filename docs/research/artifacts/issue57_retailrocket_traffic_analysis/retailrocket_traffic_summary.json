@@ -1,0 +1,30 @@
+{
+  "total_events": 2756101,
+  "distinct_items_viewed": 234838,
+  "distinct_visitors": 1407580,
+  "event_type_counts": {
+    "view": 2664312,
+    "addtocart": 69332,
+    "transaction": 22457
+  },
+  "event_type_shares": {
+    "view": 0.9666960681049062,
+    "addtocart": 0.02515582701795036,
+    "transaction": 0.008148104877143472
+  },
+  "conversion_funnel": {
+    "view_to_addtocart_rate": 0.02602247784793973,
+    "addtocart_to_transaction_rate": 0.3239052674089886
+  },
+  "item_popularity_concentration": {
+    "top_1pct_items_share_of_views": 0.22701507931503517,
+    "top_5pct_items_share_of_views": 0.4888312630052336,
+    "top_10pct_items_share_of_views": 0.6355119070138933,
+    "top_20pct_items_share_of_views": 0.7829863769708653
+  },
+  "visitor_activity": {
+    "mean_events_per_visitor": 1.9580421716705267,
+    "median_events_per_visitor": 1,
+    "max_events_single_visitor": 7757
+  }
+}
