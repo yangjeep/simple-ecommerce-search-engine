@@ -1,0 +1,64 @@
+{
+    "columns": [
+        {"name": "id", "type": "INT64"},
+        {"name": "asin", "type": "STRING"},
+        {"name": "title", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "description", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "bullet_point", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "brand", "type": "STRING"},
+        {"name": "color", "type": "STRING"}
+    ],
+    "indexes": [
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "PRIMARY_KEY64"
+        },
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "asin",
+            "index_config": {"index_fields": [{"field_name": "asin"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "brand",
+            "index_config": {"index_fields": [{"field_name": "brand"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "color",
+            "index_config": {"index_fields": [{"field_name": "color"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "title",
+            "index_config": {"index_fields": [{"field_name": "title"}]},
+            "index_type": "TEXT"
+        },
+        {
+            "name": "description",
+            "index_config": {"index_fields": [{"field_name": "description"}]},
+            "index_type": "TEXT"
+        },
+        {
+            "name": "bullet_point",
+            "index_config": {"index_fields": [{"field_name": "bullet_point"}]},
+            "index_type": "TEXT"
+        },
+        {
+            "name": "default",
+            "index_type": "PACK",
+            "index_config": {
+                "index_fields": [
+                    {"field_name": "title", "boost": 200},
+                    {"field_name": "description", "boost": 50},
+                    {"field_name": "bullet_point", "boost": 100}
+                ]
+            }
+        }
+    ]
+}

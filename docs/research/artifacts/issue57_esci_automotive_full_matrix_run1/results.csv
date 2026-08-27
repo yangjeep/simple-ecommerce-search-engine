@@ -1,0 +1,26 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms
+Q2_brand_filter,Filtrete,53,[("solr", 53), ("elasticsearch", 53), ("opensearch", 53), ("havenask", 53)],true,native,0.00010666666666666667,0.000097,0.000328
+Q2_brand_filter,Filtrete,53,[("solr", 53), ("elasticsearch", 53), ("opensearch", 53), ("havenask", 53)],true,solr,2.1006171,1.816458,10.300133
+Q2_brand_filter,Filtrete,53,[("solr", 53), ("elasticsearch", 53), ("opensearch", 53), ("havenask", 53)],true,elasticsearch,1.8285495333333335,1.732772,4.077835
+Q2_brand_filter,Filtrete,53,[("solr", 53), ("elasticsearch", 53), ("opensearch", 53), ("havenask", 53)],true,opensearch,1.7033877,1.700202,2.028499
+Q2_brand_filter,Filtrete,53,[("solr", 53), ("elasticsearch", 53), ("opensearch", 53), ("havenask", 53)],true,havenask,3.153730866666667,3.16967,3.603807
+Q2_brand_filter,Detroit Axle,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,native,0.0000976,0.000094,0.000155
+Q2_brand_filter,Detroit Axle,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,solr,1.6583291,1.625355,2.418627
+Q2_brand_filter,Detroit Axle,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,elasticsearch,1.6347005666666667,1.626373,2.045755
+Q2_brand_filter,Detroit Axle,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,opensearch,1.7068920333333335,1.663734,2.597821
+Q2_brand_filter,Detroit Axle,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,havenask,3.4207333333333336,3.412257,3.663922
+Q2_brand_filter,Nordic Pure,24,[("solr", 24), ("elasticsearch", 24), ("opensearch", 24), ("havenask", 24)],true,native,0.00010056666666666667,0.000095,0.000163
+Q2_brand_filter,Nordic Pure,24,[("solr", 24), ("elasticsearch", 24), ("opensearch", 24), ("havenask", 24)],true,solr,1.5824150666666668,1.544217,2.990421
+Q2_brand_filter,Nordic Pure,24,[("solr", 24), ("elasticsearch", 24), ("opensearch", 24), ("havenask", 24)],true,elasticsearch,1.7796663333333334,1.755808,2.174649
+Q2_brand_filter,Nordic Pure,24,[("solr", 24), ("elasticsearch", 24), ("opensearch", 24), ("havenask", 24)],true,opensearch,1.7033232666666667,1.704579,1.973778
+Q2_brand_filter,Nordic Pure,24,[("solr", 24), ("elasticsearch", 24), ("opensearch", 24), ("havenask", 24)],true,havenask,3.2610413333333335,3.277351,3.719872
+Q11_lexical_search_NOT_correctness_gated,tire,1,[("solr", 16), ("elasticsearch", 16), ("opensearch", 16), ("havenask", 10)],true,native,0.12957306666666665,0.124193,0.179761
+Q11_lexical_search_NOT_correctness_gated,tire,1,[("solr", 16), ("elasticsearch", 16), ("opensearch", 16), ("havenask", 10)],true,solr,1.3119459666666666,1.306199,1.545245
+Q11_lexical_search_NOT_correctness_gated,tire,1,[("solr", 16), ("elasticsearch", 16), ("opensearch", 16), ("havenask", 10)],true,elasticsearch,1.7946544,1.777129,3.597866
+Q11_lexical_search_NOT_correctness_gated,tire,1,[("solr", 16), ("elasticsearch", 16), ("opensearch", 16), ("havenask", 10)],true,opensearch,1.703802,1.695602,2.476362
+Q11_lexical_search_NOT_correctness_gated,tire,1,[("solr", 16), ("elasticsearch", 16), ("opensearch", 16), ("havenask", 10)],true,havenask,3.2537873,3.263233,3.581486
+Q11_lexical_search_NOT_correctness_gated,oil,108,[("solr", 161), ("elasticsearch", 161), ("opensearch", 161), ("havenask", 135)],true,native,0.12101996666666666,0.116545,0.153116
+Q11_lexical_search_NOT_correctness_gated,oil,108,[("solr", 161), ("elasticsearch", 161), ("opensearch", 161), ("havenask", 135)],true,solr,1.4938987333333333,1.399844,3.176696
+Q11_lexical_search_NOT_correctness_gated,oil,108,[("solr", 161), ("elasticsearch", 161), ("opensearch", 161), ("havenask", 135)],true,elasticsearch,1.6796305,1.677456,2.003088
+Q11_lexical_search_NOT_correctness_gated,oil,108,[("solr", 161), ("elasticsearch", 161), ("opensearch", 161), ("havenask", 135)],true,opensearch,2.0355795333333333,2.021602,4.074314
+Q11_lexical_search_NOT_correctness_gated,oil,108,[("solr", 161), ("elasticsearch", 161), ("opensearch", 161), ("havenask", 135)],true,havenask,3.5077124,3.434292,4.428539
