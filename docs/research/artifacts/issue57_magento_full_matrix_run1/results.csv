@@ -1,0 +1,5 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 1)],true,solr,0.9646963666666667,0.946602,1.242334
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 1)],true,elasticsearch,1.4277902666666666,1.325957,5.30612
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 1)],true,opensearch,1.3305110333333334,1.317472,1.566402
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 1)],true,havenask,3.0546272666666665,3.081694,3.434917
