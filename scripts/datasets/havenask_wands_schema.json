@@ -1,0 +1,135 @@
+{
+    "columns": [
+        {"name": "id", "type": "INT64"},
+        {"name": "title", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "description", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "product_class", "type": "STRING"},
+        {"name": "category_leaf", "type": "STRING"},
+        {"name": "category_depth_1", "type": "STRING"},
+        {"name": "category_depth_2", "type": "STRING"},
+        {"name": "category_depth_3", "type": "STRING"},
+        {"name": "category_depth_4", "type": "STRING"},
+        {"name": "category_depth_5", "type": "STRING"},
+        {"name": "category_depth_6", "type": "STRING"},
+        {"name": "color", "type": "STRING"},
+        {"name": "style", "type": "STRING"},
+        {"name": "primarymaterial", "type": "STRING"},
+        {"name": "material", "type": "STRING"},
+        {"name": "shape", "type": "STRING"},
+        {"name": "rating_count", "type": "DOUBLE"},
+        {"name": "average_rating", "type": "DOUBLE"},
+        {"name": "review_count", "type": "DOUBLE"}
+    ],
+    "indexes": [
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "PRIMARY_KEY64"
+        },
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "product_class",
+            "index_config": {"index_fields": [{"field_name": "product_class"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_leaf",
+            "index_config": {"index_fields": [{"field_name": "category_leaf"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_1",
+            "index_config": {"index_fields": [{"field_name": "category_depth_1"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_2",
+            "index_config": {"index_fields": [{"field_name": "category_depth_2"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_3",
+            "index_config": {"index_fields": [{"field_name": "category_depth_3"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_4",
+            "index_config": {"index_fields": [{"field_name": "category_depth_4"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_5",
+            "index_config": {"index_fields": [{"field_name": "category_depth_5"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_depth_6",
+            "index_config": {"index_fields": [{"field_name": "category_depth_6"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "color",
+            "index_config": {"index_fields": [{"field_name": "color"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "style",
+            "index_config": {"index_fields": [{"field_name": "style"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "primarymaterial",
+            "index_config": {"index_fields": [{"field_name": "primarymaterial"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "material",
+            "index_config": {"index_fields": [{"field_name": "material"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "shape",
+            "index_config": {"index_fields": [{"field_name": "shape"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "rating_count",
+            "index_config": {"index_fields": [{"field_name": "rating_count"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "average_rating",
+            "index_config": {"index_fields": [{"field_name": "average_rating"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "review_count",
+            "index_config": {"index_fields": [{"field_name": "review_count"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "title",
+            "index_config": {"index_fields": [{"field_name": "title"}]},
+            "index_type": "TEXT"
+        },
+        {
+            "name": "description",
+            "index_config": {"index_fields": [{"field_name": "description"}]},
+            "index_type": "TEXT"
+        },
+        {
+            "name": "default",
+            "index_type": "PACK",
+            "index_config": {
+                "index_fields": [
+                    {"field_name": "title", "boost": 200},
+                    {"field_name": "description", "boost": 100}
+                ]
+            }
+        }
+    ]
+}
