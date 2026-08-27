@@ -207,6 +207,18 @@ pub fn havenask_query(base_url: &str, sql: &str) -> Result<serde_json::Value, St
 pub fn havenask_count(base_url: &str, table: &str, where_clause: &str) -> Result<u64, String> {
     let sql = format!("select count(*) from {table}{where_clause}");
     let inner = havenask_query(base_url, &sql)?;
+    // Confirmed-live Havenask SQL quirk (found building the Magento
+    // cell's Q8 trap checks -- most of which expect a genuine zero
+    // match): a `COUNT(*)` over a `WHERE` clause matching zero rows
+    // returns an EMPTY `data` array, not the standard-SQL single row
+    // `[[0]]` every other engine here returns. Both shapes mean "zero",
+    // so both are treated identically rather than one surfacing as a
+    // parse failure.
+    if let Some(data) = inner["data"].as_array() {
+        if data.is_empty() {
+            return Ok(0);
+        }
+    }
     inner["data"][0][0]
         .as_u64()
         .ok_or_else(|| format!("havenask: no count in {inner}"))
