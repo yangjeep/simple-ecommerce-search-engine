@@ -78,7 +78,7 @@ flowchart LR
     V -->|uncertain| X[Ask again / escalate / abstain]
 ```
 
-The active Issue #47 tests whether this design also makes model size less load-bearing: can cheap models handle easy semantic problems while harder ones escalate selectively?
+Issue #47 tested whether this design also makes model size less load-bearing: can cheap models handle easy semantic problems while harder ones escalate selectively? It concluded REVISE on both halves — the adaptive controller missed its own call-reduction target, and a cheap-first escalation cascade consumed *more* tokens than the strong-model baseline it was meant to reduce, not fewer (issue closed; the detailed decision record has not yet landed on `main`). Model-size load-bearingness remains an open question, not a closed win.
 
 ## Why this might be a useful system
 

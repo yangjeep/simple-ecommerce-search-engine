@@ -104,7 +104,24 @@ Issue #45 then tested deterministic canonicalization. It established two useful 
 1. raw model wording/primitive choices should not own the installed schema;
 2. deterministic rules can absorb a large part of proposal instability without unsafe promotion.
 
-The E2c canonicalizer is still an experimental/evaluation boundary, not a production service. The active Issue #47 tests adaptive consensus and model capability/cost before any productionization decision.
+The E2c canonicalizer is still an experimental/evaluation boundary, not a production service. Issue #47 tested adaptive consensus and model capability/cost before any productionization decision and concluded REVISE on both halves (closed; no architecture GO) — see `docs/decisions/README.md`'s chronology for the surviving, non-#47 findings this project keeps building on.
+
+### Semantic promotion lifecycle (Issue #55 A1/A2)
+
+`compile_lexicon`'s syntactic candidates (e.g. `product_type_hyponym_groups`, a whole-word `ProductType` hyponym-expansion mechanism structurally identical to `BrandAny`) are a **candidate relation**, never installed as serving semantics on their own. The required lifecycle is:
+
+```text
+candidate relation (syntactic, from catalog vocabulary)
+→ deterministic validation / adjudication
+→ PROMOTE / REJECT / UNRESOLVED
+→ only a recorded PROMOTE verdict may install a hard ProductTypeAny route
+```
+
+`commerce_core::control_plane::hyponym_promotion` (`HyponymRelation`/`PromotedHyponyms`) implements this, reusing `implication.rs`'s existing Candidate/Promoted/Withdrawn lifecycle rather than inventing a parallel one. `compile_lexicon`'s public signature is unchanged, but its default promoted set is empty: **current production has zero active hyponym expansions** by default. This closes a real defect where an unvalidated relation shipped as a hard default filter (`"beds"` admitting the confirmed cross-family false positive `"cat beds"`/`"dog beds & mats"`).
+
+A separate, auditable promotion oracle (`issue55-eval`'s `i55_a2_promotion_oracle` binary) has adjudicated the full 149-group/317-pair live candidate set — 113 pairs PROMOTE (two independent category-hierarchy evidence sources agree), 2 REJECT (the known-bad pairs, explicit override), 136 unreachable (moot), the rest UNRESOLVED (safe fallback) — with zero known false promotions, verified two ways. **This oracle's output is not yet wired into a live `SemanticContext`**; until it is, production stays at zero active expansions regardless of the oracle's own findings. Wiring it in is the named next step, not yet done.
+
+`ProductTypeAny`'s own evidence boundary, disclosed rather than assumed: it is a leaf-only, bag-of-words whole-term match (not hierarchy-aware), which closes the three confirmed cross-family false positives found by dedicated audits except one residual, disclosed risk class (`"beds"` → pet-products-style relations, which the promotion gate now excludes by construction for the two known instances, but the underlying mechanism itself remains bag-of-words, not semantically hierarchy-aware). Treat `ProductTypeAny` as a validated-relation admission gate, not a general synonym/taxonomy engine.
 
 ## 7. Mutable commerce state
 
@@ -123,7 +140,8 @@ The important measured boundary is that pooled in-process native querying behave
 
 ## 9. What is still experimental or absent
 
-- E2c/E2d adaptive learned compilation is not installed as production control-plane behavior.
+- E2c/E2d adaptive learned compilation is not installed as production control-plane behavior (Issue #47 closed REVISE; no GO).
+- The Issue #55 A2 hyponym promotion oracle's PROMOTE verdicts are not yet wired into a live `SemanticContext` — production has zero active `ProductTypeAny` hyponym expansions until that wiring lands.
 - No real Product/Variant/relationship-rich external dataset has yet closed the learned-schema external-validity gap.
 - No generic cost-based planner covers every measured operator crossover.
 - No production Solr/Elasticsearch/OpenSearch adapter lifecycle or service API exists.
@@ -131,3 +149,7 @@ The important measured boundary is that pooled in-process native querying behave
 - No distributed serving / HA / sharding / replication.
 
 That boundary is deliberate. The repository adds product machinery only when a falsifiable experiment shows it is needed.
+
+## 10. Evaluation-harness fairness (not engine architecture, but load-bearing for every benchmark claim above)
+
+Every native-vs-Solr comparison this project cites depends on the evaluation harness asking Solr the *same* question native answers — a structural constraint native enforces (e.g. `ProductTypeAny`, `Brand`) must translate into an equivalent Solr `fq`, and a Solr transport/parse failure must never be scored as a relevance loss. Two independent audits (Issue #55 A3) found both failure modes shipped live in eval binaries at various points: a missing `fq` translation arm for a newly-introduced constraint kind, and a `None`-on-failure collapsed into a scored `NDCG=0.0`. `crates/comparator-eval` now centralizes hardened transport (a 4-way success/transport-error/query-error/parse-error outcome) and an exhaustive constraint-to-`fq` translator behind a small trait boundary designed for Issue #57's Elasticsearch/Havenask adapters to reuse. Migration is not yet complete across every eval binary in the workspace — see `docs/decisions/ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md` for exactly which binaries were fixed and which remain named, disclosed follow-up.
