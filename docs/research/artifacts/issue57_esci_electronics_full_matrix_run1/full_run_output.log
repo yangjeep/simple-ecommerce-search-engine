@@ -1,0 +1,44 @@
+   Compiling issue57-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/issue57-eval)
+    Finished `release` profile [optimized] target(s) in 21.94s
+     Running `target/release/esci_full_matrix electronics`
+loading + ingesting real ESCI electronics slice...
+2075 real products ingested
+building commerce_core structural index...
+
+=== Issue #57 esci_electronics full-matrix result ===
+Q2_brand_filter                               HP                                                           native=      49 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.2687ms p50=   1.2529ms p99=   1.5975ms
+    elasticsearch   mean=   1.7921ms p50=   1.6398ms p99=   5.3178ms
+    opensearch      mean=   1.8087ms p50=   1.7673ms p99=   2.1443ms
+    havenask        mean=   3.7728ms p50=   3.7430ms p99=   4.4883ms
+Q2_brand_filter                               Sceptre                                                      native=      43 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.9000ms p50=   1.7651ms p99=   3.7341ms
+    elasticsearch   mean=   2.0583ms p50=   1.7309ms p99=   7.0103ms
+    opensearch      mean=   1.6111ms p50=   1.5847ms p99=   1.9281ms
+    havenask        mean=   4.0366ms p50=   4.1514ms p99=   4.8728ms
+Q2_brand_filter                               Acer                                                         native=      41 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.5285ms p50=   1.4872ms p99=   2.2796ms
+    elasticsearch   mean=   1.7828ms p50=   1.7667ms p99=   2.1820ms
+    opensearch      mean=   1.7802ms p50=   1.6559ms p99=   5.4208ms
+    havenask        mean=   3.7338ms p50=   3.7272ms p99=   4.3255ms
+Q2b_brand_casing_collision_NOT_gated          variant_a=ENERSYSTEC (collides with ENERSYSTEC/Enersystec)   native=       1 match=true
+Q2b_brand_casing_collision_NOT_gated          variant_b=Enersystec (collides with ENERSYSTEC/Enersystec)   native=       1 match=true
+Q11_lexical_search_NOT_correctness_gated      monitor                                                      native=     262 match=true
+    native          mean=   0.3110ms p50=   0.3089ms p99=   0.3604ms
+    solr            mean=   1.3366ms p50=   1.2286ms p99=   2.5386ms
+    elasticsearch   mean=   1.7973ms p50=   1.7406ms p99=   2.2588ms
+    opensearch      mean=   2.0178ms p50=   1.9600ms p99=   4.3684ms
+    havenask        mean=   3.7544ms p50=   3.7757ms p99=   4.6855ms
+Q11_lexical_search_NOT_correctness_gated      cable                                                        native=     316 match=true
+    native          mean=   0.3627ms p50=   0.3566ms p99=   0.5144ms
+    solr            mean=   1.3046ms p50=   1.2942ms p99=   1.6688ms
+    elasticsearch   mean=   1.8789ms p50=   1.7026ms p99=   3.8054ms
+    opensearch      mean=   1.6237ms p50=   1.5810ms p99=   2.3166ms
+    havenask        mean=   4.1288ms p50=   3.7564ms p99=   8.4813ms
+
+correctness: 7/7 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_electronics_full_matrix
