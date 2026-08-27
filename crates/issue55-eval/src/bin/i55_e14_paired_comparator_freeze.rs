@@ -60,7 +60,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use commerce_core::cold_start::{compile_lexicon_with_product_type_hyponyms, CatalogProfile};
+use commerce_core::cold_start::{
+    compile_lexicon_with_promoted_hyponyms, promote_all_hyponym_candidates_unadjudicated,
+    CatalogProfile,
+};
+use commerce_core::control_plane::PromotedHyponyms;
 use commerce_core::domain::{CategoryId, Constraint, ProductId, ProductTypeId};
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{compile, CommerceQuery, ResolvedConstraint, StructuralConstraint};
@@ -358,12 +362,25 @@ fn main() {
     // The one variable under test: same profile, same min_enum_frequency,
     // hyponym expansion toggled -- everything else about the lexicon is
     // identical by construction (see profile.rs's own
-    // product_type_hyponym_toggle_true_matches_compile_lexicon regression
-    // test for the proof that `true` here is exactly `compile_lexicon`).
-    let baseline_lexicon =
-        compile_lexicon_with_product_type_hyponyms(&profile, MIN_ENUM_FREQUENCY, false);
-    let treatment_lexicon =
-        compile_lexicon_with_product_type_hyponyms(&profile, MIN_ENUM_FREQUENCY, true);
+    // promoted_hyponyms_empty_matches_compile_lexicon regression test for
+    // the proof that an empty `PromotedHyponyms` here is exactly
+    // `compile_lexicon`). This binary measures the leaf-only hyponym
+    // *expansion mechanism* checkpoint 14 introduced, in isolation from
+    // Issue #55 A1's later promotion-adjudication gate -- so "treatment"
+    // here deliberately reproduces the pre-A1 unconditional-auto-install
+    // behavior via `promote_all_hyponym_candidates_unadjudicated`, not a
+    // real adjudicated promotion set (see A2 for that).
+    let baseline_lexicon = compile_lexicon_with_promoted_hyponyms(
+        &profile,
+        MIN_ENUM_FREQUENCY,
+        &PromotedHyponyms::default(),
+    );
+    let all_candidates_promoted = promote_all_hyponym_candidates_unadjudicated(&profile);
+    let treatment_lexicon = compile_lexicon_with_promoted_hyponyms(
+        &profile,
+        MIN_ENUM_FREQUENCY,
+        &all_candidates_promoted,
+    );
 
     println!("building bitmap-delegate Tantivy index...");
     let BuiltIndex {

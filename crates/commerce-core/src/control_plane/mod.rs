@@ -3,12 +3,14 @@
 //! *evolve* a [`crate::ir::SemanticContext`] between deployments, not to
 //! serve a query. See `docs/adr/0005-control-plane-prototype.md`.
 
+mod hyponym_promotion;
 mod implication;
 mod observe;
 mod precision;
 mod provider;
 mod replay;
 
+pub use hyponym_promotion::{HyponymRelation, PromotedHyponyms};
 pub use implication::{
     apply_implications, ImplicationRule, ImplicationTable, RuleProvenance, RuleStatus,
 };

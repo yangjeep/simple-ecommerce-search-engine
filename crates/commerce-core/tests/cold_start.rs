@@ -1,6 +1,8 @@
 use commerce_core::cold_start::{
-    compile_lexicon, coverage_holes, generate_shopper_queries, CatalogProfile,
+    compile_lexicon, compile_lexicon_with_promoted_hyponyms, coverage_holes,
+    generate_shopper_queries, CatalogProfile,
 };
+use commerce_core::control_plane::{HyponymRelation, PromotedHyponyms, RuleProvenance};
 use commerce_core::domain::{
     attributes, Brand, BrandId, Catalog, Category, CategoryId, Inventory, Price, Product,
     ProductId, ProductType, ProductTypeId, Variant, VariantId,
@@ -262,33 +264,68 @@ fn compile_lexicon_for_types(name_a: &str, name_b: &str) -> commerce_core::ir::S
     compile_lexicon(&profile, 1)
 }
 
-/// Supersedes the original REJECT-era assertion here (checkpoint 11,
-/// `docs/decisions/ISSUE55_PRODUCT_TYPE_HYPONYM_DECISION.md`): the
-/// leaf-only-restricted mechanism
-/// (`docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md`) is now
-/// re-wired into production, and "boots"/"hiking boots" was never one
-/// of the confirmed false-positive shapes (neither name is a
-/// breadcrumb path, so leaf-only restriction changes nothing for this
-/// pair) -- hiking boots genuinely are a kind of boots, so "boots" is
-/// now expected, correctly, to admit "hiking boots" products too.
+/// Supersedes the checkpoint-14 assertion here
+/// (`docs/decisions/ISSUE55_HYPONYM_LEAF_ONLY_DECISION.md`), itself
+/// superseded by Issue #55 A1
+/// (`docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`): the
+/// leaf-only-restricted mechanism can still *generate* the "boots" ->
+/// "hiking boots" candidate correctly (neither name is a breadcrumb
+/// path, so leaf-only restriction changes nothing for this pair --
+/// hiking boots genuinely are a kind of boots), but a syntactically-valid
+/// candidate must no longer install as a live route by default. This is
+/// the direct end-to-end regression guard for A1's fix: plain
+/// `compile_lexicon` (no recorded promotion) must resolve "boots" to its
+/// own type only, and only an explicit PROMOTE verdict may activate the
+/// `ProductTypeAny` expansion.
 #[test]
-fn clean_whole_word_subset_product_types_now_merge_via_leaf_only_hyponym_expansion() {
-    let lexicon = compile_lexicon_for_types("Boots", "Hiking Boots");
+fn clean_whole_word_subset_product_types_require_explicit_promotion_to_merge() {
+    let (catalog, product_types) = product_type_pair_catalog("Boots", "Hiking Boots");
+    let brands = vec![Brand {
+        id: BrandId(1),
+        name: "Aerowalk".to_string(),
+    }];
+    let categories = vec![Category {
+        id: CategoryId(1),
+        name: "Footwear".to_string(),
+    }];
+    let profile = CatalogProfile::build(&catalog, &brands, &product_types, &categories);
 
-    let compiled = compile("boots", &lexicon);
+    // Production default: no promoted relations, so the syntactic
+    // candidate must never install as a live route.
+    let default_lexicon = compile_lexicon(&profile, 1);
+    let compiled = compile("boots", &default_lexicon);
     assert_eq!(compiled.constraints.len(), 1, "{compiled:?}");
     assert_eq!(
         compiled.constraints[0],
+        ResolvedConstraint::Structural(StructuralConstraint::ProductType(ProductTypeId(1))),
+        "an unpromoted hyponym candidate must never install as a live route by default: \
+         {compiled:?}"
+    );
+
+    // Promoting the relation is what activates the expansion.
+    let promoted = PromotedHyponyms::compile(
+        1,
+        [
+            HyponymRelation::candidate("boots", "hiking boots", RuleProvenance::Catalog, 1.0)
+                .promote(),
+        ],
+    );
+    let treatment_lexicon = compile_lexicon_with_promoted_hyponyms(&profile, 1, &promoted);
+    let compiled_treatment = compile("boots", &treatment_lexicon);
+    assert_eq!(compiled_treatment.constraints.len(), 1, "{compiled_treatment:?}");
+    assert_eq!(
+        compiled_treatment.constraints[0],
         ResolvedConstraint::Structural(StructuralConstraint::ProductTypeAny(vec![
             ProductTypeId(1),
             ProductTypeId(2)
         ])),
-        "\"boots\" must now admit the genuine hyponym \"hiking boots\" too: {compiled:?}"
+        "\"boots\" must admit the genuine, PROMOTED hyponym \"hiking boots\" too: \
+         {compiled_treatment:?}"
     );
 
     // The more specific term has no hyponyms of its own here, so it
     // still resolves to exactly its own type.
-    let compiled_hiking = compile("hiking boots", &lexicon);
+    let compiled_hiking = compile("hiking boots", &treatment_lexicon);
     assert_eq!(compiled_hiking.constraints.len(), 1, "{compiled_hiking:?}");
     assert_eq!(
         compiled_hiking.constraints[0],

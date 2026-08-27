@@ -184,3 +184,26 @@ and `docs/decisions/ISSUE55_HYPONYM_REACHABILITY_AUDIT_DECISION.md`
 independently re-verified the full 149-group/317-pair set from scratch
 before this correction was written, so later work already used the
 correct scope regardless of this log's error.
+
+## A1 implemented (later session): the promotion gate this Priority-2 thread was scoping now exists
+
+A repository-owner closure directive on PR #56/Issue #55 required
+closing exactly the gap this log's "governing question" names --
+`product_type_hyponym_groups` "wired directly into hard serving
+semantics with no discovery/validation/promotion boundary." Full
+verdict: `docs/decisions/ISSUE55_HYPONYM_PROMOTION_GATE_DECISION.md`.
+
+Summary: a new `control_plane::hyponym_promotion` module
+(`HyponymRelation`/`PromotedHyponyms`, reusing `implication.rs`'s own
+`RuleProvenance`/`RuleStatus` lifecycle) is now the boundary. Every
+syntactic candidate `product_type_hyponym_groups` produces is filtered
+through a `PromotedHyponyms::contains(broader, narrower)` check before
+it may become a live `ProductTypeAny` route; `compile_lexicon`'s
+default promoted set is now empty, so **current production has zero
+active hyponym expansions** until a real adjudicated set is built and
+wired in. That adjudicated set is exactly this log's own still-open
+Priority-2 question (PROMOTE/REJECT/UNRESOLVED evidence for the full
+149-group/317-pair candidate set) -- tracked as Issue #55 A2, not yet
+done. This entry is a pointer, not a duplicate: see the decision doc
+above for the full mechanism, verification, and disclosed
+consequences.
