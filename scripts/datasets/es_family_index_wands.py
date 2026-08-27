@@ -64,10 +64,19 @@ def build_mapping():
 
 
 def to_doc(record):
+    # KEYWORD_FIELDS are lower-cased at index time to match
+    # crates/comparator-eval/src/translate_es.rs's translator, which
+    # lower-cases the *query* side of every term/terms clause -- both
+    # sides must agree for this to be the case-insensitive-whole-match
+    # equivalent of Solr's regex fq that translate_es.rs's doc comment
+    # claims, not a silent correctness gap. `title`/`title_sort` are
+    # deliberately left at original case: Solr's own `title_sort` field
+    # is likewise unnormalized, so case-sensitive ASCII sort order stays
+    # comparable across engines.
     doc = {"title": record["title"], "title_sort": record["title"]}
     for key in KEYWORD_FIELDS:
         if record.get(key):
-            doc[key] = record[key]
+            doc[key] = str(record[key]).lower()
     for key in NUMERIC_FIELDS:
         if record.get(key) is not None:
             doc[key] = record[key]
