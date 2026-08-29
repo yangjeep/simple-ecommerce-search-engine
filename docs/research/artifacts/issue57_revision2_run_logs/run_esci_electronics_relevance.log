@@ -1,0 +1,26 @@
+=== Issue #57 ESCI electronics relevance: NDCG@10/Recall@10/MRR@10, all 5 systems ===
+2075 real products ingested
+=== HAVENASK UNAVAILABLE this session -- relevance measured for native/Solr/Elasticsearch/OpenSearch only, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ===
+
+=== 144 structural-constraint translation failures (excluded from no engine, disclosed) ===
+  query="apple i mac touch screen computer": no brand name registered for BrandId(79)
+  query="apple i mac touch screen computer": no brand name registered for BrandId(79)
+  query="apple i mac touch screen computer": no brand name registered for BrandId(79)
+  query="dell monitors": no brand name registered for BrandId(314)
+  query="dell monitors": no brand name registered for BrandId(314)
+  query="dell monitors": no brand name registered for BrandId(314)
+  query="hp monitor": no brand name registered for BrandId(1)
+  query="hp monitor": no brand name registered for BrandId(1)
+  query="hp monitor": no brand name registered for BrandId(1)
+  query="led strip lights dreamcolor minger": no brand name registered for BrandId(8)
+
+evaluated 490/600 queries (>=1 non-Irrelevant judgment)
+
+=== Issue #57 esci_electronics relevance (NDCG@10/Recall@10/MRR@10) ===
+  native          n=490    NDCG@10=0.3041  Recall@10=0.3947  MRR@10=0.3159
+  solr            n=490    NDCG@10=0.2547  Recall@10=0.3482  MRR@10=0.2636
+  elasticsearch   n=490    NDCG@10=0.2595  Recall@10=0.3551  MRR@10=0.2692
+  opensearch      n=490    NDCG@10=0.2595  Recall@10=0.3551  MRR@10=0.2692
+  havenask_UNRANKED_capability_gap n=490    NDCG@10=-0.0000  Recall@10=0.0000  MRR@10=0.0000
+
+NOTE: the havenask row uses Havenask's own default MATCHINDEX result order, not a verified relevance-ranked order (disclosed capability gap, see issue57_eval::havenask_search_ids) -- do not read it as a head-to-head relevance comparison against the other four engines.
