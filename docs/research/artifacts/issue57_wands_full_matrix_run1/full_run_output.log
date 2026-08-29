@@ -1,0 +1,55 @@
+   Compiling issue57-eval v0.1.0 (/home/user/simple-ecommerce-search-engine/crates/issue57-eval)
+    Finished `release` profile [optimized] target(s) in 20.49s
+     Running `target/release/wands_full_matrix`
+loading + ingesting real WANDS catalog...
+42994 real products ingested
+building commerce_core structural index...
+SKIP (category not found in this real catalog): Furniture / Kitchen & Dining Furniture / Kitchen & Dining Chairs
+
+=== Issue #57 wands full-matrix result ===
+Q9_category_filter                            Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds native=      73 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.4653ms p50=   1.4708ms p99=   1.8745ms
+    elasticsearch   mean=   2.4340ms p50=   2.2785ms p99=   6.6095ms
+    opensearch      mean=   2.6337ms p50=   2.3257ms p99=   5.9551ms
+    havenask        mean=   6.0628ms p50=   6.1139ms p99=   6.6924ms
+Q9_category_filter                            Furniture / Living Room Furniture / Sofas                    native=     494 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.5780ms p50=   1.5023ms p99=   2.9476ms
+    elasticsearch   mean=   2.3153ms p50=   2.2436ms p99=   3.4814ms
+    opensearch      mean=   2.3321ms p50=   2.2672ms p99=   3.2443ms
+    havenask        mean=   6.1251ms p50=   6.1524ms p99=   7.4388ms
+Q5_numeric_range                              average_rating>=4.5                                          native=   28399 match=true
+    native          mean=   0.2149ms p50=   0.2179ms p99=   0.2756ms
+    solr            mean=   1.4170ms p50=   1.4187ms p99=   1.6455ms
+    elasticsearch   mean=   2.3563ms p50=   2.1517ms p99=   6.5968ms
+    opensearch      mean=   4.2091ms p50=   2.6455ms p99=  42.0184ms
+    havenask        mean=   5.5574ms p50=   5.4941ms p99=   6.4421ms
+Q5_numeric_range                              average_rating>=3                                            native=   33136 match=true
+    native          mean=   0.3210ms p50=   0.3189ms p99=   0.3881ms
+    solr            mean=   1.4580ms p50=   1.4537ms p99=   1.8541ms
+    elasticsearch   mean=   2.2620ms p50=   2.1856ms p99=   4.3538ms
+    opensearch      mean=   2.2546ms p50=   2.2406ms p99=   2.4967ms
+    havenask        mean=   5.4627ms p50=   5.3579ms p99=   6.3884ms
+Q10_color_facet_under_category                Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds native=      73 match=true
+    native          mean=   0.0451ms p50=   0.0392ms p99=   0.0987ms
+    solr            mean=   1.7282ms p50=   1.7104ms p99=   2.0486ms
+    elasticsearch   mean=   2.7513ms p50=   2.7369ms p99=   3.2407ms
+    opensearch      mean=   2.6806ms p50=   2.7420ms p99=   3.0406ms
+    havenask        mean=   6.4817ms p50=   6.3572ms p99=   8.7019ms
+Q11_lexical_title_search_NOT_correctness_gated wood                                                         native=    2442 match=true
+    native          mean=   6.3834ms p50=   6.3614ms p99=   7.6954ms
+    solr            mean=   1.5595ms p50=   1.5558ms p99=   1.9704ms
+    elasticsearch   mean=   2.1217ms p50=   2.0912ms p99=   2.7870ms
+    opensearch      mean=   2.2287ms p50=   2.1385ms p99=   2.7730ms
+    havenask        mean=   3.8569ms p50=   3.8250ms p99=   4.7878ms
+Q11_lexical_title_search_NOT_correctness_gated storage                                                      native=    1970 match=true
+    native          mean=   6.9835ms p50=   6.8598ms p99=   8.4566ms
+    solr            mean=   1.5522ms p50=   1.5451ms p99=   2.0492ms
+    elasticsearch   mean=   2.2923ms p50=   2.0514ms p99=   4.7240ms
+    opensearch      mean=   2.0424ms p50=   2.0155ms p99=   2.4662ms
+    havenask        mean=   3.3893ms p50=   3.3888ms p99=   3.9516ms
+
+correctness: 7/7 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_wands_full_matrix

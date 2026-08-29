@@ -42,12 +42,30 @@
 //!   already had) and "report a disclosed partial sample" (the
 //!   discipline `i55_e14_paired_comparator_freeze` already had) rather
 //!   than silently defaulting to neither.
+//!
+//! Issue #57 adds three more backends behind the same [`EngineComparator`]
+//! trait, each with its own translator module (clause syntax differs per
+//! engine; field-name resolution does not -- every translator reuses
+//! [`translate::SolrFieldMap`]/[`translate::StructuralNames`] unchanged):
+//! [`elasticsearch`] ([`ElasticsearchComparator`]/[`OpenSearchComparator`]
+//! plus [`translate_es`]) and [`havenask`] ([`HavenaskComparator`] plus
+//! [`translate_havenask`]).
 
 pub mod compare;
+pub mod elasticsearch;
+pub mod havenask;
 pub mod outcome;
 pub mod solr;
 pub mod translate;
+pub mod translate_es;
+pub mod translate_havenask;
 
+pub use elasticsearch::{ElasticsearchComparator, OpenSearchComparator};
+pub use havenask::HavenaskComparator;
 pub use outcome::EngineLookup;
 pub use solr::{case_insensitive_field_regex, EngineComparator, SolrComparator};
 pub use translate::{translate_constraint, SolrFieldMap, StructuralNames, Translation};
+pub use translate_es::{translate_all_es, translate_constraint_es, EsTranslation};
+pub use translate_havenask::{
+    translate_all_havenask, translate_constraint_havenask, HavenaskTranslation,
+};

@@ -1,0 +1,43 @@
+    Finished `release` profile [optimized] target(s) in 0.13s
+     Running `target/release/esci_full_matrix automotive`
+loading + ingesting real ESCI automotive slice...
+1056 real products ingested
+building commerce_core structural index...
+
+=== Issue #57 esci_automotive full-matrix result ===
+Q2_brand_filter                               Filtrete                                                     native=      53 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0003ms
+    solr            mean=   1.5579ms p50=   1.5250ms p99=   1.9612ms
+    elasticsearch   mean=   1.6707ms p50=   1.6197ms p99=   2.4659ms
+    opensearch      mean=   1.5986ms p50=   1.5641ms p99=   2.1332ms
+    havenask        mean=   3.4390ms p50=   3.4297ms p99=   3.8686ms
+Q2_brand_filter                               Detroit Axle                                                 native=      27 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.9661ms p50=   1.9955ms p99=   2.4682ms
+    elasticsearch   mean=   1.6850ms p50=   1.6341ms p99=   2.5849ms
+    opensearch      mean=   1.5599ms p50=   1.5293ms p99=   1.8245ms
+    havenask        mean=   3.5238ms p50=   3.5063ms p99=   4.0536ms
+Q2_brand_filter                               Nordic Pure                                                  native=      24 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.3794ms p50=   1.3332ms p99=   2.2439ms
+    elasticsearch   mean=   1.5600ms p50=   1.5329ms p99=   2.5617ms
+    opensearch      mean=   1.6010ms p50=   1.5867ms p99=   1.8373ms
+    havenask        mean=   3.4670ms p50=   3.4607ms p99=   3.9003ms
+Q2b_brand_casing_collision_NOT_gated          variant_a=FilterBuy (collides with FilterBuy/Filterbuy)      native=      44 match=true
+Q2b_brand_casing_collision_NOT_gated          variant_b=Filterbuy (collides with FilterBuy/Filterbuy)      native=      36 match=true
+Q11_lexical_search_NOT_correctness_gated      tire                                                         native=       1 match=true
+    native          mean=   0.1425ms p50=   0.1388ms p99=   0.1762ms
+    solr            mean=   1.0102ms p50=   1.0142ms p99=   1.1904ms
+    elasticsearch   mean=   1.6346ms p50=   1.5865ms p99=   2.3336ms
+    opensearch      mean=   1.7515ms p50=   1.5887ms p99=   4.3946ms
+    havenask        mean=   3.4470ms p50=   3.4061ms p99=   4.1228ms
+Q11_lexical_search_NOT_correctness_gated      oil                                                          native=     108 match=true
+    native          mean=   0.1336ms p50=   0.1275ms p99=   0.1702ms
+    solr            mean=   0.9624ms p50=   0.9349ms p99=   1.4568ms
+    elasticsearch   mean=   1.5431ms p50=   1.5394ms p99=   1.7219ms
+    opensearch      mean=   1.5816ms p50=   1.5694ms p99=   1.8796ms
+    havenask        mean=   3.5392ms p50=   3.5053ms p99=   4.4126ms
+
+correctness: 7/7 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_automotive_full_matrix

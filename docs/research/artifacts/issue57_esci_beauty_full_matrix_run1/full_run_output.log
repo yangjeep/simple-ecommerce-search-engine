@@ -1,0 +1,43 @@
+    Finished `release` profile [optimized] target(s) in 0.12s
+     Running `target/release/esci_full_matrix beauty`
+loading + ingesting real ESCI beauty slice...
+2093 real products ingested
+building commerce_core structural index...
+
+=== Issue #57 esci_beauty full-matrix result ===
+Q2_brand_filter                               Filtrete                                                     native=      48 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0006ms
+    solr            mean=   1.1360ms p50=   1.1292ms p99=   1.3899ms
+    elasticsearch   mean=   1.5253ms p50=   1.5050ms p99=   2.0011ms
+    opensearch      mean=   1.6453ms p50=   1.5425ms p99=   4.0921ms
+    havenask        mean=   3.7589ms p50=   3.7099ms p99=   5.4115ms
+Q2_brand_filter                               Vivaplex                                                     native=      27 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.3147ms p50=   1.2571ms p99=   2.8675ms
+    elasticsearch   mean=   1.8472ms p50=   1.6504ms p99=   5.1369ms
+    opensearch      mean=   1.5823ms p50=   1.5397ms p99=   1.8775ms
+    havenask        mean=   3.6627ms p50=   3.6204ms p99=   4.2228ms
+Q2_brand_filter                               It's a 10 Haircare                                           native=      17 match=true
+    native          mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+    solr            mean=   1.4771ms p50=   1.4861ms p99=   1.7306ms
+    elasticsearch   mean=   1.7510ms p50=   1.7496ms p99=   2.2578ms
+    opensearch      mean=   1.8941ms p50=   1.6822ms p99=   4.9549ms
+    havenask        mean=   3.6103ms p50=   3.6175ms p99=   4.2617ms
+Q2b_brand_casing_collision_NOT_gated          variant_a=FilterBuy (collides with FilterBuy/Filterbuy)      native=      44 match=true
+Q2b_brand_casing_collision_NOT_gated          variant_b=Filterbuy (collides with FilterBuy/Filterbuy)      native=      36 match=true
+Q11_lexical_search_NOT_correctness_gated      shampoo                                                      native=      49 match=true
+    native          mean=   0.3097ms p50=   0.2993ms p99=   0.3869ms
+    solr            mean=   0.9874ms p50=   0.9918ms p99=   1.1879ms
+    elasticsearch   mean=   1.6075ms p50=   1.5906ms p99=   2.1454ms
+    opensearch      mean=   1.7128ms p50=   1.5925ms p99=   2.9859ms
+    havenask        mean=   3.5739ms p50=   3.5278ms p99=   4.6666ms
+Q11_lexical_search_NOT_correctness_gated      cream                                                        native=     137 match=true
+    native          mean=   0.3084ms p50=   0.2996ms p99=   0.3839ms
+    solr            mean=   1.0046ms p50=   0.9955ms p99=   1.3051ms
+    elasticsearch   mean=   1.7147ms p50=   1.6158ms p99=   4.7175ms
+    opensearch      mean=   2.1157ms p50=   1.4674ms p99=   7.9947ms
+    havenask        mean=   3.6956ms p50=   3.4888ms p99=   6.4643ms
+
+correctness: 7/7 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_beauty_full_matrix

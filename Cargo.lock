@@ -676,6 +676,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "issue57-eval"
+version = "0.1.0"
+dependencies = [
+ "commerce-core",
+ "comparator-eval",
+ "issue35-eval",
+ "phase6a-eval",
+ "phase9-eval",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
