@@ -165,45 +165,80 @@ fn main() {
             .map(|s| serde_json::from_str(s).expect("es filter clause is valid JSON"))
             .collect();
 
-        let solr_ranked = solr_search_ids(
+        let solr_result = solr_search_ids(
             &solr_url,
             &text,
             &solr_fq,
             "title description bullet_point",
             K,
-        )
-        .expect("solr search");
-        let es_ranked = es_search_ids(
+        );
+        let es_result = es_search_ids(
             es_url,
             &es_index,
             &text,
             &["title", "description", "bullet_point"],
             &es_filters,
             K,
-        )
-        .expect("es search");
-        let os_ranked = es_search_ids(
+        );
+        let os_result = es_search_ids(
             os_url,
             &es_index,
             &text,
             &["title", "description", "bullet_point"],
             &es_filters,
             K,
-        )
-        .expect("os search");
+        );
+        // A real, disclosed schema-coverage gap (not silently forced): the
+        // ESCI Solr/ES/OpenSearch schemas index only the fields these
+        // benchmarks' own indexer scripts registered (brand + text), but
+        // native's lexicon auto-discovers whatever attributes the real
+        // catalog data happens to contain (e.g. a "size" enum on some
+        // automotive queries) and compiles a matching structural
+        // constraint -- which a comparator then faithfully translates into
+        // a filter clause the target schema was never built to support,
+        // and the engine rejects (HTTP 400), not a benchmark-harness bug.
+        // Matching Issue #35's own `SolrLookup::TransportError` precedent:
+        // excluded from the paired comparison for every engine on this
+        // query, not scored as a relevance loss or allowed to crash the run.
+        if solr_result.is_err() || es_result.is_err() || os_result.is_err() {
+            translation_failures.push(format!(
+                "query={:?}: engine transport/schema error -- solr={:?} es={:?} os={:?}",
+                q.query,
+                solr_result.as_ref().err(),
+                es_result.as_ref().err(),
+                os_result.as_ref().err()
+            ));
+            continue;
+        }
+        // Engines here index the real ASIN as `id` (unlike WANDS, where
+        // `id` is the internal sequential ProductId) -- translate back
+        // through the same `product_id_by_asin` map used for native's own
+        // gains above, so every engine is scored in the same key space.
+        let to_internal_ids = |asins: Vec<String>| -> Vec<String> {
+            asins
+                .iter()
+                .filter_map(|asin| ingested.product_id_by_asin.get(asin))
+                .map(|pid| pid.0.to_string())
+                .collect()
+        };
+        let solr_ranked = to_internal_ids(solr_result.unwrap());
+        let es_ranked = to_internal_ids(es_result.unwrap());
+        let os_ranked = to_internal_ids(os_result.unwrap());
         let hv_ranked: Vec<String> = if !havenask_up {
             Vec::new()
         } else {
-            havenask_search_ids(
-                &havenask_url,
-                &havenask_table,
-                "default",
-                "id",
-                &text,
-                &hv_where,
-                K,
+            to_internal_ids(
+                havenask_search_ids(
+                    &havenask_url,
+                    &havenask_table,
+                    "default",
+                    "id",
+                    &text,
+                    &hv_where,
+                    K,
+                )
+                .expect("havenask search"),
             )
-            .expect("havenask search")
         };
 
         let n = ndcg_recall_mrr(&native_ranked, &gains, K);

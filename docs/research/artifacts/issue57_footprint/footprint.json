@@ -1,0 +1,122 @@
+[
+  {
+    "dataset": "wands",
+    "engine": "solr",
+    "build_ms": 92410.0,
+    "index_bytes": 28494523,
+    "startup_ms": 132.7519416809082,
+    "peak_rss_kb": 564368
+  },
+  {
+    "dataset": "wands",
+    "engine": "elasticsearch",
+    "build_ms": 71828.0,
+    "index_bytes": 28457637,
+    "startup_ms": 49473.628282547,
+    "peak_rss_kb": 112764
+  },
+  {
+    "dataset": "wands",
+    "engine": "opensearch",
+    "build_ms": 75164.99999999999,
+    "index_bytes": 28015110,
+    "startup_ms": 39554.05902862549,
+    "peak_rss_kb": 3547776
+  },
+  {
+    "dataset": "esci_electronics",
+    "engine": "solr",
+    "build_ms": 25704.0,
+    "index_bytes": 4229850,
+    "startup_ms": 132.7519416809082,
+    "peak_rss_kb": 564368
+  },
+  {
+    "dataset": "esci_electronics",
+    "engine": "elasticsearch",
+    "build_ms": 7328.0,
+    "index_bytes": 4452975,
+    "startup_ms": 49473.628282547,
+    "peak_rss_kb": 112764
+  },
+  {
+    "dataset": "esci_electronics",
+    "engine": "opensearch",
+    "build_ms": 6356.0,
+    "index_bytes": 4543016,
+    "startup_ms": 39554.05902862549,
+    "peak_rss_kb": 3547776
+  },
+  {
+    "dataset": "esci_automotive",
+    "engine": "solr",
+    "build_ms": 21812.0,
+    "index_bytes": 1689317,
+    "startup_ms": 132.7519416809082,
+    "peak_rss_kb": 564368
+  },
+  {
+    "dataset": "esci_automotive",
+    "engine": "elasticsearch",
+    "build_ms": 2412.0,
+    "index_bytes": 1739138,
+    "startup_ms": 49473.628282547,
+    "peak_rss_kb": 112764
+  },
+  {
+    "dataset": "esci_automotive",
+    "engine": "opensearch",
+    "build_ms": 2114.0,
+    "index_bytes": 1765130,
+    "startup_ms": 39554.05902862549,
+    "peak_rss_kb": 3547776
+  },
+  {
+    "dataset": "esci_beauty",
+    "engine": "solr",
+    "build_ms": 25661.0,
+    "index_bytes": 4056607,
+    "startup_ms": 132.7519416809082,
+    "peak_rss_kb": 564368
+  },
+  {
+    "dataset": "esci_beauty",
+    "engine": "elasticsearch",
+    "build_ms": 3483.0,
+    "index_bytes": 4127091,
+    "startup_ms": 49473.628282547,
+    "peak_rss_kb": 112764
+  },
+  {
+    "dataset": "esci_beauty",
+    "engine": "opensearch",
+    "build_ms": 2889.0,
+    "index_bytes": 4183809,
+    "startup_ms": 39554.05902862549,
+    "peak_rss_kb": 3547776
+  },
+  {
+    "dataset": "magento",
+    "engine": "solr",
+    "build_ms": 4160.0,
+    "index_bytes": 17928,
+    "startup_ms": 132.7519416809082,
+    "peak_rss_kb": 564368
+  },
+  {
+    "dataset": "magento",
+    "engine": "elasticsearch",
+    "build_ms": 4160.0,
+    "index_bytes": 17387,
+    "startup_ms": 49473.628282547,
+    "peak_rss_kb": 112764
+  },
+  {
+    "dataset": "magento",
+    "engine": "opensearch",
+    "build_ms": 4160.0,
+    "index_bytes": 16568,
+    "startup_ms": 39554.05902862549,
+    "peak_rss_kb": 3547776
+  }
+]
