@@ -32,7 +32,10 @@
 
 use std::collections::BTreeMap;
 
-use issue57_eval::{cell_seed, es_count, havenask_count, report, run_shuffled, solr_count, stats_ms, Row};
+use issue57_eval::{
+    cell_seed, es_count, havenask_count, report, run_shuffled, solr_count, stats_ms, EngineClosure,
+    Row,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -187,13 +190,26 @@ fn main() {
                 v.size.to_lowercase()
             );
             let seed = cell_seed(&["magento", "Q8_representative_timed_sample", &p.sku]);
-            let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
-                ("solr", Box::new(|| solr_count(solr_url, &fq_solr).expect("solr count"))),
-                ("elasticsearch", Box::new(|| es_count(es_url, es_index, &filter_es).expect("es count"))),
-                ("opensearch", Box::new(|| es_count(os_url, es_index, &filter_es).expect("os count"))),
-                ("havenask", Box::new(|| {
-                    havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
-                })),
+            let engines: Vec<EngineClosure<u64>> = vec![
+                (
+                    "solr",
+                    Box::new(|| solr_count(solr_url, &fq_solr).expect("solr count")),
+                ),
+                (
+                    "elasticsearch",
+                    Box::new(|| es_count(es_url, es_index, &filter_es).expect("es count")),
+                ),
+                (
+                    "opensearch",
+                    Box::new(|| es_count(os_url, es_index, &filter_es).expect("os count")),
+                ),
+                (
+                    "havenask",
+                    Box::new(|| {
+                        havenask_count(&havenask_url, havenask_table, &hv_where)
+                            .expect("havenask count")
+                    }),
+                ),
             ];
             let (mut results, engine_order) = run_shuffled(seed, engines);
             let (solr_ns, solr_c) = results.remove("solr").unwrap();

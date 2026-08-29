@@ -21,7 +21,7 @@ use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
 use issue35_eval::{build_catalog, load_products};
 use issue57_eval::{
     cell_seed, es_count, es_text_count, escape_sql_literal, havenask_count, havenask_text_count,
-    report, run_shuffled, solr_count, solr_text_count, stats_ms, Row,
+    report, run_shuffled, solr_count, solr_text_count, stats_ms, EngineClosure, Row,
 };
 
 fn main() {
@@ -122,14 +122,30 @@ fn main() {
         );
 
         let seed = cell_seed(&["esci", &vertical, "Q2_brand_filter", brand_name]);
-        let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
-            ("native", Box::new(|| index.indexed_candidates(&constraint).len() as u64)),
-            ("solr", Box::new(|| solr_count(&solr_url, &fq_solr).expect("solr count"))),
-            ("elasticsearch", Box::new(|| es_count(es_url, &es_index, &filter_es).expect("es count"))),
-            ("opensearch", Box::new(|| es_count(os_url, &es_index, &filter_es).expect("os count"))),
-            ("havenask", Box::new(|| {
-                havenask_count(&havenask_url, &havenask_table, &hv_where).expect("havenask count")
-            })),
+        let engines: Vec<EngineClosure<u64>> = vec![
+            (
+                "native",
+                Box::new(|| index.indexed_candidates(&constraint).len() as u64),
+            ),
+            (
+                "solr",
+                Box::new(|| solr_count(&solr_url, &fq_solr).expect("solr count")),
+            ),
+            (
+                "elasticsearch",
+                Box::new(|| es_count(es_url, &es_index, &filter_es).expect("es count")),
+            ),
+            (
+                "opensearch",
+                Box::new(|| es_count(os_url, &es_index, &filter_es).expect("os count")),
+            ),
+            (
+                "havenask",
+                Box::new(|| {
+                    havenask_count(&havenask_url, &havenask_table, &hv_where)
+                        .expect("havenask count")
+                }),
+            ),
         ];
         let (mut results, engine_order) = run_shuffled(seed, engines);
         let (native_ns, native_count) = results.remove("native").unwrap();
@@ -221,45 +237,61 @@ fn main() {
             },
         )];
         let seed = cell_seed(&["esci", &vertical, "Q11_lexical_search", term]);
-        let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
-            ("native", Box::new(|| {
-                index
-                    .indexed_candidates(&text_constraint)
-                    .iter()
-                    .filter(|&ord| {
-                        index
-                            .variant_id_at(ord)
-                            .and_then(|vid| index.lookup_variant(&ingested.catalog, vid))
-                            .map(|(p, _)| p.title.to_lowercase().contains(term))
-                            .unwrap_or(false)
-                    })
-                    .count() as u64
-            })),
-            ("solr", Box::new(|| {
-                solr_text_count(&solr_url, term, "title description bullet_point").expect("solr text")
-            })),
-            ("elasticsearch", Box::new(|| {
-                es_text_count(
-                    es_url,
-                    &es_index,
-                    term,
-                    &["title", "description", "bullet_point"],
-                )
-                .expect("es text")
-            })),
-            ("opensearch", Box::new(|| {
-                es_text_count(
-                    os_url,
-                    &es_index,
-                    term,
-                    &["title", "description", "bullet_point"],
-                )
-                .expect("os text")
-            })),
-            ("havenask", Box::new(|| {
-                havenask_text_count(&havenask_url, &havenask_table, "default", term)
-                    .expect("havenask text")
-            })),
+        let engines: Vec<EngineClosure<u64>> = vec![
+            (
+                "native",
+                Box::new(|| {
+                    index
+                        .indexed_candidates(&text_constraint)
+                        .iter()
+                        .filter(|&ord| {
+                            index
+                                .variant_id_at(ord)
+                                .and_then(|vid| index.lookup_variant(&ingested.catalog, vid))
+                                .map(|(p, _)| p.title.to_lowercase().contains(term))
+                                .unwrap_or(false)
+                        })
+                        .count() as u64
+                }),
+            ),
+            (
+                "solr",
+                Box::new(|| {
+                    solr_text_count(&solr_url, term, "title description bullet_point")
+                        .expect("solr text")
+                }),
+            ),
+            (
+                "elasticsearch",
+                Box::new(|| {
+                    es_text_count(
+                        es_url,
+                        &es_index,
+                        term,
+                        &["title", "description", "bullet_point"],
+                    )
+                    .expect("es text")
+                }),
+            ),
+            (
+                "opensearch",
+                Box::new(|| {
+                    es_text_count(
+                        os_url,
+                        &es_index,
+                        term,
+                        &["title", "description", "bullet_point"],
+                    )
+                    .expect("os text")
+                }),
+            ),
+            (
+                "havenask",
+                Box::new(|| {
+                    havenask_text_count(&havenask_url, &havenask_table, "default", term)
+                        .expect("havenask text")
+                }),
+            ),
         ];
         let (mut results, engine_order) = run_shuffled(seed, engines);
         let (native_ns, native_count) = results.remove("native").unwrap();

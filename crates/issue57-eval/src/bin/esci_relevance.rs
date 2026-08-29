@@ -27,7 +27,10 @@ use comparator_eval::translate::{translate_all, SolrFieldMap, StructuralNames};
 use comparator_eval::translate_es::translate_all_es;
 use comparator_eval::translate_havenask::translate_all_havenask;
 use issue35_eval::{build_catalog, label_gain, load_products, load_queries};
-use issue57_eval::{es_search_ids, havenask_search_ids, ndcg_recall_mrr, report_relevance, solr_search_ids, RelevanceRow};
+use issue57_eval::{
+    es_search_ids, havenask_search_ids, ndcg_recall_mrr, report_relevance, solr_search_ids,
+    RelevanceRow,
+};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate};
 
 const K: usize = 10;
@@ -71,7 +74,9 @@ fn main() {
     let vertical = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "electronics".to_string());
-    println!("=== Issue #57 ESCI {vertical} relevance: NDCG@10/Recall@10/MRR@10, all 5 systems ===");
+    println!(
+        "=== Issue #57 ESCI {vertical} relevance: NDCG@10/Recall@10/MRR@10, all 5 systems ==="
+    );
 
     let catalog_path = format!("dataset_cache/esci_{vertical}/esci_{vertical}_products.jsonl");
     let queries_path = format!("dataset_cache/esci_{vertical}/esci_{vertical}_queries.jsonl");
