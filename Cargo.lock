@@ -689,6 +689,7 @@ dependencies = [
  "comparator-eval",
  "issue35-eval",
  "phase6a-eval",
+ "phase9-eval",
  "serde",
  "serde_json",
  "ureq",

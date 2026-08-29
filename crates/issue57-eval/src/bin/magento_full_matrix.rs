@@ -32,7 +32,7 @@
 
 use std::collections::BTreeMap;
 
-use issue57_eval::{es_count, havenask_count, report, solr_count, stats_ms, time_reps, Row};
+use issue57_eval::{cell_seed, es_count, havenask_count, report, run_shuffled, solr_count, stats_ms, Row};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -158,6 +158,7 @@ fn main() {
                     counts,
                     counts_match,
                     timings_ms: vec![],
+                    engine_order: vec![],
                 });
             }
         }
@@ -174,26 +175,31 @@ fn main() {
                 format!("color:\"{}\"", v.color),
                 format!("size:\"{}\"", v.size),
             ];
-            let (solr_ns, solr_c) =
-                time_reps(|| solr_count(solr_url, &fq_solr).expect("solr count"));
             let filter_es = vec![
                 serde_json::json!({"term": {"sku": p.sku}}),
                 serde_json::json!({"term": {"color": v.color.to_lowercase()}}),
                 serde_json::json!({"term": {"size": v.size.to_lowercase()}}),
             ];
-            let (es_ns, es_c) =
-                time_reps(|| es_count(es_url, es_index, &filter_es).expect("es count"));
-            let (os_ns, os_c) =
-                time_reps(|| es_count(os_url, es_index, &filter_es).expect("os count"));
             let hv_where = format!(
                 " where sku = '{}' and color = '{}' and size = '{}'",
                 p.sku,
                 v.color.to_lowercase(),
                 v.size.to_lowercase()
             );
-            let (hv_ns, hv_c) = time_reps(|| {
-                havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
-            });
+            let seed = cell_seed(&["magento", "Q8_representative_timed_sample", &p.sku]);
+            let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
+                ("solr", Box::new(|| solr_count(solr_url, &fq_solr).expect("solr count"))),
+                ("elasticsearch", Box::new(|| es_count(es_url, es_index, &filter_es).expect("es count"))),
+                ("opensearch", Box::new(|| es_count(os_url, es_index, &filter_es).expect("os count"))),
+                ("havenask", Box::new(|| {
+                    havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
+                })),
+            ];
+            let (mut results, engine_order) = run_shuffled(seed, engines);
+            let (solr_ns, solr_c) = results.remove("solr").unwrap();
+            let (es_ns, es_c) = results.remove("elasticsearch").unwrap();
+            let (os_ns, os_c) = results.remove("opensearch").unwrap();
+            let (hv_ns, hv_c) = results.remove("havenask").unwrap();
             let counts = vec![
                 ("solr".to_string(), solr_c),
                 ("elasticsearch".to_string(), es_c),
@@ -217,6 +223,7 @@ fn main() {
                     ("opensearch".to_string(), o_mean, o_p50, o_p99),
                     ("havenask".to_string(), h_mean, h_p50, h_p99),
                 ],
+                engine_order,
             });
         }
     }
