@@ -30,8 +30,8 @@ use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
 use issue57_eval::{
     cell_seed, es_count, es_facet, es_text_count, escape_solr_phrase, escape_sql_literal,
-    havenask_count, havenask_facet, havenask_text_count, report, run_shuffled, solr_count,
-    solr_facet, solr_text_count, stats_ms, EngineClosure, Row,
+    havenask_available, havenask_count, havenask_facet, havenask_text_count, report, run_shuffled,
+    solr_count, solr_facet, solr_text_count, stats_ms, EngineClosure, Row,
 };
 use phase6a_eval::{catalog as catalog_ingest, data};
 
@@ -58,6 +58,15 @@ fn main() {
     // §3.1) -- reachable from the host directly via its bridge IP.
     let havenask_url =
         std::env::var("HAVENASK_URL").unwrap_or_else(|_| "http://172.17.0.2:45800".to_string());
+    let havenask_up = havenask_available(&havenask_url);
+    if !havenask_up {
+        eprintln!(
+            "=== HAVENASK UNAVAILABLE this session (see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md) \
+             -- every cell below runs as a genuine 4-way native/Solr/Elasticsearch/OpenSearch \
+             comparison; Havenask counts/facets are excluded from the correctness gate, not \
+             fabricated or silently defaulted ==="
+        );
+    }
     let es_index = "wands_bench";
     let havenask_table = "wands";
 
@@ -119,8 +128,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_count(&havenask_url, havenask_table, &hv_where)
-                        .expect("havenask count")
+                    if !havenask_up {
+                        u64::MAX
+                    } else {
+                        havenask_count(&havenask_url, havenask_table, &hv_where)
+                            .expect("havenask count")
+                    }
                 }),
             ),
         ];
@@ -137,7 +150,10 @@ fn main() {
             ("opensearch".to_string(), os_c),
             ("havenask".to_string(), hv_c),
         ];
-        let counts_match = counts.iter().all(|(_, c)| *c == native_count);
+        let counts_match = counts
+            .iter()
+            .filter(|(_, c)| *c != u64::MAX)
+            .all(|(_, c)| *c == native_count);
         if !counts_match {
             mismatches.push(format!(
                 "Q9 category={cat_name}: native={native_count} {counts:?}"
@@ -199,8 +215,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_count(&havenask_url, havenask_table, &hv_where)
-                        .expect("havenask count")
+                    if !havenask_up {
+                        u64::MAX
+                    } else {
+                        havenask_count(&havenask_url, havenask_table, &hv_where)
+                            .expect("havenask count")
+                    }
                 }),
             ),
         ];
@@ -217,7 +237,10 @@ fn main() {
             ("opensearch".to_string(), os_c),
             ("havenask".to_string(), hv_c),
         ];
-        let counts_match = counts.iter().all(|(_, c)| *c == native_count);
+        let counts_match = counts
+            .iter()
+            .filter(|(_, c)| *c != u64::MAX)
+            .all(|(_, c)| *c == native_count);
         if !counts_match {
             mismatches.push(format!(
                 "Q5 average_rating>={threshold}: native={native_count} {counts:?}"
@@ -297,8 +320,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_facet(&havenask_url, havenask_table, &hv_where, "color", 20)
-                        .expect("havenask facet")
+                    if !havenask_up {
+                        std::collections::BTreeMap::new()
+                    } else {
+                        havenask_facet(&havenask_url, havenask_table, &hv_where, "color", 20)
+                            .expect("havenask facet")
+                    }
                 }),
             ),
         ];
@@ -325,7 +352,7 @@ fn main() {
         let facets_match = native_lower == solr_lower
             && native_lower == es_facets
             && native_lower == os_facets
-            && native_lower == hv_facets;
+            && (!havenask_up || native_lower == hv_facets);
         if !facets_match {
             mismatches.push(format!(
                 "Q10 color_facet under {cat_name}: native={native_lower:?} solr={solr_lower:?} es={es_facets:?} os={os_facets:?} havenask={hv_facets:?}"
@@ -403,8 +430,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_text_count(&havenask_url, havenask_table, "default", term)
-                        .expect("havenask text")
+                    if !havenask_up {
+                        u64::MAX
+                    } else {
+                        havenask_text_count(&havenask_url, havenask_table, "default", term)
+                            .expect("havenask text")
+                    }
                 }),
             ),
         ];

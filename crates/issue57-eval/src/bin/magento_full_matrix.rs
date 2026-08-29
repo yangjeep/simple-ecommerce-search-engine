@@ -33,8 +33,8 @@
 use std::collections::BTreeMap;
 
 use issue57_eval::{
-    cell_seed, es_count, havenask_count, report, run_shuffled, solr_count, stats_ms, EngineClosure,
-    Row,
+    cell_seed, es_count, havenask_available, havenask_count, report, run_shuffled, solr_count,
+    stats_ms, EngineClosure, Row,
 };
 use serde::Deserialize;
 
@@ -75,6 +75,13 @@ fn main() {
     let os_url = "http://127.0.0.1:9201";
     let havenask_url =
         std::env::var("HAVENASK_URL").unwrap_or_else(|_| "http://172.17.0.2:45800".to_string());
+    let havenask_up = havenask_available(&havenask_url);
+    if !havenask_up {
+        eprintln!(
+            "=== HAVENASK UNAVAILABLE this session -- 3-way (Solr/Elasticsearch/OpenSearch) \
+             correctness gate, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ==="
+        );
+    }
     let es_index = "magento_bench";
     let havenask_table = "magento";
 
@@ -123,8 +130,12 @@ fn main() {
                     color.to_lowercase(),
                     size.to_lowercase()
                 );
-                let hv_c = havenask_count(&havenask_url, havenask_table, &hv_where)
-                    .expect("havenask count");
+                let hv_c = if !havenask_up {
+                    u64::MAX
+                } else {
+                    havenask_count(&havenask_url, havenask_table, &hv_where)
+                        .expect("havenask count")
+                };
 
                 let counts = vec![
                     ("solr".to_string(), solr_c),
@@ -132,7 +143,10 @@ fn main() {
                     ("opensearch".to_string(), os_c),
                     ("havenask".to_string(), hv_c),
                 ];
-                let counts_match = counts.iter().all(|(_, c)| *c == expected_native);
+                let counts_match = counts
+                    .iter()
+                    .filter(|(_, c)| *c != u64::MAX)
+                    .all(|(_, c)| *c == expected_native);
                 if !counts_match {
                     let kind = if is_true_positive {
                         "TRUE_POSITIVE"
@@ -206,8 +220,12 @@ fn main() {
                 (
                     "havenask",
                     Box::new(|| {
-                        havenask_count(&havenask_url, havenask_table, &hv_where)
-                            .expect("havenask count")
+                        if !havenask_up {
+                            u64::MAX
+                        } else {
+                            havenask_count(&havenask_url, havenask_table, &hv_where)
+                                .expect("havenask count")
+                        }
                     }),
                 ),
             ];
@@ -222,7 +240,10 @@ fn main() {
                 ("opensearch".to_string(), os_c),
                 ("havenask".to_string(), hv_c),
             ];
-            let counts_match = counts.iter().all(|(_, c)| *c == 1);
+            let counts_match = counts
+                .iter()
+                .filter(|(_, c)| *c != u64::MAX)
+                .all(|(_, c)| *c == 1);
             let (s_mean, s_p50, s_p99) = stats_ms(solr_ns);
             let (e_mean, e_p50, e_p99) = stats_ms(es_ns);
             let (o_mean, o_p50, o_p99) = stats_ms(os_ns);

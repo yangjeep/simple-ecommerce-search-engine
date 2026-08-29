@@ -31,8 +31,8 @@ use comparator_eval::translate::{translate_all, SolrFieldMap, StructuralNames};
 use comparator_eval::translate_es::translate_all_es;
 use comparator_eval::translate_havenask::translate_all_havenask;
 use issue57_eval::{
-    es_search_ids, havenask_search_ids, ndcg_recall_mrr, report_relevance, solr_search_ids,
-    RelevanceRow,
+    es_search_ids, havenask_available, havenask_search_ids, ndcg_recall_mrr, report_relevance,
+    solr_search_ids, RelevanceRow,
 };
 use phase6a_eval::{catalog as catalog_ingest, data};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate};
@@ -174,6 +174,10 @@ fn main() {
     let os_url = "http://127.0.0.1:9201";
     let havenask_url =
         std::env::var("HAVENASK_URL").unwrap_or_else(|_| "http://172.17.0.2:45800".to_string());
+    let havenask_up = havenask_available(&havenask_url);
+    if !havenask_up {
+        eprintln!("=== HAVENASK UNAVAILABLE this session -- relevance measured for native/Solr/Elasticsearch/OpenSearch only, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ===");
+    }
     let es_index = "wands_bench";
     let havenask_table = "wands";
 
@@ -258,16 +262,20 @@ fn main() {
             K,
         )
         .expect("os search");
-        let hv_ranked = havenask_search_ids(
-            &havenask_url,
-            havenask_table,
-            "default",
-            "id",
-            &text,
-            &hv_where,
-            K,
-        )
-        .expect("havenask search");
+        let hv_ranked: Vec<String> = if !havenask_up {
+            Vec::new()
+        } else {
+            havenask_search_ids(
+                &havenask_url,
+                havenask_table,
+                "default",
+                "id",
+                &text,
+                &hv_where,
+                K,
+            )
+            .expect("havenask search")
+        };
 
         let n = ndcg_recall_mrr(&native_ranked, &gains, K);
         let s = ndcg_recall_mrr(&solr_ranked, &gains, K);
