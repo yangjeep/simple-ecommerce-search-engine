@@ -24,6 +24,8 @@ pub mod e2c_compile;
 pub mod e2c_majority_vote;
 pub mod e2c_metrics;
 pub mod e2c_schema;
+pub mod e2d_controller;
+pub mod e2d_metrics;
 pub mod oracle;
 pub mod r1_experimental;
 pub mod r1_workload;
