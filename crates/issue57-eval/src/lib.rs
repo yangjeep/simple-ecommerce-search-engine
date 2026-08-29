@@ -75,6 +75,16 @@ pub fn shuffled_order(seed: u64, n: usize) -> Vec<usize> {
     order
 }
 
+/// One named engine's timed closure, boxed so a `Vec` can hold a
+/// differently-typed closure per engine (native/Solr/ES/OpenSearch/
+/// Havenask each call through a different transport).
+pub type EngineClosure<'a, T> = (&'static str, Box<dyn FnMut() -> T + 'a>);
+
+/// [`run_shuffled`]'s result: per-engine `(sample_ns, last_result)`
+/// keyed by engine name, plus the actual randomized execution order
+/// used (for audit).
+pub type ShuffledResults<T> = (BTreeMap<&'static str, (Vec<u128>, T)>, Vec<String>);
+
 /// Runs each named engine closure's full `time_reps` (warmup + REPS)
 /// block, in an order permuted by `seed` rather than the closures'
 /// declaration order -- returning results keyed by engine name (so
@@ -84,10 +94,7 @@ pub fn shuffled_order(seed: u64, n: usize) -> Vec<usize> {
 /// so one engine's process/cache state does not contaminate another"),
 /// unlike a per-repetition interleave -- only which engine's block goes
 /// first/second/... changes.
-pub fn run_shuffled<T>(
-    seed: u64,
-    mut engines: Vec<(&'static str, Box<dyn FnMut() -> T + '_>)>,
-) -> (BTreeMap<&'static str, (Vec<u128>, T)>, Vec<String>) {
+pub fn run_shuffled<T>(seed: u64, mut engines: Vec<EngineClosure<T>>) -> ShuffledResults<T> {
     let order = shuffled_order(seed, engines.len());
     let mut results = BTreeMap::new();
     let mut order_labels = Vec::new();
@@ -429,7 +436,8 @@ pub fn report(dataset: &str, rows: &[Row], mismatches: &[String]) {
     if !by_engine_position.is_empty() {
         println!("\n=== engine-order confound check: mean latency (ms) by queue position ===");
         let engines: Vec<String> = {
-            let mut names: Vec<String> = by_engine_position.keys().map(|(e, _)| e.clone()).collect();
+            let mut names: Vec<String> =
+                by_engine_position.keys().map(|(e, _)| e.clone()).collect();
             names.sort();
             names.dedup();
             names
@@ -491,7 +499,11 @@ pub fn report(dataset: &str, rows: &[Row], mismatches: &[String]) {
 /// non-Irrelevant judgment carries no scoreable signal, matching
 /// `phase9_eval::wands_relevance::ndcg_recall_mrr`'s own precedent
 /// rather than dividing by zero or fabricating a score.
-pub fn ndcg_recall_mrr(ranked_ids: &[String], gains: &BTreeMap<String, f64>, k: usize) -> (f64, f64, f64) {
+pub fn ndcg_recall_mrr(
+    ranked_ids: &[String],
+    gains: &BTreeMap<String, f64>,
+    k: usize,
+) -> (f64, f64, f64) {
     let relevant_total = gains.values().filter(|&&g| g > 0.0).count();
     if relevant_total == 0 {
         return (0.0, 0.0, 0.0);
@@ -682,7 +694,7 @@ pub fn process_rss_kb(pid: u32) -> Option<u64> {
     let status = std::fs::read_to_string(format!("/proc/{pid}/status")).ok()?;
     status.lines().find_map(|line| {
         line.strip_prefix("VmRSS:")
-            .and_then(|rest| rest.trim().split_whitespace().next())
+            .and_then(|rest| rest.split_whitespace().next())
             .and_then(|n| n.parse::<u64>().ok())
     })
 }

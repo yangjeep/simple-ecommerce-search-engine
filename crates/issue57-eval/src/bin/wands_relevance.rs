@@ -30,7 +30,10 @@ use commerce_core::plan::{execute_planned, PlannerPolicy};
 use comparator_eval::translate::{translate_all, SolrFieldMap, StructuralNames};
 use comparator_eval::translate_es::translate_all_es;
 use comparator_eval::translate_havenask::translate_all_havenask;
-use issue57_eval::{es_search_ids, havenask_search_ids, ndcg_recall_mrr, report_relevance, solr_search_ids, RelevanceRow};
+use issue57_eval::{
+    es_search_ids, havenask_search_ids, ndcg_recall_mrr, report_relevance, solr_search_ids,
+    RelevanceRow,
+};
 use phase6a_eval::{catalog as catalog_ingest, data};
 use phase9_eval::bitmap_delegate::{build_index, BitmapTantivyDelegate};
 use phase9_eval::wands_relevance::WandsLabel;
@@ -190,19 +193,16 @@ fn main() {
         let gains: BTreeMap<String, f64> = judged
             .iter()
             .filter_map(|(wands_pid, label)| {
-                ingested
-                    .wands_id_to_product_id
-                    .get(wands_pid)
-                    .map(|pid| {
-                        (
-                            pid.0.to_string(),
-                            match label {
-                                WandsLabel::Exact => 2.0,
-                                WandsLabel::Partial => 1.0,
-                                WandsLabel::Irrelevant => 0.0,
-                            },
-                        )
-                    })
+                ingested.wands_id_to_product_id.get(wands_pid).map(|pid| {
+                    (
+                        pid.0.to_string(),
+                        match label {
+                            WandsLabel::Exact => 2.0,
+                            WandsLabel::Partial => 1.0,
+                            WandsLabel::Irrelevant => 0.0,
+                        },
+                    )
+                })
             })
             .collect();
         if gains.values().all(|&g| g <= 0.0) {
@@ -303,7 +303,10 @@ fn main() {
         }
     }
 
-    println!("\nevaluated {evaluated}/{} queries (>=1 non-Irrelevant judgment)", queries.len());
+    println!(
+        "\nevaluated {evaluated}/{} queries (>=1 non-Irrelevant judgment)",
+        queries.len()
+    );
     let rows = vec![
         RelevanceRow {
             engine: "native".to_string(),
