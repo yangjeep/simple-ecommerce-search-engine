@@ -1,0 +1,67 @@
+loading + ingesting real WANDS catalog...
+42994 real products ingested
+building commerce_core structural index...
+=== HAVENASK UNAVAILABLE this session (see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md) -- every cell below runs as a genuine 4-way native/Solr/Elasticsearch/OpenSearch comparison; Havenask counts/facets are excluded from the correctness gate, not fabricated or silently defaulted ===
+SKIP (category not found in this real catalog): Furniture / Kitchen & Dining Furniture / Kitchen & Dining Chairs
+
+=== Issue #57 wands full-matrix result ===
+Q9_category_filter                            Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds native=      73 match=true
+    execution order: havenask -> elasticsearch -> native -> solr -> opensearch
+    native          mean=   0.0003ms p50=   0.0003ms p99=   0.0003ms
+    solr            mean=  10.6669ms p50=  10.3213ms p99=  28.3173ms
+    elasticsearch   mean=  17.1988ms p50=  16.5213ms p99=  24.4816ms
+    opensearch      mean=  19.6156ms p50=  20.2374ms p99=  24.3733ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0004ms
+Q9_category_filter                            Furniture / Living Room Furniture / Sofas                    native=     494 match=true
+    execution order: elasticsearch -> solr -> havenask -> opensearch -> native
+    native          mean=   0.0007ms p50=   0.0007ms p99=   0.0008ms
+    solr            mean=  10.1468ms p50=  10.0137ms p99=  17.4031ms
+    elasticsearch   mean=  17.9674ms p50=  18.3712ms p99=  29.8724ms
+    opensearch      mean=  15.9492ms p50=  15.5853ms p99=  25.0028ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q5_numeric_range                              average_rating>=4.5                                          native=   28399 match=true
+    execution order: opensearch -> havenask -> elasticsearch -> native -> solr
+    native          mean=   1.3701ms p50=   1.3758ms p99=   1.7949ms
+    solr            mean=  13.2548ms p50=  11.5205ms p99=  41.3779ms
+    elasticsearch   mean=  14.6582ms p50=  15.2061ms p99=  19.4337ms
+    opensearch      mean=  20.1536ms p50=  19.2585ms p99=  30.2667ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0003ms
+Q5_numeric_range                              average_rating>=3                                            native=   33136 match=true
+    execution order: havenask -> elasticsearch -> solr -> native -> opensearch
+    native          mean=   2.0848ms p50=   1.9665ms p99=   3.2977ms
+    solr            mean=   8.1722ms p50=   8.2859ms p99=  15.2338ms
+    elasticsearch   mean=  12.6308ms p50=  12.1306ms p99=  17.2956ms
+    opensearch      mean=  13.5912ms p50=  14.1621ms p99=  24.4714ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q10_color_facet_under_category                Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds native=      73 match=true
+    execution order: havenask -> opensearch -> native -> solr -> elasticsearch
+    native          mean=   0.1225ms p50=   0.1212ms p99=   0.1729ms
+    solr            mean=  12.8110ms p50=  11.5457ms p99=  76.0020ms
+    elasticsearch   mean=  16.1761ms p50=  16.3812ms p99=  21.5075ms
+    opensearch      mean=  11.3422ms p50=  10.1270ms p99=  18.5736ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+Q11_lexical_title_search_NOT_correctness_gated wood                                                         native=    2442 match=true
+    execution order: opensearch -> solr -> elasticsearch -> native -> havenask
+    native          mean=  18.5408ms p50=  18.5800ms p99=  20.3209ms
+    solr            mean=   9.7211ms p50=  10.0499ms p99=  17.3704ms
+    elasticsearch   mean=  14.1245ms p50=  12.8721ms p99=  29.4317ms
+    opensearch      mean=  10.6604ms p50=  10.0509ms p99=  17.2007ms
+    havenask        mean=   0.0000ms p50=   0.0000ms p99=   0.0001ms
+Q11_lexical_title_search_NOT_correctness_gated storage                                                      native=    1970 match=true
+    execution order: native -> opensearch -> havenask -> solr -> elasticsearch
+    native          mean=  18.7633ms p50=  18.4828ms p99=  21.3059ms
+    solr            mean=   8.2094ms p50=   7.9626ms p99=  16.8425ms
+    elasticsearch   mean=  14.7041ms p50=  14.0029ms p99=  25.9800ms
+    opensearch      mean=  13.0850ms p50=  14.1432ms p99=  22.0802ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0003ms
+
+=== engine-order confound check: mean latency (ms) by queue position ===
+  elasticsearch   pos1(n=1)=17.9674  pos2(n=2)=14.9148  pos3(n=2)=14.3913  pos5(n=2)=15.4401
+  havenask        pos1(n=3)=0.0001  pos2(n=1)=0.0001  pos3(n=2)=0.0001  pos5(n=1)=0.0000
+  native          pos1(n=1)=18.7633  pos3(n=2)=0.0614  pos4(n=3)=7.3319  pos5(n=1)=0.0007
+  opensearch      pos1(n=2)=15.4070  pos2(n=2)=12.2136  pos4(n=1)=15.9492  pos5(n=2)=16.6034
+  solr            pos2(n=2)=9.9340  pos3(n=1)=8.1722  pos4(n=3)=10.5624  pos5(n=1)=13.2548
+
+correctness: 7/7 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_wands_full_matrix

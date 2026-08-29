@@ -1,0 +1,5 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms,engine_order
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 18446744073709551615)],true,solr,4.4320157,3.948205,8.491429,solr->opensearch->elasticsearch->havenask
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 18446744073709551615)],true,elasticsearch,8.623726,8.420366,13.85826,solr->opensearch->elasticsearch->havenask
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 18446744073709551615)],true,opensearch,8.065400366666665,7.986291,11.05184,solr->opensearch->elasticsearch->havenask
+Q8_representative_timed_sample,MH01/Gray/XS,1,[("solr", 1), ("elasticsearch", 1), ("opensearch", 1), ("havenask", 18446744073709551615)],true,havenask,0.000042833333333333335,0.000039,0.000094,solr->opensearch->elasticsearch->havenask

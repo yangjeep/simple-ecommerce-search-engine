@@ -1,0 +1,52 @@
+loading + ingesting real ESCI automotive slice...
+1056 real products ingested
+building commerce_core structural index...
+=== HAVENASK UNAVAILABLE this session -- 4-way native/Solr/Elasticsearch/OpenSearch comparison, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ===
+
+=== Issue #57 esci_automotive full-matrix result ===
+Q2_brand_filter                               Filtrete                                                     native=      53 match=true
+    execution order: elasticsearch -> native -> opensearch -> solr -> havenask
+    native          mean=   0.0005ms p50=   0.0005ms p99=   0.0007ms
+    solr            mean=   9.0669ms p50=   9.1286ms p99=  14.3454ms
+    elasticsearch   mean=  11.0023ms p50=   9.9800ms p99=  26.9084ms
+    opensearch      mean=  10.5574ms p50=  10.1905ms p99=  15.9536ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+Q2_brand_filter                               Detroit Axle                                                 native=      27 match=true
+    execution order: havenask -> solr -> elasticsearch -> native -> opensearch
+    native          mean=   0.0007ms p50=   0.0007ms p99=   0.0008ms
+    solr            mean=  10.1593ms p50=  10.7065ms p99=  15.6747ms
+    elasticsearch   mean=  12.1454ms p50=  11.1070ms p99=  18.9081ms
+    opensearch      mean=   9.7787ms p50=   9.3258ms p99=  14.8365ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q2_brand_filter                               Nordic Pure                                                  native=      24 match=true
+    execution order: havenask -> native -> solr -> elasticsearch -> opensearch
+    native          mean=   0.0003ms p50=   0.0003ms p99=   0.0003ms
+    solr            mean=  10.1510ms p50=   9.8343ms p99=  16.5056ms
+    elasticsearch   mean=  10.1170ms p50=   9.0625ms p99=  23.6484ms
+    opensearch      mean=   9.1942ms p50=   8.6386ms p99=  13.8098ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q11_lexical_search_NOT_correctness_gated      tire                                                         native=       1 match=true
+    execution order: havenask -> native -> opensearch -> solr -> elasticsearch
+    native          mean=   0.8340ms p50=   0.6904ms p99=   1.3434ms
+    solr            mean=   6.0954ms p50=   6.3433ms p99=   9.4064ms
+    elasticsearch   mean=  10.0818ms p50=  10.0532ms p99=  13.7960ms
+    opensearch      mean=  12.3293ms p50=  11.8521ms p99=  17.6912ms
+    havenask        mean=   0.0002ms p50=   0.0001ms p99=   0.0003ms
+Q11_lexical_search_NOT_correctness_gated      oil                                                          native=     108 match=true
+    execution order: native -> solr -> havenask -> opensearch -> elasticsearch
+    native          mean=   0.6481ms p50=   0.6419ms p99=   0.7142ms
+    solr            mean=   8.5369ms p50=   7.2129ms p99=  24.4730ms
+    elasticsearch   mean=  10.3655ms p50=  10.2291ms p99=  13.6583ms
+    opensearch      mean=  10.6133ms p50=   9.7888ms p99=  21.6626ms
+    havenask        mean=   0.0002ms p50=   0.0002ms p99=   0.0003ms
+
+=== engine-order confound check: mean latency (ms) by queue position ===
+  elasticsearch   pos1(n=1)=11.0023  pos3(n=1)=12.1454  pos4(n=1)=10.1170  pos5(n=2)=10.2237
+  havenask        pos1(n=3)=0.0001  pos3(n=1)=0.0002  pos5(n=1)=0.0001
+  native          pos1(n=1)=0.6481  pos2(n=3)=0.2783  pos4(n=1)=0.0007
+  opensearch      pos3(n=2)=11.4433  pos4(n=1)=10.6133  pos5(n=2)=9.4865
+  solr            pos2(n=2)=9.3481  pos3(n=1)=10.1510  pos4(n=2)=7.5811
+
+correctness: 5/5 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_automotive_full_matrix
