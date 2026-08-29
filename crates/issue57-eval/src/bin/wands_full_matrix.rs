@@ -29,9 +29,9 @@ use commerce_core::domain::CategoryId;
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
 use issue57_eval::{
-    es_count, es_facet, es_text_count, escape_solr_phrase, escape_sql_literal, havenask_count,
-    havenask_facet, havenask_text_count, report, solr_count, solr_facet, solr_text_count, stats_ms,
-    time_reps, Row,
+    cell_seed, es_count, es_facet, es_text_count, escape_solr_phrase, escape_sql_literal,
+    havenask_count, havenask_facet, havenask_text_count, report, run_shuffled, solr_count,
+    solr_facet, solr_text_count, stats_ms, Row,
 };
 use phase6a_eval::{catalog as catalog_ingest, data};
 
@@ -87,28 +87,33 @@ fn main() {
         let constraint = vec![ResolvedConstraint::Structural(
             StructuralConstraint::Category(cat_id),
         )];
-        let (native_ns, native_count) =
-            time_reps(|| index.indexed_candidates(&constraint).len() as u64);
-
         let fq_solr = vec![format!(
             "category_leaf:\"{}\"",
             escape_solr_phrase(cat_name)
         )];
-        let (solr_ns, solr_count_v) =
-            time_reps(|| solr_count(solr_url, &fq_solr).expect("solr count"));
-
         let filter_es =
             vec![serde_json::json!({"term": {"category_leaf": cat_name.to_lowercase()}})];
-        let (es_ns, es_c) = time_reps(|| es_count(es_url, es_index, &filter_es).expect("es count"));
-        let (os_ns, os_c) = time_reps(|| es_count(os_url, es_index, &filter_es).expect("os count"));
-
         let hv_where = format!(
             " where category_leaf = '{}'",
             escape_sql_literal(&cat_name.to_lowercase())
         );
-        let (hv_ns, hv_c) = time_reps(|| {
-            havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
-        });
+
+        let seed = cell_seed(&["wands", "Q9_category_filter", cat_name]);
+        let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
+            ("native", Box::new(|| index.indexed_candidates(&constraint).len() as u64)),
+            ("solr", Box::new(|| solr_count(solr_url, &fq_solr).expect("solr count"))),
+            ("elasticsearch", Box::new(|| es_count(es_url, es_index, &filter_es).expect("es count"))),
+            ("opensearch", Box::new(|| es_count(os_url, es_index, &filter_es).expect("os count"))),
+            ("havenask", Box::new(|| {
+                havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
+            })),
+        ];
+        let (mut results, engine_order) = run_shuffled(seed, engines);
+        let (native_ns, native_count) = results.remove("native").unwrap();
+        let (solr_ns, solr_count_v) = results.remove("solr").unwrap();
+        let (es_ns, es_c) = results.remove("elasticsearch").unwrap();
+        let (os_ns, os_c) = results.remove("opensearch").unwrap();
+        let (hv_ns, hv_c) = results.remove("havenask").unwrap();
 
         let counts = vec![
             ("solr".to_string(), solr_count_v),
@@ -140,6 +145,7 @@ fn main() {
                 ("opensearch".to_string(), o_mean, o_p50, o_p99),
                 ("havenask".to_string(), h_mean, h_p50, h_p99),
             ],
+            engine_order,
         });
     }
 
@@ -152,21 +158,26 @@ fn main() {
                 value: threshold,
             },
         )];
-        let (native_ns, native_count) =
-            time_reps(|| index.indexed_candidates(&constraint).len() as u64);
-
         let fq_solr = vec![format!("average_rating:[{threshold} TO *]")];
-        let (solr_ns, solr_count_v) =
-            time_reps(|| solr_count(solr_url, &fq_solr).expect("solr count"));
-
         let filter_es = vec![serde_json::json!({"range": {"average_rating": {"gte": threshold}}})];
-        let (es_ns, es_c) = time_reps(|| es_count(es_url, es_index, &filter_es).expect("es count"));
-        let (os_ns, os_c) = time_reps(|| es_count(os_url, es_index, &filter_es).expect("os count"));
-
         let hv_where = format!(" where average_rating >= {threshold}");
-        let (hv_ns, hv_c) = time_reps(|| {
-            havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
-        });
+
+        let seed = cell_seed(&["wands", "Q5_numeric_range", &threshold.to_string()]);
+        let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
+            ("native", Box::new(|| index.indexed_candidates(&constraint).len() as u64)),
+            ("solr", Box::new(|| solr_count(solr_url, &fq_solr).expect("solr count"))),
+            ("elasticsearch", Box::new(|| es_count(es_url, es_index, &filter_es).expect("es count"))),
+            ("opensearch", Box::new(|| es_count(os_url, es_index, &filter_es).expect("os count"))),
+            ("havenask", Box::new(|| {
+                havenask_count(&havenask_url, havenask_table, &hv_where).expect("havenask count")
+            })),
+        ];
+        let (mut results, engine_order) = run_shuffled(seed, engines);
+        let (native_ns, native_count) = results.remove("native").unwrap();
+        let (solr_ns, solr_count_v) = results.remove("solr").unwrap();
+        let (es_ns, es_c) = results.remove("elasticsearch").unwrap();
+        let (os_ns, os_c) = results.remove("opensearch").unwrap();
+        let (hv_ns, hv_c) = results.remove("havenask").unwrap();
 
         let counts = vec![
             ("solr".to_string(), solr_count_v),
@@ -198,6 +209,7 @@ fn main() {
                 ("opensearch".to_string(), o_mean, o_p50, o_p99),
                 ("havenask".to_string(), h_mean, h_p50, h_p99),
             ],
+            engine_order,
         });
     }
 
@@ -213,36 +225,46 @@ fn main() {
             StructuralConstraint::Category(cat_id),
         )];
         let candidates = index.indexed_candidates(&constraint);
-        let (native_ns, native_facets_full) =
-            time_reps(|| index.facet_counts_by_scan(&candidates, &ingested.catalog, "color"));
-        let mut native_top: Vec<(String, u64)> = native_facets_full.into_iter().collect();
-        native_top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-        native_top.truncate(20);
-        let native_facets: std::collections::BTreeMap<String, u64> =
-            native_top.into_iter().collect();
-
         let fq_solr = vec![format!(
             "category_leaf:\"{}\"",
             escape_solr_phrase(cat_name)
         )];
-        let (solr_ns, solr_facets) =
-            time_reps(|| solr_facet(solr_url, &fq_solr, "color", 20).expect("solr facet"));
-
         let filter_es =
             vec![serde_json::json!({"term": {"category_leaf": cat_name.to_lowercase()}})];
-        let (es_ns, es_facets) =
-            time_reps(|| es_facet(es_url, es_index, &filter_es, "color", 20).expect("es facet"));
-        let (os_ns, os_facets) =
-            time_reps(|| es_facet(os_url, es_index, &filter_es, "color", 20).expect("os facet"));
-
         let hv_where = format!(
             " where category_leaf = '{}'",
             escape_sql_literal(&cat_name.to_lowercase())
         );
-        let (hv_ns, hv_facets) = time_reps(|| {
-            havenask_facet(&havenask_url, havenask_table, &hv_where, "color", 20)
-                .expect("havenask facet")
-        });
+
+        let seed = cell_seed(&["wands", "Q10_color_facet_under_category", cat_name]);
+        let engines: Vec<(&str, Box<dyn FnMut() -> std::collections::BTreeMap<String, u64>>)> = vec![
+            ("native", Box::new(|| {
+                let mut top: Vec<(String, u64)> = index
+                    .facet_counts_by_scan(&candidates, &ingested.catalog, "color")
+                    .into_iter()
+                    .collect();
+                top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+                top.truncate(20);
+                top.into_iter().collect()
+            })),
+            ("solr", Box::new(|| solr_facet(solr_url, &fq_solr, "color", 20).expect("solr facet"))),
+            ("elasticsearch", Box::new(|| {
+                es_facet(es_url, es_index, &filter_es, "color", 20).expect("es facet")
+            })),
+            ("opensearch", Box::new(|| {
+                es_facet(os_url, es_index, &filter_es, "color", 20).expect("os facet")
+            })),
+            ("havenask", Box::new(|| {
+                havenask_facet(&havenask_url, havenask_table, &hv_where, "color", 20)
+                    .expect("havenask facet")
+            })),
+        ];
+        let (mut results, engine_order) = run_shuffled(seed, engines);
+        let (native_ns, native_facets) = results.remove("native").unwrap();
+        let (solr_ns, solr_facets) = results.remove("solr").unwrap();
+        let (es_ns, es_facets) = results.remove("elasticsearch").unwrap();
+        let (os_ns, os_facets) = results.remove("opensearch").unwrap();
+        let (hv_ns, hv_facets) = results.remove("havenask").unwrap();
 
         // Native's facet map keys are raw (non-lowercased); the engine
         // maps are lowercased -- WANDS' own color field has no casing
@@ -284,6 +306,7 @@ fn main() {
                 ("opensearch".to_string(), o_mean, o_p50, o_p99),
                 ("havenask".to_string(), h_mean, h_p50, h_p99),
             ],
+            engine_order,
         });
     }
 
@@ -296,32 +319,41 @@ fn main() {
                 contains: term.to_string(),
             },
         )];
-        let (native_ns, native_count) = time_reps(|| {
-            index
-                .indexed_candidates(&text_constraint)
-                .iter()
-                .filter(|&ord| {
-                    index
-                        .variant_id_at(ord)
-                        .and_then(|vid| index.lookup_variant(&ingested.catalog, vid))
-                        .map(|(p, _)| p.title.to_lowercase().contains(term))
-                        .unwrap_or(false)
-                })
-                .count() as u64
-        });
-
-        let (solr_ns, solr_count_v) =
-            time_reps(|| solr_text_count(solr_url, term, "title description").expect("solr text"));
-        let (es_ns, es_c) = time_reps(|| {
-            es_text_count(es_url, es_index, term, &["title", "description"]).expect("es text")
-        });
-        let (os_ns, os_c) = time_reps(|| {
-            es_text_count(os_url, es_index, term, &["title", "description"]).expect("os text")
-        });
-        let (hv_ns, hv_c) = time_reps(|| {
-            havenask_text_count(&havenask_url, havenask_table, "default", term)
-                .expect("havenask text")
-        });
+        let seed = cell_seed(&["wands", "Q11_lexical_title_search", term]);
+        let engines: Vec<(&str, Box<dyn FnMut() -> u64>)> = vec![
+            ("native", Box::new(|| {
+                index
+                    .indexed_candidates(&text_constraint)
+                    .iter()
+                    .filter(|&ord| {
+                        index
+                            .variant_id_at(ord)
+                            .and_then(|vid| index.lookup_variant(&ingested.catalog, vid))
+                            .map(|(p, _)| p.title.to_lowercase().contains(term))
+                            .unwrap_or(false)
+                    })
+                    .count() as u64
+            })),
+            ("solr", Box::new(|| {
+                solr_text_count(solr_url, term, "title description").expect("solr text")
+            })),
+            ("elasticsearch", Box::new(|| {
+                es_text_count(es_url, es_index, term, &["title", "description"]).expect("es text")
+            })),
+            ("opensearch", Box::new(|| {
+                es_text_count(os_url, es_index, term, &["title", "description"]).expect("os text")
+            })),
+            ("havenask", Box::new(|| {
+                havenask_text_count(&havenask_url, havenask_table, "default", term)
+                    .expect("havenask text")
+            })),
+        ];
+        let (mut results, engine_order) = run_shuffled(seed, engines);
+        let (native_ns, native_count) = results.remove("native").unwrap();
+        let (solr_ns, solr_count_v) = results.remove("solr").unwrap();
+        let (es_ns, es_c) = results.remove("elasticsearch").unwrap();
+        let (os_ns, os_c) = results.remove("opensearch").unwrap();
+        let (hv_ns, hv_c) = results.remove("havenask").unwrap();
 
         let counts = vec![
             ("solr".to_string(), solr_count_v),
@@ -347,6 +379,7 @@ fn main() {
                 ("opensearch".to_string(), o_mean, o_p50, o_p99),
                 ("havenask".to_string(), h_mean, h_p50, h_p99),
             ],
+            engine_order,
         });
     }
 

@@ -22,6 +22,83 @@ use std::time::Instant;
 pub const REPS: usize = 30;
 pub const WARMUP: usize = 5;
 
+// ---------- Revision 2 gap closure: randomized/counterbalanced engine
+// order (Issue #57 adversarial review, gap 2) ----------
+//
+// Revision 1 always benchmarked engines in the fixed order
+// native->solr->es->opensearch->havenask, every cell, every dataset --
+// the adversarial review's single most important flagged confound
+// (Havenask always queried last, after four already-resident engines).
+// Rather than a hand-picked "run it twice" fix, every cell below is
+// given its own deterministic-but-distinct execution order, derived by
+// hashing that cell's own (dataset, class, key) identity -- across the
+// dozens of cells in the full matrix this counterbalances engine
+// identity against queue position (each engine lands in each of the 5
+// positions roughly 1/5 of the time), while remaining fully
+// reproducible from the committed seed inputs (no external RNG crate
+// dependency, no unseeded randomness).
+
+/// FNV-1a, a well-known non-cryptographic hash -- adequate for seeding a
+/// per-cell execution-order permutation, not for anything security-
+/// sensitive.
+pub fn cell_seed(parts: &[&str]) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for part in parts {
+        for byte in part.as_bytes() {
+            hash ^= *byte as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        hash ^= 0xff;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+/// splitmix64, seeded by `cell_seed` -- deterministic, reproducible,
+/// no external crate.
+fn splitmix64(state: &mut u64) -> u64 {
+    *state = state.wrapping_add(0x9E3779B97F4A7C15);
+    let mut z = *state;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB);
+    z ^ (z >> 31)
+}
+
+/// Fisher-Yates over `0..n`, seeded by `seed`.
+pub fn shuffled_order(seed: u64, n: usize) -> Vec<usize> {
+    let mut state = seed;
+    let mut order: Vec<usize> = (0..n).collect();
+    for i in (1..n).rev() {
+        let j = (splitmix64(&mut state) as usize) % (i + 1);
+        order.swap(i, j);
+    }
+    order
+}
+
+/// Runs each named engine closure's full `time_reps` (warmup + REPS)
+/// block, in an order permuted by `seed` rather than the closures'
+/// declaration order -- returning results keyed by engine name (so
+/// call sites are order-agnostic) plus the actual execution order used
+/// (recorded into `Row::engine_order` for audit). Every closure still
+/// runs its own full isolated timed block (Issue #57 "isolate engines
+/// so one engine's process/cache state does not contaminate another"),
+/// unlike a per-repetition interleave -- only which engine's block goes
+/// first/second/... changes.
+pub fn run_shuffled<T>(
+    seed: u64,
+    mut engines: Vec<(&'static str, Box<dyn FnMut() -> T + '_>)>,
+) -> (BTreeMap<&'static str, (Vec<u128>, T)>, Vec<String>) {
+    let order = shuffled_order(seed, engines.len());
+    let mut results = BTreeMap::new();
+    let mut order_labels = Vec::new();
+    for &i in &order {
+        let (name, f) = &mut engines[i];
+        order_labels.push(name.to_string());
+        results.insert(*name, time_reps(f));
+    }
+    (results, order_labels)
+}
+
 pub fn percentile_ms(sorted_ns: &[u128], p: f64) -> f64 {
     if sorted_ns.is_empty() {
         return 0.0;
@@ -281,6 +358,10 @@ pub struct Row {
     pub counts_match: bool,
     /// (engine, mean_ms, p50_ms, p99_ms)
     pub timings_ms: Vec<(String, f64, f64, f64)>,
+    /// The actual per-cell engine execution order used (Revision 2 gap
+    /// closure: randomized/counterbalanced order, see `run_shuffled`).
+    /// Empty for a row that has no timed engine comparison (e.g. Q2b).
+    pub engine_order: Vec<String>,
 }
 
 /// Prints the human-readable table, writes `results.csv` under
@@ -290,17 +371,20 @@ pub struct Row {
 pub fn report(dataset: &str, rows: &[Row], mismatches: &[String]) {
     println!("\n=== Issue #57 {dataset} full-matrix result ===");
     let mut csv = String::from(
-        "class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms\n",
+        "class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms,engine_order\n",
     );
     for r in rows {
         println!(
             "{:<45} {:<60} native={:>8} match={}",
             r.class, r.key, r.native_count, r.counts_match
         );
+        if !r.engine_order.is_empty() {
+            println!("    execution order: {}", r.engine_order.join(" -> "));
+        }
         for (engine, mean, p50, p99) in &r.timings_ms {
             println!("    {engine:<15} mean={mean:>9.4}ms p50={p50:>9.4}ms p99={p99:>9.4}ms");
             csv.push_str(&format!(
-                "{},{},{},{:?},{},{},{},{},{}\n",
+                "{},{},{},{:?},{},{},{},{},{},{}\n",
                 r.class,
                 r.key.replace(',', ";"),
                 r.native_count,
@@ -309,8 +393,56 @@ pub fn report(dataset: &str, rows: &[Row], mismatches: &[String]) {
                 engine,
                 mean,
                 p50,
-                p99
+                p99,
+                r.engine_order.join("->")
             ));
+        }
+    }
+
+    // Revision 2 gap closure: the ordering-confound check itself --
+    // mean latency by queue *position* (1st..5th queried), per engine,
+    // across every row that recorded an execution order. If Havenask
+    // (or any engine) is systematically slower only when queried late,
+    // that would show up here as position correlating with latency
+    // *within* an engine; a real per-engine performance difference
+    // shows up as a latency gap that persists across positions instead.
+    let mut by_engine_position: BTreeMap<(String, usize), Vec<f64>> = BTreeMap::new();
+    for r in rows {
+        if r.engine_order.is_empty() {
+            continue;
+        }
+        let position_of: BTreeMap<&str, usize> = r
+            .engine_order
+            .iter()
+            .enumerate()
+            .map(|(i, name)| (name.as_str(), i + 1))
+            .collect();
+        for (engine, mean, _p50, _p99) in &r.timings_ms {
+            if let Some(&pos) = position_of.get(engine.as_str()) {
+                by_engine_position
+                    .entry((engine.clone(), pos))
+                    .or_default()
+                    .push(*mean);
+            }
+        }
+    }
+    if !by_engine_position.is_empty() {
+        println!("\n=== engine-order confound check: mean latency (ms) by queue position ===");
+        let engines: Vec<String> = {
+            let mut names: Vec<String> = by_engine_position.keys().map(|(e, _)| e.clone()).collect();
+            names.sort();
+            names.dedup();
+            names
+        };
+        for engine in &engines {
+            let mut cells = Vec::new();
+            for pos in 1..=5 {
+                if let Some(samples) = by_engine_position.get(&(engine.clone(), pos)) {
+                    let mean_of_means = samples.iter().sum::<f64>() / samples.len() as f64;
+                    cells.push(format!("pos{pos}(n={})={mean_of_means:.4}", samples.len()));
+                }
+            }
+            println!("  {engine:<15} {}", cells.join("  "));
         }
     }
 
@@ -337,4 +469,281 @@ pub fn report(dataset: &str, rows: &[Row], mismatches: &[String]) {
     if !all_match {
         std::process::exit(1);
     }
+}
+
+// ---------- Revision 2 gap closure: relevance-quality metrics
+// (NDCG@k/Recall@k/MRR@k), Issue #57 adversarial review gap 1 ----------
+//
+// Revision 1 measured zero relevance-quality metrics for any of the
+// four external engines. `ndcg_recall_mrr` below is a single graded-
+// gain implementation usable against both WANDS's 3-grade label scale
+// (`phase9_eval::wands_relevance::WandsLabel::gain`) and ESCI's 4-grade
+// scale (`issue35_eval::label_gain`) -- both callers already reduce
+// their own dataset-specific label to an `f64` gain before calling in,
+// so one scorer serves both, exactly like `round1_eval::relevance`/
+// `phase9_eval::wands_relevance` already established for their own
+// single-engine (Solr-only) precedents. `gain > 0.0` is "relevant" for
+// Recall/MRR, matching both datasets' own convention (WANDS's
+// `WandsLabel::is_relevant`, ESCI's implicit "Irrelevant=0.0").
+
+/// Returns `(ndcg_at_k, recall_at_k, mrr_at_k)`. `(0.0, 0.0, 0.0)` when
+/// `gains` has no relevant (gain > 0) entries at all -- a query with no
+/// non-Irrelevant judgment carries no scoreable signal, matching
+/// `phase9_eval::wands_relevance::ndcg_recall_mrr`'s own precedent
+/// rather than dividing by zero or fabricating a score.
+pub fn ndcg_recall_mrr(ranked_ids: &[String], gains: &BTreeMap<String, f64>, k: usize) -> (f64, f64, f64) {
+    let relevant_total = gains.values().filter(|&&g| g > 0.0).count();
+    if relevant_total == 0 {
+        return (0.0, 0.0, 0.0);
+    }
+    let top: Vec<&str> = ranked_ids.iter().take(k).map(String::as_str).collect();
+
+    let dcg: f64 = top
+        .iter()
+        .enumerate()
+        .map(|(i, id)| gains.get(*id).copied().unwrap_or(0.0) / (i as f64 + 2.0).log2())
+        .sum();
+    let mut ideal: Vec<f64> = gains.values().copied().collect();
+    ideal.sort_by(|a, b| b.total_cmp(a));
+    let idcg: f64 = ideal
+        .iter()
+        .take(k)
+        .enumerate()
+        .map(|(i, g)| g / (i as f64 + 2.0).log2())
+        .sum();
+    let ndcg = if idcg > 0.0 { dcg / idcg } else { 0.0 };
+
+    let hits = top
+        .iter()
+        .filter(|id| gains.get(**id).copied().unwrap_or(0.0) > 0.0)
+        .count();
+    let recall = hits as f64 / relevant_total as f64;
+
+    let rr = top
+        .iter()
+        .position(|id| gains.get(*id).copied().unwrap_or(0.0) > 0.0)
+        .map(|pos| 1.0 / (pos as f64 + 1.0))
+        .unwrap_or(0.0);
+
+    (ndcg, recall, rr)
+}
+
+// ---------- ranked (not just count) retrieval per engine, needed for
+// relevance scoring above ----------
+
+/// Solr edismax search returning ranked `id`s (Solr's own relevance
+/// order, not re-sorted here) -- same `fq`-fairness discipline as
+/// `solr_count`/`issue35_eval::eval::solr_search`: structural
+/// constraints the caller already enforces natively must be passed as
+/// `fq` so Solr answers the identically-scoped question, not a broader
+/// one.
+pub fn solr_search_ids(
+    base_url: &str,
+    q: &str,
+    fq: &[String],
+    qf: &str,
+    rows: usize,
+) -> Result<Vec<String>, String> {
+    let rows_str = rows.to_string();
+    let mut req = ureq::get(&format!("{base_url}/select"))
+        .query("q", q)
+        .query("defType", "edismax")
+        .query("qf", qf)
+        .query("rows", &rows_str)
+        .query("fl", "id");
+    for f in fq {
+        req = req.query("fq", f);
+    }
+    let body: serde_json::Value = req
+        .call()
+        .map_err(|e| format!("solr transport: {e}"))?
+        .into_json()
+        .map_err(|e| format!("solr parse: {e}"))?;
+    let docs = body["response"]["docs"]
+        .as_array()
+        .ok_or_else(|| format!("solr: no response.docs in {body}"))?;
+    Ok(docs
+        .iter()
+        .filter_map(|d| d["id"].as_str().map(str::to_string))
+        .collect())
+}
+
+/// Elasticsearch/OpenSearch `multi_match` search returning ranked
+/// `_id`s in the engine's own `_score`-descending order (the default
+/// `_search` order, not re-sorted here).
+pub fn es_search_ids(
+    base_url: &str,
+    index: &str,
+    q: &str,
+    fields: &[&str],
+    filter: &[serde_json::Value],
+    rows: usize,
+) -> Result<Vec<String>, String> {
+    let body = serde_json::json!({
+        "query": {"bool": {
+            "must": {"multi_match": {"query": q, "fields": fields}},
+            "filter": filter,
+        }},
+        "size": rows,
+        "_source": false,
+    });
+    let resp: serde_json::Value = ureq::post(&format!("{base_url}/{index}/_search"))
+        .send_json(body)
+        .map_err(|e| format!("es transport: {e}"))?
+        .into_json()
+        .map_err(|e| format!("es parse: {e}"))?;
+    let hits = resp["hits"]["hits"]
+        .as_array()
+        .ok_or_else(|| format!("es: no hits.hits in {resp}"))?;
+    Ok(hits
+        .iter()
+        .filter_map(|h| h["_id"].as_str().map(str::to_string))
+        .collect())
+}
+
+/// Havenask SQL `MATCHINDEX` search returning ids in the order Havenask
+/// itself returns them.
+///
+/// **Disclosed capability gap, not a silent omission**: this SQL/QRS
+/// endpoint (the same one used for every count/facet query elsewhere in
+/// this crate) exposes no documented relevance-score column or
+/// `ORDER BY <score>` clause in this deployment's schema (`direct`
+/// table type, no custom ranking profile) -- Issue #57 §"Fairness
+/// contract" is explicit that when "one engine genuinely cannot express
+/// a semantic requirement equivalently, report that as a capability
+/// result rather than forcing an invalid... comparison." Rows are
+/// therefore returned in Havenask's own default result order (an
+/// index/docid order, not a verified relevance order), and every NDCG/
+/// Recall/MRR row computed from this function's output is labeled
+/// `havenask_unranked_capability_gap` rather than compared head-to-head
+/// against the other four engines' genuinely relevance-ranked results.
+pub fn havenask_search_ids(
+    base_url: &str,
+    table: &str,
+    index_name: &str,
+    id_field: &str,
+    q: &str,
+    extra_where: &[String],
+    rows: usize,
+) -> Result<Vec<String>, String> {
+    let escaped = escape_sql_literal(q);
+    let mut clause = format!("MATCHINDEX('{index_name}', '{escaped}')");
+    for w in extra_where {
+        clause.push_str(" and ");
+        clause.push_str(w);
+    }
+    let sql = format!("select {id_field} from {table} where {clause} limit {rows}");
+    let inner = havenask_query(base_url, &sql)?;
+    let data = inner["data"]
+        .as_array()
+        .ok_or_else(|| format!("havenask: no data in {inner}"))?;
+    Ok(data
+        .iter()
+        .filter_map(|row| {
+            row[0]
+                .as_str()
+                .map(str::to_string)
+                .or_else(|| row[0].as_u64().map(|n| n.to_string()))
+        })
+        .collect())
+}
+
+// ---------- Revision 2 gap closure: index size / build time / startup
+// time / memory instrumentation, Issue #57 adversarial review gap
+// ("no index/build-time matrix") ----------
+
+/// Recursively sums file sizes under `path` (best-effort: a permission
+/// error or race on an individual entry is skipped, not fatal -- this
+/// is a diagnostic instrumentation figure, not a correctness gate).
+pub fn dir_size_bytes(path: &std::path::Path) -> u64 {
+    let mut total = 0u64;
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return 0;
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if let Ok(meta) = entry.metadata() {
+            if meta.is_dir() {
+                total += dir_size_bytes(&p);
+            } else {
+                total += meta.len();
+            }
+        }
+    }
+    total
+}
+
+/// Current resident-set size (RSS, kilobytes) of `pid`, read from
+/// `/proc/<pid>/status` -- Linux-specific (this project's own
+/// documented host/runtime environment, `FULL_MATRIX_PROTOCOL.md` §4),
+/// not portable, and that is an accepted, disclosed scope limit rather
+/// than a silent Linux-only assumption.
+pub fn process_rss_kb(pid: u32) -> Option<u64> {
+    let status = std::fs::read_to_string(format!("/proc/{pid}/status")).ok()?;
+    status.lines().find_map(|line| {
+        line.strip_prefix("VmRSS:")
+            .and_then(|rest| rest.trim().split_whitespace().next())
+            .and_then(|n| n.parse::<u64>().ok())
+    })
+}
+
+/// One (dataset, engine) cell's ingestion/footprint economics --
+/// `FULL_MATRIX_PROTOCOL.md` §11's required measurement, not
+/// systematically instrumented in Revision 1 (adversarial review,
+/// confirmed limitation).
+#[derive(Debug, Clone)]
+pub struct EngineFootprint {
+    pub engine: String,
+    pub build_ms: f64,
+    pub index_bytes: u64,
+    pub startup_ms: f64,
+    pub peak_rss_kb: u64,
+}
+
+pub fn write_footprint_csv(dataset: &str, footprints: &[EngineFootprint]) {
+    println!("\n=== Issue #57 {dataset} index/build/startup/memory footprint ===");
+    let mut csv = String::from("dataset,engine,build_ms,index_bytes,startup_ms,peak_rss_kb\n");
+    for f in footprints {
+        println!(
+            "  {:<15} build={:>10.1}ms index={:>12} bytes startup={:>10.1}ms peak_rss={:>10} kB",
+            f.engine, f.build_ms, f.index_bytes, f.startup_ms, f.peak_rss_kb
+        );
+        csv.push_str(&format!(
+            "{},{},{},{},{},{}\n",
+            dataset, f.engine, f.build_ms, f.index_bytes, f.startup_ms, f.peak_rss_kb
+        ));
+    }
+    let artifacts_dir = PathBuf::from(format!("dataset_cache/issue57_{dataset}_full_matrix"));
+    std::fs::create_dir_all(&artifacts_dir).ok();
+    std::fs::write(artifacts_dir.join("footprint.csv"), &csv).ok();
+}
+
+/// One dataset's relevance-metric row for one engine, aggregated over
+/// every judged query that had at least one non-Irrelevant judgment
+/// (matching Issue #35's own `evaluated_queries` convention).
+#[derive(Debug, Clone)]
+pub struct RelevanceRow {
+    pub engine: String,
+    pub n_queries: usize,
+    pub ndcg_at_10: f64,
+    pub recall_at_10: f64,
+    pub mrr_at_10: f64,
+}
+
+pub fn report_relevance(dataset: &str, rows: &[RelevanceRow]) {
+    println!("\n=== Issue #57 {dataset} relevance (NDCG@10/Recall@10/MRR@10) ===");
+    let mut csv = String::from("dataset,engine,n_queries,ndcg_at_10,recall_at_10,mrr_at_10\n");
+    for r in rows {
+        println!(
+            "  {:<15} n={:<6} NDCG@10={:.4}  Recall@10={:.4}  MRR@10={:.4}",
+            r.engine, r.n_queries, r.ndcg_at_10, r.recall_at_10, r.mrr_at_10
+        );
+        csv.push_str(&format!(
+            "{},{},{},{},{},{}\n",
+            dataset, r.engine, r.n_queries, r.ndcg_at_10, r.recall_at_10, r.mrr_at_10
+        ));
+    }
+    let artifacts_dir = PathBuf::from(format!("dataset_cache/issue57_{dataset}_full_matrix"));
+    std::fs::create_dir_all(&artifacts_dir).ok();
+    std::fs::write(artifacts_dir.join("relevance.csv"), &csv).ok();
 }
