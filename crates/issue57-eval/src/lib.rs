@@ -270,6 +270,20 @@ pub fn es_text_count(base_url: &str, index: &str, q: &str, fields: &[&str]) -> R
         .ok_or_else(|| format!("es: no hits.total.value in {resp}"))
 }
 
+/// Revision 2: Havenask could not be brought to a serving-ready state
+/// this session (see `docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md`)
+/// despite two independent, differently-configured deployment attempts.
+/// Every binary probes this once at startup rather than letting a
+/// mid-run transport failure abort an otherwise-complete 4-engine cell
+/// -- Havenask is then simply omitted from that run's engine list/counts
+/// (a real 4-way comparison, not a fabricated 5th data point).
+pub fn havenask_available(base_url: &str) -> bool {
+    ureq::get(&format!("{base_url}/HealthCheck"))
+        .timeout(std::time::Duration::from_secs(3))
+        .call()
+        .is_ok()
+}
+
 pub fn havenask_query(base_url: &str, sql: &str) -> Result<serde_json::Value, String> {
     let full = format!("{sql}&&kvpair=databaseName:database;formatType:json");
     let resp: serde_json::Value = ureq::post(&format!("{base_url}/QrsService/searchSql"))

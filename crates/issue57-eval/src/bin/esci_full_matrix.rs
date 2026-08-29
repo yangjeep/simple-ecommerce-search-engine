@@ -20,8 +20,9 @@ use commerce_core::index::CatalogIndex;
 use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
 use issue35_eval::{build_catalog, load_products};
 use issue57_eval::{
-    cell_seed, es_count, es_text_count, escape_sql_literal, havenask_count, havenask_text_count,
-    report, run_shuffled, solr_count, solr_text_count, stats_ms, EngineClosure, Row,
+    cell_seed, es_count, es_text_count, escape_sql_literal, havenask_available, havenask_count,
+    havenask_text_count, report, run_shuffled, solr_count, solr_text_count, stats_ms,
+    EngineClosure, Row,
 };
 
 fn main() {
@@ -44,6 +45,13 @@ fn main() {
     let os_url = "http://127.0.0.1:9201";
     let havenask_url =
         std::env::var("HAVENASK_URL").unwrap_or_else(|_| "http://172.17.0.2:45800".to_string());
+    let havenask_up = havenask_available(&havenask_url);
+    if !havenask_up {
+        eprintln!(
+            "=== HAVENASK UNAVAILABLE this session -- 4-way native/Solr/Elasticsearch/OpenSearch \
+             comparison, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ==="
+        );
+    }
     let es_index = format!("esci_{vertical}_bench");
     let havenask_table = format!("esci_{vertical}");
 
@@ -142,8 +150,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_count(&havenask_url, &havenask_table, &hv_where)
-                        .expect("havenask count")
+                    if !havenask_up {
+                        u64::MAX
+                    } else {
+                        havenask_count(&havenask_url, &havenask_table, &hv_where)
+                            .expect("havenask count")
+                    }
                 }),
             ),
         ];
@@ -160,7 +172,10 @@ fn main() {
             ("opensearch".to_string(), os_c),
             ("havenask".to_string(), hv_c),
         ];
-        let counts_match = counts.iter().all(|(_, c)| *c == native_count);
+        let counts_match = counts
+            .iter()
+            .filter(|(_, c)| *c != u64::MAX)
+            .all(|(_, c)| *c == native_count);
         if !counts_match {
             mismatches.push(format!(
                 "Q2 brand={brand_name}: native={native_count} {counts:?} (a Havenask mismatch on this vertical may be the single disclosed ingestion-failure row -- see FULL_MATRIX_PROTOCOL.md's ESCI addendum)"
@@ -193,7 +208,7 @@ fn main() {
     // native's two colliding BrandIds are queried separately; every
     // comparator engine is case-insensitive and returns the SAME
     // (merged) count for both queries -- expected, not a defect.
-    if let Some((id_a, name_a, id_b, name_b)) = collision_pair {
+    if let (Some((id_a, name_a, id_b, name_b)), true) = (collision_pair, havenask_up) {
         for (label, brand_id, brand_name) in [
             ("variant_a", id_a, name_a.clone()),
             ("variant_b", id_b, name_b.clone()),
@@ -288,8 +303,12 @@ fn main() {
             (
                 "havenask",
                 Box::new(|| {
-                    havenask_text_count(&havenask_url, &havenask_table, "default", term)
-                        .expect("havenask text")
+                    if !havenask_up {
+                        u64::MAX
+                    } else {
+                        havenask_text_count(&havenask_url, &havenask_table, "default", term)
+                            .expect("havenask text")
+                    }
                 }),
             ),
         ];
