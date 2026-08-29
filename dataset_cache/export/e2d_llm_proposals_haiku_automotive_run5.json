@@ -1,0 +1,357 @@
+{
+  "configuration": "automotive",
+  "run_index": 5,
+  "descriptors": [
+    {
+      "key": "amperage_output",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "amperage",
+        "current",
+        "amp output"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "numeric_parseable_fraction=1.0, 72 distinct values with high variance, samples 101-105 are numeric ratings",
+      "abstain": false
+    },
+    {
+      "key": "bulb_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "bulb type",
+        "socket type",
+        "bulb socket"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "distinct_values=4, automotive bulb codes (9005, H11, H4, H7) are standard compatibility specs",
+      "abstain": false
+    },
+    {
+      "key": "cold_cranking_amps",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "cca",
+        "cold cranking",
+        "starting amps"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.98,
+      "evidence": "numeric_parseable_fraction=1.0, uniqueness_ratio=0.87, samples 401-410 are battery CCA ratings",
+      "abstain": false
+    },
+    {
+      "key": "filter_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "filter type",
+        "filter shape"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "distinct_values=2 (Cylindrical, Panel), physical shape affects installation compatibility",
+      "abstain": false
+    },
+    {
+      "key": "group_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "battery size",
+        "group size",
+        "group"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.9,
+      "evidence": "distinct_values=3, samples (24F, 35, 65) are standard battery group designations",
+      "abstain": false
+    },
+    {
+      "key": "heat_range",
+      "semantic_role": "enum",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "heat range",
+        "spark plug heat"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "numeric_parseable_fraction=1.0, distinct_values=5, samples 4-8 are standard spark plug heat codes",
+      "abstain": false
+    },
+    {
+      "key": "lumens",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "lumens",
+        "brightness",
+        "light output"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.98,
+      "evidence": "numeric_parseable_fraction=1.0, uniqueness_ratio=0.94, samples 1004-1041 are brightness measurements",
+      "abstain": false
+    },
+    {
+      "key": "material",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "material",
+        "construction",
+        "composition"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "distinct_values=2 (Aluminum, Copper-Brass), affects durability and cost tier",
+      "abstain": false
+    },
+    {
+      "key": "material_grade",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "material grade",
+        "pad material",
+        "brake material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "distinct_values=3 (Ceramic, Organic, Semi-Metallic), standard brake pad material grades",
+      "abstain": false
+    },
+    {
+      "key": "micron_rating",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "micron rating",
+        "micron",
+        "filter fineness"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "numeric_parseable_fraction=1.0, distinct_values=31, samples 10-14 are filtration fineness ratings",
+      "abstain": false
+    },
+    {
+      "key": "oem_or_aftermarket",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "oem",
+        "aftermarket",
+        "original",
+        "genuine"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.98,
+      "evidence": "distinct_values=2, high occurrence (1500 records), critical shopper intent signal",
+      "abstain": false
+    },
+    {
+      "key": "part_number",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "part number",
+        "part#",
+        "sku"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.99,
+      "evidence": "uniqueness_ratio=0.998, variant_scoped=true, alphanumeric format (e.g., AM-1026-CB)",
+      "abstain": false
+    },
+    {
+      "key": "position",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "position",
+        "location",
+        "front",
+        "rear"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "distinct_values=2 (Front, Rear), critical for vehicle component positioning",
+      "abstain": false
+    },
+    {
+      "key": "size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "size",
+        "tire size",
+        "width"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction=1.0, distinct_values=13, samples 16-20 are typical tire/wheel measurements",
+      "abstain": false
+    },
+    {
+      "key": "thread_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "thread size",
+        "thread",
+        "mm"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.9,
+      "evidence": "distinct_values=3, samples (10mm, 12mm, 14mm) are standard threading specifications",
+      "abstain": false
+    },
+    {
+      "key": "voltage",
+      "semantic_role": "ignore",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "voltage",
+        "volt"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.98,
+      "evidence": "distinct_values=1, only value '12' across all 150 samples, no discriminative power",
+      "abstain": false
+    },
+    {
+      "key": "warranty_months",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "warranty",
+        "warranty months",
+        "coverage"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "numeric_parseable_fraction=1.0, variant_scoped=true, distinct_values=4, samples (12,24,36,60) are standard warranty periods",
+      "abstain": false
+    }
+  ]
+}

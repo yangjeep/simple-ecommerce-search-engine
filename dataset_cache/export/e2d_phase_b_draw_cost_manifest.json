@@ -1,0 +1,149 @@
+{
+  "tiers": {
+    "opus": "claude-opus-5",
+    "haiku": "claude-haiku-4-5-20251001"
+  },
+  "total_subagent_tokens_this_workflow_run": 799614,
+  "manifest": [
+    {
+      "tier": "opus",
+      "configuration": "wands_baseline",
+      "run_index": 1,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 39459
+    },
+    {
+      "tier": "opus",
+      "configuration": "wands_baseline",
+      "run_index": 2,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 21949
+    },
+    {
+      "tier": "opus",
+      "configuration": "wands_baseline",
+      "run_index": 3,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 24805
+    },
+    {
+      "tier": "opus",
+      "configuration": "wands_baseline",
+      "run_index": 4,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 19237
+    },
+    {
+      "tier": "opus",
+      "configuration": "wands_baseline",
+      "run_index": 5,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 19159
+    },
+    {
+      "tier": "opus",
+      "configuration": "automotive",
+      "run_index": 1,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 8278
+    },
+    {
+      "tier": "opus",
+      "configuration": "automotive",
+      "run_index": 2,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 9083
+    },
+    {
+      "tier": "opus",
+      "configuration": "automotive",
+      "run_index": 3,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7408
+    },
+    {
+      "tier": "opus",
+      "configuration": "automotive",
+      "run_index": 4,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7886
+    },
+    {
+      "tier": "opus",
+      "configuration": "automotive",
+      "run_index": 5,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7264
+    },
+    {
+      "tier": "haiku",
+      "configuration": "wands_baseline",
+      "run_index": 1,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 12331
+    },
+    {
+      "tier": "haiku",
+      "configuration": "wands_baseline",
+      "run_index": 2,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 10967
+    },
+    {
+      "tier": "haiku",
+      "configuration": "wands_baseline",
+      "run_index": 3,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 11812
+    },
+    {
+      "tier": "haiku",
+      "configuration": "wands_baseline",
+      "run_index": 4,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 12304
+    },
+    {
+      "tier": "haiku",
+      "configuration": "wands_baseline",
+      "run_index": 5,
+      "n_descriptors": 36,
+      "tokens_used_this_call": 12254
+    },
+    {
+      "tier": "haiku",
+      "configuration": "automotive",
+      "run_index": 1,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 9601
+    },
+    {
+      "tier": "haiku",
+      "configuration": "automotive",
+      "run_index": 2,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7400
+    },
+    {
+      "tier": "haiku",
+      "configuration": "automotive",
+      "run_index": 3,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 6252
+    },
+    {
+      "tier": "haiku",
+      "configuration": "automotive",
+      "run_index": 4,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7410
+    },
+    {
+      "tier": "haiku",
+      "configuration": "automotive",
+      "run_index": 5,
+      "n_descriptors": 17,
+      "tokens_used_this_call": 7472
+    }
+  ]
+}

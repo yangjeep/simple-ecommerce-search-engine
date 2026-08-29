@@ -1,0 +1,752 @@
+{
+  "configuration": "wands_baseline",
+  "run_index": 1,
+  "descriptors": [
+    {
+      "key": "adultassemblyrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "assembly required for adults",
+        "adult assembly"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.95,
+      "evidence": "Only 2 distinct values (yes/no) across 25K occurrences; binary categorical",
+      "abstain": false
+    },
+    {
+      "key": "basecolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "base color",
+        "primary color",
+        "main color"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.88,
+      "evidence": "1613 distinct values; color attributes typically vary by variant; ~19.8% uniqueness suggests manageable cardinality for bitmap",
+      "abstain": false
+    },
+    {
+      "key": "color",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "color",
+        "product color"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.62,
+      "evidence": "Messy semi-structured data: includes empty strings, comma-separated lists (e.g. '2 taupe , 2 teal , 2 white'), numeric values, and metadata references; requires text indexing not categorical",
+      "abstain": false
+    },
+    {
+      "key": "commercialwarranty",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "has commercial warranty",
+        "commercial warranty included"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.96,
+      "evidence": "2 distinct values (yes/no); binary flag across 30K+ occurrences",
+      "abstain": false
+    },
+    {
+      "key": "compatiblediningchairpartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "dining chair compatibility",
+        "compatible chair"
+      ],
+      "relationship_semantics": "compatible_with:dining_chair",
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.82,
+      "evidence": "71 occurrences with uniqueness_ratio=1.0; part numbers are identifiers establishing product compatibility relationships",
+      "abstain": false
+    },
+    {
+      "key": "compatibledrainassemblypartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "drain assembly compatibility",
+        "compatible drain part"
+      ],
+      "relationship_semantics": "compatible_with:drain_assembly",
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.83,
+      "evidence": "161 occurrences; 48% uniqueness; part numbers encode compatible product relationships",
+      "abstain": false
+    },
+    {
+      "key": "countryoforigin",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "made in",
+        "origin country",
+        "country of manufacture"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.94,
+      "evidence": "71 distinct values (countries) with low uniqueness (0.002); sample shows country names (afghanistan, argentina, australia); bounded enumeration",
+      "abstain": false
+    },
+    {
+      "key": "drawersincluded",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "has drawers",
+        "includes drawers",
+        "drawer"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.96,
+      "evidence": "2 distinct values (yes/no); binary feature flag across 8.7K products",
+      "abstain": false
+    },
+    {
+      "key": "dsprimaryproductstyle",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "style",
+        "design style",
+        "furniture style"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.91,
+      "evidence": "16 distinct values (boho, coastal, country); style is primary search/filter dimension in furniture/home catalogs; very low uniqueness (0.0008)",
+      "abstain": false
+    },
+    {
+      "key": "dswoodtone",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "wood tone",
+        "wood color",
+        "wood finish",
+        "wood stain"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.87,
+      "evidence": "9 distinct values (dark brown wood, espresso wood, gray wood, light wood); variant-level visual attribute; consistent samples",
+      "abstain": false
+    },
+    {
+      "key": "estimatedtimetosetup",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "setup time",
+        "assembly time",
+        "time to setup",
+        "minutes to setup"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.88,
+      "evidence": "99.9% numeric_parseable_fraction; 83 distinct values; samples are small integers (0-100); duration measurement",
+      "abstain": false
+    },
+    {
+      "key": "finish",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "surface finish",
+        "coating",
+        "finishing"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.78,
+      "evidence": "1294 distinct values (~16.8% uniqueness); high cardinality but still enumerable; samples show material-finish pairs (acrylic, aged ash, aged brass); variant attribute",
+      "abstain": false
+    },
+    {
+      "key": "firerated",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "fire rated",
+        "fire resistance",
+        "fire code"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.93,
+      "evidence": "3 distinct values (empty, yes, no); boolean compliance flag; ~7.5K occurrences",
+      "abstain": false
+    },
+    {
+      "key": "framematerial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "material",
+        "frame type",
+        "construction material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.89,
+      "evidence": "77 distinct values; 0.7% uniqueness; materials (acacia wood, acrylic, aluminium) are variant-specific properties; manageable cardinality",
+      "abstain": false
+    },
+    {
+      "key": "fullorlimitedwarranty",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "warranty type",
+        "coverage type",
+        "warranty scope"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.87,
+      "evidence": "12 distinct values (full warranty, limited, 1 year limited warranty); low uniqueness (0.0007); bounded warranty classification",
+      "abstain": false
+    },
+    {
+      "key": "installationrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "installation",
+        "requires installation",
+        "install needed"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.94,
+      "evidence": "3 distinct values (empty, yes, no); binary feature across 12.5K products",
+      "abstain": false
+    },
+    {
+      "key": "levelofassembly",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "assembly level",
+        "assembly complexity",
+        "assembly needed"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.84,
+      "evidence": "10 distinct values (full, full assembly, light); samples show ordered assembly states; 0.0005 uniqueness",
+      "abstain": false
+    },
+    {
+      "key": "organic",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "is organic",
+        "organic certified",
+        "certified organic"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.94,
+      "evidence": "3 distinct values (empty, yes, no); binary certification flag; ~7.5K occurrences",
+      "abstain": false
+    },
+    {
+      "key": "overalldepth-fronttoback",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "depth",
+        "front to back",
+        "depth inches"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.96,
+      "evidence": "99.996% numeric_parseable_fraction; 2006 distinct values; samples (.2, .375, .5, .625, .75) indicate decimal inches; dimension measurement",
+      "abstain": false
+    },
+    {
+      "key": "overallheight-toptobottom",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "height",
+        "total height",
+        "height inches"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.96,
+      "evidence": "99.986% numeric_parseable_fraction; 2604 distinct values; samples are decimal numbers (.5, 0.04, 0.08); dimension measurement",
+      "abstain": false
+    },
+    {
+      "key": "overallproductweight",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "weight",
+        "product weight",
+        "weight lbs"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.96,
+      "evidence": "99.963% numeric_parseable_fraction; 6071 distinct values; 10.6% uniqueness; samples are small decimals (.02, .1, .2024, .25); weight measurement",
+      "abstain": false
+    },
+    {
+      "key": "overallwidth-sidetoside",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "width",
+        "side to side",
+        "width inches"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.96,
+      "evidence": "99.931% numeric_parseable_fraction; 2734 distinct values; samples (.5, .66, 0, 0.1) indicate decimal dimension; 5.8% uniqueness",
+      "abstain": false
+    },
+    {
+      "key": "pattern",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "design pattern",
+        "pattern type",
+        "pattern design"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.87,
+      "evidence": "93 distinct values (abstract, abstract cubism, abstract/geometric); 1.1% uniqueness; visual variant attribute; samples show categorized patterns",
+      "abstain": false
+    },
+    {
+      "key": "piecesincluded",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "what's included",
+        "included items",
+        "package contents",
+        "kit contents"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.76,
+      "evidence": "Semi-structured list data (39.3% uniqueness, 2706 distinct); samples show variable formats with counts/descriptions; best served by text search",
+      "abstain": false
+    },
+    {
+      "key": "primarymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "material",
+        "main material",
+        "material type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.89,
+      "evidence": "250 distinct values; 2.3% uniqueness; samples (100% cotton, fine porcelain, fiberboard); composition/material enumeration",
+      "abstain": false
+    },
+    {
+      "key": "productcare",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "care instructions",
+        "how to care",
+        "maintenance instructions",
+        "cleaning"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.91,
+      "evidence": "22.1% uniqueness; 3500 distinct values; verbose instructions (50+ chars average); natural language care procedures not primary search dimension",
+      "abstain": false
+    },
+    {
+      "key": "productwarranty",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "warranty",
+        "warranty coverage",
+        "warranty terms"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.81,
+      "evidence": "7 distinct canonical values (1 year, 90 days, lifetime); 0.00024 uniqueness; samples show warranty period classification despite text variation",
+      "abstain": false
+    },
+    {
+      "key": "samplepartnumber",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "sku",
+        "item number",
+        "sample sku"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.86,
+      "evidence": "97.85% uniqueness (2004/2048); internal identifier; samples show alphanumeric codes (06.mmfpbdv.44, 069556530416); not user-facing search term",
+      "abstain": false
+    },
+    {
+      "key": "shape",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "product shape",
+        "form",
+        "shape type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "99 distinct values (abstract, amphora, arabesque); 1.08% uniqueness; variant visual attribute; bounded enumeration",
+      "abstain": false
+    },
+    {
+      "key": "style",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "product style",
+        "design style",
+        "aesthetic style"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.92,
+      "evidence": "70 distinct values (american traditional, animal, antik, apothecary, asian inspired); 0.36% uniqueness; primary product classification in design/decor search",
+      "abstain": false
+    },
+    {
+      "key": "title",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "product name",
+        "product title",
+        "name"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.93,
+      "evidence": "493 distinct from 546 occurrences (90.3% uniqueness); natural language product names; primary full-text search index target",
+      "abstain": false
+    },
+    {
+      "key": "upholstered",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "is upholstered",
+        "has upholstery",
+        "upholstered furniture"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.96,
+      "evidence": "2 distinct values (yes/no); binary feature flag; ~10.8K products",
+      "abstain": false
+    },
+    {
+      "key": "upholsterycolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup",
+        "contains"
+      ],
+      "aliases": [
+        "upholstery color",
+        "fabric color",
+        "cushion color"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "2176 distinct values (29.8% uniqueness); variant color attribute; samples (2-tone espresso, 2-tone latte) show compound color descriptions; high cardinality manageable",
+      "abstain": false
+    },
+    {
+      "key": "upholsterymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "upholstery material",
+        "fabric type",
+        "cushion material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.87,
+      "evidence": "113 distinct values; 1.56% uniqueness; variant-level material (cotton, polyester); compositional attribute",
+      "abstain": false
+    },
+    {
+      "key": "warrantylength",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "warranty duration",
+        "coverage period",
+        "warranty period"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.76,
+      "evidence": "112 distinct values; 0.53% uniqueness; samples mix numeric (1) and text (1 year, 1 year limited manufacturer warranty); represents warranty duration classification",
+      "abstain": false
+    },
+    {
+      "key": "weightcapacity",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "weight capacity",
+        "max weight",
+        "load capacity",
+        "weight limit"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.95,
+      "evidence": "99.974% numeric_parseable_fraction; 531 distinct values; 3.51% uniqueness; samples (0, 0.01, 0.2, 0.22, 0.5) indicate decimal weight; capacity specification",
+      "abstain": false
+    }
+  ]
+}
