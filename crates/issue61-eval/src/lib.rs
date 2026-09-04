@@ -11,6 +11,7 @@ mod floor;
 mod gate;
 mod ratio;
 mod raw;
+mod request_contract;
 mod sha256;
 mod steal;
 mod workload;
@@ -32,9 +33,12 @@ pub use ratio::{
     MATERIALITY_RATIO,
 };
 pub use raw::{read_jsonl, write_jsonl, RawError, RawRecord, RAW_SCHEMA_VERSION};
+pub use request_contract::{freeze_engine_requests, FreezeRequest, FrozenEngineRequests};
 pub use sha256::sha256_hex;
 pub use steal::{
     parse_proc_stat, read_proc_stat, should_exclude_rep, steal_percent, CpuTimes, StealError,
     STEAL_EXCLUSION_THRESHOLD_PCT,
 };
-pub use workload::{load_workload, write_workload, AdmissionClass, FrozenQuery};
+pub use workload::{
+    load_workload, write_workload, AdmissionClass, FrozenQuery, NativeRequest, SolrRequest,
+};

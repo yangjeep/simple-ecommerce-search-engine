@@ -16,6 +16,7 @@ pub enum AdmissionClass {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeRequest {
     pub q: String,
+    pub params: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,19 +41,9 @@ pub struct FrozenQuery {
 }
 
 impl FrozenQuery {
-    pub fn with_engine_requests(
-        mut self,
-        native_q: String,
-        solr_q: String,
-        fq: Vec<String>,
-        params: BTreeMap<String, String>,
-    ) -> Self {
-        self.native = Some(NativeRequest { q: native_q });
-        self.solr = Some(SolrRequest {
-            q: solr_q,
-            fq,
-            params,
-        });
+    pub fn with_engine_requests(mut self, native: NativeRequest, solr: SolrRequest) -> Self {
+        self.native = Some(native);
+        self.solr = Some(solr);
         self
     }
 }
