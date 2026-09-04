@@ -867,7 +867,7 @@ Every frozen Solr request carries these explicit values:
 - `ps=0`, `ps2=0`, `ps3=0`, and `qs=0`;
 - `rows=10`;
 - `fl=id`;
-- `sort=score desc,id asc`; and
+- `sort=id asc`; and
 - `wt=json`.
 
 No `pf`, `pf2`, `pf3`, `bq`, `bf`, `boost`, or `q.alt` parameter is emitted.
@@ -904,4 +904,3 @@ E1's forced-AND profile and its CPU values are calibration artifacts only.
 They are forbidden as effect-size baselines for Issues #63 or #65. Those
 issues must freeze their own production comparator settings and correctness/
 relevance non-inferiority gates before measurement.
-
