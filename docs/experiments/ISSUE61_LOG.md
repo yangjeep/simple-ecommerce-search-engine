@@ -714,6 +714,42 @@ reviews independently identified the same clause-topology boundary and the
 same correction. Revision 4 was frozen before regenerating workloads or
 running another authoritative audit. No timed block was run.
 
+Revision 4 then passed ESCI-electronics 600/600 exactly. Its preserved artifact
+is `artifacts/issue61/i61_esci_electronics_equivalence_rev4.jsonl`, SHA-256
+`51c4a47d91ff50af20e06e4da69e3496a49f01ae8ba12739506466f7e022a825`.
+The clean WANDS run failed at 473/480 with two mismatches and five Solr HTTP
+400 failures. That negative result remains at
+`artifacts/issue61/i61_wands_equivalence_rev4.jsonl`, SHA-256
+`98188b90063859f7156b8b596f3f63fd45d2630393dbe102a5f7485cfe83113e`.
+
+Live response bodies localized the failures: query IDs 23 and 225 referenced
+undefined `color_lc`, 166 referenced undefined `primarymaterial_lc`, 241
+referenced undefined `style_lc`, and 476 referenced undefined `material_lc`.
+The two mismatches were exactly the pipe-delimited class representation already
+disclosed by WANDS ingestion. Query 126's 17 native-only products all had raw
+`Dining Chairs|Office Chairs`; query 252's 37 native-only products all began
+with `Accent Chairs|`. Untimed first-segment-aware filters reproduced native's
+585 and 410 counts exactly. Equivalent raw-field diagnostic filters returned
+zero for each of the five failed queries, matching their native counts and
+showing no third observed mismatch class. Revision 5 was frozen before changing
+the Solr schema or running another authoritative audit. No timed block was run.
+
+Revision 5 provisioning then created all four missing WANDS companions and a
+dedicated first-pipe-segment lowercase analyzer for `product_class_lc`. A clean
+42,994-document core passed corpus parity and the updated exact schema/config
+contract. The authoritative WANDS audit passed all 480 queries with exact
+count-plus-digest equality and zero failures. Its artifact is
+`artifacts/issue61/i61_wands_equivalence_rev5.jsonl`, SHA-256
+`5354a3841f2681b0b9bb2f46418a5fa337e3b6c6e7629fdef86532b05c043780`.
+
+The independent regression gate reprovisioned ESCI-electronics from a clean
+2,075-document core, passed corpus parity and the unchanged contract, and then
+passed all 600 queries exactly. Its rerun artifact is
+`artifacts/issue61/i61_esci_electronics_equivalence_rev5.jsonl`, SHA-256
+`51c4a47d91ff50af20e06e4da69e3496a49f01ae8ba12739506466f7e022a825`.
+That hash intentionally equals Revision 4 because the workload, core semantics,
+and all 600 per-query records were unchanged. No timed block was run.
+
 ---
 
 ## Open items

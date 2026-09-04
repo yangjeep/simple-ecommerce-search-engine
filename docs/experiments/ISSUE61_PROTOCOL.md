@@ -1052,3 +1052,62 @@ The authoritative audit then reruns from clean provisioned cores for all 600
 ESCI-electronics and all 480 WANDS queries. The pass condition remains exact
 count-plus-digest equality for every query with zero engine failures. Any
 remaining mismatch blocks timing and may not be whitelisted.
+
+# Revision 5 — WANDS structured-field parity
+
+**Frozen 2026-09-04 after the Revision 4 WANDS complete-set audit failed and
+after untimed diagnostic queries, but before changing provisioning, replacing
+the frozen schema snapshot, or running another authoritative audit or timed
+measurement.** Revision 4's failed 480-row artifact remains preserved. All
+prior clauses remain binding except where this revision explicitly replaces
+the WANDS lowercase companion-field set and `product_class_lc` analysis.
+
+## 19.1 Trigger and confirmed mechanisms
+
+Revision 4 passed all 600 ESCI-electronics queries but WANDS reached 473/480:
+five engine failures and two native-only mismatches. Live response bodies
+identified every engine failure as an undefined lowercase companion field:
+`color_lc`, `primarymaterial_lc`, `style_lc`, or `material_lc`. Those fields
+are emitted by the exhaustive shared constraint translator and occur in the
+frozen workload, but WANDS provisioning created companions only for
+`product_class` and `category_leaf`.
+
+Both mismatches came from WANDS's disclosed pipe-delimited product classes.
+Native ingestion uses the first segment before `|`, while Solr copied the raw
+compound value into an exact-term field. All 17 native-only IDs for query 126
+carry `Dining Chairs|Office Chairs`. Query 252's 37 native-only IDs carry an
+`Accent Chairs` first segment followed by one or two other classes. Untimed
+first-segment-aware filters changed the two Solr counts from 568 to 585 and
+from 373 to 410 respectively, exactly matching native. Changing only that
+filter recovered every missing query-252 ID, refuting a lexical-field cause.
+
+## 19.2 Frozen treatment
+
+WANDS provisioning adds non-stored, single-valued lowercase exact-filter
+companions for every attribute field referenced by the frozen workload:
+`color_lc`, `style_lc`, `primarymaterial_lc`, and `material_lc`. Each is
+populated from its same-named source through `copyField` and retains the
+Revision 2 `string_lc` KeywordTokenizer plus LowerCaseFilter semantics.
+
+`product_class_lc` instead uses a dedicated `first_pipe_segment_lc` TextField.
+Its analyzer applies `PatternReplaceCharFilterFactory` with pattern `\|.*$`
+and empty replacement, then KeywordTokenizerFactory and
+LowerCaseFilterFactory. The existing `product_class -> product_class_lc`
+copy therefore indexes the same first non-empty segment that WANDS native
+ingestion uses, without a query-time regex or automaton. No source field,
+query translator, filter value, lexical field, parser parameter, corpus, or
+native behavior changes.
+
+The dataset-specific schema contract must fail closed unless all six WANDS
+companion fields exist with their frozen field types and all six copy-field
+pairs exist. It must separately assert the dedicated product-class analyzer,
+so a generic lowercase keyword snapshot cannot bless raw pipe compounds.
+
+## 19.3 Corrected-audit gate
+
+Provision a clean WANDS core, regenerate its schema snapshot and checksum, and
+rerun all 480 frozen queries. Then reprovision a clean ESCI-electronics core and
+rerun all 600 frozen queries as the independent regression gate. Passing still
+requires exact count-plus-digest equality for every query with zero native or
+engine failures. Any mismatch blocks timing; no query, field, admission class,
+or dataset may be excluded.
