@@ -36,17 +36,24 @@ pub(super) fn validate_schema_invariants(
         )?;
     }
     for name in dataset.companion_fields() {
+        let field_type = match (dataset, *name) {
+            (SolrDataset::Wands, "product_class_lc") => "first_pipe_segment_lc",
+            (SolrDataset::Wands | SolrDataset::EsciElectronics, _) => "string_lc",
+        };
         require_field(
             fields,
             ExpectedField {
                 name,
-                strings: &[("type", "string_lc")],
+                strings: &[("type", field_type)],
                 booleans: &[("indexed", true), ("stored", false), ("multiValued", false)],
             },
         )?;
     }
     validate_native_lexical(schema)?;
     validate_string_lc(schema)?;
+    if dataset == SolrDataset::Wands {
+        validate_first_pipe_segment_lc(schema)?;
+    }
     let copy_fields = schema.get("copyFields").and_then(Value::as_array);
     for (source, dest) in dataset.copy_fields() {
         let exists = copy_fields.is_some_and(|items| {
@@ -64,6 +71,57 @@ pub(super) fn validate_schema_invariants(
         }
     }
     Ok(())
+}
+
+fn validate_first_pipe_segment_lc(schema: &Value) -> Result<(), ContractError> {
+    let field_type = schema
+        .get("fieldTypes")
+        .and_then(Value::as_array)
+        .and_then(|items| {
+            items.iter().find(|item| {
+                item.get("name").and_then(Value::as_str) == Some("first_pipe_segment_lc")
+            })
+        })
+        .ok_or_else(|| ContractError::Invariant {
+            path: "fieldType first_pipe_segment_lc".into(),
+            expected: "field type to exist".into(),
+            actual: "missing".into(),
+        })?;
+    for (pointer, expected, path) in [
+        ("/class", "solr.TextField", "first_pipe_segment_lc class"),
+        (
+            "/analyzer/charFilters/0/class",
+            "solr.PatternReplaceCharFilterFactory",
+            "first_pipe_segment_lc analyzer.charFilters[0].class",
+        ),
+        (
+            "/analyzer/charFilters/0/pattern",
+            "\\|.*$",
+            "first_pipe_segment_lc analyzer.charFilters[0].pattern",
+        ),
+        (
+            "/analyzer/charFilters/0/replacement",
+            "",
+            "first_pipe_segment_lc analyzer.charFilters[0].replacement",
+        ),
+        (
+            "/analyzer/tokenizer/class",
+            "solr.KeywordTokenizerFactory",
+            "first_pipe_segment_lc analyzer.tokenizer.class",
+        ),
+    ] {
+        require_value(
+            field_type.pointer(pointer),
+            &Value::String(expected.into()),
+            path,
+        )?;
+    }
+    let lowercase = serde_json::json!([{"class": "solr.LowerCaseFilterFactory"}]);
+    require_value(
+        field_type.pointer("/analyzer/filters"),
+        &lowercase,
+        "first_pipe_segment_lc analyzer.filters",
+    )
 }
 
 fn validate_native_lexical(schema: &Value) -> Result<(), ContractError> {

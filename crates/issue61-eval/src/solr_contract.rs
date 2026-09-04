@@ -58,7 +58,14 @@ impl SolrDataset {
 
     const fn companion_fields(self) -> &'static [&'static str] {
         match self {
-            Self::Wands => &["product_class_lc", "category_leaf_lc"],
+            Self::Wands => &[
+                "product_class_lc",
+                "category_leaf_lc",
+                "color_lc",
+                "style_lc",
+                "primarymaterial_lc",
+                "material_lc",
+            ],
             Self::EsciElectronics => &["brand_lc", "color_lc"],
         }
     }
@@ -68,6 +75,10 @@ impl SolrDataset {
             Self::Wands => &[
                 ("product_class", "product_class_lc"),
                 ("category_leaf", "category_leaf_lc"),
+                ("color", "color_lc"),
+                ("style", "style_lc"),
+                ("primarymaterial", "primarymaterial_lc"),
+                ("material", "material_lc"),
             ],
             Self::EsciElectronics => &[("brand", "brand_lc"), ("color", "color_lc")],
         }

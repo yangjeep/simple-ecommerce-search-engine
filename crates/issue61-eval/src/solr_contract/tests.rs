@@ -5,10 +5,21 @@ fn schema(dataset: SolrDataset) -> Value {
     let (lexical, companions, copies) = match dataset {
         SolrDataset::Wands => (
             vec!["title", "description"],
-            vec!["product_class_lc", "category_leaf_lc"],
+            vec![
+                "product_class_lc",
+                "category_leaf_lc",
+                "color_lc",
+                "style_lc",
+                "primarymaterial_lc",
+                "material_lc",
+            ],
             vec![
                 json!({"source": "product_class", "dest": "product_class_lc"}),
                 json!({"source": "category_leaf", "dest": "category_leaf_lc"}),
+                json!({"source": "color", "dest": "color_lc"}),
+                json!({"source": "style", "dest": "style_lc"}),
+                json!({"source": "primarymaterial", "dest": "primarymaterial_lc"}),
+                json!({"source": "material", "dest": "material_lc"}),
             ],
         ),
         SolrDataset::EsciElectronics => (
@@ -31,7 +42,13 @@ fn schema(dataset: SolrDataset) -> Value {
     );
     fields.extend(companions.into_iter().map(|name| {
         json!({
-            "name": name, "type": "string_lc", "indexed": true,
+            "name": name,
+            "type": if dataset == SolrDataset::Wands && name == "product_class_lc" {
+                "first_pipe_segment_lc"
+            } else {
+                "string_lc"
+            },
+            "indexed": true,
             "stored": false, "multiValued": false
         })
     }));
@@ -59,6 +76,19 @@ fn schema(dataset: SolrDataset) -> Value {
                 },
                 "queryAnalyzer": {
                     "tokenizer": {"class": "solr.WhitespaceTokenizerFactory"},
+                    "filters": [{"class": "solr.LowerCaseFilterFactory"}]
+                }
+            },
+            {
+                "name": "first_pipe_segment_lc",
+                "class": "solr.TextField",
+                "analyzer": {
+                    "charFilters": [{
+                        "class": "solr.PatternReplaceCharFilterFactory",
+                        "pattern": "\\|.*$",
+                        "replacement": ""
+                    }],
+                    "tokenizer": {"class": "solr.KeywordTokenizerFactory"},
                     "filters": [{"class": "solr.LowerCaseFilterFactory"}]
                 }
             }
@@ -271,6 +301,23 @@ fn contract_when_schema_snapshot_breaks_e1_invariants_rejects_straw_baseline() {
         // Then
         assert!(error.contains(expected_message), "{error}");
     }
+}
+
+#[test]
+fn contract_when_wands_workload_companion_is_missing_rejects_snapshot() {
+    // Given
+    let mut invalid = schema(SolrDataset::Wands);
+    invalid["fields"]
+        .as_array_mut()
+        .expect("fields fixture must be an array")
+        .retain(|field| field["name"] != "color_lc");
+
+    // When
+    let error = validate_matching(SolrDataset::Wands, &invalid, &config())
+        .expect_err("missing workload companion must fail");
+
+    // Then
+    assert!(error.contains("field color_lc"), "{error}");
 }
 
 #[test]
