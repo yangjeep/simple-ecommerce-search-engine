@@ -21,7 +21,7 @@ use commerce_core::ir::StructuralConstraint;
 use crate::solr::{case_insensitive_contains_regex, case_insensitive_field_regex};
 
 mod structural;
-use structural::translate_structural;
+use structural::{solr_escaped_lowercase_term, translate_structural};
 
 /// Which Solr field (if any) this dataset's Solr core uses for each
 /// structural dimension. `None` means the dataset genuinely has no such
@@ -133,20 +133,25 @@ fn translate_constraint_with_context(
 ) -> Translation {
     match c {
         ResolvedConstraint::Structural(s) => translate_structural(s, context),
-        ResolvedConstraint::Attribute(a) => translate_attribute(a),
+        ResolvedConstraint::Attribute(a) => translate_attribute(a, context),
     }
 }
 
-fn translate_attribute(c: &Constraint) -> Translation {
+fn translate_attribute(c: &Constraint, context: &TranslationContext<'_>) -> Translation {
     match c {
-        Constraint::Enum { attribute, value } => Translation::Fq(format!(
-            "{attribute}:/{}/",
-            case_insensitive_field_regex(value)
-        )),
-        Constraint::MultiEnumContains { attribute, value } => Translation::Fq(format!(
-            "{attribute}:/{}/",
-            case_insensitive_field_regex(value)
-        )),
+        Constraint::Enum { attribute, value }
+        | Constraint::MultiEnumContains { attribute, value } => {
+            match context.lowercase_companion_suffix {
+                Some(suffix) => Translation::Fq(format!(
+                    "{attribute}{suffix}:\"{}\"",
+                    solr_escaped_lowercase_term(value)
+                )),
+                None => Translation::Fq(format!(
+                    "{attribute}:/{}/",
+                    case_insensitive_field_regex(value)
+                )),
+            }
+        }
         Constraint::Boolean { attribute, value } => Translation::Fq(format!("{attribute}:{value}")),
         Constraint::Numeric {
             attribute,
@@ -162,6 +167,8 @@ fn translate_attribute(c: &Constraint) -> Translation {
             };
             Translation::Fq(clause)
         }
+        // Text is a substring constraint; an exact companion-field term query
+        // would change its semantics, so both modes deliberately retain regex.
         Constraint::Text {
             attribute,
             contains,
@@ -527,6 +534,69 @@ mod tests {
     }
 
     #[test]
+    fn default_config_still_emits_the_historical_regex_form_for_enum_attributes() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "Blue".to_string(),
+        });
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &NoNames,
+            &SolrTranslationConfig::default(),
+        );
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("color:/[bB][lL][uU][eE]/".to_string())
+        );
+    }
+
+    #[test]
+    fn lowercase_companion_mode_emits_an_exact_term_query_for_enum_attributes() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "Blue".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        match translated {
+            Translation::Fq(fq) => {
+                assert!(!fq.contains('/'));
+                assert!(fq.contains("color_lc:\"blue\""));
+            }
+            other => panic!("expected Fq, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn lowercase_companion_mode_lowercases_and_escapes_enum_attribute_values() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "BlUe \"Sky\"\\Tone".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("color_lc:\"blue \\\"sky\\\"\\\\tone\"".to_string())
+        );
+    }
+
+    #[test]
     fn multi_enum_contains_translates_by_attribute_name() {
         let c = ResolvedConstraint::Attribute(Constraint::MultiEnumContains {
             attribute: "materials".to_string(),
@@ -536,6 +606,25 @@ mod tests {
             Translation::Fq(fq) => assert_eq!(fq, "materials:/[oO][aA][kK]/"),
             other => panic!("expected Fq, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn lowercase_companion_mode_emits_an_exact_term_query_for_multi_enum_contains() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::MultiEnumContains {
+            attribute: "materials".to_string(),
+            value: "Oak".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("materials_lc:\"oak\"".to_string())
+        );
     }
 
     #[test]
@@ -589,6 +678,27 @@ mod tests {
             }
             other => panic!("expected Fq, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn text_contains_keeps_its_substring_regex_even_in_lowercase_companion_mode() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Text {
+            attribute: "description".to_string(),
+            contains: "Waterproof".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq(
+                "description:/.*[wW][aA][tT][eE][rR][pP][rR][oO][oO][fF].*/".to_string()
+            )
+        );
     }
 
     #[test]

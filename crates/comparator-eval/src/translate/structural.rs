@@ -143,7 +143,7 @@ fn translate_any<'a, Id: std::fmt::Debug>(
     }
 }
 
-fn solr_escaped_lowercase_term(value: &str) -> String {
+pub(super) fn solr_escaped_lowercase_term(value: &str) -> String {
     let lowercase = value.to_lowercase();
     let mut escaped = String::with_capacity(lowercase.len());
     for character in lowercase.chars() {
