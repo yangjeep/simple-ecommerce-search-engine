@@ -572,6 +572,31 @@
       "positionIncrementGap": "100"
     },
     {
+      "class": "solr.TextField",
+      "indexAnalyzer": {
+        "filters": [
+          {
+            "class": "solr.LowerCaseFilterFactory"
+          }
+        ],
+        "tokenizer": {
+          "class": "solr.PatternTokenizerFactory",
+          "pattern": "[^\\p{L}\\p{N}]+"
+        }
+      },
+      "name": "native_lexical",
+      "queryAnalyzer": {
+        "filters": [
+          {
+            "class": "solr.LowerCaseFilterFactory"
+          }
+        ],
+        "tokenizer": {
+          "class": "solr.WhitespaceTokenizerFactory"
+        }
+      }
+    },
+    {
       "class": "solr.DatePointField",
       "name": "pdate"
     },
@@ -1970,7 +1995,7 @@
       "indexed": true,
       "name": "description",
       "stored": true,
-      "type": "text_general"
+      "type": "native_lexical"
     },
     {
       "indexed": true,
@@ -2047,7 +2072,7 @@
       "indexed": true,
       "name": "title",
       "stored": true,
-      "type": "text_general"
+      "type": "native_lexical"
     },
     {
       "docValues": true,

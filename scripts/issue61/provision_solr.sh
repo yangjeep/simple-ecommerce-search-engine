@@ -14,7 +14,7 @@
 # crippled baseline is invalid, so this script must configure Solr the way a
 # production ecommerce deployment would:
 #   * structured attributes as `string` + docValues (exact match / facet / sort)
-#   * lexical fields as analyzed `text_general`
+#   * lexical fields with the frozen native-compatible asymmetric analyzer
 #   * explicit, recorded cache sizing rather than implicit defaults
 #   * heap sized to leave the OS page cache for MMapDirectory
 #   * forceMerge(1) on the read-only corpus
@@ -41,6 +41,7 @@ case "$DATASET" in
     CATALOG="$REPO_ROOT/dataset_cache/wands/catalog.jsonl"
     EXPECTED_DOCS="$I61_WANDS_EXPECTED_DOCS"
     INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_wands.py" "__CORE_URL__" "" "$CATALOG")
+    LEXICAL_FIELDS=(title description)
     STRUCTURAL_FIELDS=(product_class category_leaf)
     ;;
   esci_electronics)
@@ -48,6 +49,7 @@ case "$DATASET" in
     CATALOG="$REPO_ROOT/dataset_cache/esci_electronics/esci_electronics_products.jsonl"
     EXPECTED_DOCS="$I61_ESCI_ELECTRONICS_EXPECTED_DOCS"
     INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_esci_electronics.py" "__CORE_URL__")
+    LEXICAL_FIELDS=(title description bullet_point)
     STRUCTURAL_FIELDS=(brand color)
     ;;
   *)
@@ -153,7 +155,7 @@ curl -sf -X POST -H 'Content-Type: application/json' \
     }
   }' "$CORE_URL/config" >/dev/null
 
-# --- 3b/4. index, add lowercased companions, re-index ----------------------
+# --- 3b/4. index, install frozen field types, re-index ---------------------
 # Protocol Revision 2 R2.2. The shared translator's historical output for an
 # exact structured filter is a case-insensitive RegexpQuery (`field:/(?i)val/`),
 # which makes Solr run an automaton over the term dictionary where a production
@@ -174,6 +176,32 @@ INDEXER=("${INDEXER[@]/__CORE_URL__/$CORE_URL}")
 
 echo "==> indexing $DATASET from $CATALOG (pass 1: establishes base schema)"
 python3 "${INDEXER[@]}"
+
+echo "==> adding native-compatible lexical field type"
+curl -sf -X POST -H 'Content-Type: application/json' --data-binary '{
+  "add-field-type": {
+    "name": "native_lexical",
+    "class": "solr.TextField",
+    "indexAnalyzer": {
+      "tokenizer": {
+        "class": "solr.PatternTokenizerFactory",
+        "pattern": "[^\\p{L}\\p{N}]+"
+      },
+      "filters": [ { "class": "solr.LowerCaseFilterFactory" } ]
+    },
+    "queryAnalyzer": {
+      "tokenizer": { "class": "solr.WhitespaceTokenizerFactory" },
+      "filters": [ { "class": "solr.LowerCaseFilterFactory" } ]
+    }
+  }
+}' "$CORE_URL/schema" >/dev/null
+
+echo "==> replacing lexical fields: ${LEXICAL_FIELDS[*]}"
+for f in "${LEXICAL_FIELDS[@]}"; do
+  curl -sf -X POST -H 'Content-Type: application/json' --data-binary "{
+    \"replace-field\": {\"name\":\"$f\",\"type\":\"native_lexical\",\"indexed\":true,\"stored\":true}
+  }" "$CORE_URL/schema" >/dev/null
+done
 
 echo "==> adding lowercased companion fields: ${STRUCTURAL_FIELDS[*]}"
 curl -sf -X POST -H 'Content-Type: application/json' --data-binary '{
