@@ -314,6 +314,98 @@ retroactively.
 
 ---
 
+## Step 6 — hands-on QA catches the defect class a third time, before measurement
+
+The three harness binaries were delivered with a full green gate (fmt, clippy
+`-D warnings`, 477 workspace tests, release build) and self-reported
+`SELFCHECK_OK`, `ANCHOR_OK` and a correct-looking Solr-shaped response. All of
+that was true and none of it was sufficient.
+
+Driving the boundary by hand found two problems a passing test suite could not.
+
+### The 21/459 anchor holds
+
+First, the good news, verified independently:
+
+```
+HISTOGRAM FastPath=7 Hybrid=14 Punt=459
+SHA256 bfd5935802e392a4774556d7927621f6bb814e61e1d277795cb6b4002a733e70
+ANCHOR_OK
+```
+
+`7 + 14 = 21` structural-routed, `459` punt-routed — exactly reproducing
+P9-E02's published routing split. The frozen workload is the workload prior
+evidence was measured on.
+
+### Finding 1 (BLOCKING) — Solr was being asked a different question
+
+`i61_bench::query_once` sent, to **both** engines identically:
+
+```rust
+.query("q", &query.text)
+.query("rows", &query.rows.to_string())
+```
+
+That is the whole request. Consequently Solr received:
+
+- **no `fq` at all** — every structural constraint the frozen workload records
+  was computed and then discarded, so Solr answered an *unconstrained* query
+  while native applied its filters;
+- **no `defType=edismax`, no `qf`** — falling back to the default parser and
+  default field rather than the configured lexical fields;
+- **no `fl=id`** — so Solr materialized and serialized every stored field per
+  document, while native returned ids only.
+
+The comparison would have been incoherent rather than merely unfair: Solr does
+*more* work (larger unconstrained result sets, far more serialization) while
+answering a *different* question.
+
+**This is the third time this exact defect class has shipped in this
+repository.** `ISSUE55_PAIRED_COMPARATOR_DECISION.md` found Solr silently
+receiving no product-type filter; `ISSUE55_ROUTING_OUTCOME_REPLICATION_DECISION.md`
+found `issue35-eval` sending no `Brand`/`color` `fq` at all. Both were caught
+*after* numbers had been published. This one was caught before any measurement
+existed — which is the only difference, and the entire point of putting the
+equivalence audit and hands-on QA ahead of the measured campaign.
+
+The recurrence is itself the finding: centralizing the translator in
+`comparator-eval` (Issue #55 A3) removed the *translation* defect but not the
+*call-site* defect — a new binary can still simply forget to call it. Section
+16.9 therefore makes the frozen workload artifact carry the translated `fq`
+list, so the driver replays a checksummed contract instead of reconstructing
+one.
+
+### Finding 2 (disclosed, minor) — response payload asymmetry
+
+Structural comparison of the two response bodies:
+
+```
+native shape: {"response":{"docs":[{"id":"str"}],"numFound":"int"},
+               "responseHeader":{"status":"int"}}
+solr   shape: {"response":{"docs":[{"id":"str"}],"numFound":"int",
+                           "numFoundExact":"bool","start":"int"},
+               "responseHeader":{"status":"int"}}
+```
+
+Solr emits two extra scalars (`numFoundExact`, `start`). Small, but it is
+serialization work native does not do, and it is exactly lane 2 of the
+adversarial results-review brief ("does the native server do equivalent
+response work?"). Recorded rather than silently ignored.
+
+### Note on the raw text-query divergence observed during this probe
+
+An ad-hoc probe with `q=chair&qf=title` returned `numFound` 4604 (native) vs
+3255 (Solr), and `dining table` returned 1387 vs 4871. These are **not**
+evidence of a defect: native's lexical postings cover title *and* `Text`
+attributes and combine residual tokens with AND, while an edismax `qf=title`
+query covers one field and defaults to OR. Protocol §5.3 already declines to
+require identical text-retrieval sets ("different rankers is the premise").
+The numbers are recorded here only so a later reader does not rediscover them
+and mistake them for a finding. What §5.2 *does* gate — full structural
+candidate-set equality — is measured by the T10 audit, not by this probe.
+
+---
+
 ## Open items
 
 - Elasticsearch adapter/provisioning is time-boxed per protocol §2.4; its

@@ -788,4 +788,63 @@ exactly the "negative results are first-class outputs" case in `CLAUDE.md`.
 What a failed calibration blocks is **#62**, not the merge. The decision record
 then names the enumerated defect as explicit pre-#62 work.
 
+## 16.9 The frozen workload carries the per-engine request contract
+
+Hands-on QA of the harness, before any measurement, found that the benchmark
+driver sent `q` and `rows` to **both** engines and nothing else — so Solr
+received no `fq`, no `defType`, no `qf` and no `fl=id`, answering an
+unconstrained question over every stored field while native applied its
+structural constraints and returned ids only.
+
+This is the **third** occurrence of the same defect class in this repository
+(`ISSUE55_PAIRED_COMPARATOR_DECISION.md`,
+`ISSUE55_ROUTING_OUTCOME_REPLICATION_DECISION.md`). Both earlier occurrences
+were found only after numbers had been published.
+
+The recurrence is the important part. Issue #55 A3 centralized the translator
+into `comparator-eval` to stop this, and that did eliminate the *translation*
+defect — but not the *call-site* defect. A newly written binary can still
+simply fail to call the shared translator, and nothing in the type system or
+the test suite notices, because the resulting request is perfectly valid; it
+just asks a different question.
+
+Revision 2.1 therefore removes the opportunity rather than relying on the
+author remembering:
+
+1. `i61_workload_freeze` emits, for every query, the **fully translated,
+   per-engine request** — native's `q`, and Solr's `q` + `fq[]` + explicit
+   `params` (`defType`, `qf`, `fl`, `rows`) — into the checksummed workload
+   artifact.
+2. If translation reports **any** unresolvable constraint, the freeze **fails
+   and exits non-zero**. A partially translated `fq` sent to Solr while native
+   enforces the full constraint set is the defect itself, so a partial `fq` is
+   never emitted.
+3. `i61_bench` **replays** those requests verbatim and synthesizes no engine
+   parameter of its own. A record missing its per-engine block is a hard error,
+   never a fall-back to a bare `q`.
+
+The consequence is that the comparator contract becomes a frozen, checksummed
+**artifact** committed before measurement, rather than behaviour reconstructed
+at run time by whichever binary happens to be driving. It is auditable by
+reading a file, and a reviewer can diff what each engine was actually asked
+without reading any Rust.
+
+## 16.10 Disclosed response-payload asymmetry
+
+Solr's response body carries two scalars the native endpoint does not emit
+(`numFoundExact`, `start`):
+
+```
+native: {"response":{"docs":[{"id":..}],"numFound":..},"responseHeader":{"status":..}}
+solr:   {"response":{"docs":[{"id":..}],"numFound":..,"numFoundExact":..,"start":..},
+         "responseHeader":{"status":..}}
+```
+
+This is a small amount of serialization work Solr does and native does not. It
+is **not** corrected — matching it would mean adding dead fields to the native
+endpoint purely to equalize a benchmark, which is the kind of
+architecture-for-benchmark change `CLAUDE.md` forbids. It is disclosed here so
+it appears in the record rather than being discovered by a reviewer, and it
+biases *against* native's measured advantage rather than for it.
+
 
