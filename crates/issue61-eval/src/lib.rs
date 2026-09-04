@@ -13,6 +13,7 @@ mod ratio;
 mod raw;
 mod request_contract;
 mod sha256;
+pub mod solr_contract;
 mod steal;
 mod workload;
 
