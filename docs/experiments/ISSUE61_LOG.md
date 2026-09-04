@@ -406,6 +406,77 @@ candidate-set equality — is measured by the T10 audit, not by this probe.
 
 ---
 
+## Step 7 — Elasticsearch time-box (§2.4): INFRA_OK, but DEFERRED-TO-PRE-E2
+
+§2.4 preregistered Elasticsearch as a secondary, gate-optional arm with a
+time-box. A time-box that is never opened is just an assertion, so it was
+actually run.
+
+`bash scripts/issue61/provision_es.sh wands`:
+
+```
+==> (re)starting i61-es under the frozen limits
+  health: green 1 nodes
+==> bulk indexing wands
+  bulk submitted 42994 docs
+==> refresh + forcemerge(1)
+==> count=42994 (expected 42994)
+==> exact-term filter product_class_lc=beds -> 1112 hits
+==> store_size_bytes=22176120
+ES_TIMEBOX_RESULT=INFRA_OK docs=42994 beds_hits=1112 store_bytes=22176120
+```
+
+Elasticsearch 8.15.0 runs on this host under the *identical* frozen limits as
+Solr (3 CPU, cpuset 0-2, 6 GiB, `--memory-swap == --memory`), reaches
+`green`, accepts a competent commerce mapping, and reproduces corpus parity at
+42,994 documents.
+
+### An unplanned three-way semantic cross-check
+
+The ES mapping uses `copy_to` into a `keyword` field with a lowercase
+`normalizer` — the Elasticsearch analogue of Solr's `copyField` into a
+`KeywordTokenizer + LowerCaseFilter` field. Filtering
+`product_class_lc = "beds"` returns:
+
+| Engine | Form | Hits |
+|---|---|---|
+| Solr | `product_class:/[bB][eE][dD][sS]/` (historical regex) | **1112** |
+| Solr | `product_class_lc:"beds"` (Revision 2 exact term) | **1112** |
+| Elasticsearch | `term: product_class_lc = "beds"` | **1112** |
+
+Three independent implementations agree exactly. This was not the purpose of
+the time-box, but it is worth more than the time-box itself: it is evidence
+that the lowercased-companion substitution is a genuine semantics-preserving
+transformation rather than a Solr-specific coincidence, established on a second
+mature engine that shares no configuration with the first.
+
+### Verdict: DEFERRED-TO-PRE-E2, and precisely why
+
+The infrastructure is **not** the blocker. What blocks ES from entering E1's
+measured campaign is **adapter scope**:
+
+- `comparator-eval` has no Elasticsearch translator arm (its `translate`
+  module emits Solr `fq` syntax);
+- the frozen workload artifact (§16.9) carries `native` and `solr` request
+  blocks and would need an `es` block;
+- `i61_bench` has no ES request shape to replay.
+
+That is real work, and doing it inside this issue would mean writing a new
+comparator adapter *during* a measurement freeze — exactly the kind of
+concurrent change the freeze exists to prevent.
+
+Recorded verdict: **`DEFERRED-TO-PRE-E2`**, per §2.4. E1's gate is computed on
+native + Solr only, as preregistered. The distinction matters for #57 and #62:
+this is *not* "Elasticsearch could not be made to run here" — it demonstrably
+can, under the campaign's own resource limits, and the provisioning script plus
+the verified mapping are merged so the adapter work starts from a working
+baseline rather than from scratch.
+
+The container was stopped immediately after the check; ES consumes no resources
+during the measured campaign.
+
+---
+
 ## Open items
 
 - Elasticsearch adapter/provisioning is time-boxed per protocol §2.4; its
