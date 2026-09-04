@@ -1,3 +1,4 @@
+use crate::lexical_tokens::tokenize_residuals;
 use crate::{FrozenQuery, LoadedDataset};
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::compile;
@@ -25,7 +26,8 @@ pub fn native_candidate_ids(
     query_text: &str,
 ) -> Result<Vec<String>, String> {
     let query = compile(query_text, &data.lexicon);
-    let lexical = index.lexical_and_candidates(&query.residual_lexical);
+    let residual_tokens = tokenize_residuals(&query.residual_lexical);
+    let lexical = index.lexical_and_candidates(&residual_tokens);
     let hits = if query.residual_lexical.is_empty() {
         index.execute(&query, &data.catalog)
     } else {
