@@ -8,6 +8,14 @@ gates before held-out measurement").
 Parent epic: [#60](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/60).
 This issue: [#61](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/61).
 
+> **REVISION STATUS.** Everything below is **Revision 1**, preserved verbatim.
+> An adversarial protocol review run *before any measurement* found six
+> confirmed defects that would have made Revision 1's numbers invalid.
+> **§15 (Revision 2) supersedes Revision 1 wherever the two conflict.**
+> Revision 1 is not deleted, per this repository's discipline of preserving the
+> original attempt alongside the correction. No measurement was ever taken
+> under Revision 1.
+
 ---
 
 ## 0. What this is testing, and what it deliberately is not
@@ -428,3 +436,206 @@ Cold build time is reported with a CV only and is **not** gated.
 - Benchmark manifest: `benchmarks/manifests/i61_e1_baseline_freeze.yaml`
 - Result manifest: `artifacts/manifests/i61_e1.json`
 - Raw artifacts: `docs/research/artifacts/i61_e1_baseline_run1/`
+
+---
+
+# 15. Revision 2 — corrections required by adversarial protocol review
+
+**Status: supersedes Revision 1 wherever the two conflict. Written before any
+measured run; no data existed when these thresholds were changed.**
+
+An adversarial review was commissioned specifically to falsify Revision 1
+before data collection. It returned **BREAKS** and named six defects. Each was
+then independently verified against the actual code rather than accepted on
+assertion. All six reproduced. This section records the correction.
+
+The defects are recorded here, not quietly fixed, because a protocol that
+silently improves between drafts is indistinguishable from one tuned to a
+desired answer.
+
+## R2.0 The six confirmed defects
+
+| # | Defect | Verified evidence | Why it invalidates results |
+|---|---|---|---|
+| D1 | Solr's exact structured filters were emitted as **regular expressions** | `comparator-eval/src/translate.rs` emits `format!("{field}:/{}/", case_insensitive_field_regex(name))` for `Brand`/`ProductType`/`Category` | Forces a regex automaton over the term dictionary instead of an O(1) term lookup. **The baseline was a straw man.** Any native CPU win would have been partly manufactured. |
+| D2 | Malformed documents silently dropped | `solr.rs`: `docs.iter().filter_map(\|d\| d["id"].as_str()...)` still returns `Success` | A shortened result set with no error — the "failure becomes a favourable number" class this crate exists to prevent |
+| D3 | `numFound` discarded | `EngineComparator::search` returns "at most `rows` document ids" | Full candidate-set equality is impossible; top-K equality can pass while filters differ |
+| D4 | `queryResultCache` sized 4096 against a **480-query** workload | `provision_solr.sh` + `wc -l dataset_cache/wands/query.csv` = 481 | Three warm-up passes would cache *every* result. "Warm Solr" would have measured a hash lookup, not retrieval, against a native engine that has no whole-query result cache |
+| D5 | `CgroupSnapshot::delta_since` used `saturating_sub` | `issue61-eval/src/cgroup.rs` | A counter reset or wrong-cgroup read silently becomes **0 CPU** — a favourable number |
+| D6 | Protocol contradicted itself on latency | §6.1 gates `latency_p50_us`; §7.4 says end-to-end latency is "never used as a gated metric in E1" | The gate was undefined |
+
+D4 was this protocol's own error, introduced by its own provisioning script. It
+is recorded with the same weight as the inherited ones.
+
+## R2.1 Measurement boundary — one boundary, no subtraction
+
+Revision 1's transport-floor subtraction is **withdrawn**.
+
+The review's argument is accepted: Revision 1's accounting was neither
+engine-only nor total-system. Native's query loop ran inside its measured
+cgroup, while Solr's request construction, encoding, socket handling and JSON
+parsing ran in the host driver and escaped Solr's `cpu.stat`. Worse,
+subtracting a point-estimate floor `F` from measured CPU `Q` is not valid:
+`Var(Q-F) = Var(Q) + Var(F) - 2Cov(Q,F)`, so a point estimate understates
+uncertainty, and `Q = engine work + fixed floor` is not an established model —
+protocol cost varies with hit count, body size, cache state, GC and JIT. A
+match-nothing `rows=0` probe can also short-circuit to `MatchNoDocsQuery` and
+skip nearly all index work, so it *under*-estimates the tax it claims to
+measure.
+
+**Revision 2 requires:**
+
+1. The native engine is placed behind a **minimal HTTP endpoint** returning the
+   same response contract as Solr (`id` list + total match count). Both arms
+   are then driven by the **same external client over a persistent connection**.
+2. The primary metric is **raw server-side container CPU**, measured at an
+   identical boundary on both sides. No adjusted, corrected or floor-subtracted
+   CPU comparison is published.
+3. No-op probes are retained as **diagnostics only**, published beside the raw
+   numbers, never subtracted from them.
+4. Because both arms now share one boundary, **end-to-end p50 becomes legitimately
+   gateable**, which resolves D6. §6.1 stands; §7.4's blanket prohibition is
+   superseded.
+
+## R2.2 Baseline competence — corrections to Solr
+
+- **Exact filters, not regex.** Structured string constraints are issued as
+  exact term queries against a lowercased companion field populated at index
+  time. Semantics are identical to Revision 1's case-insensitive regex; the
+  automaton is gone. Implemented as an **opt-in** translator mode so the five
+  existing evaluation binaries and their published numbers are untouched.
+- **`queryResultCache` disabled (size 0).** It memoizes whole result lists and
+  the workload is a fixed 480 queries.
+- **`filterCache` retained and generously sized.** It caches filter-context
+  bitsets and is the closest Solr analogue to the native engine's precomputed
+  Roaring bitmaps. Disabling it would be a straw man in the opposite direction.
+  Hit/miss/eviction counters are published with every result.
+- **`documentCache` retained** — both engines materialize documents.
+- Exact heap, GC, cache sizes, schema and connection settings are frozen and
+  checksummed **before** the first measured run.
+
+## R2.3 Equivalence — full candidate sets, not top-K
+
+Revision 1's top-K ID-set equality is **insufficient** and is replaced.
+
+Two different candidate sets can share a top-K, and identical candidate sets
+can differ at the K boundary through score ties. `numFound` equality alone is
+also insufficient, since two different sets can share a cardinality.
+
+**Revision 2 requires:** outside the timed path, retrieve the **complete**
+structural candidate set from both engines and compare a canonical sorted-ID
+digest **and** the total count; emit both directional set differences on
+mismatch; audit every hybrid query's structural prefilter independently of
+ranking; treat any document lacking a valid string id as a hard `ParseError`,
+never a short success.
+
+The Revision 1 phrase "enumerated per `query_id` before the gate is evaluated"
+was a **post-hoc loophole** — it permitted observing mismatches and then adding
+them to the allowed list. Any known-difference manifest must now be frozen and
+checksummed **before execution**.
+
+Carried-forward limitation: WANDS and ESCI both map one product to one variant,
+so product-ID equality **cannot** validate same-variant conjunction semantics.
+E1 makes no same-variant claim.
+
+## R2.4 Statistics — paired blocks, Student-t, and a ratio decision rule
+
+Revision 1's gate is **withdrawn**. Three independent problems:
+
+1. **The percentile bootstrap is anti-conservative at n=10.** At CV=10%, its
+   half-width is ≈5.88% against a correct Student-t half-width of
+   `t(9,.975)·0.10/√10` ≈ 7.15% — about 18% too narrow, giving ≈90.4% actual
+   coverage for a nominal 95% interval. Resampling cannot add information the
+   sample does not contain. After Revision 1's permitted two exclusions (n=8)
+   coverage falls to ≈89.1%.
+2. **Non-overlapping intervals do not establish a ≥25% saving.** With A=1.00,
+   B=0.75 and both at ±7.5%, the compatible ratio spans
+   `0.75·0.925/1.075 = 0.645` to `0.75·1.075/0.925 = 0.872` — savings anywhere
+   from **12.8% to 35.5%**. A 25% point estimate is *not* decisively above a
+   25% bar. Revision 1's power justification was arithmetically true but
+   answered a Welch test the protocol never runs.
+3. **Repetitions are not independent.** Page cache, engine caches and host
+   drift induce serial dependence, so an IID bootstrap over raw repetitions is
+   unjustified.
+
+**Revision 2 requires:**
+
+- **≥30 randomized paired blocks.** Within a block both engines run under the
+  same host conditions; the block yields one paired ratio. The block, not the
+  repetition, is the unit of analysis.
+- **Student-t intervals**, computed on the **log** scale for ratios (ratios are
+  multiplicative and right-skewed) and exponentiated back.
+- **The decision is made on the ratio directly**: a ≥25% saving is claimed only
+  when the **upper** 95% bound on `treatment/baseline` is ≤ 0.75. Otherwise the
+  verdict is `Inconclusive` — never a pass.
+- **A known-effect calibration arm is mandatory.** A deliberately injected
+  effect (5 workload passes vs 4, true ratio 1.25) must be recovered: the
+  observed interval must contain 1.25 **and** exclude 1.0. Repeatability alone
+  cannot detect systematic accounting bias — an instrument that cannot recover
+  an effect it was told to expect cannot be trusted on an unknown one.
+  **A missing calibration is `FIX MEASUREMENT`, never a pass.**
+- **Index bytes are an exact artifact measurement**, not a bootstrapped
+  statistic. Revision 1's 2% bound was near-vacuous for a deterministic native
+  estimate.
+- Cells with fewer than 30 blocks are marked `underpowered` and force
+  `FIX MEASUREMENT`.
+
+## R2.5 Steal time — no post-run exclusion in the primary analysis
+
+Revision 1's exclusion rule is **withdrawn from the primary gate**.
+
+Preregistering an exclusion does not remove its selection bias, and here the
+bias is fatal: virtualization noise is exactly the phenomenon H1 is meant to
+detect, and the rule deletes precisely the repetitions that demonstrate it.
+Because cgroup CPU counts time actually scheduled, steal inflates *wall
+latency* more than CPU, so excluding high-steal repetitions suppresses latency
+variance and makes the instrument look more stable than it is.
+
+**Revision 2 requires:** every scheduled block enters the primary analysis.
+Clean-only results are published as a **sensitivity analysis** that may never
+rescue a failed all-data gate. Host conditions are screened *before* a block
+runs; a rejected block is rerun **whole**, and every rejection is recorded.
+Excessive rejection is itself `FIX MEASUREMENT`. Steal is measured on the
+assigned CPUs, not the aggregate line, and `throttled_usec`, CPU PSI, OOM and
+swap counters are recorded alongside.
+
+## R2.6 Resource definitions
+
+- `serving_rss_bytes` is renamed **`cgroup_memory_footprint_bytes`**. In
+  cgroup v2 this includes anonymous memory, charged page cache, sockets and
+  kernel memory. It remains the right cross-engine metric — it is the memory
+  the container actually needs — but calling it "RSS" was inaccurate.
+- `memory.peak` is **cumulative since cgroup creation** and may include
+  indexing, force-merge and startup. Serving memory is therefore sampled
+  across the serving window; the lifetime peak is reported separately and never
+  used as serving memory.
+- `memory.stat` components are recorded so the anonymous/page-cache split is
+  visible rather than inferred.
+- Native `approximate_size_bytes()` **excludes** the `Catalog`, `HashMap`
+  buckets, location maps and allocator overhead, while Lucene's `du -sb` is
+  actual persisted storage. These are **not** comparable. E1 therefore reports
+  each engine's index bytes descriptively and makes **no cross-engine index-byte
+  claim**; `cgroup_memory_footprint_bytes` carries the memory comparison.
+
+## R2.7 Counter integrity
+
+`CgroupSnapshot::delta_since` returns an error on any backwards counter
+movement instead of saturating to zero. A wrong-cgroup read or counter reset
+must be a loud failure, because saturating produced a *favourable* zero-CPU
+measurement.
+
+## R2.8 Narrowed scope of a KEEP verdict
+
+A Revision 2 `KEEP` authorizes **only** what it calibrated: mean CPU/query and
+p50 latency at the standardized HTTP boundary, on the two frozen datasets.
+
+It explicitly does **not** authorize p95/p99 claims, concurrent-load claims, or
+minimum-resource-envelope claims. #65 (tails, load) and #66 (envelope) each
+require their own calibration before their measured matrices begin. Revision 1
+implied a broader licence than its evidence could support.
+
+`QPS/core = 1e6/p50` (ADR 0007) is **not used** in this campaign: median
+latency is not CPU time and does not imply sustainable single-core throughput
+for a multithreaded engine. Throughput per core, where needed, is measured
+throughput divided by measured CPU.
+

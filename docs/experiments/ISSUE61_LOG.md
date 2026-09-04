@@ -158,6 +158,84 @@ Two observations recorded now, before they can be rationalised later:
 
 ---
 
+## Step 4 — adversarial protocol review, run BEFORE any measurement
+
+A reasoning agent was commissioned with an explicitly hostile brief: falsify
+Revision 1, assume it is wrong until checked, and hunt for anything that would
+let a later reviewer say *"this apparent resource saving is an artifact of
+unfairness or missing work."*
+
+**Verdict: BREAKS.** Six defects were named. Each was then independently
+verified against the actual code rather than accepted on assertion — a
+reviewer's claim is a hypothesis, not a finding. **All six reproduced.**
+
+| # | Claim | Verification | Status |
+|---|---|---|---|
+| D1 | Solr exact filters emitted as regex | `translate.rs` emits `format!("{field}:/{}/", case_insensitive_field_regex(name))` for `Brand`/`ProductType`/`Category` | **CONFIRMED** |
+| D2 | Malformed docs silently dropped | `solr.rs`: `filter_map(\|d\| d["id"].as_str()...)` still returns `Success` | **CONFIRMED** |
+| D3 | `numFound` discarded | `EngineComparator::search` documents "Returns at most `rows` document ids" | **CONFIRMED** |
+| D4 | `queryResultCache` oversized vs workload | `provision_solr.sh` set 4096; `wc -l query.csv` = 481 | **CONFIRMED** |
+| D5 | `delta_since` saturates on rollback | `cgroup.rs`: `self.usage_usec.saturating_sub(earlier.usage_usec)` | **CONFIRMED** |
+| D6 | Protocol contradicts itself on latency | §6.1 line 217 gates `latency_p50_us`; §7.4 line 275 says never gated | **CONFIRMED** |
+
+### The two that would have done real damage
+
+**D1 made the baseline a straw man.** Against a `string` + docValues field, a
+Solr `RegexpQuery` runs an automaton over the term dictionary where a
+production deployment would resolve a single term. Every "native uses less CPU
+than Solr" number produced under Revision 1 would have been partly manufactured
+by the comparator itself. This is the third time this repository has found a
+fairness defect in comparator translation
+(`ISSUE55_PAIRED_COMPARATOR_DECISION.md`, `ISSUE55_ROUTING_OUTCOME_REPLICATION_DECISION.md`),
+and the first time one was caught *before* rather than *after* publishing
+numbers.
+
+**D4 was this protocol's own error, not an inherited one.** The provisioning
+script written earlier in this same session set `queryResultCache.size = 4096`
+against a fixed 480-query workload with three warm-up passes. Every result
+would have been cached before measurement began, so "warm Solr CPU/query" would
+have measured a hash lookup rather than retrieval — against a native engine
+that has no whole-query result cache. It is recorded here with the same weight
+as the inherited defects.
+
+The fix is deliberately asymmetric, because the three Solr caches are not
+equivalent: `queryResultCache` is disabled (it memoizes the entire benchmark),
+while `filterCache` is *retained and generously sized* (it caches filter-context
+bitsets and is the closest analogue to the native engine's precomputed Roaring
+bitmaps — disabling it would be a straw man in the opposite direction).
+
+### Statistical findings
+
+Three independent problems with Revision 1's gate, all accepted:
+
+1. The percentile bootstrap is **anti-conservative at n=10** — half-width
+   ≈5.88% versus a correct Student-t ≈7.15%, roughly 18% too narrow, actual
+   coverage ≈90.4% for a nominal 95% interval. More resamples add no
+   information the sample does not contain.
+2. **Non-overlapping CIs do not establish a ≥25% saving.** With both arms at
+   ±7.5% around a 0.75 point ratio, the compatible range is 0.645–0.872 —
+   savings from 12.8% to 35.5%. Revision 1's power justification was
+   arithmetically correct but answered a Welch test the protocol never runs.
+3. Repetitions are **serially dependent** (page cache, engine caches, host
+   drift), so an IID bootstrap over raw repetitions is unjustified.
+
+The most important consequence: **repeatability alone cannot detect systematic
+accounting bias.** Revision 2 therefore adds a mandatory known-effect
+calibration arm — 5 workload passes versus 4, a true ratio of 1.25, which the
+instrument must recover — and treats a missing calibration as `FIX MEASUREMENT`
+rather than a pass.
+
+### Action taken
+
+Revision 1 was **not edited**. `ISSUE61_PROTOCOL.md` §15 adds Revision 2, which
+supersedes it where they conflict, and Revision 1 is preserved verbatim with a
+banner. This follows the repository's standing discipline: preserve the
+original attempt, document the defect, create a corrected revision. No
+measurement had been taken under Revision 1, so no result changes — the cost of
+this review was entirely paid in rework, which is the cheapest place to pay it.
+
+---
+
 ## Open items
 
 - Elasticsearch adapter/provisioning is time-boxed per protocol §2.4; its

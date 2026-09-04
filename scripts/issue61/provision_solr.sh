@@ -29,16 +29,24 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=../../benchmarks/configs/issue61/container_limits.env
 source "$REPO_ROOT/benchmarks/configs/issue61/container_limits.env"
 
+# Each dataset keeps its OWN indexer. This is deliberate, not duplication: the
+# two corpora have genuinely different schemas (WANDS has `id` plus a
+# category_depth_1..6 breadcrumb and product_class; ESCI has `product_id`,
+# `brand`, `bullet_point` and carries no taxonomy at all). Reusing the existing
+# per-dataset indexers also means E1 indexes each corpus exactly the way the
+# prior checkpoints that produced this repository's published numbers did.
 case "$DATASET" in
   wands)
     CORE="i61_wands"
     CATALOG="$REPO_ROOT/dataset_cache/wands/catalog.jsonl"
     EXPECTED_DOCS="$I61_WANDS_EXPECTED_DOCS"
+    INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_wands.py" "__CORE_URL__" "" "$CATALOG")
     ;;
   esci_electronics)
     CORE="i61_esci_electronics"
     CATALOG="$REPO_ROOT/dataset_cache/esci_electronics/esci_electronics_products.jsonl"
     EXPECTED_DOCS="$I61_ESCI_ELECTRONICS_EXPECTED_DOCS"
+    INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_esci_electronics.py" "__CORE_URL__")
     ;;
   *)
     echo "FATAL: unknown dataset '$DATASET' (expected: wands | esci_electronics)" >&2
@@ -103,11 +111,31 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 
-# --- 3. explicit cache sizing (protocol §2.2: recorded, not implicit) ------
-# Deliberately generous for a 43k-doc corpus so the baseline is not
-# cache-starved. autowarmCount is 0 because the protocol defines warm state by
-# an explicit warm-up pass over the real workload (§9.1), not by autowarming --
-# an engine that autowarms while another does not is an unfair comparison.
+# --- 3. explicit cache configuration (protocol §2.2, revised in Revision 2) --
+# The three Solr caches are NOT equivalent for benchmarking, and treating them
+# uniformly is a defect in either direction. Revision 2 sets them deliberately:
+#
+#   queryResultCache -> DISABLED (size 0).
+#     This memoizes an entire (query, sort, filter) result list. The frozen
+#     WANDS workload is 480 fixed queries and the protocol runs 3 warm-up
+#     passes, so ANY cache larger than 480 entries would hold every result
+#     before measurement began -- the "warm" measurement would then be a hash
+#     lookup, not retrieval. The native engine has no whole-query result cache,
+#     so this would not be a fair advantage, it would be a different experiment.
+#
+#   filterCache -> ENABLED and generously sized.
+#     This caches filter-context bitsets. It is the closest Solr analogue to
+#     the native engine's precomputed Roaring bitmaps, and it is how a
+#     production Solr actually serves `fq`. Disabling it would be a straw man
+#     in the opposite direction -- forcing Solr to rebuild structures native
+#     gets for free. Hit/miss counters are published with the results.
+#
+#   documentCache -> ENABLED.
+#     Both engines materialize result documents; caching that is symmetric.
+#
+# autowarmCount is 0 everywhere because warm state is defined by an explicit
+# warm-up pass over the real workload (§9.1). An engine that autowarms while
+# another does not is an unfair comparison.
 echo "==> applying explicit cache configuration"
 curl -sf -X POST -H 'Content-Type: application/json' \
   --data-binary '{
@@ -115,8 +143,8 @@ curl -sf -X POST -H 'Content-Type: application/json' \
       "query.filterCache.size": 4096,
       "query.filterCache.initialSize": 4096,
       "query.filterCache.autowarmCount": 0,
-      "query.queryResultCache.size": 4096,
-      "query.queryResultCache.initialSize": 4096,
+      "query.queryResultCache.size": 0,
+      "query.queryResultCache.initialSize": 0,
       "query.queryResultCache.autowarmCount": 0,
       "query.documentCache.size": 4096,
       "query.documentCache.initialSize": 4096
@@ -125,7 +153,8 @@ curl -sf -X POST -H 'Content-Type: application/json' \
 
 # --- 4. index ---------------------------------------------------------------
 echo "==> indexing $DATASET from $CATALOG"
-python3 "$REPO_ROOT/scripts/datasets/solr_index_wands.py" "$CORE_URL" "" "$CATALOG"
+INDEXER=("${INDEXER[@]/__CORE_URL__/$CORE_URL}")
+python3 "${INDEXER[@]}"
 
 # --- 5. forceMerge(1) on the read-only corpus -------------------------------
 # Standard read-only-benchmark practice. This FAVOURS Lucene (one segment, no
