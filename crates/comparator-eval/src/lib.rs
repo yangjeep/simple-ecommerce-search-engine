@@ -48,6 +48,11 @@ pub mod outcome;
 pub mod solr;
 pub mod translate;
 
-pub use outcome::EngineLookup;
-pub use solr::{case_insensitive_field_regex, EngineComparator, SolrComparator};
-pub use translate::{translate_constraint, SolrFieldMap, StructuralNames, Translation};
+pub use outcome::{EngineHits, EngineLookup, EngineLookupHits};
+pub use solr::{
+    case_insensitive_field_regex, solr_search_with_count, EngineComparator, SolrComparator,
+};
+pub use translate::{
+    translate_all_with_config, translate_constraint, translate_constraint_with_config,
+    SolrFieldMap, SolrTranslationConfig, StructuralNames, Translation,
+};

@@ -6,7 +6,7 @@
 //! never got a real answer) vs. [`EngineLookup::QueryError`] (Solr
 //! answered but rejected the query) -- see [`crate::outcome`].
 
-use crate::outcome::EngineLookup;
+use crate::outcome::{EngineHits, EngineLookup, EngineLookupHits};
 
 /// The contract a comparator backend implements. Solr is the only
 /// implementation today; the trait boundary exists so an Elasticsearch or
@@ -20,6 +20,21 @@ pub trait EngineComparator {
     /// each produced by [`crate::translate::translate_constraint`] for
     /// this same backend. Returns at most `rows` document ids.
     fn search(&self, q: &str, fq: &[String], rows: usize) -> EngineLookup;
+
+    /// Returns the result page plus the total number of matching documents,
+    /// independent of `rows`. The default preserves source compatibility for
+    /// existing implementors but refuses to fabricate a total from top-K ids;
+    /// backends must override it to return a successful count.
+    fn search_with_count(&self, q: &str, fq: &[String], rows: usize) -> EngineLookupHits {
+        match self.search(q, fq, rows) {
+            EngineLookup::Success(_) => EngineLookupHits::ParseError(
+                "comparator backend does not implement total match counts".to_string(),
+            ),
+            EngineLookup::TransportError(detail) => EngineLookupHits::TransportError(detail),
+            EngineLookup::QueryError(detail) => EngineLookupHits::QueryError(detail),
+            EngineLookup::ParseError(detail) => EngineLookupHits::ParseError(detail),
+        }
+    }
 }
 
 fn percent_encode(s: &str) -> String {
@@ -96,6 +111,10 @@ impl EngineComparator for SolrComparator {
     fn search(&self, q: &str, fq: &[String], rows: usize) -> EngineLookup {
         solr_search(&self.base_url, &self.qf, q, fq, rows, self.timeout)
     }
+
+    fn search_with_count(&self, q: &str, fq: &[String], rows: usize) -> EngineLookupHits {
+        solr_search_with_count(&self.base_url, &self.qf, q, fq, rows, self.timeout)
+    }
 }
 
 /// The hardened transport function itself, free of the `SolrComparator`
@@ -108,6 +127,73 @@ pub fn solr_search(
     rows: usize,
     timeout: std::time::Duration,
 ) -> EngineLookup {
+    match solr_search_response(base_url, qf, q, fq, rows, timeout) {
+        Ok(response) => EngineLookup::Success(response.ids),
+        Err(failure) => failure.into_lookup(),
+    }
+}
+
+/// Returns both the selected ids and Solr's full `response.numFound` count.
+pub fn solr_search_with_count(
+    base_url: &str,
+    qf: &str,
+    q: &str,
+    fq: &[String],
+    rows: usize,
+    timeout: std::time::Duration,
+) -> EngineLookupHits {
+    match solr_search_response(base_url, qf, q, fq, rows, timeout) {
+        Ok(response) => match response.num_found {
+            Some(num_found) => EngineLookupHits::Success(EngineHits {
+                ids: response.ids,
+                num_found,
+            }),
+            None => EngineLookupHits::ParseError(
+                "response JSON parsed but response.numFound was missing or not an unsigned number"
+                    .to_string(),
+            ),
+        },
+        Err(failure) => failure.into_lookup_hits(),
+    }
+}
+
+struct ParsedSolrResponse {
+    ids: Vec<String>,
+    num_found: Option<u64>,
+}
+
+enum SolrFailure {
+    Transport(String),
+    Query(String),
+    Parse(String),
+}
+
+impl SolrFailure {
+    fn into_lookup(self) -> EngineLookup {
+        match self {
+            Self::Transport(detail) => EngineLookup::TransportError(detail),
+            Self::Query(detail) => EngineLookup::QueryError(detail),
+            Self::Parse(detail) => EngineLookup::ParseError(detail),
+        }
+    }
+
+    fn into_lookup_hits(self) -> EngineLookupHits {
+        match self {
+            Self::Transport(detail) => EngineLookupHits::TransportError(detail),
+            Self::Query(detail) => EngineLookupHits::QueryError(detail),
+            Self::Parse(detail) => EngineLookupHits::ParseError(detail),
+        }
+    }
+}
+
+fn solr_search_response(
+    base_url: &str,
+    qf: &str,
+    q: &str,
+    fq: &[String],
+    rows: usize,
+    timeout: std::time::Duration,
+) -> Result<ParsedSolrResponse, SolrFailure> {
     let url = format!("{base_url}/select");
     let rows_str = rows.to_string();
     let mut form: Vec<(&str, &str)> = vec![
@@ -123,31 +209,39 @@ pub fn solr_search(
     let resp = ureq::post(&url).timeout(timeout).send_form(&form);
     let resp = match resp {
         Ok(resp) => resp,
-        Err(e) => return EngineLookup::TransportError(format!("HTTP request failed: {e}")),
+        Err(error) => {
+            return Err(SolrFailure::Transport(format!(
+                "HTTP request failed: {error}"
+            )))
+        }
     };
     let body = match resp.into_json::<serde_json::Value>() {
         Ok(body) => body,
-        Err(e) => {
-            return EngineLookup::ParseError(format!("response body was not valid JSON: {e}"))
+        Err(error) => {
+            return Err(SolrFailure::Parse(format!(
+                "response body was not valid JSON: {error}"
+            )))
         }
     };
     if let Some(status) = body["responseHeader"]["status"].as_i64() {
         if status != 0 {
-            return EngineLookup::QueryError(format!(
+            return Err(SolrFailure::Query(format!(
                 "Solr responseHeader.status={status} (Solr-side query error): {body}"
-            ));
+            )));
         }
     }
     let Some(docs) = body["response"]["docs"].as_array() else {
-        return EngineLookup::ParseError(format!(
+        return Err(SolrFailure::Parse(format!(
             "response JSON parsed but had no response.docs array: {body}"
-        ));
+        )));
     };
-    EngineLookup::Success(
-        docs.iter()
-            .filter_map(|d| d["id"].as_str().map(str::to_string))
-            .collect(),
-    )
+    match parse_document_ids(docs) {
+        Ok(ids) => Ok(ParsedSolrResponse {
+            ids,
+            num_found: body["response"]["numFound"].as_u64(),
+        }),
+        Err(detail) => Err(SolrFailure::Parse(detail)),
+    }
 }
 
 /// Percent-encoded GET variant, kept for callers that only ever send a
@@ -191,11 +285,23 @@ pub fn solr_search_get(
             "response JSON parsed but had no response.docs array: {body}"
         ));
     };
-    EngineLookup::Success(
-        docs.iter()
-            .filter_map(|d| d["id"].as_str().map(str::to_string))
-            .collect(),
-    )
+    match parse_document_ids(docs) {
+        Ok(ids) => EngineLookup::Success(ids),
+        Err(detail) => EngineLookup::ParseError(detail),
+    }
+}
+
+fn parse_document_ids(docs: &[serde_json::Value]) -> Result<Vec<String>, String> {
+    let mut ids = Vec::with_capacity(docs.len());
+    for (index, document) in docs.iter().enumerate() {
+        let Some(id) = document["id"].as_str() else {
+            return Err(format!(
+                "response document index {index} had no string id: {document}"
+            ));
+        };
+        ids.push(id.to_string());
+    }
+    Ok(ids)
 }
 
 #[cfg(test)]
@@ -369,6 +475,66 @@ mod tests {
     }
 
     #[test]
+    fn a_document_missing_its_id_is_a_parse_error_not_a_short_success() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":2,"docs":[{"id":"B001"},{"title":"broken"}]}}"#,
+        );
+
+        // When
+        let lookup = solr_search(&url, "all_text", "widget", &[], 10, TEST_TIMEOUT);
+
+        // Then
+        match lookup {
+            EngineLookup::ParseError(detail) => {
+                assert!(detail.contains("document index 1"));
+                assert!(detail.contains(r#"{"title":"broken"}"#));
+            }
+            other => panic!("expected ParseError, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_document_with_a_non_string_id_is_a_parse_error() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":1,"docs":[{"id":42}]}}"#,
+        );
+
+        // When
+        let lookup = solr_search(&url, "all_text", "widget", &[], 10, TEST_TIMEOUT);
+
+        // Then
+        match lookup {
+            EngineLookup::ParseError(detail) => {
+                assert!(detail.contains("document index 0"));
+                assert!(detail.contains(r#"{"id":42}"#));
+            }
+            other => panic!("expected ParseError, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn all_documents_having_string_ids_still_succeeds() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":2,"docs":[{"id":"B001"},{"id":"B002"}]}}"#,
+        );
+
+        // When
+        let lookup = solr_search(&url, "all_text", "widget", &[], 10, TEST_TIMEOUT);
+
+        // Then
+        assert_eq!(
+            lookup,
+            EngineLookup::Success(vec!["B001".to_string(), "B002".to_string()])
+        );
+    }
+
+    #[test]
     fn fq_parameters_reach_the_wire_when_present() {
         let (url, rx) = fake_solr_capturing_request(
             "HTTP/1.1 200 OK",
@@ -415,5 +581,81 @@ mod tests {
         let comparator = SolrComparator::new(url, "all_text");
         let lookup = comparator.search("widget", &[], 10);
         assert_eq!(lookup.ids(), Some(&["B001".to_string()][..]));
+    }
+
+    #[test]
+    fn search_with_count_returns_num_found_from_the_response() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":2,"docs":[{"id":"B001"},{"id":"B002"}]}}"#,
+        );
+        let comparator = SolrComparator::new(url, "all_text");
+
+        // When
+        let lookup = comparator.search_with_count("widget", &[], 10);
+
+        // Then
+        assert_eq!(
+            lookup,
+            EngineLookupHits::Success(EngineHits {
+                ids: vec!["B001".to_string(), "B002".to_string()],
+                num_found: 2,
+            })
+        );
+    }
+
+    #[test]
+    fn num_found_absent_is_a_parse_error() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"docs":[{"id":"B001"}]}}"#,
+        );
+        let comparator = SolrComparator::new(url, "all_text");
+
+        // When
+        let lookup = comparator.search_with_count("widget", &[], 10);
+
+        // Then
+        assert!(matches!(lookup, EngineLookupHits::ParseError(_)));
+    }
+
+    #[test]
+    fn num_found_can_exceed_the_returned_id_count() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":1000,"docs":[{"id":"B001"}]}}"#,
+        );
+        let comparator = SolrComparator::new(url, "all_text");
+
+        // When
+        let lookup = comparator.search_with_count("widget", &[], 10);
+
+        // Then
+        match lookup {
+            EngineLookupHits::Success(hits) => {
+                assert_eq!(hits.ids.len(), 1);
+                assert_eq!(hits.num_found, 1000);
+            }
+            other => panic!("expected Success, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn existing_search_behaviour_is_unchanged() {
+        // Given
+        let url = fake_solr_base_url(
+            "HTTP/1.1 200 OK",
+            r#"{"responseHeader":{"status":0},"response":{"numFound":1000,"docs":[{"id":"B001"}]}}"#,
+        );
+        let comparator = SolrComparator::new(url, "all_text");
+
+        // When
+        let lookup = comparator.search("widget", &[], 10);
+
+        // Then
+        assert_eq!(lookup, EngineLookup::Success(vec!["B001".to_string()]));
     }
 }

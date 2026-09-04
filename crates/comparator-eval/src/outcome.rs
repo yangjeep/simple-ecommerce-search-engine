@@ -37,6 +37,25 @@ pub enum EngineLookup {
     ParseError(String),
 }
 
+/// Successful comparator results with both the returned page and the complete
+/// candidate-set cardinality reported by the backend. `num_found` is
+/// independent of the requested page size.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EngineHits {
+    pub ids: Vec<String>,
+    pub num_found: u64,
+}
+
+/// Count-preserving counterpart to [`EngineLookup`], required when auditing
+/// full candidate-set equivalence rather than only a shared top-K prefix.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EngineLookupHits {
+    Success(EngineHits),
+    TransportError(String),
+    QueryError(String),
+    ParseError(String),
+}
+
 impl EngineLookup {
     /// The matched document ids, only for a genuine success. Every other
     /// variant returns `None` -- deliberately not `Some(&[])`, so a

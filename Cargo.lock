@@ -676,6 +676,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "issue61-eval"
+version = "0.1.0"
+dependencies = [
+ "bench-harness",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
