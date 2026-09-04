@@ -37,7 +37,7 @@ pub(super) fn build_request(
             .map(|request| EngineRequest {
                 q: request.q.clone(),
                 fq: Vec::new(),
-                params: BTreeMap::from([("rows".to_string(), query.rows.to_string())]),
+                params: request.params.clone(),
             })
             .ok_or_else(|| {
                 format!(
