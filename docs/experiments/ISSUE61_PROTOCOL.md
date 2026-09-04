@@ -993,3 +993,62 @@ ESCI-electronics queries. The preregistered pass condition is exact: every
 query must match both `numFound` and the §16.3 digest, with zero native or Solr
 failures. Any mismatch on either dataset blocks timing. No threshold is relaxed
 and no dataset, admission class or punctuation case may be excluded.
+
+# Revision 4 — one explicit lexical token stream
+
+**Frozen 2026-09-04 after the Revision 3 complete-set audit failed and after
+untimed diagnostic toggles, but before regenerating either workload or running
+another authoritative audit or timed measurement.** Revision 3's failed result
+and both rejected diagnostic treatments remain preserved in the append-only
+log. All prior clauses remain binding except where this revision explicitly
+replaces native residual lookup and Solr `q` construction.
+
+## 18.1 Trigger and corrected mechanism
+
+Revision 3 reached 595/600 on ESCI-electronics. Its five misses exposed a
+pre-existing native endpoint defect: `CommerceQuery::residual_lexical` entries
+may contain multiple words, but `CatalogIndex::lexical_and_candidates` accepts
+the individual tokens produced by public `commerce_core::index::tokenize`.
+Passing residual entries directly therefore looked up impossible phrase keys.
+
+Tokenizing only native residuals was rejected at 581/600. Changing Solr's query
+analyzer to PatternTokenizer as well was rejected at 596/600. The final four
+misses occurred because eDisMax kept punctuation-split subtokens inside one
+original whitespace clause and required those subtokens in one `qf` field;
+native postings are deliberately attribute-agnostic across title and every
+Text attribute. An untimed four-query toggle that made every token a top-level
+Solr clause matched 4/4 exactly.
+
+## 18.2 Frozen treatment
+
+Both engines consume one deterministic token stream derived from the compiled
+residual entries:
+
+1. apply `commerce_core::index::tokenize` independently to every
+   `residual_lexical` entry;
+2. preserve entry order and token order, including duplicates;
+3. perform no second compiler stopword pass — punctuation splitting may expose
+   a token such as `to`, and that token remains part of the request;
+4. native passes the resulting token vector to
+   `lexical_and_candidates`;
+5. Solr joins the same tokens with one ASCII space and applies the existing
+   literal eDisMax escaping before freezing `solr.q`.
+
+Revision 3's `native_lexical` index PatternTokenizer and query
+WhitespaceTokenizer remain frozen. Because each Solr whitespace chunk is now
+one native token, eDisMax constructs one top-level cross-field DisMax clause
+per token. No field, parser parameter, filter, ranking parameter or corpus
+changes.
+
+## 18.3 Workload and evidence replacement
+
+Regenerate both JSONL workloads from the unchanged source query files and
+catalogs. Native requests, admission classes and structural constraints must
+remain unchanged; only Solr `q` values affected by residual token normalization
+may differ. Record new SHA-256 values and retain the superseded workload hashes
+in the log rather than rewriting history.
+
+The authoritative audit then reruns from clean provisioned cores for all 600
+ESCI-electronics and all 480 WANDS queries. The pass condition remains exact
+count-plus-digest equality for every query with zero engine failures. Any
+remaining mismatch blocks timing and may not be whitelisted.

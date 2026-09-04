@@ -676,6 +676,44 @@ catalog-index tokens, while WhitespaceTokenizer plus LowerCase preserved
 native's residual-query tokens. The probe changed no frozen artifact and the
 core must be reprovisioned before another audit. No timed block was run.
 
+### Step 12 — Revision 3 audit and residual clause-topology diagnosis
+
+Revision 3 provisioned ESCI-electronics from a clean core with the frozen
+native-compatible index analyzer, reached 2,075/2,075 corpus parity, passed the
+exact schema/config contract and emitted `PROVISION_OK`. Its complete-set audit
+improved from 542/600 to 595/600 but still failed five Punt queries, with no
+native or Solr failures. The 600-row result is preserved at
+`artifacts/issue61/i61_esci_electronics_equivalence_rev3.jsonl`, SHA-256
+`75910d874726ae25bc486fe50cc97ff8e1df908086ac55050cdb213414705a4b`.
+
+Runtime probes found that the compiler can preserve a multiword residual as
+one entry: query 104 produced `["rgb led strip lights"]`, while query 250
+produced `["47", "inch", "tv wall mount"]`. Passing those entries directly
+to token-keyed native postings explained the five native zeroes, but tokenizing
+only the native side was not a valid fix: an untimed diagnostic worsened the
+full audit to 581/600 because punctuation then split natively but remained one
+Solr query token.
+
+A second diagnostic changed Solr's query analyzer to PatternTokenizer as well
+as tokenizing native residuals. It reached 596/600. Solr `debugQuery` localized
+the final four misses to Boolean topology: eDisMax analyzed `1\\-light` as
+`(title:(+1 +light) OR description:(+1 +light) OR bullet_point:(+1 +light))`,
+requiring both subtokens in one field, while native intersects field-agnostic
+postings. All four remaining differences were native-only punctuation cases.
+
+The decisive untimed test restored the frozen Whitespace query analyzer and
+sent the four residuals as already-tokenized top-level terms:
+
+- `1 light fan kit ceiling fan`;
+- `wall mounts tv s`;
+- `usb c usb`;
+- `displayport to displayport cable`.
+
+All four count/digest comparisons matched exactly. Three orthogonal Oracle
+reviews independently identified the same clause-topology boundary and the
+same correction. Revision 4 was frozen before regenerating workloads or
+running another authoritative audit. No timed block was run.
+
 ---
 
 ## Open items
