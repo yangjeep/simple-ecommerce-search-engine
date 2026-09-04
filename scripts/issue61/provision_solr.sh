@@ -41,12 +41,14 @@ case "$DATASET" in
     CATALOG="$REPO_ROOT/dataset_cache/wands/catalog.jsonl"
     EXPECTED_DOCS="$I61_WANDS_EXPECTED_DOCS"
     INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_wands.py" "__CORE_URL__" "" "$CATALOG")
+    STRUCTURAL_FIELDS=(product_class category_leaf)
     ;;
   esci_electronics)
     CORE="i61_esci_electronics"
     CATALOG="$REPO_ROOT/dataset_cache/esci_electronics/esci_electronics_products.jsonl"
     EXPECTED_DOCS="$I61_ESCI_ELECTRONICS_EXPECTED_DOCS"
     INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_esci_electronics.py" "__CORE_URL__")
+    STRUCTURAL_FIELDS=(brand color)
     ;;
   *)
     echo "FATAL: unknown dataset '$DATASET' (expected: wands | esci_electronics)" >&2
@@ -151,9 +153,51 @@ curl -sf -X POST -H 'Content-Type: application/json' \
     }
   }' "$CORE_URL/config" >/dev/null
 
-# --- 4. index ---------------------------------------------------------------
-echo "==> indexing $DATASET from $CATALOG"
+# --- 3b/4. index, add lowercased companions, re-index ----------------------
+# Protocol Revision 2 R2.2. The shared translator's historical output for an
+# exact structured filter is a case-insensitive RegexpQuery (`field:/(?i)val/`),
+# which makes Solr run an automaton over the term dictionary where a production
+# deployment resolves a single term. Benchmarking against that is a straw man.
+#
+# `string_lc` is KeywordTokenizer + LowerCaseFilter: the whole value stays one
+# token and is lowercased, so `product_class_lc:"dining chairs"` is an exact
+# term lookup with the SAME case-insensitive semantics the regex had.
+#
+# The indexer must run BEFORE the companion fields are declared and AGAIN
+# after. copyField only populates at index time and its source field must
+# already exist, but Solr applies an `add-field` batch atomically -- so
+# pre-creating a source field here makes the indexer's own batch fail, which
+# silently leaves its other fields (title_sort) uncreated. Indexing twice
+# around the schema change is the only ordering that satisfies both
+# constraints without editing the historical indexer.
 INDEXER=("${INDEXER[@]/__CORE_URL__/$CORE_URL}")
+
+echo "==> indexing $DATASET from $CATALOG (pass 1: establishes base schema)"
+python3 "${INDEXER[@]}"
+
+echo "==> adding lowercased companion fields: ${STRUCTURAL_FIELDS[*]}"
+curl -sf -X POST -H 'Content-Type: application/json' --data-binary '{
+  "add-field-type": {
+    "name": "string_lc",
+    "class": "solr.TextField",
+    "omitNorms": true,
+    "analyzer": {
+      "tokenizer": { "class": "solr.KeywordTokenizerFactory" },
+      "filters": [ { "class": "solr.LowerCaseFilterFactory" } ]
+    }
+  }
+}' "$CORE_URL/schema" >/dev/null
+
+for f in "${STRUCTURAL_FIELDS[@]}"; do
+  curl -sf -X POST -H 'Content-Type: application/json' --data-binary "{
+    \"add-field\": {\"name\":\"${f}_lc\",\"type\":\"string_lc\",\"indexed\":true,\"stored\":false,\"multiValued\":false}
+  }" "$CORE_URL/schema" >/dev/null
+  curl -sf -X POST -H 'Content-Type: application/json' --data-binary "{
+    \"add-copy-field\": {\"source\":\"$f\",\"dest\":\"${f}_lc\"}
+  }" "$CORE_URL/schema" >/dev/null
+done
+
+echo "==> re-indexing so copyField populates the companion fields"
 python3 "${INDEXER[@]}"
 
 # --- 5. forceMerge(1) on the read-only corpus -------------------------------

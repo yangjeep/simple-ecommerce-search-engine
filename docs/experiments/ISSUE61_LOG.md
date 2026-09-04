@@ -236,6 +236,84 @@ this review was entirely paid in rework, which is the cheapest place to pay it.
 
 ---
 
+## Step 5 — quantifying D1: how large was the straw man?
+
+The adversarial review asserted that emitting Solr's exact structured filters as
+regular expressions inflates the baseline's CPU. That is a claim about
+magnitude, not just principle, so it was measured directly rather than
+accepted.
+
+First, what the translator actually emits. `case_insensitive_field_regex`
+builds a **per-character alternation**, not an inline flag:
+
+```
+case_insensitive_field_regex("Beds")  ->  [bB][eE][dD][sS]
+fq=product_class:/[bB][eE][dD][sS]/
+```
+
+Lucene compiles that into a DFA and runs it across the field's term
+dictionary. The production-equivalent form is a single term lookup against a
+`KeywordTokenizer + LowerCaseFilter` companion field:
+
+```
+fq=product_class_lc:"beds"
+```
+
+### Semantics first
+
+Both forms were run against the live 42,994-document WANDS core:
+
+| Form | `numFound` |
+|---|---|
+| `product_class:/[bB][eE][dD][sS]/` | **1112** |
+| `product_class_lc:"beds"` | **1112** |
+
+Identical. The replacement is semantics-preserving, not a relaxation — which
+had to be established before any cost comparison was meaningful.
+
+### Then cost
+
+300 queries per form, `{!cache=false}` so `filterCache` could not absorb the
+difference, CPU read from the container's own `cpu.stat`:
+
+| Form | CPU delta (300 queries) | CPU/query |
+|---|---|---|
+| regex (historical) | 13,461,006 µs | **44,870 µs** |
+| exact term (Revision 2) | 8,470,499 µs | **28,234 µs** |
+
+**The historical comparator made Solr spend 1.59x the CPU for an identical
+answer — a 37.1% handicap.**
+
+### Why this matters more than it first appears
+
+The campaign's materiality bar is a 25% resource reduction. The comparator
+defect alone was worth **37%** on structured filters. A "commerce-native
+execution uses 25% less CPU than Solr" result could therefore have been
+produced entirely by the measuring apparatus, with no architectural content
+whatsoever — and it would have passed every gate Revision 1 defined, because
+Revision 1 only checked whether the number was *repeatable*, not whether it was
+*right*.
+
+This is the concrete justification for Revision 2's mandatory known-effect
+calibration arm: repeatability cannot detect systematic accounting bias. A
+biased instrument is perfectly repeatable.
+
+The absolute numbers above are inflated (they include HTTP and JVM cost, and
+the JVM is only partly warmed) and are **not** citable as Solr's serving cost.
+Only the ratio is claimed, and both arms were measured under identical
+conditions back to back.
+
+### Consequence for comparability
+
+E1's Solr numbers are therefore **not** directly comparable to `p9_e02`'s and
+other historical WANDS numbers, which used the regex filter. This is a
+deliberate, disclosed break: the older numbers were measured against a
+handicapped baseline. The historical wire format remains the library default
+and is pinned by a regression test, so no previously published number changes
+retroactively.
+
+---
+
 ## Open items
 
 - Elasticsearch adapter/provisioning is time-boxed per protocol §2.4; its
