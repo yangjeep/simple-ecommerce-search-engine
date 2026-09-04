@@ -5,7 +5,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
-pub const RAW_SCHEMA_VERSION: u32 = 1;
+pub const RAW_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RawRecord {
@@ -13,6 +13,8 @@ pub struct RawRecord {
     pub experiment_id: String,
     pub run_id: String,
     pub rep: usize,
+    pub engine_order: usize,
+    pub calibration: bool,
     pub engine: String,
     pub dataset: String,
     pub query_class: String,
@@ -22,8 +24,8 @@ pub struct RawRecord {
     pub cpu_usage_usec: u64,
     pub cpu_user_usec: u64,
     pub cpu_system_usec: u64,
-    pub rss_current_bytes: u64,
-    pub rss_peak_bytes: u64,
+    pub cgroup_memory_footprint_bytes: u64,
+    pub cgroup_memory_peak_bytes: u64,
     pub index_serialized_bytes: u64,
     pub latency_p50_us: f64,
     pub latency_p95_us: f64,

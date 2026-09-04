@@ -477,6 +477,102 @@ during the measured campaign.
 
 ---
 
+## Step 8 — the §16.9 contract lands, and exposes two more baseline defects
+
+The frozen-workload-carries-the-contract fix (§16.9) is implemented: the
+workload artifact now carries each engine's exact request, the freeze aborts on
+any unresolvable constraint rather than emitting a partial `fq`, and the driver
+replays without synthesizing parameters. A sample Hybrid record:
+
+```json
+{"query_id":"14","text":"beds that have leds","admission_class":"Hybrid",
+ "structural_constraint_count":1,"has_residual_lexical":true,"rows":10,
+ "native":{"q":"beds that have leds"},
+ "solr":{"q":"that have leds","fq":["product_class_lc:\"beds\""],
+         "params":{"defType":"edismax","fl":"id","qf":"title description","rows":"10"}}}
+```
+
+Replaying that frozen request against the live core proves Solr accepts it, and
+the freeze is byte-identical across two runs (`ANCHOR_OK`, 21/459 preserved).
+
+Making the contract visible immediately made two further defects visible with
+it. Both are cases where an engine was configured to do *less* work than its
+comparator, which is as invalidating as doing more.
+
+### Defect A (fixed) — `qf` was narrower than native's lexical scope
+
+The first implementation hardcoded `qf=title` for both datasets. But native's
+`lexical_postings` index is built from `product.title` **plus every
+`AttributeValue::Text` attribute** (`commerce-core/src/index/mod.rs:197`
+and `:268`). For WANDS that is `description`
+(`phase6a-eval/src/catalog.rs:142`); for ESCI it is `description` and
+`bullet_point` (`issue35-eval/src/lib.rs:138-139`).
+
+So Solr was searching one field while native searched two or three. It is also
+narrower than this repository's own historical baseline — `p9_e02`, the
+checkpoint that produced the published WANDS numbers, sent
+`qf="title description"` (`p9_e02_wands_physical_advantage.rs:177`).
+
+Corrected so `qf` names exactly native's lexical field scope:
+
+| Dataset | Native lexical scope | Frozen `qf` |
+|---|---|---|
+| WANDS | `title` + `description` | `title description` |
+| ESCI-electronics | `title` + `description` + `bullet_point` | `title description bullet_point` |
+
+The effect is not cosmetic. Same query, same `fq`, same corpus:
+
+| Solr `qf` | `numFound` |
+|---|---|
+| `title` (defective) | **0** |
+| `title description` (corrected) | **403** |
+
+With `qf=title`, Solr was doing essentially no work on this Hybrid query.
+
+Two tests now pin the field scope to native's, citing the exact `file:line` in
+all three crates the invariant spans, so a future change to native's Text
+attribute ingestion cannot silently desynchronize the comparison.
+
+### Defect B (unresolved, escalated) — residual-lexical operator mismatch
+
+With `qf` corrected, the same query now shows the *inverse* asymmetry:
+
+| Arm | `numFound` |
+|---|---|
+| Solr (`q="that have leds"`, `qf="title description"`, `fq=product_class_lc:"beds"`) | **403** |
+| Native (`q="beds that have leds"`, compiled internally) | **0** |
+
+Native's residual lexical path uses `lexical_and_candidates` — **AND** across
+all residual tokens. Solr's edismax runs at its default `mm`, which is OR-ish.
+**`mm` was never frozen in §16** — an unfrozen degree of freedom found before,
+not after, data existed.
+
+This is the more dangerous direction. If native returns ~0 hits on a large
+share of Hybrid and Punt traffic while Solr returns hundreds, native's measured
+CPU/query is low **because it retrieved nothing**, not because it is efficient.
+That is exactly the confounder #60 forbids: *"implementation bugs producing
+less work rather than more efficient work"*. It flatters native, and on this
+workload ~95.6% of traffic is Punt-routed, so it would dominate any aggregate.
+
+This is not a new bug. `ISSUE55_HYBRID_ZERO_HIT_MECHANISM_DECISION.md` already
+quantified native zero-hit Hybrid queries at 43.75% (automotive), 16.7%
+(electronics) and 39.5% (beauty), including confirmed *recoverable* misses. It
+is documented native behaviour — but for a CPU comparison it is a first-order
+confounder rather than a curiosity.
+
+Escalated to the pre-measurement sign-off rather than resolved unilaterally,
+because the options are a genuine fork (freeze Solr `mm=100%` to match native's
+AND; keep production-typical OR and accept non-equivalent lexical questions; or
+restrict E1's gated cells to the provably equivalent structural subset), and
+choosing the one that happens to favour the architecture would be exactly the
+failure this protocol exists to prevent.
+
+**No measured block runs until this is resolved and frozen.** The frozen
+workload artifact is deliberately not committed yet, because `mm` is part of
+the contract it carries.
+
+---
+
 ## Open items
 
 - Elasticsearch adapter/provisioning is time-boxed per protocol §2.4; its

@@ -4,14 +4,18 @@
 //! server-side cgroup CPU accounting neutralizes that process-boundary
 //! asymmetry.
 
+mod catalog_data;
 mod cgroup;
 mod equivalence;
 mod floor;
 mod gate;
 mod ratio;
 mod raw;
+mod sha256;
 mod steal;
+mod workload;
 
+pub use catalog_data::{load_dataset, Dataset, LoadedDataset};
 pub use cgroup::{CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot};
 pub use equivalence::{
     audit_all, audit_query, EngineOutcome, EquivalenceReport, QueryAudit, QueryVerdict,
@@ -28,7 +32,9 @@ pub use ratio::{
     MATERIALITY_RATIO,
 };
 pub use raw::{read_jsonl, write_jsonl, RawError, RawRecord, RAW_SCHEMA_VERSION};
+pub use sha256::sha256_hex;
 pub use steal::{
     parse_proc_stat, read_proc_stat, should_exclude_rep, steal_percent, CpuTimes, StealError,
     STEAL_EXCLUSION_THRESHOLD_PCT,
 };
+pub use workload::{load_workload, write_workload, AdmissionClass, FrozenQuery};

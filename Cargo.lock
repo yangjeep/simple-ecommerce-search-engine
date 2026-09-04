@@ -680,8 +680,12 @@ name = "issue61-eval"
 version = "0.1.0"
 dependencies = [
  "bench-harness",
+ "commerce-core",
+ "comparator-eval",
+ "phase6a-eval",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]
