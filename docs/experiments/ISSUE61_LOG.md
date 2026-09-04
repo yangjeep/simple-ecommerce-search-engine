@@ -83,6 +83,79 @@ that no longer exists on this host.
 Version continuity is deliberate: keeping Solr at 9.10.1 means E1 changes the
 measurement method without also changing the comparator identity.
 
+## Step 3 — Solr provisioning, and confirmation that cgroup attribution works
+
+`bash scripts/issue61/provision_solr.sh wands`:
+
+```
+==> verifying solr:9.10.1 digest
+  digest OK: sha256:1f055b0260d3efb177b12d6a46e9ef510fb4d2616473a91f8f4d099384aa176a
+submitted 42994 docs in 15.7s, committing...
+commit took 4.4s
+total index build time: 20.1s
+numFound: 42994
+==> forceMerge(1)
+==> numFound=42994 (expected 42994)
+==> index_bytes=25714386
+PROVISION_OK core=i61_wands docs=42994 index_bytes=25714386
+```
+
+Corpus parity holds (42,994 = 42,994), so the Solr side is answering over the
+same catalog the native side will.
+
+### Scenario S6 — live smoke test
+
+`bash scripts/issue61/smoke.sh` — **PASS (exit 0)**:
+
+```
+==> [1/6] container i61-solr is running                      ok: pid=918946
+==> [2/6] cgroup v2 path resolves
+  ok: /sys/fs/cgroup/system.slice/docker-3e8bbff6f27d9e63e6a1eaf951a7e9b442414519f3771b8532ece5e3f09a0d80.scope
+==> [3/6] frozen limits applied
+  ok: cpu.max=300000 100000 (= 3 CPUs)
+  ok: memory.max=6442450944 (6g)
+  ok: cpuset=0-2
+==> [4/6] swap disabled for the container                    ok: memory.swap.max=0
+==> [5/6] a real query returns results                       ok: numFound=42994
+==> [6/6] cgroup CPU accounting moves under load
+  cpu_delta_usec=5071982 (200 queries)                       ok: cpu_delta_usec>0
+  cpu_usec_per_query=25359
+  memory.current=2497318912 memory.peak=2527125504
+SMOKE_OK
+```
+
+This is the first direct evidence that the campaign's central measurement
+mechanism works on this host. Four things are now established rather than
+assumed:
+
+1. **The cgroup path resolves from `/proc/<pid>/cgroup`**, not from a guessed
+   template. Docker here uses the `systemd` cgroup driver, so the container's
+   cgroup is `/system.slice/docker-<id>.scope` — a path a `cgroupfs`-driver
+   assumption would have missed entirely.
+2. **The frozen limits are actually applied.** `cpu.max = 300000 100000` is
+   exactly 3.0 CPUs and `cpuset.cpus.effective = 0-2`; a silently-ignored
+   Docker flag would have meant measuring an unconstrained engine.
+3. **`memory.swap.max = 0`.** The container genuinely cannot swap, despite the
+   host having 4 GiB of swap enabled. Without this every `serving_rss_bytes`
+   number — the metric the campaign's >=25% RSS bar depends on — would have
+   been silently rescued by swap under pressure.
+4. **`memory.peak` exists on this kernel**, so peak (not just instantaneous)
+   memory is available without extra instrumentation.
+
+Two observations recorded now, before they can be rationalised later:
+
+- **25,359 µs CPU/query is not a result.** These were the first 200 queries
+  after provisioning, with the JVM entirely unwarmed. It is recorded only as
+  evidence that the counter moves, and as direct justification for the warm-up
+  protocol in §9.1. It must never be cited as a Solr cost.
+- **`memory.current` (2.49 GB) exceeds the 2 GiB Java heap.** In cgroup v2 the
+  page cache backing Lucene's `MMapDirectory` is charged to the container's
+  memory. This is a *feature* for E1's purpose, not a distortion: it means
+  `serving_rss_bytes` measures the total memory the container actually needs,
+  which is the fair basis for comparison against a heap-resident Rust index.
+  Flagged for the Oracle protocol review, because it also means a "cold page
+  cache" regime is doubly unavailable — see §9.1's disclosure.
+
 ---
 
 ## Open items
