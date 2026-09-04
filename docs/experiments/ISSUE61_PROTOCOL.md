@@ -639,3 +639,153 @@ latency is not CPU time and does not imply sustainable single-core throughput
 for a multithreaded engine. Throughput per core, where needed, is measured
 throughput divided by measured CPU.
 
+---
+
+# 16. Revision 2.1 — operational constants, frozen before measurement
+
+**Status: additive to Revision 2. Written and committed before any measured
+artifact exists.**
+
+Revision 2 fixed the *method* but left seven operational quantities
+unspecified. An unspecified constant is a degree of freedom, and a degree of
+freedom that survives into the measurement phase is a place where a result can
+be tuned after the fact without anyone being able to prove it. This section
+closes them. Every value below is frozen; changing one after data exists
+requires a numbered Revision 3 with the original preserved.
+
+## 16.1 Block structure
+
+| Constant | Value |
+|---|---|
+| Blocks per gated cell | **30** |
+| Warm-up passes per engine session | **3** |
+| Measured passes per engine session | **2** |
+| Engine order within a block | randomized per block, seed **61** |
+| Engine sessions | restarted every block; **never co-resident** |
+
+A *block* is two adjacent single-engine sessions (boot → 3 warm-up passes → 2
+measured passes → cgroup/memory snapshots → teardown) in randomized order. The
+block, not the pass, is the unit of analysis.
+
+Two measured passes give within-block averaging. One WANDS pass costs on the
+order of 5–15 s of CPU per engine, which is ≥10⁶× cgroup's 1 µs accounting
+granularity and far above the timer floor, so §9.4's batching requirement is
+satisfied without additional batching. Per-query client latencies are recorded
+individually — **p50 is never derived by dividing a batch time by N.**
+
+## 16.2 Calibration arm
+
+| Constant | Value |
+|---|---|
+| Injected effect | **5 measured passes vs 4**, true CPU ratio **1.25** |
+| Measured quantity | **block-total container CPU** (`Δ cpu.stat usage_usec`) |
+| Engines calibrated | **both** native and Solr |
+| Dataset | WANDS |
+| Blocks | 30 per engine |
+| Pass condition | 95% Student-t CI on the log-ratio **contains 1.25 AND excludes 1.0** |
+
+Two decisions here are load-bearing.
+
+**The calibration metric is block-total CPU, not per-query CPU.** Running five
+passes instead of four multiplies the *total* work in the measured interval by
+1.25, but leaves *per-query* cost at approximately 1.0. Calibrating a per-query
+metric against an expected ratio of 1.25 would be a category error and would
+fail for the wrong reason.
+
+**Both engines are calibrated, not just native.** Calibrating only the quiet
+single-threaded Rust binary and then asserting the instrument is sound would be
+exactly the shortcut an adversarial reviewer should attack: the JVM, with JIT
+and GC, is the noisy case the instrument actually has to survive. The extra
+machine time is the price of the claim.
+
+No additional point-estimate tolerance is defined. The interval rule above *is*
+the test; inventing a supplementary tolerance after seeing the observed ratio
+would be threshold-tampering.
+
+**Disclosed limitation:** p50 latency has no injectable known effect under this
+design — adding passes does not change per-query latency. Latency credibility
+therefore rests on three other checks rather than on calibration: the shared
+HTTP boundary (R2.1), the measured timer floor (§6.4), and the
+cgroup-vs-`getrusage` agreement check (≤2%, §13). This is stated here so the
+decision record cannot later imply latency was calibrated when it was not.
+
+## 16.3 Candidate-set digest
+
+```
+digest = SHA-256( join(sort(unique(ids)), "\n") )   # UTF-8, no trailing newline
+```
+
+Compared together with `numFound`. A digest match with a count mismatch, or
+vice versa, is a failure. On mismatch both directional set differences are
+emitted.
+
+Retrieved **outside the timed path**, in a separate audit stage that runs
+before any measured block, so retrieval cost cannot contaminate measurement by
+construction. Solr uses `cursorMark` pagination (`sort=id asc`, `fl=id`,
+`rows=5000`) with the terminal invariant `collected.len() == numFound`, else a
+hard error. Native uses its full candidate set directly.
+
+Scope: the structural WANDS queries, every hybrid query's structural prefilter
+audited independently of ranking, and the same for ESCI. Free-text disjunction
+sets are **not** audited — unbounded and not required by R2.3.
+
+## 16.4 Steal-time pre-screen (replaces Revision 1's post-run exclusion)
+
+| Constant | Value |
+|---|---|
+| Probe | 5 s, measured on the engine's assigned CPUs (`cpuset 0-2`), not the aggregate line |
+| Reject-block threshold | steal > **1.0%** |
+| Action on reject | rerun the **whole block**; log the measured steal % |
+| "Excessive" rejection | > **20%** of scheduled blocks ⇒ `FIX MEASUREMENT` (environment) |
+
+Every block that *runs* enters the primary analysis. Screening happens before a
+block, never after it — that is the difference between controlling conditions
+and deleting inconvenient data.
+
+## 16.5 Memory sampling
+
+`memory.current` sampled every **500 ms** during measured passes. The
+**per-block median** is the gated statistic; the per-block max is reported
+alongside. Lifetime `memory.peak` is recorded but is **never** used as serving
+memory, because it is cumulative since cgroup creation and includes indexing,
+force-merge and startup.
+
+## 16.6 Enumerated cells
+
+**Gated** (warm regime only): `cpu_us_per_query` and `latency_p50_us` per
+engine × dataset; `cgroup_memory_footprint_bytes` at the footprint bound; index
+bytes as an exact artifact **per engine** with no cross-engine claim.
+
+**Descriptive, never gated:** the cold regime (n=5 per engine × dataset), cold
+build time, p95/p99, Solr cache hit/miss counters, the no-op transport probe.
+
+## 16.7 Standing clauses restated
+
+- Revision 1 §10's **REFINE** clause remains operative under Revision 2: if
+  equivalence passes and exactly one dataset's cells pass, E1's scope freezes to
+  the passing dataset and the other is named as explicit pre-#62 work. REFINE is
+  an *outcome*, not a pre-hoc option — neither dataset may be dropped before
+  data exists.
+- ESCI-electronics **remains a measured dataset**. Its known shape (no
+  product_type, no category, no price, flat products) is disclosed, and E1 makes
+  no same-variant claim on it. A corpus with weak structural signal is still a
+  valid *stability* corpus, and E1 gates stability, not effect size.
+- Seed **61** everywhere a seed is required.
+
+## 16.8 Stop rule if calibration fails
+
+1. Root-cause first. If a concrete instrument defect is found and fixed, the
+   **entire** measured campaign — calibration and blocks — reruns from scratch.
+   Superseded data is preserved, never overwritten.
+2. At most **two** such fix-and-rerun cycles.
+3. After two failed cycles, or if no defect can be identified, the verdict is
+   `FIX MEASUREMENT`, and **the pull request still merges.**
+
+The third point is deliberate. Issue #61's own gate text makes
+`FIX MEASUREMENT` a legitimate terminal outcome, and the deliverables — the
+harness, the protocol, the equivalence audit, the raw negative evidence — are
+exactly the "negative results are first-class outputs" case in `CLAUDE.md`.
+What a failed calibration blocks is **#62**, not the merge. The decision record
+then names the enumerated defect as explicit pre-#62 work.
+
+

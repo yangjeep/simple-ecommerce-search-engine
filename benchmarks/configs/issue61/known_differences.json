@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "frozen_at": "2026-09-04",
+  "protocol_section": "ISSUE61_PROTOCOL.md R2.3 / 16.3",
+  "entries": [],
+  "note": "Deliberately empty. Revision 1 allowed a known-difference list to be 'enumerated per query_id before the gate is evaluated', which was a post-hoc loophole: it permitted observing mismatches and then adding them to the allowed list. Revision 2 requires this manifest to be frozen and checksummed before execution. An empty list means no equivalence exception is pre-authorized for Issue #61 -- any native-vs-engine candidate-set mismatch is a finding to be root-caused, not an entry to be added here after the fact. Adding an entry once any measured artifact exists requires a numbered protocol revision."
+}
