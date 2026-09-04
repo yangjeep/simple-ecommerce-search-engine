@@ -904,3 +904,22 @@ E1's forced-AND profile and its CPU values are calibration artifacts only.
 They are forbidden as effect-size baselines for Issues #63 or #65. Those
 issues must freeze their own production comparator settings and correctness/
 relevance non-inferiority gates before measurement.
+
+## 16.12 Audit-order and ambiguity-only corrections
+
+The first workload regeneration under §16.11 happened before any timed data
+and exposed two remaining contract defects.
+
+First, `sort=score desc,id asc` was inconsistent with §16.3's full-set
+cursor audit and needlessly retained scorer work in an experiment whose only
+semantic gate is candidate-set equality. E1 therefore freezes `sort=id asc`.
+This correction was committed before workload regeneration completed.
+
+Second, WANDS query IDs `7` (`driftwood mirror`) and `160` (`marble`) compile
+to explicit ambiguity with no hard constraint and no residual lexical term.
+The current native endpoint consequently executes its unconstrained candidate
+set. For E1 parity, any non-empty source query with no executable hard or
+residual term freezes Solr `q=*:*` with an empty `fq` list. A truly empty or
+whitespace-only source query remains a hard generation error. The complete-set
+audit must return the full corpus on both arms for these two records; otherwise
+the equivalence gate fails.

@@ -603,6 +603,26 @@ current harness therefore cannot produce valid E1 measurements. No performance
 result exists, and none will be collected until a second independent review
 returns no blocking finding.
 
+### Step 9 — Revision 2.1 workload regeneration
+
+The first regeneration under §16.11 failed loudly on WANDS query IDs `7` and
+`160` rather than dropping them. Both compile to explicit ambiguity with no
+hard or residual term; the native HTTP endpoint therefore returns the
+unconstrained candidate set. Revision 2.1 §16.12 preserves the finding and
+freezes equivalent Solr `*:*` requests for these non-empty ambiguity-only
+queries. Empty source text still fails in a RED→GREEN regression test.
+
+Both workload artifacts were then generated twice from the pinned local public
+datasets and compared byte-for-byte. Results:
+
+| Dataset | Routing histogram | SHA-256 |
+|---|---|---|
+| WANDS | FastPath 7 / Hybrid 14 / Punt 459 (`ANCHOR_OK`) | `e137300be36c5763b0d0fc882b9db15a00de788f3e2e914c0bc7fce1628fd128` |
+| ESCI-electronics | FastPath 1 / Hybrid 58 / Punt 541 | `4ec8c77a8bffb93bc620799e4548a92ea6a33213d5067050689d62af48398939` |
+
+The artifacts now visibly carry native parameters and all sixteen explicit
+Solr §16.11 parameters. No timed block was run.
+
 ---
 
 ## Open items
