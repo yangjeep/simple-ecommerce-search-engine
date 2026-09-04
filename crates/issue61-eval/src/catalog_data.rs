@@ -16,6 +16,13 @@ pub enum Dataset {
 }
 
 impl Dataset {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Wands => "wands",
+            Self::EsciElectronics => "esci_electronics",
+        }
+    }
+
     pub fn parse(value: &str) -> Result<Self, String> {
         match value {
             "wands" => Ok(Self::Wands),
