@@ -649,6 +649,33 @@ The gate runs after indexing, companion-field population, force-merge and
 corpus parity, verifies the frozen snapshot checksum manifest, and completes
 before `PROVISION_OK`. No timed block was run.
 
+### Step 11 — first complete-set audit: semantic failure
+
+The new untimed audit runner retrieved every native candidate directly and
+every Solr candidate via 5,000-row `cursorMark` pages. It preserved every
+per-query count, digest and directional difference at
+`artifacts/issue61/i61_esci_electronics_equivalence_rev2_1.jsonl` (600 rows,
+SHA-256 `31a5218ea81700e3649c039a529175709d69f47b9f623c07ae425d58970c229f`).
+
+ESCI-electronics failed: 542/600 queries matched, 58 mismatched, and neither
+engine produced a transport/query/parse failure. All 58 mismatches were Punt
+queries; FastPath was 1/1 and Hybrid was 58/58. Solr returned fewer candidates
+on 34 mismatches and more on 24. Directional differences totalled 66 IDs found
+only by native and 397 found only by Solr.
+
+The mismatch examples localize the defect to analyzer semantics rather than
+structured-filter translation. Native returned zero while Solr split and
+matched punctuation-bearing query tokens such as `usb-c`, `mini-fridge` and
+`displayport-to-displayport`. Conversely, native indexed punctuation/HTML
+boundaries such as `monitor's` and `required.Monitor` as separate alphanumeric
+tokens where Solr's StandardTokenizer retained a different token boundary.
+
+A transient, untimed Solr analysis-API probe confirmed the proposed mechanism:
+PatternTokenizer with `[^\\p{L}\\p{N}]+` plus LowerCase reproduced native's
+catalog-index tokens, while WhitespaceTokenizer plus LowerCase preserved
+native's residual-query tokens. The probe changed no frozen artifact and the
+core must be reprovisioned before another audit. No timed block was run.
+
 ---
 
 ## Open items

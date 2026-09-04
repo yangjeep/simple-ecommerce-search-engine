@@ -944,3 +944,52 @@ The four normalized snapshots and their SHA-256 values are frozen in
 `benchmarks/configs/issue61/solr_frozen.sha256`; provisioning verifies that
 manifest before reading the snapshots. Any later change requires a numbered
 protocol correction before another provision or measurement.
+
+# Revision 3 — native-compatible lexical analyzers
+
+**Frozen 2026-09-04 after the first complete-set audit failed and before any
+corrected audit or timed measurement.** Revision 2.1 and its failed artifact
+remain preserved. All Revision 2 clauses remain binding except where this
+revision explicitly replaces the lexical field analyzer.
+
+## 17.1 Trigger and competing explanations
+
+The first ESCI-electronics complete-set audit matched 542/600 queries and
+failed all remaining 58. Every mismatch was Punt; every structural/hybrid
+query matched. The primary hypothesis is therefore that Solr `text_general`
+does not reproduce native's asymmetric catalog/query tokenization.
+
+Competing explanations remain live until the corrected audit passes: omitted
+lexical fields or content during indexing, query-parser escape behavior,
+Unicode classification differences, and source-ID mapping defects. Any
+remaining mismatch is evidence for one of these alternatives and remains
+`FIX MEASUREMENT`; it cannot be added to the known-difference manifest.
+
+## 17.2 Frozen analyzer treatment
+
+The WANDS `title`/`description` and ESCI-electronics `title`/`description`/
+`bullet_point` fields use a new `native_lexical` Solr field type:
+
+- index analyzer: PatternTokenizerFactory with pattern
+  `[^\\p{L}\\p{N}]+`, then LowerCaseFilterFactory;
+- query analyzer: WhitespaceTokenizerFactory, then LowerCaseFilterFactory;
+- no stopword, synonym, stemming, delimiter, folding or n-gram filter.
+
+This mirrors the current native endpoint rather than improving it: catalog
+text is split on every non-alphanumeric character, while compiled residual
+query terms retain punctuation inside whitespace-delimited tokens. The frozen
+literal eDisMax escaping and every other §16.11 request parameter remain
+unchanged.
+
+Provisioning creates the field type, replaces only those named lexical fields,
+reindexes the complete corpus, force-merges, captures new dataset-specific
+schema/config snapshots and passes §16.13. The failed Revision 2.1 core is not
+reused.
+
+## 17.3 Corrected-audit gate
+
+The corrected audit reruns from scratch for all 480 WANDS and all 600
+ESCI-electronics queries. The preregistered pass condition is exact: every
+query must match both `numFound` and the §16.3 digest, with zero native or Solr
+failures. Any mismatch on either dataset blocks timing. No threshold is relaxed
+and no dataset, admission class or punctuation case may be excluded.
