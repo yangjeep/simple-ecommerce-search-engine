@@ -1,0 +1,412 @@
+{
+  "codecFactory": {
+    "class": "solr.SchemaCodecFactory"
+  },
+  "directoryFactory": {
+    "class": "solr.NRTCachingDirectoryFactory",
+    "name": "DirectoryFactory"
+  },
+  "indexConfig": {
+    "infoStreamEnabled": false,
+    "lockType": "native",
+    "maxBufferedDocs": -1,
+    "maxCommitMergeWaitTime": -1,
+    "metrics": {},
+    "ramBufferSizeMB": 100.0,
+    "ramPerThreadHardLimitMB": -1,
+    "useCompoundFile": false,
+    "writeLockTimeout": -1
+  },
+  "initParams": [
+    {
+      "defaults": {
+        "df": "_text_"
+      },
+      "path": "/update/**,/query,/select,/spell"
+    }
+  ],
+  "listener": [
+    {
+      "class": "solr.QuerySenderListener",
+      "event": "newSearcher",
+      "queries": []
+    },
+    {
+      "class": "solr.QuerySenderListener",
+      "event": "firstSearcher",
+      "queries": []
+    }
+  ],
+  "luceneMatchVersion": "9.12.0",
+  "query": {
+    "documentCache": {
+      "autowarmCount": "0",
+      "initialSize": "4096",
+      "name": "documentCache",
+      "size": "4096"
+    },
+    "enableLazyFieldLoading": true,
+    "fieldValueCache": {
+      "initialSize": "10",
+      "name": "fieldValueCache",
+      "size": "10000"
+    },
+    "filterCache": {
+      "autowarmCount": "0",
+      "initialSize": "4096",
+      "name": "filterCache",
+      "size": "4096"
+    },
+    "maxBooleanClauses": 1024,
+    "minPrefixQueryTermLength": -1,
+    "queryResultCache": {
+      "autowarmCount": "0",
+      "initialSize": "0",
+      "name": "queryResultCache",
+      "size": "0"
+    },
+    "queryResultMaxDocsCached": 200,
+    "queryResultWindowSize": 20,
+    "useFilterForSortedQuery": false
+  },
+  "requestDispatcher": {
+    "handleSelect": false,
+    "httpCaching": {
+      "cacheControl": null,
+      "etagSeed": "Solr",
+      "lastModFrom": "opentime",
+      "never304": true
+    },
+    "requestParsers": {
+      "addHttpRequestToContext": false,
+      "formUploadLimitKB": 2147483647,
+      "multipartUploadLimitKB": 2147483647
+    }
+  },
+  "requestHandler": {
+    "/admin/file": {
+      "class": "solr.ShowFileRequestHandler",
+      "name": "/admin/file",
+      "useParams": "_ADMIN_FILE"
+    },
+    "/admin/luke": {
+      "class": "solr.LukeRequestHandler",
+      "name": "/admin/luke",
+      "useParams": "_ADMIN_LUKE"
+    },
+    "/admin/mbeans": {
+      "class": "solr.SolrInfoMBeanHandler",
+      "name": "/admin/mbeans",
+      "useParams": "_ADMIN_MBEANS"
+    },
+    "/admin/ping": {
+      "class": "solr.PingRequestHandler",
+      "invariants": {
+        "echoParams": "all",
+        "q": "{!lucene}*:*"
+      },
+      "name": "/admin/ping",
+      "useParams": "_ADMIN_PING"
+    },
+    "/admin/plugins": {
+      "class": "solr.PluginInfoHandler",
+      "name": "/admin/plugins"
+    },
+    "/admin/segments": {
+      "class": "solr.SegmentsInfoRequestHandler",
+      "name": "/admin/segments",
+      "useParams": "_ADMIN_SEGMENTS"
+    },
+    "/admin/system": {
+      "class": "solr.SystemInfoHandler",
+      "name": "/admin/system",
+      "useParams": "_ADMIN_SYSTEM"
+    },
+    "/analysis/document": {
+      "class": "solr.DocumentAnalysisRequestHandler",
+      "name": "/analysis/document",
+      "startup": "lazy",
+      "useParams": "_ANALYSIS_DOCUMENT"
+    },
+    "/analysis/field": {
+      "class": "solr.FieldAnalysisRequestHandler",
+      "name": "/analysis/field",
+      "startup": "lazy",
+      "useParams": "_ANALYSIS_FIELD"
+    },
+    "/config": {
+      "class": "solr.SolrConfigHandler",
+      "name": "/config",
+      "useParams": "_CONFIG"
+    },
+    "/debug/dump": {
+      "class": "solr.DumpRequestHandler",
+      "defaults": {
+        "echoHandler": true,
+        "echoParams": "explicit"
+      },
+      "name": "/debug/dump",
+      "useParams": "_DEBUG_DUMP"
+    },
+    "/export": {
+      "class": "solr.ExportHandler",
+      "components": [
+        "query"
+      ],
+      "invariants": {
+        "distrib": false,
+        "rq": "{!xport}"
+      },
+      "name": "/export",
+      "useParams": "_EXPORT"
+    },
+    "/get": {
+      "class": "solr.RealTimeGetHandler",
+      "defaults": {
+        "omitHeader": true
+      },
+      "name": "/get",
+      "useParams": "_GET"
+    },
+    "/graph": {
+      "class": "solr.GraphHandler",
+      "invariants": {
+        "distrib": false,
+        "wt": "graphml"
+      },
+      "name": "/graph",
+      "useParams": "_ADMIN_GRAPH"
+    },
+    "/query": {
+      "class": "solr.SearchHandler",
+      "defaults": {
+        "echoParams": "explicit",
+        "indent": "true",
+        "wt": "json"
+      },
+      "name": "/query"
+    },
+    "/replication": {
+      "class": "solr.ReplicationHandler",
+      "name": "/replication",
+      "useParams": "_REPLICATION"
+    },
+    "/schema": {
+      "class": "solr.SchemaHandler",
+      "name": "/schema",
+      "useParams": "_SCHEMA"
+    },
+    "/select": {
+      "class": "solr.SearchHandler",
+      "defaults": {
+        "echoParams": "explicit",
+        "rows": 10
+      },
+      "name": "/select"
+    },
+    "/spell": {
+      "class": "solr.SearchHandler",
+      "defaults": {
+        "spellcheck": "on",
+        "spellcheck.alternativeTermCount": "5",
+        "spellcheck.collate": "true",
+        "spellcheck.collateExtendedResults": "true",
+        "spellcheck.count": "10",
+        "spellcheck.dictionary": "default",
+        "spellcheck.extendedResults": "true",
+        "spellcheck.maxCollationTries": "10",
+        "spellcheck.maxCollations": "5",
+        "spellcheck.maxResultsForSuggest": "5"
+      },
+      "last-components": [
+        "spellcheck"
+      ],
+      "name": "/spell",
+      "startup": "lazy"
+    },
+    "/sql": {
+      "class": "solr.SQLHandler",
+      "invariants": {
+        "distrib": false
+      },
+      "name": "/sql",
+      "startup": "lazy",
+      "useParams": "_SQL"
+    },
+    "/stream": {
+      "class": "solr.StreamHandler",
+      "invariants": {
+        "distrib": false
+      },
+      "name": "/stream",
+      "useParams": "_STREAM"
+    },
+    "/tasks/cancel": {
+      "class": "solr.QueryCancellationHandler",
+      "components": [
+        "querycancellation"
+      ],
+      "name": "/tasks/cancel",
+      "useParams": "_TASK_CANCELLATION"
+    },
+    "/tasks/list": {
+      "class": "solr.ActiveTasksListHandler",
+      "components": [
+        "activetaskslist"
+      ],
+      "name": "/tasks/list",
+      "useParams": "_LIST_TASKS"
+    },
+    "/terms": {
+      "class": "solr.SearchHandler",
+      "components": [
+        "terms"
+      ],
+      "defaults": {
+        "terms": true
+      },
+      "name": "/terms",
+      "useParams": "_TERMS"
+    },
+    "/update": {
+      "class": "solr.UpdateRequestHandler",
+      "name": "/update",
+      "useParams": "_UPDATE"
+    },
+    "/update/cbor": {
+      "class": "solr.UpdateRequestHandler",
+      "invariants": {
+        "update.contentType": "application/cbor"
+      },
+      "name": "/update/cbor",
+      "useParams": "_UPDATE_CBOR"
+    },
+    "/update/csv": {
+      "class": "solr.UpdateRequestHandler",
+      "invariants": {
+        "update.contentType": "application/csv"
+      },
+      "name": "/update/csv",
+      "useParams": "_UPDATE_CSV"
+    },
+    "/update/json": {
+      "class": "solr.UpdateRequestHandler",
+      "invariants": {
+        "update.contentType": "application/json"
+      },
+      "name": "/update/json",
+      "useParams": "_UPDATE_JSON"
+    },
+    "/update/json/docs": {
+      "class": "solr.UpdateRequestHandler",
+      "invariants": {
+        "json.command": "false",
+        "update.contentType": "application/json"
+      },
+      "name": "/update/json/docs",
+      "useParams": "_UPDATE_JSON_DOCS"
+    },
+    "update": {
+      "class": "solr.V2UpdateRequestHandler",
+      "name": "update",
+      "useParams": "_UPDATE_JSON_DOCS"
+    }
+  },
+  "searchComponent": {
+    "spellcheck": {
+      "class": "solr.SpellCheckComponent",
+      "name": "spellcheck",
+      "queryAnalyzerFieldType": "text_general",
+      "spellchecker": {
+        "accuracy": 0.5,
+        "classname": "solr.DirectSolrSpellChecker",
+        "distanceMeasure": "internal",
+        "field": "_text_",
+        "maxEdits": 2,
+        "maxInspections": 5,
+        "maxQueryFrequency": 0.01,
+        "minPrefix": 1,
+        "minQueryLength": 4,
+        "name": "default"
+      }
+    }
+  },
+  "updateHandler": {
+    "autoCommit": {
+      "maxDocs": -1,
+      "maxTime": 15000,
+      "openSearcher": false
+    },
+    "autoSoftCommit": {
+      "maxDocs": -1,
+      "maxTime": 3000
+    },
+    "commitPollInterval": null,
+    "commitWithin": {
+      "softCommit": true
+    }
+  },
+  "updateHandlerupdateLog": {
+    "dir": ""
+  },
+  "updateProcessor": {
+    "add-schema-fields": {
+      "class": "solr.AddSchemaFieldsUpdateProcessorFactory",
+      "name": "add-schema-fields"
+    },
+    "field-name-mutating": {
+      "class": "solr.FieldNameMutatingUpdateProcessorFactory",
+      "name": "field-name-mutating",
+      "pattern": "[^\\w-\\.]",
+      "replacement": "_"
+    },
+    "max-fields": {
+      "class": "solr.NumFieldLimitingUpdateRequestProcessorFactory",
+      "maxFields": 1000,
+      "name": "max-fields",
+      "warnOnly": true
+    },
+    "parse-boolean": {
+      "class": "solr.ParseBooleanFieldUpdateProcessorFactory",
+      "name": "parse-boolean"
+    },
+    "parse-date": {
+      "class": "solr.ParseDateFieldUpdateProcessorFactory",
+      "name": "parse-date"
+    },
+    "parse-double": {
+      "class": "solr.ParseDoubleFieldUpdateProcessorFactory",
+      "name": "parse-double"
+    },
+    "parse-long": {
+      "class": "solr.ParseLongFieldUpdateProcessorFactory",
+      "name": "parse-long"
+    },
+    "remove-blank": {
+      "class": "solr.RemoveBlankFieldUpdateProcessorFactory",
+      "name": "remove-blank"
+    },
+    "uuid": {
+      "class": "solr.UUIDUpdateProcessorFactory",
+      "name": "uuid"
+    }
+  },
+  "updateRequestProcessorChain": [
+    {
+      "": [
+        {
+          "class": "solr.LogUpdateProcessorFactory"
+        },
+        {
+          "class": "solr.DistributedUpdateProcessorFactory"
+        },
+        {
+          "class": "solr.RunUpdateProcessorFactory"
+        }
+      ],
+      "default": "false",
+      "name": "add-unknown-fields-to-the-schema",
+      "processor": "uuid,remove-blank,field-name-mutating,max-fields,parse-boolean,parse-long,parse-double,parse-date,add-schema-fields"
+    }
+  ]
+}
