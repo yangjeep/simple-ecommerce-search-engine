@@ -923,3 +923,24 @@ residual term freezes Solr `q=*:*` with an empty `fq` list. A truly empty or
 whitespace-only source query remains a hard generation error. The complete-set
 audit must return the full corpus on both arms for these two records; otherwise
 the equivalence gate fails.
+
+## 16.13 Dataset-specific Solr contract gate
+
+Before any correctness audit or timed request, provisioning must validate the
+live core against a dataset-specific frozen schema and config snapshot. WANDS
+and ESCI-electronics have different lexical and structured fields, so one
+generic snapshot cannot validate both.
+
+Validation is fail-closed and requires exact semantic JSON equality after one
+documented normalization: Solr's top-level `config.znodeVersion` is managed
+metadata that changes when the config API writes a new version, so it is
+omitted from frozen snapshots and removed from the live config before
+comparison. No other schema or config key is ignored. The gate separately
+asserts the E1 unique key, lexical fields, lowercase exact-filter analyzer,
+copy fields, and cache settings so a defective frozen snapshot cannot bless a
+straw baseline.
+
+The four normalized snapshots and their SHA-256 values are frozen in
+`benchmarks/configs/issue61/solr_frozen.sha256`; provisioning verifies that
+manifest before reading the snapshots. Any later change requires a numbered
+protocol correction before another provision or measurement.

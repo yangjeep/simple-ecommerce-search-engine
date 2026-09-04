@@ -623,6 +623,32 @@ datasets and compared byte-for-byte. Results:
 The artifacts now visibly carry native parameters and all sixteen explicit
 Solr §16.11 parameters. No timed block was run.
 
+### Step 10 — dataset-specific Solr contract gate
+
+The former generic Solr snapshots were WANDS-only and could not validate the
+materially different ESCI-electronics schema. They were replaced before timing
+with normalized per-dataset schema/config snapshots and a Rust gate that
+requires exact semantic JSON equality plus explicit E1 field, analyzer,
+copy-field, and cache invariants.
+
+The first full WANDS provisioning attempt correctly failed because the live
+`config.znodeVersion` differed from the captured value. This is Solr-managed
+config version metadata, not serving behavior. Revision 2.1 §16.13 now removes
+only that top-level key from live comparison and forbids it in frozen
+snapshots. A RED→GREEN regression test locks the exception; every other key
+remains exact.
+
+Both complete provisioning paths then passed the contract gate:
+
+| Dataset | Corpus parity | Contract result |
+|---|---:|---|
+| WANDS | 42,994 | `SOLR_CONTRACT_OK dataset=wands core=i61_wands` |
+| ESCI-electronics | 2,075 | `SOLR_CONTRACT_OK dataset=esci_electronics core=i61_esci_electronics` |
+
+The gate runs after indexing, companion-field population, force-merge and
+corpus parity, verifies the frozen snapshot checksum manifest, and completes
+before `PROVISION_OK`. No timed block was run.
+
 ---
 
 ## Open items
