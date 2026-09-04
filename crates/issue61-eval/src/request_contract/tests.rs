@@ -110,6 +110,16 @@ fn empty_residual_uses_match_all_only_with_a_structural_filter() {
 }
 
 #[test]
+fn nonempty_query_without_executable_terms_uses_match_all() {
+    let requests =
+        freeze_engine_requests(freeze("q-ambiguous", "marble", &CommerceQuery::default()))
+            .expect("native executes the unconstrained candidate set");
+
+    assert_eq!(requests.solr.q, "*:*");
+    assert!(requests.solr.fq.is_empty());
+}
+
+#[test]
 fn query_without_residual_terms_or_structural_filters_fails_the_freeze() {
     let error = freeze_engine_requests(freeze("q-empty", "", &CommerceQuery::default()))
         .expect_err("empty semantic query must fail");

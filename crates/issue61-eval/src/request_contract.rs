@@ -32,11 +32,8 @@ pub fn freeze_engine_requests(input: FreezeRequest<'_>) -> Result<FrozenEngineRe
             unresolvable.join("; ")
         ));
     }
-    if input.compiled.residual_lexical.is_empty() && fq.is_empty() {
-        return Err(format!(
-            "query {}: neither residual terms nor structural filters",
-            input.query_id
-        ));
+    if input.text.trim().is_empty() {
+        return Err(format!("query {}: source text is empty", input.query_id));
     }
 
     let solr_q = if input.compiled.residual_lexical.is_empty() {
