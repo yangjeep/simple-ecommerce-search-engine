@@ -216,7 +216,17 @@ if [[ "$NUM_FOUND" != "$EXPECTED_DOCS" ]]; then
   exit 5
 fi
 
-# --- 7. record what was actually provisioned --------------------------------
+# --- 7. exact schema/config contract gate ------------------------------------
+echo "==> validating live Solr schema/config contract"
+(
+  cd "$REPO_ROOT/benchmarks/configs/issue61"
+  sha256sum --check solr_frozen.sha256
+)
+cargo run --quiet --manifest-path "$REPO_ROOT/Cargo.toml" \
+  -p issue61-eval --bin i61_solr_contract -- \
+  "$DATASET" "$CORE_URL" "$REPO_ROOT/benchmarks/configs/issue61"
+
+# --- 8. record what was actually provisioned --------------------------------
 INDEX_BYTES="$(docker exec "$I61_SOLR_CONTAINER" \
   du -sb "/var/solr/data/$CORE/data/index" 2>/dev/null | cut -f1 || echo 0)"
 echo "==> index_bytes=$INDEX_BYTES"
