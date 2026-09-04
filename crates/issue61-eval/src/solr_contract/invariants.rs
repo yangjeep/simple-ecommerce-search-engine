@@ -30,7 +30,7 @@ pub(super) fn validate_schema_invariants(
             fields,
             ExpectedField {
                 name,
-                strings: &[("type", "text_general")],
+                strings: &[("type", "native_lexical")],
                 booleans: &[("indexed", true)],
             },
         )?;
@@ -45,6 +45,7 @@ pub(super) fn validate_schema_invariants(
             },
         )?;
     }
+    validate_native_lexical(schema)?;
     validate_string_lc(schema)?;
     let copy_fields = schema.get("copyFields").and_then(Value::as_array);
     for (source, dest) in dataset.copy_fields() {
@@ -63,6 +64,53 @@ pub(super) fn validate_schema_invariants(
         }
     }
     Ok(())
+}
+
+fn validate_native_lexical(schema: &Value) -> Result<(), ContractError> {
+    let root = schema
+        .get("fieldTypes")
+        .and_then(Value::as_array)
+        .and_then(|items| {
+            items
+                .iter()
+                .find(|item| item.get("name").and_then(Value::as_str) == Some("native_lexical"))
+        })
+        .ok_or_else(|| ContractError::Invariant {
+            path: "fieldType native_lexical".into(),
+            expected: "field type to exist".into(),
+            actual: "missing".into(),
+        })?;
+    for (pointer, expected, path) in [
+        ("/class", "solr.TextField", "native_lexical class"),
+        (
+            "/indexAnalyzer/tokenizer/class",
+            "solr.PatternTokenizerFactory",
+            "native_lexical indexAnalyzer.tokenizer.class",
+        ),
+        (
+            "/indexAnalyzer/tokenizer/pattern",
+            "[^\\p{L}\\p{N}]+",
+            "native_lexical indexAnalyzer.tokenizer.pattern",
+        ),
+        (
+            "/queryAnalyzer/tokenizer/class",
+            "solr.WhitespaceTokenizerFactory",
+            "native_lexical queryAnalyzer.tokenizer.class",
+        ),
+    ] {
+        require_value(root.pointer(pointer), &Value::String(expected.into()), path)?;
+    }
+    let lowercase = serde_json::json!([{"class": "solr.LowerCaseFilterFactory"}]);
+    require_value(
+        root.pointer("/indexAnalyzer/filters"),
+        &lowercase,
+        "native_lexical indexAnalyzer.filters",
+    )?;
+    require_value(
+        root.pointer("/queryAnalyzer/filters"),
+        &lowercase,
+        "native_lexical queryAnalyzer.filters",
+    )
 }
 
 fn require_field(

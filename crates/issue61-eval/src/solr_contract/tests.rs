@@ -27,7 +27,7 @@ fn schema(dataset: SolrDataset) -> Value {
     fields.extend(
         lexical
             .into_iter()
-            .map(|name| json!({"name": name, "type": "text_general", "indexed": true})),
+            .map(|name| json!({"name": name, "type": "native_lexical", "indexed": true})),
     );
     fields.extend(companions.into_iter().map(|name| {
         json!({
@@ -38,14 +38,31 @@ fn schema(dataset: SolrDataset) -> Value {
     json!({
         "uniqueKey": "id",
         "fields": fields,
-        "fieldTypes": [{
-            "name": "string_lc",
-            "class": "solr.TextField",
-            "analyzer": {
-                "tokenizer": {"class": "solr.KeywordTokenizerFactory"},
-                "filters": [{"class": "solr.LowerCaseFilterFactory"}]
+        "fieldTypes": [
+            {
+                "name": "string_lc",
+                "class": "solr.TextField",
+                "analyzer": {
+                    "tokenizer": {"class": "solr.KeywordTokenizerFactory"},
+                    "filters": [{"class": "solr.LowerCaseFilterFactory"}]
+                }
+            },
+            {
+                "name": "native_lexical",
+                "class": "solr.TextField",
+                "indexAnalyzer": {
+                    "tokenizer": {
+                        "class": "solr.PatternTokenizerFactory",
+                        "pattern": "[^\\p{L}\\p{N}]+"
+                    },
+                    "filters": [{"class": "solr.LowerCaseFilterFactory"}]
+                },
+                "queryAnalyzer": {
+                    "tokenizer": {"class": "solr.WhitespaceTokenizerFactory"},
+                    "filters": [{"class": "solr.LowerCaseFilterFactory"}]
+                }
             }
-        }],
+        ],
         "copyFields": copies
     })
 }
@@ -228,6 +245,11 @@ fn contract_when_schema_snapshot_breaks_e1_invariants_rejects_straw_baseline() {
             "/fieldTypes/0/analyzer/tokenizer/class",
             json!("solr.StandardTokenizerFactory"),
             "string_lc analyzer.tokenizer.class",
+        ),
+        (
+            "/fieldTypes/1/indexAnalyzer/tokenizer/pattern",
+            json!("\\W+"),
+            "native_lexical indexAnalyzer.tokenizer.pattern",
         ),
         (
             "/copyFields/0/dest",
