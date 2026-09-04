@@ -72,6 +72,25 @@ fn residual_edismax_text_escapes_backslash_and_every_lucene_metacharacter() {
 }
 
 #[test]
+fn solr_query_when_residual_contains_punctuation_and_phrase_uses_native_tokens() {
+    // Given
+    let compiled = CommerceQuery {
+        residual_lexical: vec![
+            "displayport-to-displayport".to_string(),
+            "tv wall mount".to_string(),
+        ],
+        ..CommerceQuery::default()
+    };
+
+    // When
+    let requests = freeze_engine_requests(freeze("q-tokens", "source text", &compiled))
+        .expect("valid lexical request");
+
+    // Then
+    assert_eq!(requests.solr.q, "displayport to displayport tv wall mount");
+}
+
+#[test]
 fn structural_constraints_remain_lowercase_companion_filters() {
     let compiled = CommerceQuery {
         constraints: vec![

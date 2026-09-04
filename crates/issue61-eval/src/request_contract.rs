@@ -1,3 +1,4 @@
+use crate::lexical_tokens::tokenize_residuals;
 use crate::{Dataset, NativeRequest, SolrRequest};
 use commerce_core::ir::CommerceQuery;
 use comparator_eval::translate::{
@@ -39,7 +40,7 @@ pub fn freeze_engine_requests(input: FreezeRequest<'_>) -> Result<FrozenEngineRe
     let solr_q = if input.compiled.residual_lexical.is_empty() {
         String::from("*:*")
     } else {
-        escape_edismax_literal(&input.compiled.residual_lexical.join(" "))
+        escape_edismax_literal(&tokenize_residuals(&input.compiled.residual_lexical).join(" "))
     };
     Ok(FrozenEngineRequests {
         native: NativeRequest {
