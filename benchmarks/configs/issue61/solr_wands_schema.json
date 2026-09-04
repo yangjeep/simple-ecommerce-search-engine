@@ -5,8 +5,24 @@
       "source": "category_leaf"
     },
     {
+      "dest": "color_lc",
+      "source": "color"
+    },
+    {
+      "dest": "material_lc",
+      "source": "material"
+    },
+    {
+      "dest": "primarymaterial_lc",
+      "source": "primarymaterial"
+    },
+    {
       "dest": "product_class_lc",
       "source": "product_class"
+    },
+    {
+      "dest": "style_lc",
+      "source": "style"
     },
     {
       "dest": "title_sort",
@@ -535,6 +551,28 @@
           "name": "keyword"
         }
       }
+    },
+    {
+      "analyzer": {
+        "charFilters": [
+          {
+            "class": "solr.PatternReplaceCharFilterFactory",
+            "pattern": "\\|.*$",
+            "replacement": ""
+          }
+        ],
+        "filters": [
+          {
+            "class": "solr.LowerCaseFilterFactory"
+          }
+        ],
+        "tokenizer": {
+          "class": "solr.KeywordTokenizerFactory"
+        }
+      },
+      "class": "solr.TextField",
+      "name": "first_pipe_segment_lc",
+      "omitNorms": true
     },
     {
       "class": "solr.StrField",
@@ -1993,6 +2031,13 @@
     },
     {
       "indexed": true,
+      "multiValued": false,
+      "name": "color_lc",
+      "stored": false,
+      "type": "string_lc"
+    },
+    {
+      "indexed": true,
       "name": "description",
       "stored": true,
       "type": "native_lexical"
@@ -2014,12 +2059,26 @@
       "type": "string"
     },
     {
+      "indexed": true,
+      "multiValued": false,
+      "name": "material_lc",
+      "stored": false,
+      "type": "string_lc"
+    },
+    {
       "docValues": true,
       "indexed": true,
       "multiValued": false,
       "name": "primarymaterial",
       "stored": true,
       "type": "string"
+    },
+    {
+      "indexed": true,
+      "multiValued": false,
+      "name": "primarymaterial_lc",
+      "stored": false,
+      "type": "string_lc"
     },
     {
       "docValues": true,
@@ -2034,7 +2093,7 @@
       "multiValued": false,
       "name": "product_class_lc",
       "stored": false,
-      "type": "string_lc"
+      "type": "first_pipe_segment_lc"
     },
     {
       "docValues": true,
@@ -2067,6 +2126,13 @@
       "name": "style",
       "stored": true,
       "type": "string"
+    },
+    {
+      "indexed": true,
+      "multiValued": false,
+      "name": "style_lc",
+      "stored": false,
+      "type": "string_lc"
     },
     {
       "indexed": true,

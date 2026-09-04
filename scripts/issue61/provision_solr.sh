@@ -42,7 +42,7 @@ case "$DATASET" in
     EXPECTED_DOCS="$I61_WANDS_EXPECTED_DOCS"
     INDEXER=("$REPO_ROOT/scripts/datasets/solr_index_wands.py" "__CORE_URL__" "" "$CATALOG")
     LEXICAL_FIELDS=(title description)
-    STRUCTURAL_FIELDS=(product_class category_leaf)
+    STRUCTURAL_FIELDS=(product_class category_leaf color style primarymaterial material)
     ;;
   esci_electronics)
     CORE="i61_esci_electronics"
@@ -216,9 +216,34 @@ curl -sf -X POST -H 'Content-Type: application/json' --data-binary '{
   }
 }' "$CORE_URL/schema" >/dev/null
 
+if [[ "$DATASET" == "wands" ]]; then
+  curl -sf -X POST -H 'Content-Type: application/json' --data-binary '{
+    "add-field-type": {
+      "name": "first_pipe_segment_lc",
+      "class": "solr.TextField",
+      "omitNorms": true,
+      "analyzer": {
+        "charFilters": [
+          {
+            "class": "solr.PatternReplaceCharFilterFactory",
+            "pattern": "\\|.*$",
+            "replacement": ""
+          }
+        ],
+        "tokenizer": {"class": "solr.KeywordTokenizerFactory"},
+        "filters": [ { "class": "solr.LowerCaseFilterFactory" } ]
+      }
+    }
+  }' "$CORE_URL/schema" >/dev/null
+fi
+
 for f in "${STRUCTURAL_FIELDS[@]}"; do
+  field_type="string_lc"
+  if [[ "$DATASET" == "wands" && "$f" == "product_class" ]]; then
+    field_type="first_pipe_segment_lc"
+  fi
   curl -sf -X POST -H 'Content-Type: application/json' --data-binary "{
-    \"add-field\": {\"name\":\"${f}_lc\",\"type\":\"string_lc\",\"indexed\":true,\"stored\":false,\"multiValued\":false}
+    \"add-field\": {\"name\":\"${f}_lc\",\"type\":\"$field_type\",\"indexed\":true,\"stored\":false,\"multiValued\":false}
   }" "$CORE_URL/schema" >/dev/null
   curl -sf -X POST -H 'Content-Type: application/json' --data-binary "{
     \"add-copy-field\": {\"source\":\"$f\",\"dest\":\"${f}_lc\"}
