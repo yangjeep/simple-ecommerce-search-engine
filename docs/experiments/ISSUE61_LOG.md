@@ -571,6 +571,38 @@ failure this protocol exists to prevent.
 workload artifact is deliberately not committed yet, because `mm` is part of
 the contract it carries.
 
+### Independent pre-measurement sign-off — `BREAKS`
+
+The requested independent Oracle review completed before any timed block. It
+accepted only an **E1-specific conjunctive equivalence profile**: Solr may be
+forced to native's AND candidate-generation contract for instrument
+calibration, but those CPU values are forbidden as production-style baselines
+for Issues #63 or #65. A plain `mm=100%` setting is not sufficient evidence;
+the untimed gate must retrieve and compare the complete candidate set for every
+query because Solr and native still use different analyzers and query parsers.
+
+The review returned **`BREAKS`**, with these measurement blockers:
+
+1. freeze the complete E1 query/parser contract and regenerate both datasets;
+2. validate every emitted `fq` field against the live checksummed schema;
+3. implement complete candidate-set count and digest comparison for every
+   WANDS and ESCI query before timing;
+4. run fresh, non-co-resident engine sessions with three warm-up and two
+   measured passes per block;
+5. calibrate both engines and reconcile cgroup CPU with independent process CPU
+   accounting before cross-engine measurement;
+6. implement the frozen memory sampling, assigned-CPU steal pre-screen, PSI,
+   throttling, OOM, swap, affinity and provenance capture; and
+7. freeze the ESCI workload/config, qrels checksums, exact gated cells and
+   thresholds, rather than leaving them as command-line degrees of freedom.
+
+Two implementation contradictions were confirmed directly: `i61_bench`
+currently warms both already-running engines once and measures one pass without
+restarts, and its calibration path always targets the native URL/cgroup. The
+current harness therefore cannot produce valid E1 measurements. No performance
+result exists, and none will be collected until a second independent review
+returns no blocking finding.
+
 ---
 
 ## Open items

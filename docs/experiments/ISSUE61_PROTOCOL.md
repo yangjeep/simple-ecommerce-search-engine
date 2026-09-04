@@ -847,4 +847,61 @@ architecture-for-benchmark change `CLAUDE.md` forbids. It is disclosed here so
 it appears in the record rather than being discovered by a reviewer, and it
 biases *against* native's measured advantage rather than for it.
 
+## 16.11 E1-only lexical-equivalence profile
+
+Issue #61 calibrates the measuring instrument and makes no architecture or
+native-vs-Solr effect claim. For E1 only, Solr residual lexical matching is
+forced to the native endpoint's conjunctive candidate-generation contract.
+
+Every frozen Solr request carries these explicit values:
+
+- `defType=edismax`;
+- WANDS `qf=title description`;
+- ESCI-electronics `qf=title description bullet_point`;
+- `q.op=AND`;
+- `mm=100%`;
+- `mm.autoRelax=false`;
+- `tie=0.0`;
+- `sow=true`;
+- `lowercaseOperators=false`;
+- `ps=0`, `ps2=0`, `ps3=0`, and `qs=0`;
+- `rows=10`;
+- `fl=id`;
+- `sort=score desc,id asc`; and
+- `wt=json`.
+
+No `pf`, `pf2`, `pf3`, `bq`, `bf`, `boost`, or `q.alt` parameter is emitted.
+The phrase-slop values above are inert because phrase boost fields are absent;
+they are explicit only to close request-handler/default degrees of freedom.
+
+Residual query text is emitted as literal eDisMax input. Backslash and every
+Lucene query-language metacharacter (`+ - && || ! ( ) { } [ ] ^ " ~ * ? : /`)
+is backslash-escaped before HTTP form encoding. Fielded queries, boosts,
+grouping, unary operators, and unescaped quote syntax are therefore not
+permitted in the generated request. Empty residual text uses `*:*` only when
+the compiled query carries at least one structural filter.
+
+Before any timed block, the audit retrieves the complete result set for every
+query from both engines. It compares `numFound` and the §16.3 sorted,
+unique-ID digest and emits both directional differences on mismatch. This
+supersedes §16.3's exclusion of free-text candidate sets for E1. Any mismatch
+is `FIX MEASUREMENT`; it cannot become a post-hoc known difference.
+
+The complete effective Solr configset is archived and checksummed: effective
+managed schema, `solrconfig.xml`, config overlay, request handlers, stopwords,
+synonyms, protected-word/mapping/language resources, and any loaded plugin.
+Every field named by a frozen `fq`, `qf`, `fl`, or `sort` is validated against
+that live configset before the audit runs.
+
+Gated stability cells are engine × dataset × each non-empty admission class
+(`FastPath`, `Hybrid`, `Punt`) plus the all-workload aggregate. Class-specific
+CPU cells run as separately measured frozen sub-workloads and must satisfy the
+timer/cgroup floor. CPU/query remains the primary metric; candidate count,
+`numFound`, returned rows and zero-hit rate are diagnostics, never divisors used
+to normalize away candidate-pruning work.
+
+E1's forced-AND profile and its CPU values are calibration artifacts only.
+They are forbidden as effect-size baselines for Issues #63 or #65. Those
+issues must freeze their own production comparator settings and correctness/
+relevance non-inferiority gates before measurement.
 
