@@ -1,6 +1,8 @@
 use commerce_core::index::CatalogIndex;
 use commerce_core::ir::compile;
-use issue61_eval::{load_dataset, native_candidate_ids, Dataset, LoadedDataset};
+use issue61_eval::{
+    load_dataset, native_candidate_ids, Dataset, LoadedDataset, ProcessCpuSnapshot,
+};
 use serde::Serialize;
 use std::error::Error;
 use std::io::{BufRead, BufReader, Write};
@@ -112,6 +114,10 @@ fn render_error(message: &str) -> String {
     serde_json::json!({"responseHeader":{"status":500},"error":{"msg":message}}).to_string()
 }
 
+fn render_rusage(snapshot: &ProcessCpuSnapshot) -> Result<String, String> {
+    serde_json::to_string(snapshot).map_err(|error| format!("serialize rusage response: {error}"))
+}
+
 fn search(
     request: &SelectRequest,
     data: &LoadedDataset,
@@ -153,6 +159,18 @@ fn serve_connection(
         let target = request_line.split_whitespace().nth(1).unwrap_or("");
         if target == "/ping" {
             write_http(&mut stream, "200 OK", r#"{"status":"ok"}"#)?;
+        } else if target == "/rusage" {
+            match ProcessCpuSnapshot::capture_self()
+                .map_err(|error| error.to_string())
+                .and_then(|snapshot| render_rusage(&snapshot))
+            {
+                Ok(body) => write_http(&mut stream, "200 OK", &body)?,
+                Err(error) => write_http(
+                    &mut stream,
+                    "500 Internal Server Error",
+                    &render_error(&error),
+                )?,
+            }
         } else {
             match parse_select_request(request_line.trim_end())
                 .and_then(|request| search(&request, data, index))

@@ -37,3 +37,29 @@ fn response_rendering_matches_solr_contract_when_ids_need_escaping() {
     assert_eq!(value["response"]["numFound"], 12);
     assert_eq!(value["response"]["docs"][1]["id"], "P\"2");
 }
+
+#[test]
+fn select_response_byte_shape_remains_unchanged() {
+    // Given / When
+    let body = render_success(1, &["P1".to_string()]).expect("serializable response");
+
+    // Then
+    assert_eq!(
+        body,
+        r#"{"responseHeader":{"status":0},"response":{"numFound":1,"docs":[{"id":"P1"}]}}"#
+    );
+}
+
+#[test]
+fn rusage_response_is_a_typed_pid_and_cumulative_cpu_payload() {
+    // Given
+    let snapshot = ProcessCpuSnapshot::new(41, 12, 7);
+
+    // When
+    let body = render_rusage(&snapshot).expect("serializable rusage response");
+    let decoded: ProcessCpuSnapshot = serde_json::from_str(&body).expect("typed response");
+
+    // Then
+    assert_eq!(decoded, snapshot);
+    assert_eq!(body, r#"{"pid":41,"user_usec":12,"system_usec":7}"#);
+}
