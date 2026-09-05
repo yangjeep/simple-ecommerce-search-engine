@@ -1,5 +1,6 @@
 use issue61_eval::{
-    is_above_floor, measure_timer_floor, required_batch_size, TimerFloor, MIN_FLOOR_MULTIPLE,
+    is_above_floor, measure_timer_floor, required_batch_size, validate_measurement_window,
+    MeasurementFloorError, TimerFloor, MIN_CGROUP_CPU_USEC, MIN_FLOOR_MULTIPLE,
 };
 
 fn realistic_floor() -> TimerFloor {
@@ -7,6 +8,22 @@ fn realistic_floor() -> TimerFloor {
         clock_resolution_ns: 10.0,
         instant_now_overhead_ns: 20.0,
     }
+}
+
+#[test]
+fn measurement_window_requires_both_frozen_floors() {
+    let floor = realistic_floor();
+
+    assert!(matches!(
+        validate_measurement_window(1_999, 1_000, &floor),
+        Err(MeasurementFloorError::WallBelowTimerFloor { .. })
+    ));
+    assert!(matches!(
+        validate_measurement_window(2_000, 999, &floor),
+        Err(MeasurementFloorError::CpuBelowCgroupFloor { .. })
+    ));
+    assert!(validate_measurement_window(2_000, 1_000, &floor).is_ok());
+    assert_eq!(MIN_CGROUP_CPU_USEC, 1_000);
 }
 
 #[test]

@@ -29,7 +29,8 @@ pub use equivalence::{
     CandidateAuditRecord, EngineOutcome, EquivalenceReport, QueryAudit, QueryVerdict,
 };
 pub use floor::{
-    is_above_floor, measure_timer_floor, required_batch_size, TimerFloor, MIN_FLOOR_MULTIPLE,
+    is_above_floor, measure_timer_floor, required_batch_size, validate_measurement_window,
+    MeasurementFloorError, TimerFloor, MIN_CGROUP_CPU_USEC, MIN_FLOOR_MULTIPLE,
 };
 pub use gate::{
     evaluate, evaluate_cell, evaluate_exact_artifact, CellStability, GateReport, GateVerdict,
