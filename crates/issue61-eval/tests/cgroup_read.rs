@@ -233,3 +233,42 @@ fn delta_rejects_pressure_and_event_counter_rollbacks() {
         .expect("event rollback snapshot");
     assert!(event_rollback.delta_since(&earlier).is_err());
 }
+
+#[test]
+fn process_scope_rejects_missing_empty_and_multiple_pid_sets() {
+    // Given
+    let missing = Fixture::new();
+    let empty = Fixture::new();
+    empty.write("group/cgroup.procs", "");
+    let multiple = Fixture::new();
+    multiple.write("group/cgroup.procs", "41\n");
+    multiple.write("group/child/cgroup.procs", "42\n");
+
+    // When / Then
+    assert!(CgroupReader::at_dir(missing.root.join("group"))
+        .single_process_id()
+        .is_err());
+    assert!(CgroupReader::at_dir(empty.root.join("group"))
+        .single_process_id()
+        .is_err());
+    assert!(CgroupReader::at_dir(multiple.root.join("group"))
+        .single_process_id()
+        .is_err());
+}
+
+#[test]
+fn process_scope_recursively_finds_the_only_descendant_pid() {
+    // Given
+    let fixture = Fixture::new();
+    fixture.write("group/cgroup.procs", "");
+    fixture.write("group/child/cgroup.procs", "");
+    fixture.write("group/child/grandchild/cgroup.procs", "41\n");
+
+    // When
+    let pid = CgroupReader::at_dir(fixture.root.join("group"))
+        .single_process_id()
+        .expect("one descendant PID is the exact subtree scope");
+
+    // Then
+    assert_eq!(pid, 41);
+}

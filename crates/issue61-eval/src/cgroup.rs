@@ -1,5 +1,6 @@
 mod delta;
 mod parse;
+mod processes;
 
 use parse::{parse_flat_counters, parse_pressure, required, CpuCounters};
 use std::error::Error;
@@ -85,6 +86,9 @@ pub enum CgroupError {
         earlier: u64,
         later: u64,
     },
+    ProcessScope {
+        pids: Vec<u32>,
+    },
     NotV2,
 }
 
@@ -105,6 +109,10 @@ impl fmt::Display for CgroupError {
             } => write!(
                 formatter,
                 "cgroup counter {field} went backwards from {earlier} to {later}"
+            ),
+            Self::ProcessScope { pids } => write!(
+                formatter,
+                "cgroup subtree must contain exactly one process; found {pids:?}"
             ),
             Self::NotV2 => write!(formatter, "no cgroup v2 entry found"),
         }
