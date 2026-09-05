@@ -264,6 +264,10 @@ fn config_rejects_a_second_engine_url() {
 
 #[path = "tests/cli_tests.rs"]
 mod cli_tests;
+#[path = "../../../tests/support/http_capture.rs"]
+mod http_capture;
+#[path = "tests/http_contract.rs"]
+mod http_contract;
 #[path = "tests/projection_tests.rs"]
 mod projection_tests;
 #[path = "tests/protocol_tests.rs"]

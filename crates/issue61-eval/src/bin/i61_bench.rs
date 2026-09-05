@@ -34,7 +34,7 @@ fn main() {
 }
 
 #[cfg(test)]
-use bench_request::{build_request, validate_response};
+use bench_request::{build_request, validate_response, workload_pass};
 #[cfg(test)]
 #[path = "i61_bench/tests.rs"]
 mod tests;
