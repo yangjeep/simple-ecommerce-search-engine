@@ -24,7 +24,9 @@ mod workload;
 mod workload_projection;
 
 pub use catalog_data::{load_dataset, Dataset, LoadedDataset};
-pub use cgroup::{CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot};
+pub use cgroup::{
+    CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot, MemoryEvents, MemorySwapEvents,
+};
 pub use equivalence::{
     audit_all, audit_candidate_sets, audit_query, candidate_digest, AuditVerdict,
     CandidateAuditRecord, EngineOutcome, EquivalenceReport, QueryAudit, QueryVerdict,

@@ -5,7 +5,12 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
-pub const RAW_SCHEMA_VERSION: u32 = 2;
+pub const RAW_SCHEMA_VERSION: u32 = 3;
+
+#[derive(Deserialize)]
+struct RawSchema {
+    schema_version: u32,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RawRecord {
@@ -21,11 +26,40 @@ pub struct RawRecord {
     pub regime: String,
     pub queries: u64,
     pub wall_elapsed_us: u64,
+    pub timer_floor_clock_resolution_ns: f64,
+    pub timer_floor_instant_now_overhead_ns: f64,
+    pub timer_floor_effective_ns: f64,
     pub cpu_usage_usec: u64,
     pub cpu_user_usec: u64,
     pub cpu_system_usec: u64,
+    pub cpu_nr_periods: u64,
+    pub cpu_nr_throttled: u64,
+    pub cpu_throttled_usec: u64,
+    pub cpu_pressure_some_usec: u64,
+    pub cpu_pressure_full_usec: u64,
     pub cgroup_memory_footprint_bytes: u64,
+    pub cgroup_memory_current_median_bytes: u64,
+    pub cgroup_memory_current_max_bytes: u64,
     pub cgroup_memory_peak_bytes: u64,
+    pub memory_anon_bytes: u64,
+    pub memory_file_bytes: u64,
+    pub memory_kernel_bytes: u64,
+    pub memory_sock_bytes: u64,
+    pub memory_swap_current_bytes: u64,
+    pub memory_swap_peak_bytes: u64,
+    pub memory_events_low: u64,
+    pub memory_events_high: u64,
+    pub memory_events_max: u64,
+    pub memory_events_oom: u64,
+    pub memory_events_oom_kill: u64,
+    pub memory_events_oom_group_kill: u64,
+    pub memory_swap_events_high: u64,
+    pub memory_swap_events_max: u64,
+    pub memory_swap_events_fail: u64,
+    pub cpuset_cpus_effective: String,
+    pub cpu_max: String,
+    pub memory_max: String,
+    pub memory_swap_max: String,
     pub index_serialized_bytes: u64,
     pub latency_p50_us: f64,
     pub latency_p95_us: f64,
@@ -105,16 +139,20 @@ pub fn read_jsonl(path: &Path) -> Result<Vec<RawRecord>, RawError> {
         if line.trim().is_empty() {
             continue;
         }
+        let schema: RawSchema = serde_json::from_str(&line).map_err(|source| RawError::Json {
+            line: index + 1,
+            source,
+        })?;
+        if schema.schema_version != RAW_SCHEMA_VERSION {
+            return Err(RawError::UnsupportedSchemaVersion {
+                found: schema.schema_version,
+                expected: RAW_SCHEMA_VERSION,
+            });
+        }
         let record: RawRecord = serde_json::from_str(&line).map_err(|source| RawError::Json {
             line: index + 1,
             source,
         })?;
-        if record.schema_version != RAW_SCHEMA_VERSION {
-            return Err(RawError::UnsupportedSchemaVersion {
-                found: record.schema_version,
-                expected: RAW_SCHEMA_VERSION,
-            });
-        }
         records.push(record);
     }
     Ok(records)

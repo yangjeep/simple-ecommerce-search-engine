@@ -41,11 +41,40 @@ fn record() -> RawRecord {
         regime: "warm".to_owned(),
         queries: 100,
         wall_elapsed_us: 2_000,
+        timer_floor_clock_resolution_ns: 10.0,
+        timer_floor_instant_now_overhead_ns: 20.0,
+        timer_floor_effective_ns: 20.0,
         cpu_usage_usec: 1_500,
         cpu_user_usec: 1_200,
         cpu_system_usec: 300,
+        cpu_nr_periods: 10,
+        cpu_nr_throttled: 2,
+        cpu_throttled_usec: 25,
+        cpu_pressure_some_usec: 7,
+        cpu_pressure_full_usec: 3,
         cgroup_memory_footprint_bytes: 4_096,
+        cgroup_memory_current_median_bytes: 4_000,
+        cgroup_memory_current_max_bytes: 4_500,
         cgroup_memory_peak_bytes: 8_192,
+        memory_anon_bytes: 2_000,
+        memory_file_bytes: 1_000,
+        memory_kernel_bytes: 500,
+        memory_sock_bytes: 64,
+        memory_swap_current_bytes: 128,
+        memory_swap_peak_bytes: 256,
+        memory_events_low: 1,
+        memory_events_high: 2,
+        memory_events_max: 3,
+        memory_events_oom: 4,
+        memory_events_oom_kill: 5,
+        memory_events_oom_group_kill: 6,
+        memory_swap_events_high: 7,
+        memory_swap_events_max: 8,
+        memory_swap_events_fail: 9,
+        cpuset_cpus_effective: "0-2".to_owned(),
+        cpu_max: "300000 100000".to_owned(),
+        memory_max: "6442450944".to_owned(),
+        memory_swap_max: "1024".to_owned(),
         index_serialized_bytes: 16_384,
         latency_p50_us: 10.0,
         latency_p95_us: 20.0,
@@ -88,6 +117,26 @@ fn reading_a_future_schema_version_is_rejected_not_silently_accepted() {
             found,
             expected: RAW_SCHEMA_VERSION
         } if found == RAW_SCHEMA_VERSION + 1
+    ));
+}
+
+#[test]
+fn non_v3_schema_is_rejected_before_record_shape_is_parsed() {
+    // Given
+    let fixture = Fixture::new();
+    std::fs::write(fixture.path(), "{\"schema_version\":2}\n")
+        .expect("legacy-shaped fixture should be written");
+
+    // When
+    let error = read_jsonl(&fixture.path()).expect_err("v2 schema must be rejected first");
+
+    // Then
+    assert!(matches!(
+        error,
+        RawError::UnsupportedSchemaVersion {
+            found: 2,
+            expected: RAW_SCHEMA_VERSION
+        }
     ));
 }
 
