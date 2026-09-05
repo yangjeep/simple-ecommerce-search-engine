@@ -1,5 +1,5 @@
 use super::*;
-use issue61_eval::{Engine, FrozenQuery, SessionMode, SessionStep};
+use issue61_eval::{Engine, FrozenQuery, SessionMode, SessionStep, WorkloadProjection};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -116,7 +116,7 @@ fn warm_session_executes_frozen_pass_and_counter_order() {
     let mut observed = Vec::new();
 
     // When
-    session::execute_warm_session(|step| {
+    session::execute_session(SessionMode::Warm.plan(), |step| {
         observed.push(step);
         Ok::<(), String>(())
     })
@@ -146,15 +146,17 @@ fn config_parses_exactly_one_typed_engine_session() {
         "workload.jsonl",
         "--dataset",
         "wands",
+        "--query-class",
+        "all",
         "--engine",
-        "native",
+        "solr",
         "--session-mode",
         "warm",
         "--engine-url",
-        "http://native:3000",
+        "http://solr:8983",
         "--engine-cgroup",
-        "/sys/fs/cgroup/native",
-        "--rep",
+        "/sys/fs/cgroup/solr",
+        "--block",
         "4",
         "--engine-order",
         "1",
@@ -171,12 +173,13 @@ fn config_parses_exactly_one_typed_engine_session() {
     let config = parse_config(&args).expect("single-session config");
 
     // Then
-    assert_eq!(config.engine, Engine::Native);
-    assert_eq!(config.session_mode, SessionMode::Warm);
-    assert_eq!(config.engine_url, "http://native:3000");
-    assert_eq!(config.engine_cgroup, PathBuf::from("/sys/fs/cgroup/native"));
-    assert_eq!(config.rep, 4);
-    assert_eq!(config.engine_order, 1);
+    assert_eq!(config.engine, Engine::Solr);
+    assert_eq!(config.plan, SessionMode::Warm.plan());
+    assert_eq!(config.projection, WorkloadProjection::All);
+    assert_eq!(config.engine_url, "http://solr:8983");
+    assert_eq!(config.engine_cgroup, PathBuf::from("/sys/fs/cgroup/solr"));
+    assert_eq!(config.block.get(), 4);
+    assert_eq!(config.order.index(), 1);
 }
 
 #[test]
@@ -188,6 +191,8 @@ fn config_rejects_the_legacy_two_engine_campaign_shape() {
         "workload.jsonl",
         "--dataset",
         "wands",
+        "--query-class",
+        "all",
         "--regime",
         "warm",
         "--baseline-url",
@@ -237,7 +242,7 @@ fn config_rejects_a_second_engine_url() {
         "http://solr-b:8983",
         "--engine-cgroup",
         "/sys/fs/cgroup/solr",
-        "--rep",
+        "--block",
         "4",
         "--engine-order",
         "0",
@@ -256,3 +261,10 @@ fn config_rejects_a_second_engine_url() {
     // Then
     assert!(result.is_err());
 }
+
+#[path = "tests/cli_tests.rs"]
+mod cli_tests;
+#[path = "tests/projection_tests.rs"]
+mod projection_tests;
+#[path = "tests/protocol_tests.rs"]
+mod protocol_tests;

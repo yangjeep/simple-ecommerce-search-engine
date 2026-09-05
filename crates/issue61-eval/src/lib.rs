@@ -20,6 +20,7 @@ pub mod solr_contract;
 mod solr_pagination;
 mod steal;
 mod workload;
+mod workload_projection;
 
 pub use catalog_data::{load_dataset, Dataset, LoadedDataset};
 pub use cgroup::{CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot};
@@ -35,7 +36,10 @@ pub use gate::{
     MetricKind, ALPHA, MAX_CV, MAX_REL_HALFWIDTH, MIN_BLOCKS,
 };
 pub use native_candidates::{frozen_native_query, native_candidate_ids};
-pub use protocol::{Engine, SessionMode, SessionStep, WARM_SESSION_STEPS};
+pub use protocol::{
+    campaign_schedule, BlockIndex, CampaignSeed, Engine, EngineOrder, EnginePair, SessionMode,
+    SessionPlan, SessionStep, CAMPAIGN_BLOCKS,
+};
 pub use ratio::{
     check_calibration, paired_ratio, CalibrationCheck, PairedBlock, RatioResult, RatioVerdict,
     MATERIALITY_RATIO,
@@ -54,3 +58,4 @@ pub use steal::{
 pub use workload::{
     load_workload, write_workload, AdmissionClass, FrozenQuery, NativeRequest, SolrRequest,
 };
+pub use workload_projection::{project_workload, ProjectedWorkload, WorkloadProjection};

@@ -1,29 +1,30 @@
 use super::bench_request::{workload_pass, Config, QueryObservation};
 use bench_harness::Distribution;
 use issue61_eval::{
-    read_proc_stat, steal_percent, CgroupReader, CgroupSnapshot, CpuTimes, FrozenQuery, RawRecord,
-    SessionStep, RAW_SCHEMA_VERSION, WARM_SESSION_STEPS,
+    read_proc_stat, steal_percent, CgroupReader, CgroupSnapshot, CpuTimes, ProjectedWorkload,
+    RawRecord, SessionPlan, SessionStep, RAW_SCHEMA_VERSION,
 };
 use std::error::Error;
 use std::path::Path;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-pub(super) fn execute_warm_session<E>(
+pub(super) fn execute_session<E>(
+    plan: SessionPlan,
     mut execute: impl FnMut(SessionStep) -> Result<(), E>,
 ) -> Result<(), E> {
-    for step in WARM_SESSION_STEPS {
+    for step in plan.steps() {
         execute(step)?;
     }
     Ok(())
 }
 
-pub(super) fn measure_warm_session(
+pub(super) fn measure_session(
     agent: &ureq::Agent,
     config: &Config,
-    workload: &[FrozenQuery],
+    workload: ProjectedWorkload<'_>,
 ) -> Result<RawRecord, Box<dyn Error>> {
     let cgroup = CgroupReader::at_dir(config.engine_cgroup.clone());
-    let mut runner = WarmSessionRunner {
+    let mut runner = SessionRunner {
         agent,
         config,
         workload,
@@ -31,19 +32,19 @@ pub(super) fn measure_warm_session(
         cpu_before: None,
         steal_before: None,
         wall_started: None,
-        observations: Vec::with_capacity(workload.len() * 2),
+        observations: Vec::with_capacity(workload.query_count() * config.plan.pass_counts().1),
         record: None,
     };
-    execute_warm_session(|step| runner.execute(step))?;
+    execute_session(config.plan, |step| runner.execute(step))?;
     runner
         .record
-        .ok_or_else(|| "warm session ended without closing counters".into())
+        .ok_or_else(|| "session ended without closing counters".into())
 }
 
-struct WarmSessionRunner<'a> {
+struct SessionRunner<'a> {
     agent: &'a ureq::Agent,
     config: &'a Config,
-    workload: &'a [FrozenQuery],
+    workload: ProjectedWorkload<'a>,
     cgroup: &'a CgroupReader,
     cpu_before: Option<CgroupSnapshot>,
     steal_before: Option<CpuTimes>,
@@ -52,7 +53,7 @@ struct WarmSessionRunner<'a> {
     record: Option<RawRecord>,
 }
 
-impl WarmSessionRunner<'_> {
+impl SessionRunner<'_> {
     fn execute(&mut self, step: SessionStep) -> Result<(), Box<dyn Error>> {
         match step {
             SessionStep::WarmupPass => {
@@ -117,14 +118,14 @@ impl WarmSessionRunner<'_> {
         self.record = Some(RawRecord {
             schema_version: RAW_SCHEMA_VERSION,
             experiment_id: "I61-E1".to_string(),
-            run_id: format!("seed-{}", self.config.seed),
-            rep: self.config.rep,
-            engine_order: self.config.engine_order,
-            calibration: false,
+            run_id: format!("seed-{}", self.config.seed.get()),
+            rep: self.config.block.get(),
+            engine_order: self.config.order.index(),
+            calibration: self.config.plan.mode().is_calibration(),
             engine: self.config.engine.as_str().to_string(),
-            dataset: self.config.dataset.clone(),
-            query_class: "all".to_string(),
-            regime: self.config.session_mode.as_str().to_string(),
+            dataset: self.config.dataset.as_str().to_string(),
+            query_class: self.config.projection.as_str().to_string(),
+            regime: self.config.plan.mode().as_str().to_string(),
             queries: u64::try_from(self.observations.len())?,
             wall_elapsed_us,
             cpu_usage_usec: delta.usage_usec,

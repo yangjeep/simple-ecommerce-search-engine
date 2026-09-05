@@ -1,5 +1,13 @@
 use std::str::FromStr;
 
+mod schedule;
+mod session_plan;
+
+pub use schedule::{
+    campaign_schedule, BlockIndex, CampaignSeed, EngineOrder, EnginePair, CAMPAIGN_BLOCKS,
+};
+pub use session_plan::{SessionMode, SessionPlan, SessionStep};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Engine {
     Native,
@@ -27,46 +35,3 @@ impl FromStr for Engine {
         }
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SessionMode {
-    Warm,
-}
-
-impl SessionMode {
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Warm => "warm",
-        }
-    }
-}
-
-impl FromStr for SessionMode {
-    type Err = String;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
-            "warm" => Ok(Self::Warm),
-            other => Err(format!("invalid session mode {other:?}; expected warm")),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SessionStep {
-    WarmupPass,
-    OpenCounters,
-    MeasuredPass,
-    CloseCounters,
-}
-
-pub const WARM_SESSION_STEPS: [SessionStep; 7] = [
-    SessionStep::WarmupPass,
-    SessionStep::WarmupPass,
-    SessionStep::WarmupPass,
-    SessionStep::OpenCounters,
-    SessionStep::MeasuredPass,
-    SessionStep::MeasuredPass,
-    SessionStep::CloseCounters,
-];

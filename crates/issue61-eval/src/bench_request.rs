@@ -1,4 +1,7 @@
-use issue61_eval::{Engine, FrozenQuery, SessionMode};
+use issue61_eval::{
+    campaign_schedule, BlockIndex, CampaignSeed, Dataset, Engine, EngineOrder, FrozenQuery,
+    SessionMode, SessionPlan, WorkloadProjection,
+};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -88,14 +91,15 @@ pub(super) fn validate_response(body: &str) -> Result<ValidatedResponse, String>
 
 pub(super) struct Config {
     pub(super) workload: PathBuf,
-    pub(super) dataset: String,
+    pub(super) dataset: Dataset,
+    pub(super) projection: WorkloadProjection,
     pub(super) engine: Engine,
-    pub(super) session_mode: SessionMode,
+    pub(super) plan: SessionPlan,
     pub(super) engine_url: String,
     pub(super) engine_cgroup: PathBuf,
-    pub(super) rep: usize,
-    pub(super) engine_order: usize,
-    pub(super) seed: u64,
+    pub(super) block: BlockIndex,
+    pub(super) order: EngineOrder,
+    pub(super) seed: CampaignSeed,
     pub(super) output: PathBuf,
 }
 
@@ -112,23 +116,59 @@ fn required_arg(args: &[String], name: &str) -> Result<String, String> {
 }
 
 pub(super) fn parse_config(args: &[String]) -> Result<Config, String> {
-    let parse_usize = |name| {
-        required_arg(args, name)?
-            .parse()
-            .map_err(|error| format!("invalid {name}: {error}"))
-    };
+    const FLAGS: [&str; 10] = [
+        "--workload",
+        "--dataset",
+        "--query-class",
+        "--engine",
+        "--session-mode",
+        "--engine-url",
+        "--engine-cgroup",
+        "--block",
+        "--engine-order",
+        "--seed",
+    ];
+    if args.len() != 23
+        || args
+            .iter()
+            .skip(1)
+            .step_by(2)
+            .any(|arg| !FLAGS.contains(&arg.as_str()) && arg != "--out")
+    {
+        return Err("expected exactly one value for each single-session argument".to_string());
+    }
+    let dataset = Dataset::parse(&required_arg(args, "--dataset")?)?;
+    let engine = required_arg(args, "--engine")?.parse()?;
+    let mode = required_arg(args, "--session-mode")?.parse::<SessionMode>()?;
+    let block = required_arg(args, "--block")?.parse::<BlockIndex>()?;
+    let order = required_arg(args, "--engine-order")?.parse::<EngineOrder>()?;
+    let seed = required_arg(args, "--seed")?.parse::<CampaignSeed>()?;
+    let scheduled_engine = campaign_schedule()
+        .into_iter()
+        .nth(block.get())
+        .ok_or_else(|| "block is absent from the frozen schedule".to_string())?
+        .engine(order);
+    if scheduled_engine != engine {
+        return Err("engine does not match the frozen block order".to_string());
+    }
+    match (mode, dataset) {
+        (SessionMode::Warm | SessionMode::Cold, Dataset::Wands | Dataset::EsciElectronics)
+        | (SessionMode::CalibrationFour | SessionMode::CalibrationFive, Dataset::Wands) => {}
+        (SessionMode::CalibrationFour | SessionMode::CalibrationFive, Dataset::EsciElectronics) => {
+            return Err("calibration sessions require the WANDS dataset".to_string())
+        }
+    }
     Ok(Config {
         workload: required_arg(args, "--workload")?.into(),
-        dataset: required_arg(args, "--dataset")?,
-        engine: required_arg(args, "--engine")?.parse()?,
-        session_mode: required_arg(args, "--session-mode")?.parse()?,
+        dataset,
+        projection: required_arg(args, "--query-class")?.parse()?,
+        engine,
+        plan: mode.plan(),
         engine_url: required_arg(args, "--engine-url")?,
         engine_cgroup: required_arg(args, "--engine-cgroup")?.into(),
-        rep: parse_usize("--rep")?,
-        engine_order: parse_usize("--engine-order")?,
-        seed: required_arg(args, "--seed")?
-            .parse()
-            .map_err(|error| format!("invalid --seed: {error}"))?,
+        block,
+        order,
+        seed,
         output: required_arg(args, "--out")?.into(),
     })
 }
@@ -173,7 +213,7 @@ fn query_once(
 pub(super) fn workload_pass(
     agent: &ureq::Agent,
     url: &str,
-    workload: &[FrozenQuery],
+    workload: issue61_eval::ProjectedWorkload<'_>,
     engine: Engine,
 ) -> Result<Vec<QueryObservation>, String> {
     workload
