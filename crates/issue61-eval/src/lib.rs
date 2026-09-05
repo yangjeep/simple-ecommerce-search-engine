@@ -12,6 +12,7 @@ mod gate;
 mod lexical_tokens;
 mod memory_sampler;
 mod native_candidates;
+mod pid_namespace;
 mod process_cpu;
 mod protocol;
 mod ratio;
@@ -45,6 +46,7 @@ pub use memory_sampler::{
     MEMORY_SAMPLE_INTERVAL,
 };
 pub use native_candidates::{frozen_native_query, native_candidate_ids};
+pub use pid_namespace::{NativePidIdentity, PidNamespaceError};
 pub use process_cpu::{ProcessCpuDelta, ProcessCpuError, ProcessCpuSnapshot};
 pub use protocol::{
     campaign_schedule, BlockIndex, CampaignSeed, Engine, EngineOrder, EnginePair, SessionMode,
