@@ -1,14 +1,8 @@
-use issue61_eval::FrozenQuery;
+use issue61_eval::{Engine, FrozenQuery, SessionMode};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Instant;
-
-#[derive(Debug, Clone, Copy)]
-pub(super) enum RequestEngine {
-    Solr,
-    Native,
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct EngineRequest {
@@ -17,12 +11,9 @@ pub(super) struct EngineRequest {
     pub(super) params: BTreeMap<String, String>,
 }
 
-pub(super) fn build_request(
-    query: &FrozenQuery,
-    engine: RequestEngine,
-) -> Result<EngineRequest, String> {
+pub(super) fn build_request(query: &FrozenQuery, engine: Engine) -> Result<EngineRequest, String> {
     match engine {
-        RequestEngine::Solr => query
+        Engine::Solr => query
             .solr
             .as_ref()
             .map(|request| EngineRequest {
@@ -31,7 +22,7 @@ pub(super) fn build_request(
                 params: request.params.clone(),
             })
             .ok_or_else(|| format!("query {} is missing its solr request block", query.query_id)),
-        RequestEngine::Native => query
+        Engine::Native => query
             .native
             .as_ref()
             .map(|request| EngineRequest {
@@ -98,23 +89,26 @@ pub(super) fn validate_response(body: &str) -> Result<ValidatedResponse, String>
 pub(super) struct Config {
     pub(super) workload: PathBuf,
     pub(super) dataset: String,
-    pub(super) regime: String,
-    pub(super) baseline_url: String,
-    pub(super) baseline_cgroup: PathBuf,
-    pub(super) treatment_url: String,
-    pub(super) treatment_cgroup: PathBuf,
-    pub(super) blocks: usize,
-    pub(super) warmup_passes: usize,
+    pub(super) engine: Engine,
+    pub(super) session_mode: SessionMode,
+    pub(super) engine_url: String,
+    pub(super) engine_cgroup: PathBuf,
+    pub(super) rep: usize,
+    pub(super) engine_order: usize,
     pub(super) seed: u64,
     pub(super) output: PathBuf,
-    pub(super) calibration_passes: usize,
 }
 
 fn required_arg(args: &[String], name: &str) -> Result<String, String> {
-    args.windows(2)
-        .find(|pair| pair[0] == name)
-        .map(|pair| pair[1].clone())
-        .ok_or_else(|| format!("missing {name}"))
+    let mut values = args
+        .windows(2)
+        .filter(|pair| pair[0] == name)
+        .map(|pair| &pair[1]);
+    let value = values.next().ok_or_else(|| format!("missing {name}"))?;
+    if values.next().is_some() {
+        return Err(format!("duplicate {name}"));
+    }
+    Ok(value.clone())
 }
 
 pub(super) fn parse_config(args: &[String]) -> Result<Config, String> {
@@ -126,27 +120,16 @@ pub(super) fn parse_config(args: &[String]) -> Result<Config, String> {
     Ok(Config {
         workload: required_arg(args, "--workload")?.into(),
         dataset: required_arg(args, "--dataset")?,
-        regime: required_arg(args, "--regime")?,
-        baseline_url: required_arg(args, "--baseline-url")?,
-        baseline_cgroup: required_arg(args, "--baseline-cgroup")?.into(),
-        treatment_url: required_arg(args, "--treatment-url")?,
-        treatment_cgroup: required_arg(args, "--treatment-cgroup")?.into(),
-        blocks: parse_usize("--blocks")?,
-        warmup_passes: parse_usize("--warmup-passes")?,
+        engine: required_arg(args, "--engine")?.parse()?,
+        session_mode: required_arg(args, "--session-mode")?.parse()?,
+        engine_url: required_arg(args, "--engine-url")?,
+        engine_cgroup: required_arg(args, "--engine-cgroup")?.into(),
+        rep: parse_usize("--rep")?,
+        engine_order: parse_usize("--engine-order")?,
         seed: required_arg(args, "--seed")?
             .parse()
             .map_err(|error| format!("invalid --seed: {error}"))?,
         output: required_arg(args, "--out")?.into(),
-        calibration_passes: args
-            .windows(2)
-            .find(|pair| pair[0] == "--calibration-passes")
-            .map(|pair| {
-                pair[1]
-                    .parse()
-                    .map_err(|error| format!("invalid --calibration-passes: {error}"))
-            })
-            .transpose()?
-            .unwrap_or(5),
     })
 }
 
@@ -159,7 +142,7 @@ fn query_once(
     agent: &ureq::Agent,
     base_url: &str,
     query: &FrozenQuery,
-    engine: RequestEngine,
+    engine: Engine,
 ) -> Result<QueryObservation, String> {
     let url = format!("{}/select", base_url.trim_end_matches('/'));
     let request = build_request(query, engine)?;
@@ -191,28 +174,10 @@ pub(super) fn workload_pass(
     agent: &ureq::Agent,
     url: &str,
     workload: &[FrozenQuery],
-    engine: RequestEngine,
+    engine: Engine,
 ) -> Result<Vec<QueryObservation>, String> {
     workload
         .iter()
         .map(|query| query_once(agent, url, query, engine))
         .collect()
-}
-
-pub(super) fn repeated_passes(
-    agent: &ureq::Agent,
-    url: &str,
-    workload: &[FrozenQuery],
-    passes: usize,
-    engine: RequestEngine,
-) -> Result<Vec<f64>, String> {
-    let mut samples = Vec::with_capacity(workload.len() * passes);
-    for _ in 0..passes {
-        samples.extend(
-            workload_pass(agent, url, workload, engine)?
-                .into_iter()
-                .map(|observation| observation.latency_us),
-        );
-    }
-    Ok(samples)
 }

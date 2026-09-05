@@ -1,5 +1,7 @@
 use super::*;
+use issue61_eval::{Engine, FrozenQuery, SessionMode, SessionStep};
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 fn frozen_record() -> FrozenQuery {
     serde_json::from_str(
@@ -23,7 +25,7 @@ fn frozen_record() -> FrozenQuery {
 
 #[test]
 fn solr_request_includes_every_frozen_fq_as_a_repeated_parameter() {
-    let request = build_request(&frozen_record(), RequestEngine::Solr).expect("complete record");
+    let request = build_request(&frozen_record(), Engine::Solr).expect("complete record");
 
     assert_eq!(
         request.fq,
@@ -36,7 +38,7 @@ fn solr_request_includes_every_frozen_fq_as_a_repeated_parameter() {
 
 #[test]
 fn solr_request_includes_deftype_qf_and_fl_id_from_the_frozen_params() {
-    let request = build_request(&frozen_record(), RequestEngine::Solr).expect("complete record");
+    let request = build_request(&frozen_record(), Engine::Solr).expect("complete record");
 
     assert_eq!(
         request.params.get("defType").map(String::as_str),
@@ -48,7 +50,7 @@ fn solr_request_includes_deftype_qf_and_fl_id_from_the_frozen_params() {
 
 #[test]
 fn native_request_replays_its_frozen_params_verbatim() {
-    let request = build_request(&frozen_record(), RequestEngine::Native).expect("complete record");
+    let request = build_request(&frozen_record(), Engine::Native).expect("complete record");
 
     assert_eq!(request.q, "red beds");
     assert!(request.fq.is_empty());
@@ -68,7 +70,7 @@ fn a_record_missing_its_per_engine_block_is_an_error_not_a_bare_q_fallback() {
     )
     .expect("missing engine blocks remain parseable for a query-specific error");
 
-    let error = build_request(&record, RequestEngine::Solr).expect_err("missing Solr request");
+    let error = build_request(&record, Engine::Solr).expect_err("missing Solr request");
 
     assert!(error.contains("q-missing"));
 }
@@ -106,4 +108,151 @@ fn response_validation_accepts_solr_shape_and_returns_total_count() {
         .num_found,
         12
     );
+}
+
+#[test]
+fn warm_session_executes_frozen_pass_and_counter_order() {
+    // Given
+    let mut observed = Vec::new();
+
+    // When
+    session::execute_warm_session(|step| {
+        observed.push(step);
+        Ok::<(), String>(())
+    })
+    .expect("session steps succeed");
+
+    // Then
+    assert_eq!(
+        observed,
+        [
+            SessionStep::WarmupPass,
+            SessionStep::WarmupPass,
+            SessionStep::WarmupPass,
+            SessionStep::OpenCounters,
+            SessionStep::MeasuredPass,
+            SessionStep::MeasuredPass,
+            SessionStep::CloseCounters,
+        ]
+    );
+}
+
+#[test]
+fn config_parses_exactly_one_typed_engine_session() {
+    // Given
+    let args = vec![
+        "i61_bench",
+        "--workload",
+        "workload.jsonl",
+        "--dataset",
+        "wands",
+        "--engine",
+        "native",
+        "--session-mode",
+        "warm",
+        "--engine-url",
+        "http://native:3000",
+        "--engine-cgroup",
+        "/sys/fs/cgroup/native",
+        "--rep",
+        "4",
+        "--engine-order",
+        "1",
+        "--seed",
+        "61",
+        "--out",
+        "raw.jsonl",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect::<Vec<_>>();
+
+    // When
+    let config = parse_config(&args).expect("single-session config");
+
+    // Then
+    assert_eq!(config.engine, Engine::Native);
+    assert_eq!(config.session_mode, SessionMode::Warm);
+    assert_eq!(config.engine_url, "http://native:3000");
+    assert_eq!(config.engine_cgroup, PathBuf::from("/sys/fs/cgroup/native"));
+    assert_eq!(config.rep, 4);
+    assert_eq!(config.engine_order, 1);
+}
+
+#[test]
+fn config_rejects_the_legacy_two_engine_campaign_shape() {
+    // Given
+    let args = vec![
+        "i61_bench",
+        "--workload",
+        "workload.jsonl",
+        "--dataset",
+        "wands",
+        "--regime",
+        "warm",
+        "--baseline-url",
+        "http://solr:8983",
+        "--baseline-cgroup",
+        "/sys/fs/cgroup/solr",
+        "--treatment-url",
+        "http://native:3000",
+        "--treatment-cgroup",
+        "/sys/fs/cgroup/native",
+        "--blocks",
+        "30",
+        "--warmup-passes",
+        "3",
+        "--seed",
+        "61",
+        "--out",
+        "raw.jsonl",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect::<Vec<_>>();
+
+    // When
+    let result = parse_config(&args);
+
+    // Then
+    assert!(result.is_err());
+}
+
+#[test]
+fn config_rejects_a_second_engine_url() {
+    // Given
+    let args = vec![
+        "i61_bench",
+        "--workload",
+        "workload.jsonl",
+        "--dataset",
+        "wands",
+        "--engine",
+        "solr",
+        "--session-mode",
+        "warm",
+        "--engine-url",
+        "http://solr-a:8983",
+        "--engine-url",
+        "http://solr-b:8983",
+        "--engine-cgroup",
+        "/sys/fs/cgroup/solr",
+        "--rep",
+        "4",
+        "--engine-order",
+        "0",
+        "--seed",
+        "61",
+        "--out",
+        "raw.jsonl",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect::<Vec<_>>();
+
+    // When
+    let result = parse_config(&args);
+
+    // Then
+    assert!(result.is_err());
 }

@@ -11,6 +11,7 @@ mod floor;
 mod gate;
 mod lexical_tokens;
 mod native_candidates;
+mod protocol;
 mod ratio;
 mod raw;
 mod request_contract;
@@ -34,6 +35,7 @@ pub use gate::{
     MetricKind, ALPHA, MAX_CV, MAX_REL_HALFWIDTH, MIN_BLOCKS,
 };
 pub use native_candidates::{frozen_native_query, native_candidate_ids};
+pub use protocol::{Engine, SessionMode, SessionStep, WARM_SESSION_STEPS};
 pub use ratio::{
     check_calibration, paired_ratio, CalibrationCheck, PairedBlock, RatioResult, RatioVerdict,
     MATERIALITY_RATIO,
