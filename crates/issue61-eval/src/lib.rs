@@ -10,6 +10,7 @@ mod equivalence;
 mod floor;
 mod gate;
 mod lexical_tokens;
+mod memory_sampler;
 mod native_candidates;
 mod protocol;
 mod ratio;
@@ -35,6 +36,10 @@ pub use floor::{
 pub use gate::{
     evaluate, evaluate_cell, evaluate_exact_artifact, CellStability, GateReport, GateVerdict,
     MetricKind, ALPHA, MAX_CV, MAX_REL_HALFWIDTH, MIN_BLOCKS,
+};
+pub use memory_sampler::{
+    summarize_memory_samples, MemorySampleSummary, MemorySampler, MemorySamplerError,
+    MEMORY_SAMPLE_INTERVAL,
 };
 pub use native_candidates::{frozen_native_query, native_candidate_ids};
 pub use protocol::{
