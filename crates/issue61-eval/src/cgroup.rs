@@ -1,15 +1,53 @@
+mod delta;
+mod parse;
+
+use parse::{parse_flat_counters, parse_pressure, required, CpuCounters};
 use std::error::Error;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MemoryEvents {
+    pub low: u64,
+    pub high: u64,
+    pub max: u64,
+    pub oom: u64,
+    pub oom_kill: u64,
+    pub oom_group_kill: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MemorySwapEvents {
+    pub high: u64,
+    pub max: u64,
+    pub fail: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CgroupSnapshot {
     pub usage_usec: u64,
     pub user_usec: u64,
     pub system_usec: u64,
+    pub nr_periods: u64,
+    pub nr_throttled: u64,
+    pub throttled_usec: u64,
+    pub cpu_pressure_some_usec: u64,
+    pub cpu_pressure_full_usec: u64,
     pub memory_current_bytes: u64,
     pub memory_peak_bytes: u64,
+    pub memory_anon_bytes: u64,
+    pub memory_file_bytes: u64,
+    pub memory_kernel_bytes: u64,
+    pub memory_sock_bytes: u64,
+    pub memory_events: MemoryEvents,
+    pub memory_swap_current_bytes: u64,
+    pub memory_swap_peak_bytes: u64,
+    pub memory_swap_events: MemorySwapEvents,
+    pub cpuset_cpus_effective: String,
+    pub cpu_max: String,
+    pub memory_max: String,
+    pub memory_swap_max: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,9 +55,16 @@ pub struct CgroupDelta {
     pub usage_usec: u64,
     pub user_usec: u64,
     pub system_usec: u64,
+    pub nr_periods: u64,
+    pub nr_throttled: u64,
+    pub throttled_usec: u64,
+    pub cpu_pressure_some_usec: u64,
+    pub cpu_pressure_full_usec: u64,
+    pub memory_events: MemoryEvents,
+    pub memory_swap_events: MemorySwapEvents,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CgroupReader {
     dir: PathBuf,
 }
@@ -70,61 +115,63 @@ impl Error for CgroupError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Io { source, .. } => Some(source),
-            Self::InvalidInteger { .. }
-            | Self::MissingField(_)
-            | Self::CounterRollback { .. }
-            | Self::NotV2 => None,
+            _ => None,
         }
     }
 }
 
 impl CgroupReader {
-    pub fn from_proc_cgroup_content(
-        content: &str,
-        cgroup_mount: &Path,
-    ) -> Result<Self, CgroupError> {
+    pub fn from_proc_cgroup_content(content: &str, mount: &Path) -> Result<Self, CgroupError> {
         let relative = content
             .lines()
             .find_map(|line| line.strip_prefix("0::"))
             .ok_or(CgroupError::NotV2)?
             .trim_start_matches('/');
-        Ok(Self::at_dir(cgroup_mount.join(relative)))
+        Ok(Self::at_dir(mount.join(relative)))
     }
 
-    pub fn for_pid(pid: u32, proc_root: &Path, cgroup_mount: &Path) -> Result<Self, CgroupError> {
-        let path = proc_root.join(pid.to_string()).join("cgroup");
-        let content = read_file(&path)?;
-        Self::from_proc_cgroup_content(&content, cgroup_mount)
+    pub fn for_pid(pid: u32, proc_root: &Path, mount: &Path) -> Result<Self, CgroupError> {
+        let content = read_file(&proc_root.join(pid.to_string()).join("cgroup"))?;
+        Self::from_proc_cgroup_content(&content, mount)
     }
 
     pub fn at_dir(dir: PathBuf) -> Self {
         Self { dir }
     }
 
-    /// Reads CPU counters and memory gauges from this cgroup. Kernels without
-    /// `memory.peak` report zero so callers can record the gauge as unavailable.
+    pub fn read_memory_current(&self) -> Result<u64, CgroupError> {
+        read_integer_file(&self.dir.join("memory.current"))
+    }
+
     pub fn snapshot(&self) -> Result<CgroupSnapshot, CgroupError> {
-        let cpu_path = self.dir.join("cpu.stat");
-        let cpu_stat = read_file(&cpu_path)?;
-        let (usage_usec, user_usec, system_usec) = parse_cpu_stat(&cpu_stat)?;
-        let memory_current_bytes = read_integer_file(&self.dir.join("memory.current"))?;
-        let peak_path = self.dir.join("memory.peak");
-        let memory_peak_bytes = match std::fs::read_to_string(&peak_path) {
-            Ok(value) => parse_integer("memory.peak", value.trim())?,
-            Err(source) if source.kind() == io::ErrorKind::NotFound => 0,
-            Err(source) => {
-                return Err(CgroupError::Io {
-                    path: peak_path,
-                    source,
-                })
-            }
-        };
+        let cpu = CpuCounters::parse(&read_file(&self.dir.join("cpu.stat"))?)?;
+        let pressure = parse_pressure(&read_file(&self.dir.join("cpu.pressure"))?)?;
+        let stat = parse_flat_counters(&read_file(&self.dir.join("memory.stat"))?)?;
+        let events = parse_flat_counters(&read_file(&self.dir.join("memory.events"))?)?;
+        let swap_events = parse_flat_counters(&read_file(&self.dir.join("memory.swap.events"))?)?;
         Ok(CgroupSnapshot {
-            usage_usec,
-            user_usec,
-            system_usec,
-            memory_current_bytes,
-            memory_peak_bytes,
+            usage_usec: cpu.usage_usec,
+            user_usec: cpu.user_usec,
+            system_usec: cpu.system_usec,
+            nr_periods: cpu.nr_periods,
+            nr_throttled: cpu.nr_throttled,
+            throttled_usec: cpu.throttled_usec,
+            cpu_pressure_some_usec: pressure.0,
+            cpu_pressure_full_usec: pressure.1,
+            memory_current_bytes: self.read_memory_current()?,
+            memory_peak_bytes: read_integer_file(&self.dir.join("memory.peak"))?,
+            memory_anon_bytes: required(&stat, "anon")?,
+            memory_file_bytes: required(&stat, "file")?,
+            memory_kernel_bytes: required(&stat, "kernel")?,
+            memory_sock_bytes: required(&stat, "sock")?,
+            memory_events: MemoryEvents::parse(&events)?,
+            memory_swap_current_bytes: read_integer_file(&self.dir.join("memory.swap.current"))?,
+            memory_swap_peak_bytes: read_integer_file(&self.dir.join("memory.swap.peak"))?,
+            memory_swap_events: MemorySwapEvents::parse(&swap_events)?,
+            cpuset_cpus_effective: read_trimmed(&self.dir.join("cpuset.cpus.effective"))?,
+            cpu_max: read_trimmed(&self.dir.join("cpu.max"))?,
+            memory_max: read_trimmed(&self.dir.join("memory.max"))?,
+            memory_swap_max: read_trimmed(&self.dir.join("memory.swap.max"))?,
         })
     }
 
@@ -133,44 +180,25 @@ impl CgroupReader {
     }
 }
 
-impl CgroupSnapshot {
-    /// Rejects counter rollback because saturating to zero would convert a
-    /// reset or wrong-cgroup read into a favourable zero-CPU measurement.
-    pub const fn delta_since(&self, earlier: &Self) -> Result<CgroupDelta, CgroupError> {
-        let usage_usec = match self.usage_usec.checked_sub(earlier.usage_usec) {
-            Some(delta) => delta,
-            None => {
-                return Err(CgroupError::CounterRollback {
-                    field: "usage_usec",
-                    earlier: earlier.usage_usec,
-                    later: self.usage_usec,
-                })
-            }
-        };
-        let user_usec = match self.user_usec.checked_sub(earlier.user_usec) {
-            Some(delta) => delta,
-            None => {
-                return Err(CgroupError::CounterRollback {
-                    field: "user_usec",
-                    earlier: earlier.user_usec,
-                    later: self.user_usec,
-                })
-            }
-        };
-        let system_usec = match self.system_usec.checked_sub(earlier.system_usec) {
-            Some(delta) => delta,
-            None => {
-                return Err(CgroupError::CounterRollback {
-                    field: "system_usec",
-                    earlier: earlier.system_usec,
-                    later: self.system_usec,
-                })
-            }
-        };
-        Ok(CgroupDelta {
-            usage_usec,
-            user_usec,
-            system_usec,
+impl MemoryEvents {
+    fn parse(values: &std::collections::HashMap<String, u64>) -> Result<Self, CgroupError> {
+        Ok(Self {
+            low: required(values, "low")?,
+            high: required(values, "high")?,
+            max: required(values, "max")?,
+            oom: required(values, "oom")?,
+            oom_kill: required(values, "oom_kill")?,
+            oom_group_kill: required(values, "oom_group_kill")?,
+        })
+    }
+}
+
+impl MemorySwapEvents {
+    fn parse(values: &std::collections::HashMap<String, u64>) -> Result<Self, CgroupError> {
+        Ok(Self {
+            high: required(values, "high")?,
+            max: required(values, "max")?,
+            fail: required(values, "fail")?,
         })
     }
 }
@@ -182,38 +210,10 @@ fn read_file(path: &Path) -> Result<String, CgroupError> {
     })
 }
 
+fn read_trimmed(path: &Path) -> Result<String, CgroupError> {
+    Ok(read_file(path)?.trim().to_owned())
+}
+
 fn read_integer_file(path: &Path) -> Result<u64, CgroupError> {
-    let content = read_file(path)?;
-    parse_integer(&path.display().to_string(), content.trim())
-}
-
-fn parse_integer(field: &str, value: &str) -> Result<u64, CgroupError> {
-    value
-        .parse::<u64>()
-        .map_err(|_| CgroupError::InvalidInteger {
-            field: field.to_owned(),
-            value: value.to_owned(),
-        })
-}
-
-fn parse_cpu_stat(content: &str) -> Result<(u64, u64, u64), CgroupError> {
-    let mut usage = None;
-    let mut user = None;
-    let mut system = None;
-    for line in content.lines() {
-        let mut fields = line.split_whitespace();
-        let key = fields.next();
-        let value = fields.next();
-        match (key, value) {
-            (Some("usage_usec"), Some(raw)) => usage = Some(parse_integer("usage_usec", raw)?),
-            (Some("user_usec"), Some(raw)) => user = Some(parse_integer("user_usec", raw)?),
-            (Some("system_usec"), Some(raw)) => system = Some(parse_integer("system_usec", raw)?),
-            _ => {}
-        }
-    }
-    Ok((
-        usage.ok_or(CgroupError::MissingField("usage_usec"))?,
-        user.ok_or(CgroupError::MissingField("user_usec"))?,
-        system.ok_or(CgroupError::MissingField("system_usec"))?,
-    ))
+    parse::parse_integer(&path.display().to_string(), read_file(path)?.trim())
 }
