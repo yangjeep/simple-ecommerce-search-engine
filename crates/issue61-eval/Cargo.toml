@@ -11,6 +11,7 @@ bench-harness = { path = "../bench-harness" }
 commerce-core = { path = "../commerce-core" }
 comparator-eval = { path = "../comparator-eval" }
 phase6a-eval = { path = "../phase6a-eval" }
+nix = { version = "0.31", features = ["resource"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ureq = { version = "2", features = ["json"] }
