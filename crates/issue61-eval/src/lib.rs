@@ -60,8 +60,10 @@ pub use solr_pagination::{
     PreparedSolrRequest, SolrPage, AUDIT_PAGE_ROWS,
 };
 pub use steal::{
-    parse_proc_stat, read_proc_stat, should_exclude_rep, steal_percent, CpuTimes, StealError,
-    STEAL_EXCLUSION_THRESHOLD_PCT,
+    assess_assigned_cpu_steal, parse_assigned_proc_stat, parse_proc_stat, probe_assigned_cpu_steal,
+    read_proc_stat, run_assigned_cpu_steal_probe, should_exclude_rep, steal_percent, CpuSet,
+    CpuTimes, StealError, StealProbeConfig, StealProbeResult, STEAL_EXCLUSION_THRESHOLD_PCT,
+    STEAL_PROBE_DURATION,
 };
 pub use workload::{
     load_workload, write_workload, AdmissionClass, FrozenQuery, NativeRequest, SolrRequest,

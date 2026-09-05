@@ -1,3 +1,9 @@
+mod prescreen;
+
+pub use prescreen::{
+    assess_assigned_cpu_steal, parse_assigned_proc_stat, probe_assigned_cpu_steal,
+    run_assigned_cpu_steal_probe, CpuSet, StealProbeConfig, StealProbeResult, STEAL_PROBE_DURATION,
+};
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -13,9 +19,21 @@ pub struct CpuTimes {
 
 #[derive(Debug)]
 pub enum StealError {
-    Io { path: PathBuf, source: io::Error },
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
     MissingAggregateCpu,
     InvalidInteger(String),
+    InvalidCpuSet(String),
+    InvalidSelectedCpu(u32),
+    CounterRollback {
+        field: &'static str,
+        earlier: u64,
+        later: u64,
+    },
+    ZeroTotalDelta,
+    ArithmeticOverflow(&'static str),
 }
 
 impl fmt::Display for StealError {
@@ -26,15 +44,21 @@ impl fmt::Display for StealError {
             }
             Self::MissingAggregateCpu => write!(formatter, "missing aggregate cpu line"),
             Self::InvalidInteger(value) => write!(formatter, "invalid CPU jiffy count: {value}"),
+            error @ (Self::InvalidCpuSet(_)
+            | Self::InvalidSelectedCpu(_)
+            | Self::CounterRollback { .. }
+            | Self::ZeroTotalDelta
+            | Self::ArithmeticOverflow(_)) => write!(formatter, "{error:?}"),
         }
     }
 }
 
 impl Error for StealError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Io { source, .. } => Some(source),
-            Self::MissingAggregateCpu | Self::InvalidInteger(_) => None,
+        if let Self::Io { source, .. } = self {
+            Some(source)
+        } else {
+            None
         }
     }
 }
@@ -44,17 +68,17 @@ pub fn parse_proc_stat(content: &str) -> Result<CpuTimes, StealError> {
         .lines()
         .find(|line| line.split_whitespace().next() == Some("cpu"))
         .ok_or(StealError::MissingAggregateCpu)?;
-    let values = line
-        .split_whitespace()
-        .skip(1)
-        .map(|value| {
-            value
-                .parse::<u64>()
-                .map_err(|_| StealError::InvalidInteger(value.to_owned()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    let total_jiffies = values.iter().sum();
-    let steal_jiffies = values.get(7).copied().unwrap_or(0);
+    let mut total_jiffies = 0;
+    let mut steal_jiffies = 0;
+    for (index, raw) in line.split_whitespace().skip(1).enumerate() {
+        let value = raw
+            .parse::<u64>()
+            .map_err(|_| StealError::InvalidInteger(raw.to_owned()))?;
+        total_jiffies += value;
+        if index == 7 {
+            steal_jiffies = value;
+        }
+    }
     Ok(CpuTimes {
         total_jiffies,
         steal_jiffies,
@@ -62,10 +86,14 @@ pub fn parse_proc_stat(content: &str) -> Result<CpuTimes, StealError> {
 }
 
 pub fn read_proc_stat(proc_root: &Path) -> Result<CpuTimes, StealError> {
-    let path = proc_root.join("stat");
-    let content =
-        std::fs::read_to_string(&path).map_err(|source| StealError::Io { path, source })?;
-    parse_proc_stat(&content)
+    parse_proc_stat(&read_stat_file(&proc_root.join("stat"))?)
+}
+
+pub(super) fn read_stat_file(path: &Path) -> Result<String, StealError> {
+    std::fs::read_to_string(path).map_err(|source| StealError::Io {
+        path: path.to_path_buf(),
+        source,
+    })
 }
 
 pub fn steal_percent(earlier: &CpuTimes, later: &CpuTimes) -> f64 {
