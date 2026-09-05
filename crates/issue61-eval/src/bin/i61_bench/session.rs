@@ -2,12 +2,16 @@ use super::bench_request::{workload_pass, Config, QueryObservation};
 use bench_harness::Distribution;
 use issue61_eval::{
     measure_timer_floor, read_proc_stat, steal_percent, validate_measurement_window, CgroupReader,
-    CgroupSnapshot, CpuTimes, MemorySampler, ProjectedWorkload, RawRecord, SessionPlan,
-    SessionStep, TimerFloor, RAW_SCHEMA_VERSION,
+    CgroupSnapshot, CpuTimes, MemorySampler, NativePidIdentity, ProcessCpuSnapshot,
+    ProjectedWorkload, RawRecord, SessionPlan, SessionStep, TimerFloor, RAW_SCHEMA_VERSION,
 };
 use std::error::Error;
 use std::path::Path;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
+mod process;
+pub(super) use process::process_snapshot_for;
+use process::{fetch_process_snapshot, reconcile_process_cpu, validate_process_scope};
 
 pub(super) fn execute_session<E>(
     plan: SessionPlan,
@@ -33,6 +37,8 @@ pub(super) fn measure_session(
         cgroup: &cgroup,
         timer_floor,
         cpu_before: None,
+        process_before: None,
+        process_identity_before: None,
         memory_sampler: None,
         steal_before: None,
         wall_started: None,
@@ -52,6 +58,8 @@ struct SessionRunner<'a> {
     cgroup: &'a CgroupReader,
     timer_floor: TimerFloor,
     cpu_before: Option<CgroupSnapshot>,
+    process_before: Option<ProcessCpuSnapshot>,
+    process_identity_before: Option<NativePidIdentity>,
     memory_sampler: Option<MemorySampler>,
     steal_before: Option<CpuTimes>,
     wall_started: Option<Instant>,
@@ -71,7 +79,15 @@ impl SessionRunner<'_> {
                 )?;
             }
             SessionStep::OpenCounters => {
+                self.process_before = process_snapshot_for(self.config.engine, || {
+                    fetch_process_snapshot(self.agent, &self.config.engine_url)
+                })?;
                 self.cpu_before = Some(self.cgroup.snapshot()?);
+                self.process_identity_before = validate_process_scope(
+                    self.cgroup,
+                    Path::new("/proc"),
+                    self.process_before.as_ref(),
+                )?;
                 self.steal_before = Some(read_proc_stat(Path::new("/proc"))?);
                 self.memory_sampler = Some(MemorySampler::start(self.cgroup.clone())?);
                 self.wall_started = Some(Instant::now());
@@ -102,12 +118,29 @@ impl SessionRunner<'_> {
             .finish()?;
         let steal_after = read_proc_stat(Path::new("/proc"))?;
         let cpu_after = self.cgroup.snapshot()?;
+        let process_after = process_snapshot_for(self.config.engine, || {
+            fetch_process_snapshot(self.agent, &self.config.engine_url)
+        })?;
+        let process_identity_after =
+            validate_process_scope(self.cgroup, Path::new("/proc"), process_after.as_ref())?;
+        let process_identity = match (self.process_identity_before.take(), process_identity_after) {
+            (Some(before), Some(after)) => {
+                before.ensure_stable(&after)?;
+                Some(before)
+            }
+            (None, None) => None,
+            (Some(_), None) | (None, Some(_)) => {
+                return Err("native PID identities must exist at both boundaries".into());
+            }
+        };
         let delta = cpu_after.delta_since(
             &self
                 .cpu_before
                 .take()
                 .ok_or("CPU counters were not opened")?,
         )?;
+        let process =
+            reconcile_process_cpu(self.process_before.take(), process_after, delta.usage_usec)?;
         validate_measurement_window(wall_elapsed_ns, delta.usage_usec, &self.timer_floor)?;
         let steal_before = self
             .steal_before
@@ -152,6 +185,12 @@ impl SessionRunner<'_> {
             cpu_throttled_usec: delta.throttled_usec,
             cpu_pressure_some_usec: delta.cpu_pressure_some_usec,
             cpu_pressure_full_usec: delta.cpu_pressure_full_usec,
+            native_cgroup_host_pid: process_identity.map(|identity| identity.cgroup_host_pid),
+            native_pid_namespace: process_identity.map(|identity| identity.pid_namespace),
+            process_cpu_user_usec: process.map(|value| value.0.user_usec),
+            process_cpu_system_usec: process.map(|value| value.0.system_usec),
+            process_cpu_total_usec: process.map(|value| value.0.total_usec),
+            process_cgroup_disagreement_pct: process.map(|value| value.1),
             cgroup_memory_footprint_bytes: cpu_after.memory_current_bytes,
             cgroup_memory_current_median_bytes: memory_samples.median_bytes,
             cgroup_memory_current_max_bytes: memory_samples.max_bytes,

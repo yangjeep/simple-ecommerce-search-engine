@@ -52,6 +52,12 @@ fn record() -> RawRecord {
         cpu_throttled_usec: 25,
         cpu_pressure_some_usec: 7,
         cpu_pressure_full_usec: 3,
+        native_cgroup_host_pid: Some(2_334_505),
+        native_pid_namespace: Some(1),
+        process_cpu_user_usec: Some(1_190),
+        process_cpu_system_usec: Some(290),
+        process_cpu_total_usec: Some(1_480),
+        process_cgroup_disagreement_pct: Some(4.0 / 3.0),
         cgroup_memory_footprint_bytes: 4_096,
         cgroup_memory_current_median_bytes: 4_000,
         cgroup_memory_current_max_bytes: 4_500,
@@ -100,6 +106,56 @@ fn raw_record_roundtrip_preserves_all_fields_and_schema_version() {
 
     assert_eq!(actual, vec![expected]);
     assert_eq!(actual[0].schema_version, RAW_SCHEMA_VERSION);
+    assert_eq!(RAW_SCHEMA_VERSION, 4);
+}
+
+#[test]
+fn solr_record_serializes_mandatory_process_fields_as_null() {
+    // Given
+    let mut solr = record();
+    solr.engine = "solr".to_owned();
+    solr.native_cgroup_host_pid = None;
+    solr.native_pid_namespace = None;
+    solr.process_cpu_user_usec = None;
+    solr.process_cpu_system_usec = None;
+    solr.process_cpu_total_usec = None;
+    solr.process_cgroup_disagreement_pct = None;
+
+    // When
+    let value = serde_json::to_value(solr).expect("record serializes");
+
+    // Then
+    assert!(value["native_cgroup_host_pid"].is_null());
+    assert!(value["native_pid_namespace"].is_null());
+    assert!(value["process_cpu_user_usec"].is_null());
+    assert!(value["process_cpu_system_usec"].is_null());
+    assert!(value["process_cpu_total_usec"].is_null());
+    assert!(value["process_cgroup_disagreement_pct"].is_null());
+}
+
+#[test]
+fn every_missing_nullable_process_field_is_rejected() {
+    let fields = [
+        "native_cgroup_host_pid",
+        "native_pid_namespace",
+        "process_cpu_user_usec",
+        "process_cpu_system_usec",
+        "process_cpu_total_usec",
+        "process_cgroup_disagreement_pct",
+    ];
+
+    for field in fields {
+        let mut value = serde_json::to_value(record()).expect("record serializes");
+        value
+            .as_object_mut()
+            .expect("record is an object")
+            .remove(field);
+
+        assert!(
+            serde_json::from_value::<RawRecord>(value).is_err(),
+            "missing {field} must be rejected"
+        );
+    }
 }
 
 #[test]
@@ -121,7 +177,7 @@ fn reading_a_future_schema_version_is_rejected_not_silently_accepted() {
 }
 
 #[test]
-fn non_v3_schema_is_rejected_before_record_shape_is_parsed() {
+fn non_v4_schema_is_rejected_before_record_shape_is_parsed() {
     // Given
     let fixture = Fixture::new();
     std::fs::write(fixture.path(), "{\"schema_version\":2}\n")

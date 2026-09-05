@@ -138,6 +138,29 @@ fn warm_session_executes_frozen_pass_and_counter_order() {
 }
 
 #[test]
+fn native_fetches_process_snapshots_while_solr_never_calls_control_endpoint() {
+    // Given
+    let mut calls = 0;
+
+    // When
+    let native = session::process_snapshot_for(Engine::Native, || {
+        calls += 1;
+        Ok::<_, String>(issue61_eval::ProcessCpuSnapshot::new(41, 10, 5))
+    })
+    .expect("native snapshot");
+    let solr = session::process_snapshot_for(Engine::Solr, || {
+        calls += 1;
+        Ok::<_, String>(issue61_eval::ProcessCpuSnapshot::new(42, 20, 10))
+    })
+    .expect("Solr branch");
+
+    // Then
+    assert_eq!(calls, 1);
+    assert!(native.is_some());
+    assert!(solr.is_none());
+}
+
+#[test]
 fn config_parses_exactly_one_typed_engine_session() {
     // Given
     let args = vec![

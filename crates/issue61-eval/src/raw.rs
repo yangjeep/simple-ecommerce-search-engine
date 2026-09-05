@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::error::Error;
 use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
-pub const RAW_SCHEMA_VERSION: u32 = 3;
+pub const RAW_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Deserialize)]
 struct RawSchema {
@@ -37,6 +37,18 @@ pub struct RawRecord {
     pub cpu_throttled_usec: u64,
     pub cpu_pressure_some_usec: u64,
     pub cpu_pressure_full_usec: u64,
+    #[serde(deserialize_with = "required_option")]
+    pub native_cgroup_host_pid: Option<u32>,
+    #[serde(deserialize_with = "required_option")]
+    pub native_pid_namespace: Option<u32>,
+    #[serde(deserialize_with = "required_option")]
+    pub process_cpu_user_usec: Option<u64>,
+    #[serde(deserialize_with = "required_option")]
+    pub process_cpu_system_usec: Option<u64>,
+    #[serde(deserialize_with = "required_option")]
+    pub process_cpu_total_usec: Option<u64>,
+    #[serde(deserialize_with = "required_option")]
+    pub process_cgroup_disagreement_pct: Option<f64>,
     pub cgroup_memory_footprint_bytes: u64,
     pub cgroup_memory_current_median_bytes: u64,
     pub cgroup_memory_current_max_bytes: u64,
@@ -71,6 +83,14 @@ pub struct RawRecord {
     pub git_sha: String,
     pub host: String,
     pub timestamp_utc: String,
+}
+
+fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
 }
 
 impl RawRecord {
