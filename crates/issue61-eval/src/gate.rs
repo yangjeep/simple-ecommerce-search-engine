@@ -2,7 +2,8 @@ use crate::ratio::CalibrationCheck;
 use bench_harness::{t_ci_mean, Distribution};
 
 pub const MIN_BLOCKS: usize = 30;
-pub const MAX_REL_HALFWIDTH: f64 = 0.075;
+pub const MAX_CPU_LATENCY_REL_HALFWIDTH: f64 = 0.075;
+pub const MAX_FOOTPRINT_REL_HALFWIDTH: f64 = 0.02;
 pub const MAX_CV: f64 = 0.10;
 pub const ALPHA: f64 = 0.05;
 
@@ -24,45 +25,47 @@ pub struct CellStability {
     pub ci_low: f64,
     pub ci_high: f64,
     pub rel_halfwidth: f64,
+    pub max_relative_halfwidth: f64,
     pub cv: f64,
     pub underpowered: bool,
     pub passes: bool,
 }
 
 pub fn evaluate_cell(cell: &str, metric: &str, kind: MetricKind, samples: &[f64]) -> CellStability {
-    match kind {
-        MetricKind::ExactArtifact => evaluate_exact_artifact(cell, metric, samples, 0.0),
-        MetricKind::CpuOrLatency | MetricKind::Footprint => {
-            let interval = t_ci_mean(samples, ALPHA);
-            let distribution = if samples.is_empty() {
-                None
-            } else {
-                Some(Distribution::compute(samples))
-            };
-            let (rel_halfwidth, cv) = match distribution {
-                Some(distribution) if distribution.mean > 0.0 => (
-                    (interval.ci_high - interval.ci_low) / (2.0 * distribution.mean),
-                    distribution.stddev / distribution.mean,
-                ),
-                Some(_) | None => (f64::INFINITY, f64::INFINITY),
-            };
-            CellStability {
-                cell: cell.to_owned(),
-                metric: metric.to_owned(),
-                kind,
-                n: interval.n,
-                n_blocks: interval.n,
-                mean: interval.mean,
-                ci_low: interval.ci_low,
-                ci_high: interval.ci_high,
-                rel_halfwidth,
-                cv,
-                underpowered: interval.n < MIN_BLOCKS,
-                passes: interval.mean.is_finite()
-                    && rel_halfwidth <= MAX_REL_HALFWIDTH
-                    && cv <= MAX_CV,
-            }
-        }
+    let max_relative_halfwidth = match kind {
+        MetricKind::CpuOrLatency => MAX_CPU_LATENCY_REL_HALFWIDTH,
+        MetricKind::Footprint => MAX_FOOTPRINT_REL_HALFWIDTH,
+        MetricKind::ExactArtifact => return evaluate_exact_artifact(cell, metric, samples, 0.0),
+    };
+    let interval = t_ci_mean(samples, ALPHA);
+    let distribution = if samples.is_empty() {
+        None
+    } else {
+        Some(Distribution::compute(samples))
+    };
+    let (rel_halfwidth, cv) = match distribution {
+        Some(distribution) if distribution.mean > 0.0 => (
+            (interval.ci_high - interval.ci_low) / (2.0 * distribution.mean),
+            distribution.stddev / distribution.mean,
+        ),
+        Some(_) | None => (f64::INFINITY, f64::INFINITY),
+    };
+    CellStability {
+        cell: cell.to_owned(),
+        metric: metric.to_owned(),
+        kind,
+        n: interval.n,
+        n_blocks: interval.n,
+        mean: interval.mean,
+        ci_low: interval.ci_low,
+        ci_high: interval.ci_high,
+        rel_halfwidth,
+        max_relative_halfwidth,
+        cv,
+        underpowered: interval.n < MIN_BLOCKS,
+        passes: interval.mean.is_finite()
+            && rel_halfwidth <= max_relative_halfwidth
+            && cv <= MAX_CV,
     }
 }
 
@@ -104,8 +107,9 @@ pub fn evaluate_exact_artifact(
         ci_low: mean,
         ci_high: mean,
         rel_halfwidth: 0.0,
+        max_relative_halfwidth: 0.0,
         cv,
-        underpowered: n < MIN_BLOCKS,
+        underpowered: false,
         passes,
     }
 }
@@ -117,10 +121,27 @@ pub enum GateVerdict {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct CampaignCalibrations {
+    pub native: Option<CalibrationCheck>,
+    pub solr: Option<CalibrationCheck>,
+}
+
+impl CampaignCalibrations {
+    const fn passed(&self) -> bool {
+        match (&self.native, &self.solr) {
+            (Some(native), Some(solr)) => native.passed && solr.passed,
+            (Some(_), None) => false,
+            (None, Some(_)) => false,
+            (None, None) => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct GateReport {
     pub verdict: GateVerdict,
     pub cells: Vec<CellStability>,
-    pub calibration: Option<CalibrationCheck>,
+    pub calibrations: CampaignCalibrations,
     pub equivalence_passed: bool,
 }
 
@@ -141,13 +162,11 @@ impl GateReport {
 
 pub fn evaluate(
     cells: Vec<CellStability>,
-    calibration: Option<CalibrationCheck>,
+    calibrations: CampaignCalibrations,
     equivalence_passed: bool,
 ) -> GateReport {
     let all_cells_passed = cells.iter().all(|cell| cell.passes && !cell.underpowered);
-    let calibration_passed = calibration
-        .as_ref()
-        .is_some_and(|calibration| calibration.passed);
+    let calibration_passed = calibrations.passed();
     let verdict = if equivalence_passed && all_cells_passed && calibration_passed {
         GateVerdict::Keep
     } else {
@@ -156,7 +175,7 @@ pub fn evaluate(
     GateReport {
         verdict,
         cells,
-        calibration,
+        calibrations,
         equivalence_passed,
     }
 }

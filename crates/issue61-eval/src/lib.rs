@@ -38,8 +38,9 @@ pub use floor::{
     MeasurementFloorError, TimerFloor, MIN_CGROUP_CPU_USEC, MIN_FLOOR_MULTIPLE,
 };
 pub use gate::{
-    evaluate, evaluate_cell, evaluate_exact_artifact, CellStability, GateReport, GateVerdict,
-    MetricKind, ALPHA, MAX_CV, MAX_REL_HALFWIDTH, MIN_BLOCKS,
+    evaluate, evaluate_cell, evaluate_exact_artifact, CampaignCalibrations, CellStability,
+    GateReport, GateVerdict, MetricKind, ALPHA, MAX_CPU_LATENCY_REL_HALFWIDTH, MAX_CV,
+    MAX_FOOTPRINT_REL_HALFWIDTH, MIN_BLOCKS,
 };
 pub use memory_sampler::{
     summarize_memory_samples, MemorySampleSummary, MemorySampler, MemorySamplerError,
