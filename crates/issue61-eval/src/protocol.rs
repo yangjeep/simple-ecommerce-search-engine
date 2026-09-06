@@ -1,10 +1,17 @@
 use std::str::FromStr;
 
+mod campaign_plan;
 mod schedule;
 mod session_plan;
 
+pub use campaign_plan::{
+    campaign_plan, BlockSpec, CampaignBlockIndex, CampaignCycle, CampaignPhase, CampaignPlan,
+    CampaignSeries, PairOrder, SessionSpec, CALIBRATION_BLOCKS_PER_ENGINE, COLD_BLOCKS_PER_DATASET,
+    EXACT_INDEX_CELLS, STABILITY_CELLS, WARM_BLOCKS_PER_SERIES,
+};
 pub use schedule::{
-    campaign_schedule, BlockIndex, CampaignSeed, EngineOrder, EnginePair, CAMPAIGN_BLOCKS,
+    calibration_schedule, campaign_schedule, BlockIndex, CalibrationOrder, CampaignSeed,
+    EngineOrder, EnginePair, CAMPAIGN_BLOCKS,
 };
 pub use session_plan::{SessionMode, SessionPlan, SessionStep};
 

@@ -49,8 +49,11 @@ pub use native_candidates::{frozen_native_query, native_candidate_ids};
 pub use pid_namespace::{NativePidIdentity, PidNamespaceError};
 pub use process_cpu::{ProcessCpuDelta, ProcessCpuError, ProcessCpuSnapshot};
 pub use protocol::{
-    campaign_schedule, BlockIndex, CampaignSeed, Engine, EngineOrder, EnginePair, SessionMode,
-    SessionPlan, SessionStep, CAMPAIGN_BLOCKS,
+    calibration_schedule, campaign_plan, campaign_schedule, BlockIndex, BlockSpec,
+    CalibrationOrder, CampaignBlockIndex, CampaignCycle, CampaignPhase, CampaignPlan, CampaignSeed,
+    CampaignSeries, Engine, EngineOrder, EnginePair, PairOrder, SessionMode, SessionPlan,
+    SessionSpec, SessionStep, CALIBRATION_BLOCKS_PER_ENGINE, CAMPAIGN_BLOCKS,
+    COLD_BLOCKS_PER_DATASET, EXACT_INDEX_CELLS, STABILITY_CELLS, WARM_BLOCKS_PER_SERIES,
 };
 pub use ratio::{
     check_calibration, paired_ratio, CalibrationCheck, PairedBlock, RatioResult, RatioVerdict,
