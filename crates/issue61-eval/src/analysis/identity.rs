@@ -1,24 +1,12 @@
+use super::{AnalysisError, IdentityField};
 use crate::{
-    campaign_plan, check_calibration, CampaignCalibrations, CampaignCycle, CampaignPhase,
-    CampaignSeries, Dataset, Engine, EngineOrder, PairedBlock, RawRecord, SessionMode, SessionSpec,
-    WorkloadProjection, ALPHA, RAW_SCHEMA_VERSION,
+    campaign_plan, CampaignCycle, CampaignPhase, Dataset, Engine, EngineOrder, RawRecord,
+    SessionMode, SessionSpec, WorkloadProjection, RAW_SCHEMA_VERSION,
 };
-use std::error::Error;
-use std::fmt;
 use std::str::FromStr;
 
 const EXPERIMENT_ID: &str = "I61-E1";
 const RUN_ID: &str = "seed-61";
-const EXPECTED_CALIBRATION_RATIO: f64 = 1.25;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IdentityField {
-    Engine,
-    Dataset,
-    QueryClass,
-    Regime,
-    EngineOrder,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RawSessionKey {
@@ -89,60 +77,6 @@ impl RawSessionKey {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AnalysisError {
-    UnsupportedSchemaVersion { record: usize, found: u32 },
-    WrongExperimentId { record: usize },
-    WrongRunId { record: usize },
-    ExcludedRecord { record: usize },
-    UnexpectedExclusionReason { record: usize },
-    MalformedIdentity { record: usize, field: IdentityField },
-    UnexpectedIdentity { record: usize, key: RawSessionKey },
-    DuplicateIdentity { record: usize, key: RawSessionKey },
-    MissingIdentity { key: RawSessionKey },
-    InvalidCalibrationPlan { engine: Engine, block: usize },
-}
-
-impl fmt::Display for AnalysisError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnsupportedSchemaVersion { record, found } => write!(
-                formatter,
-                "record {record} has schema version {found}; expected {RAW_SCHEMA_VERSION}"
-            ),
-            Self::WrongExperimentId { record } => {
-                write!(
-                    formatter,
-                    "record {record} does not belong to {EXPERIMENT_ID}"
-                )
-            }
-            Self::WrongRunId { record } => {
-                write!(formatter, "record {record} does not belong to {RUN_ID}")
-            }
-            Self::ExcludedRecord { record } => write!(formatter, "record {record} is excluded"),
-            Self::UnexpectedExclusionReason { record } => {
-                write!(formatter, "record {record} has an exclusion reason")
-            }
-            Self::MalformedIdentity { record, field } => {
-                write!(formatter, "record {record} has malformed {field:?}")
-            }
-            Self::UnexpectedIdentity { record, key } => {
-                write!(formatter, "record {record} has unexpected identity {key:?}")
-            }
-            Self::DuplicateIdentity { record, key } => {
-                write!(formatter, "record {record} duplicates identity {key:?}")
-            }
-            Self::MissingIdentity { key } => write!(formatter, "missing identity {key:?}"),
-            Self::InvalidCalibrationPlan { engine, block } => write!(
-                formatter,
-                "calibration plan has no four/five pair for {engine:?} block {block}"
-            ),
-        }
-    }
-}
-
-impl Error for AnalysisError {}
-
 #[derive(Clone, Copy)]
 struct ExpectedSession {
     key: RawSessionKey,
@@ -150,18 +84,63 @@ struct ExpectedSession {
 }
 
 #[derive(Clone, Copy)]
-struct ValidatedRecord<'a> {
+pub(super) struct ValidatedRecord<'a> {
+    source_index: usize,
     spec: SessionSpec,
     raw: &'a RawRecord,
 }
 
-fn validate_records<'a>(
+impl<'a> ValidatedRecord<'a> {
+    pub(super) const fn source_index(self) -> usize {
+        self.source_index
+    }
+
+    pub(super) const fn spec(self) -> SessionSpec {
+        self.spec
+    }
+
+    pub(super) const fn raw(self) -> &'a RawRecord {
+        self.raw
+    }
+}
+
+#[derive(Clone, Copy)]
+enum EvidenceScope {
+    Calibration,
+    FullCampaign,
+}
+
+impl EvidenceScope {
+    const fn includes(self, phase: CampaignPhase) -> bool {
+        match (self, phase) {
+            (Self::Calibration, CampaignPhase::Calibration) | (Self::FullCampaign, _) => true,
+            (Self::Calibration, CampaignPhase::Warm | CampaignPhase::Cold) => false,
+        }
+    }
+}
+
+pub(super) fn validate_calibration_records(
     cycle: CampaignCycle,
-    records: &'a [RawRecord],
-) -> Result<Vec<ValidatedRecord<'a>>, AnalysisError> {
+    records: &[RawRecord],
+) -> Result<Vec<ValidatedRecord<'_>>, AnalysisError> {
+    validate_records(cycle, records, EvidenceScope::Calibration)
+}
+
+pub(super) fn validate_campaign_records(
+    cycle: CampaignCycle,
+    records: &[RawRecord],
+) -> Result<Vec<ValidatedRecord<'_>>, AnalysisError> {
+    validate_records(cycle, records, EvidenceScope::FullCampaign)
+}
+
+fn validate_records(
+    cycle: CampaignCycle,
+    records: &[RawRecord],
+    scope: EvidenceScope,
+) -> Result<Vec<ValidatedRecord<'_>>, AnalysisError> {
     let expected: Vec<_> = campaign_plan(cycle)
         .sessions()
-        .filter(|spec| spec.series().phase() == CampaignPhase::Calibration)
+        .filter(|spec| scope.includes(spec.series().phase()))
         .map(|spec| ExpectedSession {
             key: RawSessionKey::from_spec(spec),
             spec,
@@ -174,19 +153,21 @@ fn validate_records<'a>(
         let Some(position) = expected.iter().position(|session| session.key == key) else {
             return Err(AnalysisError::UnexpectedIdentity { record: index, key });
         };
-        if matched[position].replace(record).is_some() {
+        if matched[position].replace((index, record)).is_some() {
             return Err(AnalysisError::DuplicateIdentity { record: index, key });
         }
     }
     expected
         .into_iter()
         .zip(matched)
-        .map(|(session, raw)| {
-            raw.map(|raw| ValidatedRecord {
-                spec: session.spec,
-                raw,
-            })
-            .ok_or(AnalysisError::MissingIdentity { key: session.key })
+        .map(|(session, matched)| {
+            matched
+                .map(|(source_index, raw)| ValidatedRecord {
+                    source_index,
+                    spec: session.spec,
+                    raw,
+                })
+                .ok_or(AnalysisError::MissingIdentity { key: session.key })
         })
         .collect()
 }
@@ -211,62 +192,6 @@ fn validate_envelope(record: &RawRecord, index: usize) -> Result<(), AnalysisErr
         return Err(AnalysisError::UnexpectedExclusionReason { record: index });
     }
     Ok(())
-}
-
-fn paired_block(
-    engine: Engine,
-    block: usize,
-    records: &[ValidatedRecord<'_>],
-) -> Result<PairedBlock, AnalysisError> {
-    let mut baseline = None;
-    let mut treatment = None;
-    for record in records
-        .iter()
-        .filter(|record| record.spec.engine() == engine && record.spec.block_index().get() == block)
-    {
-        match record.spec.plan().mode() {
-            SessionMode::CalibrationFour => baseline = Some(record.raw.cpu_usage_usec as f64),
-            SessionMode::CalibrationFive => treatment = Some(record.raw.cpu_usage_usec as f64),
-            SessionMode::Warm | SessionMode::Cold => {}
-        }
-    }
-    match (baseline, treatment) {
-        (Some(baseline), Some(treatment)) => Ok(PairedBlock {
-            block,
-            baseline,
-            treatment,
-        }),
-        (Some(_), None) | (None, Some(_)) | (None, None) => {
-            Err(AnalysisError::InvalidCalibrationPlan { engine, block })
-        }
-    }
-}
-
-pub fn analyze_calibration(
-    cycle: CampaignCycle,
-    records: &[RawRecord],
-) -> Result<CampaignCalibrations, AnalysisError> {
-    let records = validate_records(cycle, records)?;
-    let mut native = Vec::new();
-    let mut solr = Vec::new();
-    for block in campaign_plan(cycle)
-        .blocks()
-        .iter()
-        .filter(|block| block.series().phase() == CampaignPhase::Calibration)
-    {
-        let CampaignSeries::Calibration { engine } = block.series() else {
-            continue;
-        };
-        let pair = paired_block(engine, block.index().get(), &records)?;
-        match engine {
-            Engine::Native => native.push(pair),
-            Engine::Solr => solr.push(pair),
-        }
-    }
-    Ok(CampaignCalibrations {
-        native: check_calibration(&native, EXPECTED_CALIBRATION_RATIO, ALPHA),
-        solr: check_calibration(&solr, EXPECTED_CALIBRATION_RATIO, ALPHA),
-    })
 }
 
 #[cfg(test)]
