@@ -1111,3 +1111,75 @@ rerun all 600 frozen queries as the independent regression gate. Passing still
 requires exact count-plus-digest equality for every query with zero native or
 engine failures. Any mismatch blocks timing; no query, field, admission class,
 or dataset may be excluded.
+
+# Revision 6: campaign matrix, lifecycle, and dry-run contract
+
+**Frozen 2026-09-06 before analyzer or driver implementation and before any authoritative timed artifact.** Revisions 1 through 5 remain preserved verbatim. All prior governing thresholds, equivalence rules, calibration bounds, noise floors, 2% reconciliation requirements, seeds, block limits, and materiality rules remain binding. Revision 6 freezes the remaining campaign execution matrix, artifact lifecycle, sequence ordering, rejection count limits, and dry-run contract.
+
+## 20.1 Trigger and scope
+
+Revision 6 freezes campaign execution details prior to driver implementation and timed benchmark execution. No measurement, result claim, or architecture verdict is introduced.
+
+## 20.2 Frozen execution matrix and class cell resolution
+
+The campaign execution matrix is frozen at 310 logical pairs and 620 total engine sessions:
+
+- Warm series: 2 datasets (WANDS, ESCI) x 4 query projections (`FastPath`, `Hybrid`, `Punt`, aggregate `All`) x 30 paired blocks = 240 blocks / 480 sessions.
+- Calibration series: 2 engine types (native, Solr) x 30 WANDS 4-vs-5 measured-pass paired blocks = 60 blocks / 120 sessions.
+- Cold series: 2 datasets (WANDS, ESCI) x 5 aggregate native-vs-Solr paired blocks = 10 blocks / 20 sessions.
+
+Admission class cells (`FastPath`, `Hybrid`, `Punt`) are measured as separate frozen sub-workloads derived from baseline query compilation. Each dataset must validate that every class cell is non-empty prior to execution. If a frozen class cell is empty for a dataset, execution aborts immediately before timing rather than silently dropping the cell.
+
+## 20.3 Deterministic scheduling and sequence order
+
+Engine session execution order within paired blocks uses deterministic seed-61 schedules:
+
+- Warm native-versus-Solr paired blocks use the existing seed-61 schedule.
+- Calibration four-pass versus five-pass paired blocks use a new deterministic balanced seed-61 schedule, placing 15 blocks in four-pass-first order and 15 blocks in five-pass-first order.
+
+The pre-timing setup and campaign sequence proceed in exact linear order:
+
+1. Validate checksums and static configuration contracts.
+2. Clean provision cores and run complete-set equivalence audits (WANDS 480/480, ESCI 600/600).
+3. Record exact index metadata and schema snapshots.
+4. Execute both-engine measured-pass calibration blocks (60 blocks / 120 sessions).
+5. Perform calibration analysis and stop before warm execution if either engine fails it.
+6. Execute warm paired blocks (240 blocks / 480 sessions).
+7. Execute cold descriptive paired blocks (10 blocks / 20 sessions).
+8. Generate final campaign analysis and summary reports.
+
+## 20.4 Cycle identity and directory lifecycle
+
+Campaign execution cycles are strictly named `run1`, `rerun1`, and `rerun2`. A third rerun (`rerun3`) is forbidden. Reruns require a concrete, documented instrument or infrastructure defect fix. A rerun preserves all prior cycle artifacts without modification or deletion, and restarts calibration plus all measured blocks from scratch.
+
+Cycle output directories use create-once paths under `artifacts/issue61/i61_e1_<cycle>/`. The execution driver refuses to start if the target cycle directory exists. Execution cannot resume across sessions or append to a past cycle directory. Within an active cycle run, events and raw records write to append-only typed streams. Truncation or overwriting of existing event or raw files within a cycle is prohibited.
+
+## 20.5 Artifact roles and rejection count semantics
+
+Cycle directories organize evidence into distinct file roles:
+
+- `events.jsonl`: append-only typed event stream recording cycle lifecycle, block starts, session completion, teardowns, and rejected attempt metadata.
+- `raw.jsonl`: append-only typed stream containing measured runtime metrics for accepted sessions. Raw measured records must never represent rejected prescreens or failed blocks.
+- `index_artifacts.jsonl`: exact index metadata, document counts, and schema snapshot identities.
+- `analysis.json`: normalized summary tables, statistical calculations, and gate evaluations.
+- `commands.log`: captured command invocations, launch arguments, and environment parameters.
+- `checksums.sha256`: SHA-256 verification hashes for static assets, launch adapters, and output files.
+
+Rejection limits enforce strict count semantics for scheduled attempts under the >20% rejection rule:
+
+- A 30-block series permits at most 6 rejected attempts. A seventh rejected attempt halts the campaign.
+- A 5-block cold series permits at most 1 rejected attempt. A second rejected attempt halts the campaign.
+- Rejected attempts rerun the whole logical block and log details exclusively in the event stream.
+
+No partial-pair resume is permitted. If any slot or session fails during a paired block, the driver tears down the environment, preserves partial evidence, aborts the cycle, and does not execute the partner slot.
+
+Primary gate analysis includes every completed block that ran after passing its prescreen; no completed block may be excluded post hoc. Sensitivity views or secondary filtering passes cannot override or rescue a failed primary quality gate.
+
+## 20.6 Dry-run rendering contract and protected launcher boundary
+
+The `--dry-run` flag operates as pure plan rendering:
+
+- `--dry-run` creates no files or directories, spawns no subprocesses, and touches no Docker, HTTP, sleep, prescreen, provision, audit, or timing functions.
+- The dry-run output must report exact plan summary metrics: 310 logical pairs, 620 total sessions, 480 warm sessions, 120 calibration sessions, 20 cold sessions, 48 stability cells, 4 exact index cells, 0 external commands, and 0 filesystem writes.
+
+This revision keeps the protected native launcher script (`scripts/issue61/run_native_container.sh`) outside until its adapter contract and checksum are explicitly frozen. `--dry-run` does not inspect, validate, or invoke the protected launcher script. Authoritative campaign execution remains blocked until that adapter contract is explicitly frozen.

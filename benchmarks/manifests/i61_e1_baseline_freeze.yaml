@@ -1,0 +1,93 @@
+# Worked-example manifest for Issue #61 Infra E1 baseline campaign freeze.
+experiment_id: I61-E1
+phase: infra-e1
+issue: 61
+decision_document: docs/experiments/ISSUE61_PROTOCOL.md#revision-6
+claim: >
+  Issue #61 Infra E1: campaign matrix, artifact lifecycle, sequence ordering,
+  rejection limits, and dry-run contract frozen before driver implementation
+  and before any authoritative timed measurement.
+
+  Frozen matrix totals 310 logical pairs (620 sessions):
+  - 240 warm paired blocks (480 sessions) across 2 datasets (WANDS, ESCI) and
+    4 query projections (FastPath, Hybrid, Punt, aggregate All) with 30 blocks each;
+  - 60 calibration paired blocks (120 sessions) across 2 engine types (native, Solr)
+    testing 4-vs-5 measured workload passes on WANDS with 30 blocks each;
+  - 10 cold paired blocks (20 sessions) across 2 datasets (WANDS, ESCI) testing
+    aggregate native-vs-Solr execution with 5 blocks each.
+
+  Execution order, cycle identity (run1, rerun1, rerun2), create-once cycle directories
+  (artifacts/issue61/i61_e1_<cycle>/), strict rejection count limits (max 6 rejections per
+  30-block series, max 1 per 5-block series), complete-set equivalence requirements, and pure
+  plan rendering for --dry-run (310 pairs, 620 sessions, 480 warm, 120 calibration, 20 cold,
+  48 stability cells, 4 exact index cells, 0 external commands, 0 writes) are fully frozen.
+
+git_sha: f78326a
+baseline_sha: c6953063e2641ceada1992d1372766a2e6ad63cd
+
+matrix:
+  logical_pairs_total: 310
+  sessions_total: 620
+  warm_blocks:
+    datasets: [wands, esci_electronics]
+    projections: [FastPath, Hybrid, Punt, All]
+    blocks_per_cell: 30
+    total_blocks: 240
+    total_sessions: 480
+  calibration_blocks:
+    engines: [native, solr]
+    dataset: wands
+    measured_pass_comparison: 4_vs_5
+    blocks_per_engine: 30
+    total_blocks: 60
+    total_sessions: 120
+  cold_blocks:
+    datasets: [wands, esci_electronics]
+    engines: [native, solr]
+    blocks_per_dataset: 5
+    total_blocks: 10
+    total_sessions: 20
+
+datasets:
+  wands:
+    name: real WANDS catalog + queries
+    products: 42994
+    queries: 480
+    equivalence: 480/480 exact match required
+  esci_electronics:
+    name: ESCI electronics filtered catalog + queries
+    products: 2075
+    queries: 600
+    equivalence: 600/600 exact match required
+
+cycles:
+  allowed_names: [run1, rerun1, rerun2]
+  directory_pattern: "artifacts/issue61/i61_e1_<cycle>/"
+  mode: create_once_no_resume
+
+artifacts:
+  events: events.jsonl
+  raw: raw.jsonl
+  index: index_artifacts.jsonl
+  analysis: analysis.json
+  commands: commands.log
+  checksums: checksums.sha256
+
+rejection_limits:
+  series_30_blocks:
+    max_rejections: 6
+    abort_threshold: 7
+  series_5_blocks:
+    max_rejections: 1
+    abort_threshold: 2
+
+dry_run_contract:
+  pairs: 310
+  sessions: 620
+  warm_sessions: 480
+  calibration_sessions: 120
+  cold_sessions: 20
+  stability_cells: 48
+  exact_index_cells: 4
+  external_commands: 0
+  writes: 0
