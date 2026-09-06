@@ -1,5 +1,9 @@
 use crate::ratio::CalibrationCheck;
+use crate::{Dataset, Engine, MetricIdentity, WorkloadProjection, STABILITY_CELLS};
 use bench_harness::{t_ci_mean, Distribution};
+
+mod warm_cell;
+pub(crate) use warm_cell::{DatasetCellStability, WarmCellKey};
 
 pub const MIN_BLOCKS: usize = 30;
 pub const MAX_CPU_LATENCY_REL_HALFWIDTH: f64 = 0.075;
@@ -117,7 +121,17 @@ pub fn evaluate_exact_artifact(
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GateVerdict {
     Keep,
+    Refine {
+        passing_dataset: Dataset,
+        blocked_dataset: Dataset,
+    },
     FixMeasurement,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct GlobalGateChecks {
+    pub(crate) equivalence_passed: bool,
+    pub(crate) process_reconciliation_passed: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -130,22 +144,42 @@ impl CampaignCalibrations {
     const fn passed(&self) -> bool {
         match (&self.native, &self.solr) {
             (Some(native), Some(solr)) => native.passed && solr.passed,
-            (Some(_), None) => false,
-            (None, Some(_)) => false,
-            (None, None) => false,
+            (Some(_), None) | (None, Some(_)) | (None, None) => false,
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct GateReport {
-    pub verdict: GateVerdict,
-    pub cells: Vec<CellStability>,
-    pub calibrations: CampaignCalibrations,
-    pub equivalence_passed: bool,
+    verdict: GateVerdict,
+    cells: Vec<CellStability>,
+    calibrations: CampaignCalibrations,
+    equivalence_passed: bool,
+    process_reconciliation_passed: bool,
 }
 
 impl GateReport {
+    pub const fn verdict(&self) -> GateVerdict {
+        self.verdict
+    }
+
+    pub fn cells(&self) -> &[CellStability] {
+        &self.cells
+    }
+
+    pub const fn calibrations(&self) -> &CampaignCalibrations {
+        &self.calibrations
+    }
+
+    pub const fn equivalence_passed(&self) -> bool {
+        self.equivalence_passed
+    }
+
+    pub const fn process_reconciliation_passed(&self) -> bool {
+        self.process_reconciliation_passed
+    }
+
     pub fn failing_cells(&self) -> impl Iterator<Item = &CellStability> {
         self.cells
             .iter()
@@ -155,27 +189,82 @@ impl GateReport {
     pub const fn exit_code(&self) -> i32 {
         match self.verdict {
             GateVerdict::Keep => 0,
-            GateVerdict::FixMeasurement => 1,
+            GateVerdict::Refine { .. } | GateVerdict::FixMeasurement => 1,
         }
     }
 }
 
-pub fn evaluate(
-    cells: Vec<CellStability>,
+pub(crate) fn evaluate_campaign_gate(
+    dataset_cells: Vec<DatasetCellStability>,
     calibrations: CampaignCalibrations,
-    equivalence_passed: bool,
+    global: GlobalGateChecks,
 ) -> GateReport {
-    let all_cells_passed = cells.iter().all(|cell| cell.passes && !cell.underpowered);
     let calibration_passed = calibrations.passed();
-    let verdict = if equivalence_passed && all_cells_passed && calibration_passed {
-        GateVerdict::Keep
-    } else {
-        GateVerdict::FixMeasurement
+    let wands_passed = dataset_passed(&dataset_cells, Dataset::Wands);
+    let esci_passed = dataset_passed(&dataset_cells, Dataset::EsciElectronics);
+    let identities_passed = dataset_cells.len() == STABILITY_CELLS
+        && dataset_cells.iter().enumerate().all(|(index, cell)| {
+            dataset_cells[..index]
+                .iter()
+                .all(|prior| prior.key != cell.key)
+        });
+    let global_passed = calibration_passed
+        && identities_passed
+        && global.equivalence_passed
+        && global.process_reconciliation_passed;
+    let verdict = match (global_passed, wands_passed, esci_passed) {
+        (false, _, _) | (true, false, false) => GateVerdict::FixMeasurement,
+        (true, true, true) => GateVerdict::Keep,
+        (true, true, false) => GateVerdict::Refine {
+            passing_dataset: Dataset::Wands,
+            blocked_dataset: Dataset::EsciElectronics,
+        },
+        (true, false, true) => GateVerdict::Refine {
+            passing_dataset: Dataset::EsciElectronics,
+            blocked_dataset: Dataset::Wands,
+        },
     };
+    let cells = dataset_cells.into_iter().map(|cell| cell.cell).collect();
     GateReport {
         verdict,
         cells,
         calibrations,
-        equivalence_passed,
+        equivalence_passed: global.equivalence_passed,
+        process_reconciliation_passed: global.process_reconciliation_passed,
     }
 }
+
+fn dataset_passed(cells: &[DatasetCellStability], dataset: Dataset) -> bool {
+    for engine in [Engine::Native, Engine::Solr] {
+        for projection in [
+            WorkloadProjection::All,
+            WorkloadProjection::FastPath,
+            WorkloadProjection::Hybrid,
+            WorkloadProjection::Punt,
+        ] {
+            for metric in [
+                MetricIdentity::CpuUsPerQuery,
+                MetricIdentity::LatencyP50Us,
+                MetricIdentity::MemoryCurrentMedianBytes,
+            ] {
+                let key = WarmCellKey {
+                    engine,
+                    dataset,
+                    projection,
+                    metric,
+                };
+                let mut matches = cells.iter().filter(|cell| cell.key == key);
+                let Some(cell) = matches.next() else {
+                    return false;
+                };
+                if matches.next().is_some() || !cell.cell.passes || cell.cell.underpowered {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests;
