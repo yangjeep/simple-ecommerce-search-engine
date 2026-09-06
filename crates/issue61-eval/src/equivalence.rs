@@ -1,5 +1,5 @@
 use crate::{sha256_hex, AdmissionClass, FrozenQuery};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -38,7 +38,7 @@ pub struct EquivalenceReport {
     pub audits: Vec<QueryAudit>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuditVerdict {
     Match,
@@ -47,7 +47,8 @@ pub enum AuditVerdict {
     EngineFailure,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CandidateAuditRecord {
     pub dataset: String,
     pub query_id: String,

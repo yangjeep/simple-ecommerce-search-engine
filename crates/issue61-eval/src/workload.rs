@@ -14,12 +14,14 @@ pub enum AdmissionClass {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeRequest {
     pub q: String,
     pub params: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SolrRequest {
     pub q: String,
     pub fq: Vec<String>,
@@ -27,6 +29,7 @@ pub struct SolrRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FrozenQuery {
     pub query_id: String,
     pub text: String,
@@ -34,9 +37,7 @@ pub struct FrozenQuery {
     pub structural_constraint_count: usize,
     pub has_residual_lexical: bool,
     pub rows: usize,
-    #[serde(default)]
     pub native: Option<NativeRequest>,
-    #[serde(default)]
     pub solr: Option<SolrRequest>,
 }
 

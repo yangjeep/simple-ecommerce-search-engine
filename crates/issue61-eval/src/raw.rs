@@ -13,6 +13,7 @@ struct RawSchema {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RawRecord {
     pub schema_version: u32,
     pub experiment_id: String,
