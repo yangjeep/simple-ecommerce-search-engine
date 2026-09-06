@@ -4,6 +4,7 @@
 //! server-side cgroup CPU accounting neutralizes that process-boundary
 //! asymmetry.
 
+mod analysis;
 mod catalog_data;
 mod cgroup;
 mod equivalence;
@@ -25,6 +26,7 @@ mod steal;
 mod workload;
 mod workload_projection;
 
+pub use analysis::{analyze_calibration, AnalysisError, IdentityField, RawSessionKey};
 pub use catalog_data::{load_dataset, Dataset, LoadedDataset};
 pub use cgroup::{
     CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot, MemoryEvents, MemorySwapEvents,
