@@ -1,42 +1,7 @@
 use issue61_eval::{
-    check_calibration, evaluate, evaluate_cell, evaluate_exact_artifact, CalibrationCheck,
-    CampaignCalibrations, GateVerdict, MetricKind, PairedBlock, ALPHA,
-    MAX_CPU_LATENCY_REL_HALFWIDTH, MAX_FOOTPRINT_REL_HALFWIDTH, MIN_BLOCKS,
+    evaluate_cell, evaluate_exact_artifact, MetricKind, MAX_CPU_LATENCY_REL_HALFWIDTH,
+    MAX_FOOTPRINT_REL_HALFWIDTH, MIN_BLOCKS,
 };
-
-fn stable_cell() -> issue61_eval::CellStability {
-    evaluate_cell(
-        "native/wands/warm",
-        "cpu_us_per_query",
-        MetricKind::CpuOrLatency,
-        &[100.0; MIN_BLOCKS],
-    )
-}
-
-fn passed_calibration() -> CalibrationCheck {
-    let blocks: Vec<PairedBlock> = (0..MIN_BLOCKS)
-        .map(|block| PairedBlock {
-            block,
-            baseline: 100.0,
-            treatment: 125.0,
-        })
-        .collect();
-    check_calibration(&blocks, 1.25, ALPHA).expect("constant known effect should calibrate")
-}
-
-fn passed_calibrations() -> CampaignCalibrations {
-    CampaignCalibrations {
-        native: Some(passed_calibration()),
-        solr: Some(passed_calibration()),
-    }
-}
-
-fn failed_calibration() -> CalibrationCheck {
-    CalibrationCheck {
-        passed: false,
-        ..passed_calibration()
-    }
-}
 
 #[test]
 fn a_tight_low_variance_cell_passes() {
@@ -156,85 +121,6 @@ fn fewer_than_thirty_blocks_marks_the_cell_underpowered() {
 }
 
 #[test]
-fn underpowered_cells_force_fix_measurement() {
-    // Given: stable measurements from too few independent blocks.
-    let cell = evaluate_cell(
-        "cell",
-        "cpu",
-        MetricKind::CpuOrLatency,
-        &[100.0; MIN_BLOCKS - 1],
-    );
-
-    // When: all other gate requirements pass.
-    let report = evaluate(vec![cell], passed_calibrations(), true);
-
-    // Then: the power failure still blocks the campaign.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-}
-
-#[test]
-fn missing_native_calibration_forces_fix_measurement() {
-    // Given: powered, stable, semantically equivalent measurements.
-    let cell = stable_cell();
-
-    // When: no known-effect calibration result is supplied.
-    let calibrations = CampaignCalibrations {
-        native: None,
-        solr: Some(passed_calibration()),
-    };
-    let report = evaluate(vec![cell], calibrations, true);
-
-    // Then: repeatability alone cannot pass an uncalibrated instrument.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-    assert!(report.calibrations.native.is_none());
-}
-
-#[test]
-fn missing_solr_calibration_forces_fix_measurement() {
-    // Given: powered, stable, equivalent measurements with native calibration only.
-    let calibrations = CampaignCalibrations {
-        native: Some(passed_calibration()),
-        solr: None,
-    };
-
-    // When: the complete campaign gate is evaluated.
-    let report = evaluate(vec![stable_cell()], calibrations, true);
-
-    // Then: the absent Solr arm blocks the campaign.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-}
-
-#[test]
-fn failed_native_calibration_forces_fix_measurement() {
-    // Given: both calibration arms are present but native failed.
-    let calibrations = CampaignCalibrations {
-        native: Some(failed_calibration()),
-        solr: Some(passed_calibration()),
-    };
-
-    // When: the complete campaign gate is evaluated.
-    let report = evaluate(vec![stable_cell()], calibrations, true);
-
-    // Then: the failed native arm blocks the campaign.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-}
-
-#[test]
-fn failed_solr_calibration_forces_fix_measurement() {
-    // Given: both calibration arms are present but Solr failed.
-    let calibrations = CampaignCalibrations {
-        native: Some(passed_calibration()),
-        solr: Some(failed_calibration()),
-    };
-
-    // When: the complete campaign gate is evaluated.
-    let report = evaluate(vec![stable_cell()], calibrations, true);
-
-    // Then: the failed Solr arm blocks the campaign.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-}
-
-#[test]
 fn exact_artifact_within_tolerance_passes_without_bootstrapping() {
     // Given: deterministic artifact observations within declared byte tolerance.
     let samples = [1_000.0, 1_000.5, 999.5];
@@ -248,47 +134,4 @@ fn exact_artifact_within_tolerance_passes_without_bootstrapping() {
     assert_eq!(cell.ci_low, cell.mean);
     assert_eq!(cell.ci_high, cell.mean);
     assert!(!cell.underpowered);
-}
-
-#[test]
-fn failed_equivalence_still_forces_fix_measurement() {
-    // Given: stable, powered, calibrated resource measurements.
-    let cell = stable_cell();
-
-    // When: semantic equivalence fails.
-    let report = evaluate(vec![cell], passed_calibrations(), false);
-
-    // Then: resource savings cannot excuse incorrect results.
-    assert_eq!(report.verdict, GateVerdict::FixMeasurement);
-    assert!(!report.equivalence_passed);
-}
-
-#[test]
-fn exit_code_is_nonzero_for_fix_measurement() {
-    // Given/When: calibration is missing from an otherwise passing report.
-    let report = evaluate(
-        vec![stable_cell()],
-        CampaignCalibrations {
-            native: None,
-            solr: None,
-        },
-        true,
-    );
-
-    // Then: automation receives a blocking exit status.
-    assert_eq!(report.exit_code(), 1);
-}
-
-#[test]
-fn keep_requires_every_preregistered_condition() {
-    // Given: stable, powered, equivalent, calibrated measurements.
-    let calibrations = passed_calibrations();
-
-    // When: the complete gate is evaluated.
-    let report = evaluate(vec![stable_cell()], calibrations, true);
-
-    // Then: and only then may the campaign proceed.
-    assert_eq!(report.verdict, GateVerdict::Keep);
-    assert_eq!(report.exit_code(), 0);
-    assert_eq!(report.failing_cells().count(), 0);
 }

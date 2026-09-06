@@ -26,7 +26,12 @@ mod steal;
 mod workload;
 mod workload_projection;
 
-pub use analysis::{analyze_calibration, AnalysisError, IdentityField, RawSessionKey};
+pub use analysis::{
+    analyze_calibration, analyze_campaign, AnalysisError, CampaignAnalysis, CampaignEvidence,
+    CandidateAuditError, CandidateAuditEvidence, CandidateAuditSummary, CandidateEvidenceKind,
+    CandidateSetSide, ExactIndexObservation, IdentityField, MetricIdentity, ProcessCpuSummary,
+    ProcessReconciliationError, RawSessionKey,
+};
 pub use catalog_data::{load_dataset, Dataset, LoadedDataset};
 pub use cgroup::{
     CgroupDelta, CgroupError, CgroupReader, CgroupSnapshot, MemoryEvents, MemorySwapEvents,
@@ -40,8 +45,8 @@ pub use floor::{
     MeasurementFloorError, TimerFloor, MIN_CGROUP_CPU_USEC, MIN_FLOOR_MULTIPLE,
 };
 pub use gate::{
-    evaluate, evaluate_cell, evaluate_exact_artifact, CampaignCalibrations, CellStability,
-    GateReport, GateVerdict, MetricKind, ALPHA, MAX_CPU_LATENCY_REL_HALFWIDTH, MAX_CV,
+    evaluate_cell, evaluate_exact_artifact, CampaignCalibrations, CellStability, GateReport,
+    GateVerdict, MetricKind, ALPHA, MAX_CPU_LATENCY_REL_HALFWIDTH, MAX_CV,
     MAX_FOOTPRINT_REL_HALFWIDTH, MIN_BLOCKS,
 };
 pub use memory_sampler::{
