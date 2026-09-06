@@ -14,6 +14,7 @@ mod lexical_tokens;
 mod memory_sampler;
 mod native_candidates;
 mod pid_namespace;
+mod post_run;
 mod process_cpu;
 mod protocol;
 mod ratio;
@@ -55,6 +56,7 @@ pub use memory_sampler::{
 };
 pub use native_candidates::{frozen_native_query, native_candidate_ids};
 pub use pid_namespace::{NativePidIdentity, PidNamespaceError};
+pub use post_run::{run_completed_analysis_cli, CompletedAnalysis, PostRunError};
 pub use process_cpu::{ProcessCpuDelta, ProcessCpuError, ProcessCpuSnapshot};
 pub use protocol::{
     calibration_schedule, campaign_plan, campaign_schedule, BlockIndex, BlockSpec,
