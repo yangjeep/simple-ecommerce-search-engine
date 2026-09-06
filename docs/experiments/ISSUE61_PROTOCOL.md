@@ -1183,3 +1183,31 @@ The `--dry-run` flag operates as pure plan rendering:
 - The dry-run output must report exact plan summary metrics: 310 logical pairs, 620 total sessions, 480 warm sessions, 120 calibration sessions, 20 cold sessions, 48 stability cells, 4 exact index cells, 0 external commands, and 0 filesystem writes.
 
 This revision keeps the protected native launcher script (`scripts/issue61/run_native_container.sh`) outside until its adapter contract and checksum are explicitly frozen. `--dry-run` does not inspect, validate, or invoke the protected launcher script. Authoritative campaign execution remains blocked until that adapter contract is explicitly frozen.
+
+# Revision 7: campaign analyzer matching, metric precision, and purity contracts
+
+**Frozen 2026-09-06 before analyzer implementation and authoritative timed artifacts.** Revisions 1 through 6 remain preserved verbatim. All prior governing thresholds, the 310/620 campaign matrix, equivalence rules, materiality criteria, rejection limits, 2% process-reconciliation requirements, and rerun rules remain binding. Revision 7 freezes campaign analyzer matching rules, metric precision targets, calibration evaluation logic, exact index artifact inputs, and analyzer purity boundaries.
+
+## 21.1 Trigger and scope
+
+Revision 7 removes analyzer matching and precision ambiguity prior to analyzer implementation and authoritative timed benchmark execution. It preserves all prior revisions, thresholds, and campaign matrices verbatim.
+
+## 21.2 Raw schema and campaign plan matching
+
+The raw record schema remains v4. An external typed argument supplies the analyzer cycle. Each raw session record is matched against `campaign_plan(cycle)` by `(calibration, engine, dataset, query_class, regime, rep, engine_order)`, never by JSONL file adjacency or line order. In this match tuple, `rep` represents the logical block index and `engine_order` represents the paired slot index. Calibration pass identity is recovered directly from the typed campaign plan combined with the regime tag. Any duplicate, missing, unexpected, or post-hoc excluded records cause the analyzer to fail closed immediately.
+
+## 21.3 Metric precision and memory footprint sample definition
+
+Warm `cpu_us_per_query` and `latency_p50_us` precision evaluation uses a maximum 7.5% relative Student-t half-width at 95% confidence. Evaluating warm per-block footprint precision uses a maximum 2% relative Student-t half-width on `cgroup_memory_current_median_bytes`. All three stability metrics retain the maximum 10% coefficient of variation and 30-block requirement. This 2% memory precision limit formalizes the footprint bound referenced in §16.6, removing sample field ambiguity prior to execution rather than retuning bounds post-result.
+
+## 21.4 Calibration pass criteria
+
+Calibration evaluation requires independent passes for native and Solr using block-total `cpu_usage_usec` across 30 paired blocks, testing against the expected 4-vs-5 ratio of 1.25. If either engine arm is missing or fails the calibration test, the campaign status becomes `FIX MEASUREMENT`, blocking warm execution.
+
+## 21.5 Exact index evidence gate
+
+Exact index evidence is ingested as a separate four-record typed input covering each engine and dataset pair (`index_artifacts.jsonl`). Index size metrics are exact descriptive artifacts without bootstrap confidence intervals or cross-engine claims. The analyzer ignores `RawRecord.index_serialized_bytes` when evaluating the exact index gate.
+
+## 21.6 Analyzer purity and execution boundary
+
+The analyzer module is strictly pure. It does not create cycle directories, spawn subprocesses, invoke Docker or HTTP calls, or enable non-dry-run execution. Execution via the protected launcher script remains blocked until its adapter contract and checksum are explicitly frozen in a future revision.
