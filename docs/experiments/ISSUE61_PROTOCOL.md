@@ -1211,3 +1211,43 @@ Exact index evidence is ingested as a separate four-record typed input covering 
 ## 21.6 Analyzer purity and execution boundary
 
 The analyzer module is strictly pure. It does not create cycle directories, spawn subprocesses, invoke Docker or HTTP calls, or enable non-dry-run execution. Execution via the protected launcher script remains blocked until its adapter contract and checksum are explicitly frozen in a future revision.
+
+# Revision 8: aggregate analyzer evidence and verdict contract
+
+**Frozen 2026-09-06 before analyzer implementation and authoritative timed artifacts.** Revisions 1 through 7 remain preserved verbatim. All prior governing thresholds, raw schema v4, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, and purity rules remain binding. Revision 8 freezes candidate audit identity and validation, native process CPU reconciliation, dataset-scoped verdict precedence, and analyzer exit behavior.
+
+## 22.1 Trigger and scope
+
+Revision 8 closes the remaining analyzer degrees of freedom identified by adversarial review prior to analyzer implementation. Sections 5, 6.4, 10, 16.3, 16.7, and 16.11 remain binding.
+
+## 22.2 Candidate audit validation and complete-set equivalence
+
+Candidate audit evidence must supply exactly 1,080 records matching the frozen workload slices: 480 WANDS queries and 600 ESCI-electronics queries. The analyzer validates an exact bijection by typed dataset and `query_id` against the supplied workload slices, confirming that the admission class recorded in each audit entry matches the workload slice entry.
+
+Each audit record is structurally validated as one of `Match`, `Mismatch`, `NativeFailure`, or `EngineFailure`. Count and digest fields must be present or absent as a pair. A `Match` requires equal counts, equal lowercase SHA-256 digests, empty directional differences, and no failure reason. A `Mismatch` requires both count/digest pairs, at least one count or digest inequality, and no failure reason; its directional differences may both be empty when only the count differs. A failure verdict requires a non-empty reason, empty directional differences, and an absent count/digest pair for the failed side. Equivalence requires that all 1,080 records be `Match`. Any complete `Mismatch`, `NativeFailure`, or `EngineFailure` is valid negative evidence that fails the equivalence gate. Missing, duplicate, unexpected, class-mismatched, or structurally malformed records produce an `AnalysisError`.
+
+## 22.3 Native process CPU reconciliation and 2% bound
+
+Every native campaign record must include `process_cpu_user_usec`, `process_cpu_system_usec`, `process_cpu_total_usec`, and `process_cgroup_disagreement_pct`, whereas Solr records must omit all four fields. The process tuple must verify that the checked sum of `process_cpu_user_usec` and `process_cpu_system_usec` equals `process_cpu_total_usec`. The stored disagreement percentage must be finite, non-negative, and exactly equal to the percentage recomputed by the analyzer using the same expression as the measurement harness.
+
+Disagreement between process CPU time and container cgroup CPU usage (`cpu_usage_usec`) is recomputed using integer cross multiplication to avoid floating point imprecision. Disagreement of exactly 2% or less passes calibration. Disagreement greater than 2% constitutes complete negative evidence that forces `FIX MEASUREMENT`. Malformed or missing process tuples on native records produce an `AnalysisError`.
+
+## 22.4 Dataset-scoped cells and global verdict precedence
+
+Each dataset owns 24 warm stability cells (2 engines x 4 projections x 3 metrics: `cpu_us_per_query`, `latency_p50_us`, and `cgroup_memory_current_median_bytes`). Cold series and exact-index artifacts are evaluated as descriptive evidence only.
+
+Verdict evaluation follows strict precedence:
+
+1. Any global calibration failure, equivalence failure, or process CPU reconciliation failure overrides `REFINE` and forces `FIX MEASUREMENT`.
+2. If no global failure exists, dataset outcomes are evaluated independently across their 24 warm cells.
+3. If both datasets pass all warm cells, the campaign verdict is `KEEP`.
+4. If exactly one dataset passes all warm cells, the campaign verdict is `REFINE`, naming both the passing and blocked datasets.
+5. If zero datasets pass all warm cells, the campaign verdict is `FIX MEASUREMENT`.
+
+## 22.5 Analyzer exit behavior
+
+The analyzer process exit code is strictly tied to the final campaign verdict:
+
+- Only a `KEEP` verdict exits with code zero (0).
+- A `REFINE` verdict names the passing and blocked datasets and exits with a non-zero code.
+- A `FIX MEASUREMENT` verdict or any `AnalysisError` exits with a non-zero code.
