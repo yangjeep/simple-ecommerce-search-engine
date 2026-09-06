@@ -2,6 +2,8 @@ use super::Engine;
 use std::str::FromStr;
 
 pub const CAMPAIGN_BLOCKS: usize = 30;
+const BALANCED_SLOTS: u64 = 15;
+const TOTAL_SLOTS: u64 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CampaignSeed;
@@ -54,6 +56,12 @@ impl FromStr for BlockIndex {
 pub enum EngineOrder {
     First,
     Second,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CalibrationOrder {
+    FourFirst,
+    FiveFirst,
 }
 
 impl EngineOrder {
@@ -120,23 +128,57 @@ impl SplitMix64 {
     }
 }
 
-fn build_campaign_schedule() -> [EnginePair; CAMPAIGN_BLOCKS] {
-    let mut random = SplitMix64(61);
-    let mut solr_first = 15u64;
-    let mut remaining = 30u64;
+fn build_balanced_schedule<T: Copy>(selected: T, alternate: T) -> [T; CAMPAIGN_BLOCKS] {
+    let mut random = SplitMix64(CampaignSeed.get());
+    let mut selected_remaining = BALANCED_SLOTS;
+    let mut remaining = TOTAL_SLOTS;
     std::array::from_fn(|_| {
-        let pair = if random.next() % remaining < solr_first {
-            solr_first -= 1;
-            EnginePair::new(Engine::Solr, Engine::Native)
+        let value = if random.next() % remaining < selected_remaining {
+            selected_remaining -= 1;
+            selected
         } else {
-            EnginePair::new(Engine::Native, Engine::Solr)
+            alternate
         };
         remaining -= 1;
-        pair
+        value
     })
 }
 
 #[must_use]
 pub fn campaign_schedule() -> [EnginePair; CAMPAIGN_BLOCKS] {
-    build_campaign_schedule()
+    build_balanced_schedule(
+        EnginePair::new(Engine::Solr, Engine::Native),
+        EnginePair::new(Engine::Native, Engine::Solr),
+    )
+}
+
+#[must_use]
+pub fn calibration_schedule() -> [CalibrationOrder; CAMPAIGN_BLOCKS] {
+    build_balanced_schedule(CalibrationOrder::FourFirst, CalibrationOrder::FiveFirst)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{calibration_schedule, CalibrationOrder};
+
+    #[test]
+    fn seed_61_calibration_schedule_is_deterministic_and_balanced() {
+        let schedule = calibration_schedule();
+
+        assert_eq!(schedule, calibration_schedule());
+        assert_eq!(
+            schedule
+                .iter()
+                .filter(|order| **order == CalibrationOrder::FourFirst)
+                .count(),
+            15
+        );
+        assert_eq!(
+            schedule
+                .iter()
+                .filter(|order| **order == CalibrationOrder::FiveFirst)
+                .count(),
+            15
+        );
+    }
 }
