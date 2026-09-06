@@ -1251,3 +1251,154 @@ The analyzer process exit code is strictly tied to the final campaign verdict:
 - Only a `KEEP` verdict exits with code zero (0).
 - A `REFINE` verdict names the passing and blocked datasets and exits with a non-zero code.
 - A `FIX MEASUREMENT` verdict or any `AnalysisError` exits with a non-zero code.
+
+# Revision 9: completed-cycle analysis boundary
+
+**Frozen 2026-09-06 before loader or report implementation and before cycle-result inspection.** Revisions 1 through 8 remain preserved verbatim. All prior governing thresholds, raw schema v4, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, purity rules, and verdict precedence remain binding. Revision 9 decision-completely freezes the post-run completed-cycle analysis interface, input contract, verification seal, file structure, and CLI invocation before any loader or report implementation or cycle-result inspection.
+
+## 23.1 Trigger and scope
+
+Revision 9 freezes post-run completed-cycle analysis boundaries for already completed campaign cycles. It introduces no measured result, alters no prior threshold, and explicitly supersedes only Revision 6's ambiguous phrase stating that `checksums.sha256` covers output files. For this checkpoint, `checksums.sha256` is a pre-analysis seal: it excludes itself and `analysis.json`.
+
+## 23.2 CLI invocation and path derivation
+
+Analysis executes through a dedicated CLI interface with exact flag order:
+
+`i61_analyze --repository-root <PATH> --cycle <run1|rerun1|rerun2>`
+
+The CLI accepts no other arguments, optional flags, environment overrides, or force flags. The repository root path must resolve to a canonical non-symlink directory. The cycle directory is derived strictly as `<PATH>/artifacts/issue61/i61_e1_<cycle>/` and must exist as a canonical non-symlink directory.
+
+## 23.3 File structure and regular-file boundary
+
+The analyzer operates on an exact required set of files within the derived cycle directory. The cycle directory must contain:
+
+- `candidate_audit_esci.jsonl`
+- `candidate_audit_wands.jsonl`
+- `events.jsonl`
+- `raw.jsonl`
+- `index_artifacts.jsonl`
+- `commands.log`
+- `checksums.sha256`
+
+The file `analysis.json` must be absent before analysis begins and is created exactly once upon successful completion. Every existing input must be a strict regular file, and the repository root, cycle directory, and every parent path component of an input or output must not be a symlink. A successfully created `analysis.json` must be a strict regular file.
+
+## 23.4 Pre-analysis checksum verification seal
+
+Before semantically parsing any artifact, the analyzer verifies the pre-analysis seal in `checksums.sha256`; files may first be opened and read only as opaque bytes for checksum verification. The checksum file must exist in strict immutable format, containing exactly twelve bytewise-sorted repository-relative path entries with lower-case hexadecimal SHA-256 digests and two space separators:
+
+```
+<HASH>  artifacts/issue61/i61_e1_<cycle>/candidate_audit_esci.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/candidate_audit_wands.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/commands.log
+<HASH>  artifacts/issue61/i61_e1_<cycle>/events.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/index_artifacts.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/raw.jsonl
+<HASH>  benchmarks/configs/issue61/solr_esci_electronics_config.json
+<HASH>  benchmarks/configs/issue61/solr_esci_electronics_schema.json
+<HASH>  benchmarks/configs/issue61/solr_wands_config.json
+<HASH>  benchmarks/configs/issue61/solr_wands_schema.json
+<HASH>  benchmarks/workloads/i61_esci_electronics.jsonl
+<HASH>  benchmarks/workloads/i61_wands_480.jsonl
+```
+
+The checksum file must not contain self-references, an entry for `analysis.json`, or any other path. Parsing rejects CRLF, comments, blank lines, duplicate paths, uppercase or non-hexadecimal digests, separators other than exactly two ASCII spaces, absolute paths, backslashes, and `.` or `..` path components.
+
+The six static input files in `checksums.sha256` must match these exact verified hashes:
+
+- WANDS workload `benchmarks/workloads/i61_wands_480.jsonl`: `462b5bf8cae6e12fdcfa2cb5177a648d4de43aec0936c35e61aaffaacb0cad08`
+- ESCI workload `benchmarks/workloads/i61_esci_electronics.jsonl`: `531e39d0feda45591c0f3f17adfa25b1b52d73ff70994a3e31cad739364f050e`
+- WANDS schema snapshot `benchmarks/configs/issue61/solr_wands_schema.json`: `997e321ed081133b9a83fce5f35e42a75cfd3333bf91505f876501343600463a`
+- WANDS config snapshot `benchmarks/configs/issue61/solr_wands_config.json`: `ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b`
+- ESCI schema snapshot `benchmarks/configs/issue61/solr_esci_electronics_schema.json`: `62266803df8715b3b09485fdc168b580c1ae337d1dd7b5b43ae1ce09e74eca2e`
+- ESCI config snapshot `benchmarks/configs/issue61/solr_esci_electronics_config.json`: `ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b`
+
+The two cycle-local candidate audit files bind equivalence evidence to the analyzed cycle. They are generated by that cycle's clean-provision complete-set audits and sealed with their actual per-cycle hashes; the earlier Revision 5 audits remain preserved historical evidence but are not substitutes for cycle-local evidence. The four Solr snapshot files are both hashed as manifest inputs and compared against the exact path and digest identities recorded by the Solr index records.
+
+Any missing entry, hash mismatch, unsorted order, malformed line, extra entry, self-reference, or presence of `analysis.json` in `checksums.sha256` fails verification immediately. Checksum verification must complete successfully before semantic parsing of any JSON or JSONL content.
+
+## 23.5 Artifact formatting and strict JSONL constraints
+
+All semantically parsed JSONL input files require strict LF line endings, UTF-8 encoding, and exactly one object per line. Parsing rejects blank lines, CRLF line endings, unknown fields, duplicate fields, missing nullable keys, malformed enums, and trailing data. `events.jsonl` is not semantically parsed by this checkpoint and is verified only as sealed opaque completion evidence.
+
+Input file record constraints:
+
+- `raw.jsonl`: must contain exactly 620 v4 raw records matching the campaign matrix.
+- `benchmarks/workloads/i61_wands_480.jsonl`: must contain exactly 480 workload entries with non-null per-engine request blocks.
+- `benchmarks/workloads/i61_esci_electronics.jsonl`: must contain exactly 600 workload entries with non-null per-engine request blocks.
+- `candidate_audit_wands.jsonl`: must contain exactly 480 candidate audit records for the active cycle.
+- `candidate_audit_esci.jsonl`: must contain exactly 600 candidate audit records for the active cycle.
+
+Events and commands files are validated as checksum-verified opaque completion evidence.
+
+## 23.6 Index schema v1 specification
+
+The `index_artifacts.jsonl` file must adhere strictly to index schema v1 and forms an exact four-record bijection with the Cartesian product of engines (`native`, `solr`) and datasets (`wands`, `esci_electronics`). Parsing rejects unknown fields.
+
+Every index record must include:
+
+- `schema_version`: integer `1`
+- `experiment_id`: string `"I61-E1"`
+- `cycle`: string matching the active cycle (`"run1"`, `"rerun1"`, or `"rerun2"`)
+- `engine`: string (`"native"` or `"solr"`)
+- `dataset`: string (`"wands"` or `"esci_electronics"`)
+- `document_count`: integer (`42994` for WANDS, `2075` for ESCI)
+- `index_serialized_bytes`: integer in the range `1..=9007199254740992` (1 to 2^53)
+
+Engine-specific snapshot fields:
+
+- Native records must not contain snapshot fields (`schema_snapshot` and `config_snapshot` must be omitted).
+- Solr records require `schema_snapshot` and `config_snapshot` objects containing exactly the fields `path` and `sha256` with these dataset-specific values:
+  - WANDS Solr record requires `schema_snapshot` (`path`: `"benchmarks/configs/issue61/solr_wands_schema.json"`, `sha256`: `"997e321ed081133b9a83fce5f35e42a75cfd3333bf91505f876501343600463a"`) and `config_snapshot` (`path`: `"benchmarks/configs/issue61/solr_wands_config.json"`, `sha256`: `"ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b"`).
+  - ESCI Solr record requires `schema_snapshot` (`path`: `"benchmarks/configs/issue61/solr_esci_electronics_schema.json"`, `sha256`: `"62266803df8715b3b09485fdc168b580c1ae337d1dd7b5b43ae1ce09e74eca2e"`) and `config_snapshot` (`path`: `"benchmarks/configs/issue61/solr_esci_electronics_config.json"`, `sha256`: `"ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b"`).
+
+## 23.7 Deterministic report format and output behavior
+
+Successful completed analysis generates a create-new report file at `artifacts/issue61/i61_e1_<cycle>/analysis.json`. The complete report is serialized to memory before the file is opened. Publication uses create-new semantics, `write_all`, and a successful file sync. A write or sync failure closes and removes the incomplete file before returning exit code 2; if cleanup itself fails, the diagnostic names the incomplete residue and the next invocation continues to reject it as a collision.
+
+Report serialization constraints:
+
+- Format: UTF-8 pretty JSON, two-space indentation, exactly one trailing LF newline.
+- Exclusions: must contain no timestamps, absolute file paths, hostnames, or unordered maps.
+- Exact top-level key order:
+  1. `schema_version`
+  2. `experiment_id`
+  3. `cycle`
+  4. `inputs`
+  5. `decision`
+  6. `global_gates`
+  7. `calibrations`
+  8. `candidate_audit`
+  9. `process_cpu`
+  10. `warm_cells`
+  11. `exact_index_cells`
+  12. `cold`
+- `schema_version` is integer `1`; `experiment_id` is `"I61-E1"`; and `cycle` is the typed active cycle.
+- Each `inputs` item contains exactly `path` and `sha256`.
+- `decision` contains, in order, `verdict`, `passing_dataset`, `blocked_dataset`, and `exit_code`. Verdict strings are `"KEEP"`, `"REFINE"`, and `"FIX MEASUREMENT"`. `KEEP` and `FIX MEASUREMENT` require both dataset fields to be JSON `null`; `REFINE` requires both fields to be non-null lowercase protocol names copied from `GateVerdict::Refine`.
+- `global_gates` contains, in order, `calibration_passed`, `equivalence_passed`, and `process_cpu_reconciliation_passed`.
+- `calibrations` contains `passed` followed by `arms`. Arms are ordered native then Solr and each contains, in order, `engine`, `expected_ratio`, `observed`, and `passed`; `observed` is either JSON `null` for a missing arm or an object containing `n_blocks`, `point_ratio`, `ci_low`, and `ci_high` in that order. A missing arm has `passed: false`.
+- `candidate_audit` contains, in order, `total_records`, `matched_records`, `mismatched_records`, `native_failure_records`, `engine_failure_records`, and `equivalence_passed`.
+- `process_cpu` contains, in order, `native_records`, `solr_records`, `max_disagreement_pct`, and `reconciliation_passed`.
+- Every `warm_cells` and `exact_index_cells` item contains the existing `CellStability` fields in order: `cell`, `metric`, `kind`, `n`, `n_blocks`, `mean`, `ci_low`, `ci_high`, `rel_halfwidth`, `max_relative_halfwidth`, `cv`, `underpowered`, and `passes`. `kind` uses exactly `"CPU_OR_LATENCY"`, `"FOOTPRINT"`, or `"EXACT_ARTIFACT"`.
+- `cold` contains, in order, `session_count` and `gated`, where `gated` is always `false`.
+- Array orderings:
+  - `inputs`: preserves exact checksum manifest order (the twelve bytewise-sorted checksum entries).
+  - `warm_cells`: preserves analyzer order: engine (`native`, `solr`), then dataset (`wands`, `esci_electronics`), then projection (`all`, `fast-path`, `hybrid`, `punt`), then metric (`cpu_us_per_query`, `latency_p50_us`, `cgroup_memory_current_median_bytes`).
+  - `exact_index_cells`: preserves analyzer order: native/WANDS, native/ESCI, Solr/WANDS, Solr/ESCI. Typed document counts and snapshot identities remain sealed source evidence in `index_artifacts.jsonl`; this report array is explicitly the analyzer's normalized exact-cell view.
+
+Execution and exit behavior:
+
+- On successful completed analysis:
+  - Writes create-new `analysis.json`.
+  - stdout: prints exactly one summary line formatted as `i61_analyze: cycle=<cycle> verdict=<verdict> passing_dataset=<passing|null> blocked_dataset=<blocked|null> exit_code=<exit_code>\n`.
+  - stderr: empty.
+  - exit code: `0` for `KEEP`, `1` for `REFINE` or `FIX MEASUREMENT`.
+- On failure (CLI invocation error, path error, checksum failure, symlink violation, parse error, schema error, `AnalysisError`, serialization failure, file collision, or write failure):
+  - Writes no successful report (leaves any existing file untouched on collision).
+  - stdout: empty.
+  - stderr: prints exactly one line `i61_analyze: <detail>\n`.
+  - exit code: `2`.
+
+## 23.8 Component isolation and purity boundary
+
+Existing campaign dry-run functionality (`i61_campaign --dry-run`) and pure analyzer core logic remain unchanged. This revision explicitly excludes launch, provisioning, timing, lifecycle management, and authoritative campaign execution.
