@@ -1402,3 +1402,206 @@ Execution and exit behavior:
 ## 23.8 Component isolation and purity boundary
 
 Existing campaign dry-run functionality (`i61_campaign --dry-run`) and pure analyzer core logic remain unchanged. This revision explicitly excludes launch, provisioning, timing, lifecycle management, and authoritative campaign execution.
+
+# Revision 10: launcher-neutral lifecycle core boundary
+
+**Frozen 2026-09-07 before lifecycle-core implementation or authoritative execution.** Revisions 1 through 9 remain preserved verbatim. All prior governing thresholds, raw schema v4, index schema v1, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, purity rules, seal verification, and verdict precedence remain binding. Revision 10 decision-completely freezes the testable launcher-neutral lifecycle core and explicit external contract boundaries while keeping authoritative execution blocked.
+
+## 24.1 Trigger, scope, and compilation gate
+
+Revision 10 registers the remaining launcher-neutral tracked lifecycle core before implementation. Scope is limited to an experiment-only Rust module within `issue61-eval`, driven by the existing `CampaignPlan`. Injected command, process, and filesystem abstractions allow unit testing against deterministic fakes.
+
+The entire lifecycle module, all ports, fakes, and unit tests are placed behind a module-level `#[cfg(test)]` attribute within `issue61-eval`. There is no normal-target compilation, public export, cargo feature flag, or `#[allow(dead_code)]` workaround. A future launcher protocol revision must explicitly remove or update this `#[cfg(test)]` compilation gate.
+
+Production exposure remains frozen. Command `i61_campaign` stays dry-run-only. Revision 10 introduces no non-dry-run CLI, launch command, container execution, measurement, or result claim.
+
+## 24.2 Ordered lifecycle state model
+
+The lifecycle core enforces an explicit, ordered phase transition model covering ten exact phases:
+
+1. `StaticValidation`: Validate static inputs and snapshot assets.
+2. `Initialization`: Initialize create-once cycle directory and open six local evidence files using create-new.
+3. `EquivalenceAudit`: Provision cores and run complete-set candidate equivalence audits for WANDS and ESCI.
+4. `IndexCapture`: Capture and validate four exact index cells into `index_artifacts.jsonl`.
+5. `EquivalenceGate`: Evaluate candidate equivalence gate.
+6. `Calibration`: Execute calibration blocks (60 blocks, 120 sessions).
+7. `CalibrationGate`: Evaluate calibration gate using existing pure calibration analysis.
+8. `Warm`: Execute warm blocks (240 blocks, 480 sessions).
+9. `Cold`: Execute cold blocks (10 blocks, 20 sessions).
+10. `EvidenceFinalization`: Close the five non-event evidence files, emit `EvidenceFinalized`, close `events.jsonl`, create and verify the seal, and invoke the completed-cycle analyzer.
+
+Phase transition rules:
+
+- Gate phases (`EquivalenceGate` and `CalibrationGate`) emit `GatePassed` or `GateFailed`.
+- If a gate evaluates to `GateFailed`, the core emits `LifecycleTerminated` and terminates cleanly before the subsequent execution phase (`Calibration` or `Warm`).
+- Equivalence gate failure and calibration gate failure are valid terminal transitions.
+- Gate failures and failures before `EvidenceFinalization` create no `checksums.sha256`; failure during seal creation or verification may leave an unverified checksum as specified in §24.3. No failed or unverified seal permits `i61_analyze` invocation.
+- State transitions must strictly follow this sequence and cannot skip or reorder any phase.
+
+## 24.3 Directory safety, derivation, symlink rules, and persistence
+
+Repository root path must resolve to a canonical non-symlink directory. Base directory `artifacts/issue61` preexists in the repository. Cycle output directories derive strictly as `<root>/artifacts/issue61/i61_e1_<cycle>/` where `<cycle>` is `run1`, `rerun1`, or `rerun2`.
+
+Target cycle directory, repository root, and all parent path components must not be symlinks. Initialization fails immediately if any path component is a symlink. Create-once semantics apply: if the target cycle directory exists, execution refuses to start. Resuming an existing cycle directory or appending across sessions is forbidden.
+
+All six local evidence files (`candidate_audit_esci.jsonl`, `candidate_audit_wands.jsonl`, `commands.log`, `events.jsonl`, `index_artifacts.jsonl`, `raw.jsonl`) are opened during `Initialization` using create-new semantics. Subsequent writes use append-only `write_all`.
+
+On handled failure or gate termination, the driver executes environment teardown, writes a `LifecycleTerminated` event to `events.jsonl` when possible, and flushes, syncs, and closes all open evidence files. If an abrupt crash occurs, only previously synced bytes persist on disk; resuming incomplete runs is prohibited.
+
+A completed cycle directory contains exactly seven regular files (`candidate_audit_esci.jsonl`, `candidate_audit_wands.jsonl`, `commands.log`, `events.jsonl`, `index_artifacts.jsonl`, `raw.jsonl`, `checksums.sha256`) after a successful seal. Incomplete or terminated cycles contain fewer files, or seven files with an invalid or incomplete seal, and are never analyzed.
+
+## 24.4 Typed command and event logging contracts
+
+Both `commands.log` and `events.jsonl` use LF line endings, UTF-8 encoding, and schema version 1. A single lifecycle-global sequence counter starts at integer 1 and increments monotonically across every command and event record emitted during the cycle. Revision 9 treats `commands.log` and `events.jsonl` as semantically opaque byte files during post-run analysis; Revision 10 defines their schema-v1 layout for emission by the lifecycle core.
+
+`StaticValidation` events and `Initialization` `PhaseStarted` are staged in memory. After all six evidence files are successfully opened, the core appends the staged records in sequence order and then appends `Initialization` `PhaseCompleted`. A failure before `events.jsonl` exists produces no event file; a failure after it exists appends the staged records and `LifecycleTerminated` when possible.
+
+Value classification type `LoggedText` is defined strictly as a JSON object:
+`{"Public":"<value>"}` or `{"Redacted":"<redacted>"}`.
+
+Command record schema (`commands.log`):
+Each line is a JSON object with these exact fields in order:
+1. `schema_version`: integer `1`
+2. `experiment_id`: string `"I61-E1"`
+3. `cycle`: string (`"run1"`, `"rerun1"`, or `"rerun2"`)
+4. `seq`: integer (lifecycle-global sequence number starting at 1)
+5. `executable`: string (executable identity)
+6. `args`: array of `LoggedText` objects
+7. `env`: array of key-value objects representing allowlisted environment variables with exact ordered fields `{"name":"<NAME>","value":<LoggedText>}`. Environment variable names are public strings that must exactly match the allowlist and are not `LoggedText`; only environment values use `LoggedText` classification. The array must contain unique names and be bytewise-sorted by `name`.
+8. `outcome`: tagged outcome object representing process completion, being exactly one of:
+   - `{"Exited":{"exit_code":<code_int>}}`
+   - `{"SpawnFailed":{"reason":<LoggedText>}}`
+   - `{"Signaled":{"signal":<signal_int>}}`
+   - `{"TimedOut":{"timeout_ms":<timeout_ms_uint>}}`
+9. `stdout`: `LoggedText` object
+10. `stderr`: `LoggedText` object
+
+Input classifications (args and allowlisted environment values) and output visibility policies are fixed before execution. Unclassified input values are rejected before execution. Captured stdout and stderr strings are classified after capture according to the visibility policy before logging. Redacted fields serialize strictly as `"<redacted>"`. Direct argument vectors are used without shell interpolation.
+
+Event record schema (`events.jsonl`):
+Each line is a JSON object with these exact fields in order:
+1. `schema_version`: integer `1`
+2. `experiment_id`: string `"I61-E1"`
+3. `cycle`: string (`"run1"`, `"rerun1"`, or `"rerun2"`)
+4. `seq`: integer (lifecycle-global sequence number)
+5. `phase`: string enum (`"StaticValidation"`, `"Initialization"`, `"EquivalenceAudit"`, `"IndexCapture"`, `"EquivalenceGate"`, `"Calibration"`, `"CalibrationGate"`, `"Warm"`, `"Cold"`, `"EvidenceFinalization"`)
+6. `series`: string or JSON `null` (`"calibration"`, `"warm"`, `"cold"`, or `null`)
+7. `block_index`: integer or JSON `null` (0-based logical block index when inside a series)
+8. `attempt`: integer or JSON `null` (1-based attempt counter when inside a block)
+9. `slot_index`: integer or JSON `null` (0 or 1 for paired slots)
+10. `engine`: string or JSON `null` (`"native"`, `"solr"`, or `null`)
+11. `dataset`: string or JSON `null` (`"wands"`, `"esci_electronics"`, or `null`)
+12. `projection`: string or JSON `null` (`"all"`, `"fast-path"`, `"hybrid"`, `"punt"`, or `null`)
+13. `event_type`: string enum (`"PhaseStarted"`, `"PhaseCompleted"`, `"BlockStarted"`, `"PrescreenRejected"`, `"SlotStarted"`, `"SlotCompleted"`, `"SlotFailed"`, `"TeardownStarted"`, `"TeardownCompleted"`, `"TeardownFailed"`, `"BlockCompleted"`, `"GatePassed"`, `"GateFailed"`, `"LifecycleTerminated"`, `"EvidenceFinalized"`)
+14. `reason`: `LoggedText` object or JSON `null`
+
+Event emission requirements:
+
+- The first nine phases emit `PhaseStarted` at entry and `PhaseCompleted` at successful completion. `EvidenceFinalization` instead ends with the single final `EvidenceFinalized` event defined in §24.8.
+- A rejected prescreen probe emits `PrescreenRejected` and emits no `BlockStarted` event.
+- Every started slot emits `SlotStarted` and exactly one completion or failure event (`SlotCompleted` or `SlotFailed`), followed by teardown events (`TeardownStarted` then `TeardownCompleted` or `TeardownFailed`).
+- Evaluated gates emit strictly `GatePassed` or `GateFailed`.
+- The `EvidenceFinalized` event concludes `events.jsonl` emission during `EvidenceFinalization`.
+- `projection` is required for every warm-series block, slot, teardown, rejection, and completion event and is JSON `null` otherwise. `series`, `block_index`, and `attempt` are required on block-scoped events. `slot_index` and `engine` are required on slot and teardown events. `reason` is JSON `null` for successful events and non-null for rejection, failure, and termination events.
+
+## 24.5 Pair execution semantics, attempts, and rejection staging
+
+Block execution freezes attempt counting starting at integer 1. The steal-time prescreen probe runs before attempting either slot in a paired block.
+
+If a prescreen probe is rejected, a `PrescreenRejected` event is logged in `events.jsonl`, the `CampaignSeries`-scoped rejection counter increments, no engine session runs, and the driver retries the entire logical block.
+
+Slot execution and failure rules:
+
+- Raw measured records for both slots are staged in memory during block execution.
+- When slot zero fails during execution, slot one is not executed, slot zero command and event logs are recorded, no raw record is written, the driver executes environment teardown, and the campaign cycle aborts without retry.
+- If slot one fails after slot zero succeeds, slot zero diagnostic logs remain recorded in `commands.log` and `events.jsonl`, both staged raw records (slot zero and slot one) are discarded, the driver executes environment teardown, and the campaign cycle aborts without retry.
+- Staged raw records append to `raw.jsonl` only after both slots in the paired block complete successfully.
+
+Rejection threshold limits follow Revision 6: a 7th rejection in a 30-block series or a 2nd rejection in a 5-block cold series halts the campaign immediately. File `raw.jsonl` contains accepted measured records only; it never records rejected prescreen attempts or failed block sessions.
+
+## 24.6 Index capture and validation
+
+Index evidence capture uses a typed index provider interface. Four exact cells are captured into `index_artifacts.jsonl` in strict deterministic order:
+
+1. `engine: "native"`, `dataset: "wands"`
+2. `engine: "native"`, `dataset: "esci_electronics"`
+3. `engine: "solr"`, `dataset: "wands"`
+4. `engine: "solr"`, `dataset: "esci_electronics"`
+
+Before timing begins, the core validates that the four records form a complete bijection with the Cartesian product of engines and datasets, satisfy index schema v1, verify document counts (42,994 for WANDS, 2,075 for ESCI), and contain exact dataset-specific snapshot paths and SHA-256 hashes for Solr records.
+
+## 24.7 Pre-warm calibration gate
+
+The calibration gate evaluates before warm blocks start. It uses existing pure calibration analysis over exactly 120 accepted calibration sessions (30 paired blocks per engine arm).
+
+If either engine arm is missing or fails the calibration test, the campaign emits `GateFailed` and `LifecycleTerminated`, stopping immediately. No warm or cold sessions run when calibration fails.
+
+## 24.8 Finalization, seal creation, and analyzer integration
+
+Phase `EvidenceFinalization` runs after cold blocks complete. The lifecycle core first flushes, syncs, and closes the five non-event evidence files in this exact order:
+
+1. `candidate_audit_esci.jsonl`
+2. `candidate_audit_wands.jsonl`
+3. `commands.log`
+4. `index_artifacts.jsonl`
+5. `raw.jsonl`
+
+If closing any of those five files fails, the core appends `LifecycleTerminated` when possible, flushes, syncs, and closes `events.jsonl`, and creates no seal. After all five close successfully, the core appends `EvidenceFinalized` as the final event, then flushes, syncs, and closes `events.jsonl`. There is no `PhaseCompleted` event for finalization and no event is attempted after that point.
+
+Only after all six evidence files are closed does the core create `checksums.sha256` using create-new semantics, write it using `write_all` with the exact Revision 9 twelve-entry format (six static benchmark or config files plus six local evidence files), flush, sync, close, and verify it immediately. Seal creation or verification failure may leave an incomplete or invalid checksum file but never invokes analysis.
+
+Upon successful seal verification, the completed-cycle analyzer (`i61_analyze`) is invoked. Invocation of `i61_analyze` is governed by §23.7: it is excluded from `commands.log` and `events.jsonl`. Analyzer `i61_analyze` exits with code 0 for `KEEP`, code 1 for `REFINE` or `FIX MEASUREMENT`, or code 2 for failure.
+
+A completed cycle directory contains exactly seven regular files before analysis. Successful analysis adds only `analysis.json`.
+
+## 24.9 External launcher contract specification and boundary isolation
+
+Revision 10 records no launcher identity. A future revision will freeze schema-versioned launcher path and hash inside existing sealed evidence files (`commands.log` or `events.jsonl`). Launcher identity will never appear as an eighth file in the cycle directory or a thirteenth entry in `checksums.sha256`.
+
+This subsection serves as a specification checklist for a future revision. Authoritative execution remains blocked until an explicit launcher contract is provided declaring:
+
+- Immutable adapter script path and SHA-256 hash.
+- Exact executable path and ordered CLI arguments.
+- Allowlisted environment variables and volume mounts.
+- Container and process identity parameters.
+- Server endpoint URL and port bindings.
+- Cgroup path discovery method.
+- Readiness probe definition and timeout.
+- Teardown procedure and timeout.
+- Emitted metadata fields.
+- Failure mapping rules.
+
+## 24.10 RED test requirements
+
+Before implementing the lifecycle core, automated RED tests must verify:
+
+- Module-level `#[cfg(test)]` compilation isolation with no normal-target exports or feature flags.
+- Deterministic phase (`StaticValidation` through `EvidenceFinalization`), command, and event sequence ordering.
+- Rejection of existing cycle directories, non-preexisting parent paths, and symlinks during create-once initialization.
+- Append-only file writing with prohibition of truncation or overwriting (`write_all` enforcement).
+- Incomplete cycle directory behavior (contains fewer than seven files or an unverified seal, refusing analyzer invocation).
+- Immediate campaign termination on `EquivalenceGate` failure (`GateFailed`) before `Calibration`.
+- Prescreen rejection emitting `PrescreenRejected` without `BlockStarted`, incrementing `CampaignSeries` rejection counter, and retrying logical block.
+- Staging raw records in memory and discarding both staged records on slot failure (slot zero failure prevents slot one; slot one failure discards both staged records so slot zero raw record never leaks to `raw.jsonl`).
+- Whole-block rejection accounting and strict enforcement of Revision 6 rejection limits (7th in 30-block series, 2nd in 5-block cold series).
+- Immediate campaign termination on `CalibrationGate` failure (`GateFailed`) before `Warm`.
+- Typed index provider validation with exact four-cell bijection, document count check, snapshot verification, and deterministic order (`native/wands`, `native/esci_electronics`, `solr/wands`, `solr/esci_electronics`).
+- Schema-v1 JSONL validation and redaction filtering for `commands.log` and `events.jsonl` (using `LoggedText`, tagged outcome objects, ordered and unique env arrays, serializing `Redacted` as `"<redacted>"`, rejecting unclassified values).
+- Exact flush, sync, and close order for the five non-event evidence files, failure termination through the still-open event stream, final `EvidenceFinalized` emission, event-stream close, and only then twelve-entry `checksums.sha256` creation, verifying no writes after seal.
+- Analyzer invocation governed by §23.7 only after valid seal verification, and refusal to run analyzer on unsealed, invalid, or incomplete directories.
+- Byte-for-byte dry-run plan stability.
+- Absolute isolation of protected launcher execution in unit tests (`cfg(test)` fakes only).
+
+## 24.11 Stop condition and entry criteria for Issue #62
+
+Completing Revision 10 implementation delivers only the generic lifecycle core and its `cfg(test)` suite. Revision 10 alone never satisfies entry criteria for Issue #62.
+
+Before execution: a future protocol revision must freeze the concrete launcher contract and checksum, the live adapter must be peer-reviewed, and the execution PR must be merged into green main.
+
+After execution: the campaign cycle must be sealed, analyzed via `i61_analyze`, adversarially reviewed, and the decision record merged into green main.
+
+Issue #62 entry follows existing decision verdict rules:
+
+- `KEEP` permits entry for both datasets.
+- `FIX MEASUREMENT` blocks entry.
+- `REFINE` permits entry only after completing named pre-work, limited strictly to the passing dataset.
