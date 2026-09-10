@@ -11,6 +11,8 @@ use checksum::{verify_seal, VerifiedSeal};
 use cycle_directory::AnalysisPaths;
 pub use error::PostRunError;
 use index_artifact::parse_index_artifacts;
+#[cfg(test)]
+pub(crate) use index_artifact::parse_index_artifacts as parse_index_artifacts_for_test;
 use jsonl::{parse_jsonl, JsonlSchema};
 use report::{publish_report, serialize_report};
 use std::ffi::{OsStr, OsString};
