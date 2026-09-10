@@ -14,9 +14,14 @@
 //! here rather than silently under-filtering Solr relative to native.
 
 use commerce_core::domain::{BrandId, CategoryId, Constraint, NumericOp, ProductTypeId};
-use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
+use commerce_core::ir::ResolvedConstraint;
+#[cfg(test)]
+use commerce_core::ir::StructuralConstraint;
 
 use crate::solr::{case_insensitive_contains_regex, case_insensitive_field_regex};
+
+mod structural;
+use structural::{solr_escaped_lowercase_term, translate_structural};
 
 /// Which Solr field (if any) this dataset's Solr core uses for each
 /// structural dimension. `None` means the dataset genuinely has no such
@@ -37,6 +42,17 @@ pub struct SolrFieldMap {
     pub product_type: Option<&'static str>,
     pub category: Option<&'static str>,
     pub price_cents: Option<&'static str>,
+}
+
+/// Opt-in translation configuration for production-style exact structured
+/// string filters. The default preserves the historical regex wire format.
+#[derive(Debug, Clone, Default)]
+pub struct SolrTranslationConfig {
+    pub fields: SolrFieldMap,
+    /// When set, structured string filters target a lowercased companion
+    /// field populated at index time, replacing a regex automaton with an
+    /// exact term lookup while preserving case-insensitive semantics.
+    pub lowercase_companion_suffix: Option<&'static str>,
 }
 
 /// Resolves the compiler-internal typed ids a [`StructuralConstraint`]
@@ -82,130 +98,60 @@ pub fn translate_constraint(
     fields: &SolrFieldMap,
     names: &dyn StructuralNames,
 ) -> Translation {
-    match c {
-        ResolvedConstraint::Structural(s) => translate_structural(s, fields, names),
-        ResolvedConstraint::Attribute(a) => translate_attribute(a),
-    }
+    let context = TranslationContext {
+        fields,
+        names,
+        lowercase_companion_suffix: None,
+    };
+    translate_constraint_with_context(c, &context)
 }
 
-fn translate_structural(
-    c: &StructuralConstraint,
-    fields: &SolrFieldMap,
+/// Translates one resolved constraint with an explicit, default-off physical
+/// representation for structured string filters.
+pub fn translate_constraint_with_config(
+    c: &ResolvedConstraint,
     names: &dyn StructuralNames,
+    config: &SolrTranslationConfig,
+) -> Translation {
+    let context = TranslationContext {
+        fields: &config.fields,
+        names,
+        lowercase_companion_suffix: config.lowercase_companion_suffix,
+    };
+    translate_constraint_with_context(c, &context)
+}
+
+pub(super) struct TranslationContext<'a> {
+    pub(super) fields: &'a SolrFieldMap,
+    pub(super) names: &'a dyn StructuralNames,
+    pub(super) lowercase_companion_suffix: Option<&'static str>,
+}
+
+fn translate_constraint_with_context(
+    c: &ResolvedConstraint,
+    context: &TranslationContext<'_>,
 ) -> Translation {
     match c {
-        StructuralConstraint::Brand(id) => {
-            let Some(field) = fields.brand else {
-                return Translation::NotApplicable;
-            };
-            match names.brand_name(*id) {
-                Some(name) => {
-                    Translation::Fq(format!("{field}:/{}/", case_insensitive_field_regex(name)))
-                }
-                None => Translation::Unresolvable(format!("no brand name registered for {id:?}")),
-            }
-        }
-        StructuralConstraint::BrandAny(ids) => {
-            let Some(field) = fields.brand else {
-                return Translation::NotApplicable;
-            };
-            translate_any(field, ids, |id| names.brand_name(*id))
-        }
-        StructuralConstraint::ProductType(id) => {
-            let Some(field) = fields.product_type else {
-                return Translation::NotApplicable;
-            };
-            match names.product_type_name(*id) {
-                Some(name) => {
-                    Translation::Fq(format!("{field}:/{}/", case_insensitive_field_regex(name)))
-                }
-                None => {
-                    Translation::Unresolvable(format!("no product_type name registered for {id:?}"))
-                }
-            }
-        }
-        StructuralConstraint::ProductTypeAny(ids) => {
-            let Some(field) = fields.product_type else {
-                return Translation::NotApplicable;
-            };
-            translate_any(field, ids, |id| names.product_type_name(*id))
-        }
-        StructuralConstraint::Category(id) => {
-            let Some(field) = fields.category else {
-                return Translation::NotApplicable;
-            };
-            match names.category_name(*id) {
-                Some(name) => {
-                    Translation::Fq(format!("{field}:/{}/", case_insensitive_field_regex(name)))
-                }
-                None => {
-                    Translation::Unresolvable(format!("no category name registered for {id:?}"))
-                }
-            }
-        }
-        StructuralConstraint::PriceUnderCents(cents) => {
-            let Some(field) = fields.price_cents else {
-                return Translation::NotApplicable;
-            };
-            // StructuralConstraint::matches requires a strict `<`; Solr's
-            // `[* TO n}` is upper-exclusive, the exact equivalent (not
-            // `[* TO n-1]`, which would be wrong for a non-integer-cents
-            // price representation and is needlessly off-by-one-prone).
-            Translation::Fq(format!("{field}:[* TO {cents}}}"))
-        }
-        StructuralConstraint::PriceOverCents(cents) => {
-            let Some(field) = fields.price_cents else {
-                return Translation::NotApplicable;
-            };
-            Translation::Fq(format!("{field}:{{{cents} TO *]"))
-        }
+        ResolvedConstraint::Structural(s) => translate_structural(s, context),
+        ResolvedConstraint::Attribute(a) => translate_attribute(a, context),
     }
 }
 
-/// Shared OR-of-regex construction for `BrandAny`/`ProductTypeAny`: every
-/// id in the group must resolve to a name (a partial resolution would
-/// silently narrow the filter relative to what native's own
-/// `ids.contains(&product.brand)` admits), never returning `Fq` from a
-/// subset.
-fn translate_any<'a, Id: std::fmt::Debug>(
-    field: &str,
-    ids: &[Id],
-    resolve: impl Fn(&Id) -> Option<&'a str>,
-) -> Translation {
-    if ids.is_empty() {
-        return Translation::Unresolvable(format!("empty id group for field {field}"));
-    }
-    let mut names = Vec::with_capacity(ids.len());
-    for id in ids {
-        match resolve(id) {
-            Some(name) => names.push(name),
-            None => {
-                return Translation::Unresolvable(format!(
-                    "no name registered for {id:?} (field {field}), {}/{} ids resolved so far",
-                    names.len(),
-                    ids.len()
-                ))
+fn translate_attribute(c: &Constraint, context: &TranslationContext<'_>) -> Translation {
+    match c {
+        Constraint::Enum { attribute, value }
+        | Constraint::MultiEnumContains { attribute, value } => {
+            match context.lowercase_companion_suffix {
+                Some(suffix) => Translation::Fq(format!(
+                    "{attribute}{suffix}:\"{}\"",
+                    solr_escaped_lowercase_term(value)
+                )),
+                None => Translation::Fq(format!(
+                    "{attribute}:/{}/",
+                    case_insensitive_field_regex(value)
+                )),
             }
         }
-    }
-    let alternation = names
-        .iter()
-        .map(|n| case_insensitive_field_regex(n))
-        .collect::<Vec<_>>()
-        .join("|");
-    Translation::Fq(format!("{field}:/({alternation})/"))
-}
-
-fn translate_attribute(c: &Constraint) -> Translation {
-    match c {
-        Constraint::Enum { attribute, value } => Translation::Fq(format!(
-            "{attribute}:/{}/",
-            case_insensitive_field_regex(value)
-        )),
-        Constraint::MultiEnumContains { attribute, value } => Translation::Fq(format!(
-            "{attribute}:/{}/",
-            case_insensitive_field_regex(value)
-        )),
         Constraint::Boolean { attribute, value } => Translation::Fq(format!("{attribute}:{value}")),
         Constraint::Numeric {
             attribute,
@@ -221,6 +167,8 @@ fn translate_attribute(c: &Constraint) -> Translation {
             };
             Translation::Fq(clause)
         }
+        // Text is a substring constraint; an exact companion-field term query
+        // would change its semantics, so both modes deliberately retain regex.
         Constraint::Text {
             attribute,
             contains,
@@ -242,10 +190,37 @@ pub fn translate_all(
     fields: &SolrFieldMap,
     names: &dyn StructuralNames,
 ) -> (Vec<String>, Vec<String>) {
+    let context = TranslationContext {
+        fields,
+        names,
+        lowercase_companion_suffix: None,
+    };
+    translate_all_with_context(constraints, &context)
+}
+
+/// Translates all constraints with an explicit, default-off structured-string
+/// representation while preserving separate unresolvable failures.
+pub fn translate_all_with_config(
+    constraints: &[ResolvedConstraint],
+    names: &dyn StructuralNames,
+    config: &SolrTranslationConfig,
+) -> (Vec<String>, Vec<String>) {
+    let context = TranslationContext {
+        fields: &config.fields,
+        names,
+        lowercase_companion_suffix: config.lowercase_companion_suffix,
+    };
+    translate_all_with_context(constraints, &context)
+}
+
+fn translate_all_with_context(
+    constraints: &[ResolvedConstraint],
+    context: &TranslationContext<'_>,
+) -> (Vec<String>, Vec<String>) {
     let mut fq = Vec::new();
     let mut failures = Vec::new();
     for c in constraints {
-        match translate_constraint(c, fields, names) {
+        match translate_constraint_with_context(c, context) {
             Translation::Fq(clause) => fq.push(clause),
             Translation::NotApplicable => {}
             Translation::Unresolvable(reason) => failures.push(reason),
@@ -302,6 +277,146 @@ mod tests {
             category: Some("category_leaf"),
             price_cents: Some("price_cents"),
         }
+    }
+
+    struct SpecialCharacterNames;
+    impl StructuralNames for SpecialCharacterNames {
+        fn brand_name(&self, id: BrandId) -> Option<&str> {
+            match id.0 {
+                1 => Some("ACME \"Pro\"\\ Gear"),
+                _ => None,
+            }
+        }
+
+        fn product_type_name(&self, _id: ProductTypeId) -> Option<&str> {
+            None
+        }
+
+        fn category_name(&self, _id: CategoryId) -> Option<&str> {
+            None
+        }
+    }
+
+    fn lowercase_companion_config() -> SolrTranslationConfig {
+        SolrTranslationConfig {
+            fields: full_fields(),
+            lowercase_companion_suffix: Some("_lc"),
+        }
+    }
+
+    #[test]
+    fn default_field_map_still_emits_the_historical_regex_form() {
+        // Given
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1)));
+
+        // When
+        let translated = translate_constraint(&constraint, &full_fields(), &FakeNames);
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("brand:/[nN][iI][kK][eE]/".to_string())
+        );
+    }
+
+    #[test]
+    fn lowercase_companion_mode_emits_an_exact_term_query_not_a_regex() {
+        // Given
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1)));
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &FakeNames,
+            &lowercase_companion_config(),
+        );
+
+        // Then
+        match translated {
+            Translation::Fq(fq) => {
+                assert!(!fq.contains('/'));
+                assert!(fq.contains("brand_lc:\"nike\""));
+            }
+            other => panic!("expected Fq, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn lowercase_companion_mode_lowercases_the_value() {
+        // Given
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1)));
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &FakeNames,
+            &lowercase_companion_config(),
+        );
+
+        // Then
+        assert_eq!(translated, Translation::Fq("brand_lc:\"nike\"".to_string()));
+    }
+
+    #[test]
+    fn lowercase_companion_mode_escapes_solr_special_characters() {
+        // Given
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1)));
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &SpecialCharacterNames,
+            &lowercase_companion_config(),
+        );
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("brand_lc:\"acme \\\"pro\\\"\\\\ gear\"".to_string())
+        );
+    }
+
+    #[test]
+    fn lowercase_companion_multi_value_any_emits_a_single_term_disjunction() {
+        // Given
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::BrandAny(vec![
+            BrandId(1),
+            BrandId(2),
+        ]));
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &FakeNames,
+            &lowercase_companion_config(),
+        );
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("brand_lc:(\"nike\" OR \"adidas\")".to_string())
+        );
+    }
+
+    #[test]
+    fn both_modes_select_the_same_logical_value() {
+        // Given: the stored source value and its index-time lowercase companion.
+        let constraint = ResolvedConstraint::Structural(StructuralConstraint::Brand(BrandId(1)));
+
+        // When
+        let historical = translate_constraint(&constraint, &full_fields(), &FakeNames);
+        let exact = translate_constraint_with_config(
+            &constraint,
+            &FakeNames,
+            &lowercase_companion_config(),
+        );
+
+        // Then: both forms select "Nike"; only the physical lookup differs.
+        assert_eq!(
+            historical,
+            Translation::Fq("brand:/[nN][iI][kK][eE]/".to_string())
+        );
+        assert_eq!(exact, Translation::Fq("brand_lc:\"nike\"".to_string()));
     }
 
     #[test]
@@ -419,6 +534,69 @@ mod tests {
     }
 
     #[test]
+    fn default_config_still_emits_the_historical_regex_form_for_enum_attributes() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "Blue".to_string(),
+        });
+
+        // When
+        let translated = translate_constraint_with_config(
+            &constraint,
+            &NoNames,
+            &SolrTranslationConfig::default(),
+        );
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("color:/[bB][lL][uU][eE]/".to_string())
+        );
+    }
+
+    #[test]
+    fn lowercase_companion_mode_emits_an_exact_term_query_for_enum_attributes() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "Blue".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        match translated {
+            Translation::Fq(fq) => {
+                assert!(!fq.contains('/'));
+                assert!(fq.contains("color_lc:\"blue\""));
+            }
+            other => panic!("expected Fq, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn lowercase_companion_mode_lowercases_and_escapes_enum_attribute_values() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Enum {
+            attribute: "color".to_string(),
+            value: "BlUe \"Sky\"\\Tone".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("color_lc:\"blue \\\"sky\\\"\\\\tone\"".to_string())
+        );
+    }
+
+    #[test]
     fn multi_enum_contains_translates_by_attribute_name() {
         let c = ResolvedConstraint::Attribute(Constraint::MultiEnumContains {
             attribute: "materials".to_string(),
@@ -428,6 +606,25 @@ mod tests {
             Translation::Fq(fq) => assert_eq!(fq, "materials:/[oO][aA][kK]/"),
             other => panic!("expected Fq, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn lowercase_companion_mode_emits_an_exact_term_query_for_multi_enum_contains() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::MultiEnumContains {
+            attribute: "materials".to_string(),
+            value: "Oak".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq("materials_lc:\"oak\"".to_string())
+        );
     }
 
     #[test]
@@ -481,6 +678,27 @@ mod tests {
             }
             other => panic!("expected Fq, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn text_contains_keeps_its_substring_regex_even_in_lowercase_companion_mode() {
+        // Given
+        let constraint = ResolvedConstraint::Attribute(Constraint::Text {
+            attribute: "description".to_string(),
+            contains: "Waterproof".to_string(),
+        });
+
+        // When
+        let translated =
+            translate_constraint_with_config(&constraint, &NoNames, &lowercase_companion_config());
+
+        // Then
+        assert_eq!(
+            translated,
+            Translation::Fq(
+                "description:/.*[wW][aA][tT][eE][rR][pP][rR][oO][oO][fF].*/".to_string()
+            )
+        );
     }
 
     #[test]

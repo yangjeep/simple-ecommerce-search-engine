@@ -1,0 +1,1607 @@
+# Issue #61 Preregistered Protocol — Infra E1: fair baseline + reproducible resource benchmark harness
+
+Committed **before** any measured run, per this repository's governance
+(`docs/EXPERIMENT_LOOP.md`) and Issue #60's own merge-gated execution rule
+("preregister hypothesis, baseline, protocol, metrics, and KEEP/REJECT/REFINE
+gates before held-out measurement").
+
+Parent epic: [#60](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/60).
+This issue: [#61](https://github.com/yangjeep/simple-ecommerce-search-engine/issues/61).
+
+> **REVISION STATUS.** Everything below is **Revision 1**, preserved verbatim.
+> An adversarial protocol review run *before any measurement* found six
+> confirmed defects that would have made Revision 1's numbers invalid.
+> **§15 (Revision 2) supersedes Revision 1 wherever the two conflict.**
+> Revision 1 is not deleted, per this repository's discipline of preserving the
+> original attempt alongside the correction. No measurement was ever taken
+> under Revision 1.
+
+---
+
+## 0. What this is testing, and what it deliberately is not
+
+Issue #60 asks how much **infrastructure** commerce-native execution can
+remove at equivalent semantics and SLO. Every downstream experiment (#62–#70)
+compares resource numbers against a mature-engine baseline and applies a
+**>=25% materiality bar**.
+
+That bar is only meaningful if the measuring instrument can *resolve* a 25%
+effect. This issue measures the instrument, not the architecture.
+
+Concretely, E1 asks:
+
+> On this specific 4-vCPU QEMU-virtualised host, with no hardware performance
+> counters and no root, can repeated native-vs-Solr runs produce resource
+> numbers whose run-to-run uncertainty is small enough that a true 25%
+> difference could not be confused with noise — and do both engines
+> demonstrably answer the same question?
+
+**This protocol registers no architecture claim.** E1 computes no native-vs-Solr
+verdict. Any ratio that appears in E1's artifacts is descriptive context for
+calibrating batch sizes and is explicitly forbidden from being cited as a
+campaign result. The campaign's first architecture claim is E2 (#62).
+
+A "the instrument is not good enough" outcome is a **successful** E1, not a
+failure. It is recorded as `FIX MEASUREMENT` and it blocks #62 until resolved.
+
+---
+
+## 1. Hypothesis
+
+**H0 (the instrument is adequate).** With (a) uniform cgroup v2 accounting
+applied identically to every engine, (b) engines executed serially and never
+co-resident, (c) steal-time-contaminated repetitions excluded by a
+preregistered rule, and (d) n=10 repetitions per cell, every gated cell reaches
+a relative 95% bootstrap CI half-width of <=7.5% for CPU/query and warm p50
+latency, and <=2% for resident memory and index bytes.
+
+**H1 (virtualization noise dominates).** Steal time, absent CPU-frequency
+pinning, and shared-host interference push at least one gated cell past those
+bounds. The honest verdict is then `FIX MEASUREMENT`: enumerate the noise
+source, do **not** begin #62, and do **not** relax the thresholds.
+
+H1 is a real possibility on a QEMU guest and is preregistered as an
+acceptable, publishable outcome.
+
+---
+
+## 2. Baseline — and why it is not a straw man
+
+Issue #61 states: *"Use competent Solr/Elasticsearch-style configuration; do
+not create a straw-man baseline."* A resource win against a crippled baseline
+is invalid, and the campaign's adversarial-review step is instructed to hunt
+for exactly that.
+
+### 2.1 Frozen engine set
+
+| Engine | Status in E1 | Version / provenance |
+|---|---|---|
+| Native `commerce-core` | **PRIMARY** | this repository @ baseline SHA below |
+| Apache Solr | **PRIMARY** | `solr:9.10.1`, digest `sha256:1f055b0260d3efb177b12d6a46e9ef510fb4d2616473a91f8f4d099384aa176a` |
+| Elasticsearch | **SECONDARY, time-boxed** | `8.15.0` via Docker; see §2.4 |
+| Havenask | **DEFERRED** | remains #57's scope; runtime-confirmed only, never benchmark-confirmed |
+| OpenSearch | **EXCLUDED** | the historical route was an embedded Java test node; Java is absent on this host, and for E1's purpose it duplicates Elasticsearch |
+
+Baseline commit SHA: `c6953063e2641ceada1992d1372766a2e6ad63cd`.
+
+Every exclusion above is recorded here rather than left silent. Deferral is a
+scope decision, not a measured finding.
+
+### 2.2 Solr competence bar
+
+Solr 9.10.1 is the same major/minor version this repository's own prior
+comparator work used (`ISSUE55_COMPARATOR_CENTRALIZATION_DECISION.md`,
+`ISSUE35_SOLR_HARNESS_HARDENING_DECISION.md`), so E1 does not silently change
+the comparator identity while changing the measurement method.
+
+The configuration must satisfy all of the following, and any deviation from
+vendor defaults must be enumerated in `ISSUE61_LOG.md`:
+
+- structured commerce attributes indexed as `StrField` with `docValues=true`
+  (exact match, faceting, sorting) — never as analyzed `TextField`;
+- lexical fields as analyzed `TextField`; `edismax` with an explicit `qf`;
+- hard constraints issued in **filter context** as `fq`, not folded into `q`;
+- `filterCache` / `queryResultCache` / `documentCache` explicitly sized and
+  recorded, not left implicit;
+- indexing completed and committed before measurement; `forceMerge(1)` applied
+  to the read-only corpus;
+- heap explicitly set (`SOLR_HEAP`), sized for the corpus, with the remainder
+  of container memory left to the OS page cache backing `MMapDirectory`.
+
+`forceMerge(1)` favours Lucene. That direction is **conservative against
+native** and is retained deliberately.
+
+### 2.3 Structural translation parity
+
+Native structural constraints are translated to Solr `fq` clauses through the
+already-hardened `crates/comparator-eval` translator (`translate.rs`), not a
+fresh per-experiment client. This repository has twice shipped fairness bugs
+from bespoke comparator clients — a transport failure scored as a
+native-favouring `NDCG=0.0`, and a stale query builder silently omitting a
+whole constraint arm. Reusing the centralized, tested translator is a direct
+mitigation of a *known, twice-observed* defect class in this codebase.
+
+### 2.4 Elasticsearch time-box
+
+Elasticsearch requires a new Rust adapter and a new translator arm; neither
+exists. It is included on a strict time-box. If its smoke test does not pass
+inside that box, the verdict `DEFERRED-TO-PRE-E2` is written into
+`ISSUE61_LOG.md` and E1's gate is computed on native + Solr only.
+
+**Elasticsearch never blocks or alters E1's gate.** This is preregistered here
+so that dropping it later cannot be mistaken for post-hoc convenience.
+
+---
+
+## 3. Dataset and workload
+
+### 3.1 Provenance (frozen)
+
+All datasets are re-acquired from canonical upstreams via the repository's
+existing pinned fetch scripts and verified against committed checksums. The
+raw bytes remain gitignored; the scripts plus checksums are the reproducible
+artifact.
+
+| Dataset | Source | Pin | Verification result |
+|---|---|---|---|
+| WANDS | `github.com/wayfair/WANDS` | commit `3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5` | `sha256sum -c wands_checksums.sha256` — `product.csv: OK`, `query.csv: OK`, `label.csv: OK` |
+| ESCI (electronics slice) | `huggingface.co/datasets/tasksource/esci` | revision `45c948250c2116f1e535bac67b92501c695307a4` | `train0000.parquet` = `bd6e1217eef98968103d9731ae52e5e1e640b8af8810956ad144cb13481bf3b9` — matches committed manifest |
+
+Row counts as re-acquired on this host:
+
+- WANDS — 42,994 products, 480 queries, 233,448 relevance judgments. These
+  match `docs/research/artifacts/p6a_dataset_acquisition/manifest.json`
+  exactly, so the corpus is byte-identical to the one prior WANDS evidence was
+  measured on.
+- ESCI-electronics — 2,075 products, 600 queries, of which 490/600 carry at
+  least one non-`Irrelevant` judgment; judgment distribution
+  `Exact 1406 / Substitute 422 / Complement 33 / Irrelevant 281`.
+
+### 3.2 Measured vs. frozen-only
+
+- **Measured in E1**: WANDS (primary), ESCI-electronics (independent second
+  dataset, guards against a WANDS-specific stability artifact).
+- **Frozen-only in E1** (fetched, checksummed, manifested, *not* measured):
+  ESCI-automotive, ESCI-beauty, Magento configurable, Retailrocket.
+
+Retailrocket carries no relevance judgments and therefore cannot participate
+in E1's semantic-equivalence audit at all; it is a #62+ input.
+
+### 3.3 Workload freeze
+
+Workload manifests are generated deterministically and checksummed to
+`benchmarks/workloads/i61_wands_480.jsonl` and
+`benchmarks/workloads/i61_esci_electronics.jsonl`, each record carrying:
+query id, query text, the compiled structural constraints, the admission
+class from `commerce_core::admission::admit`, top-K, and a qrels reference.
+
+**Regression anchor**: the WANDS routing split must reproduce P9-E02's already
+published 21 structural-routed / 459 punt-routed division. A different split
+means the workload changed, and any comparison to prior evidence is void.
+
+---
+
+## 4. Treatments
+
+**None.** E1 is a single-arm stability and equivalence study. The "treatments"
+are the measurement regimes (cold/warm) and the engines, which are measured
+*against themselves across repetitions*, not against each other.
+
+---
+
+## 5. Correctness / semantic-equivalence requirements
+
+Performance numbers are invalid until semantics reconcile. This gate is
+evaluated **before** any performance interpretation.
+
+1. **Corpus parity** — indexed document count identical per dataset per engine.
+2. **Structural subset** — per-query result **ID-set equality**, order-insensitive,
+   native vs. engine. Target 100%. Every mismatch is named by `query_id` and
+   root-caused. A frozen known-difference list (e.g. tokenizer punctuation
+   edge cases, a class this repository has already documented) is permitted
+   **only if enumerated per `query_id` before the gate is evaluated**.
+3. **Text / hybrid subset** — no identical-ranking requirement; different
+   rankers is the premise of the architecture. Equivalence here means: same
+   query text, same `qf` field set, same `rows`, and relevance computed by
+   identical code against identical qrels.
+4. **Failure handling** — transport, query, and parse failures are
+   **excluded and counted**, never scored. This is the
+   `crates/comparator-eval` contract. Because Solr runs on the same host under
+   our control, any non-zero failure count is a real infrastructure defect and
+   **aborts the run** before any number is printed.
+
+A report containing excluded engine failures **does not pass**. Silence is not
+agreement.
+
+---
+
+## 6. Metrics
+
+### 6.1 Gated (primary)
+
+| Metric | Definition | Applies to |
+|---|---|---|
+| `cpu_us_per_query` | Δ cgroup `cpu.stat usage_usec` / queries | all engines |
+| `latency_p50_us` (warm) | client-observed per-query p50 | all engines |
+| `serving_rss_bytes` | cgroup `memory.current` and `memory.peak`, post-warm | all engines |
+| `index_serialized_bytes` | see §6.3 | all engines |
+
+### 6.2 Descriptive (never gated in E1)
+
+p95/p99; QPS/core proxy (`1e6 / p50_us`, per ADR 0007); cold index-build wall
+time; end-to-end client latency **explicitly labelled** as including HTTP
+transport for containerized engines.
+
+### 6.3 Index bytes — two disclosed definitions, never mixed
+
+1. `index_serialized_bytes` — native: `CatalogIndex::approximate_size_bytes()`
+   (already defined by ADR 0007 as serialized Roaring bitmaps plus flat
+   ordinal/numeric/price vectors); Solr/ES: `du -sb` of the core index
+   directory after final commit and `forceMerge(1)`.
+   Disclosed asymmetry: the native figure excludes allocator and `HashMap`/
+   `String` overhead; the Lucene figure includes stored fields and docValues.
+   The defensible equivalence is that each side carries exactly what it needs
+   to answer the identical frozen workload — not that the two byte-counting
+   methods are identical.
+2. `serving_rss_bytes` — uniform cgroup accounting for **all** engines.
+   **This is the metric the campaign's >=25% RSS materiality bar uses.**
+
+### 6.4 Published calibrations
+
+- **timer floor** — clock resolution and `Instant::now()` overhead; any
+  measurement below `100x` the floor is reported as a bound, never as a ratio;
+- **per-engine transport floor** — CPU and latency for a request that performs
+  essentially no retrieval work (match-nothing, `rows=0`), isolating the
+  HTTP + JVM per-request tax; both raw and floor-subtracted CPU are reported;
+- **cgroup-vs-getrusage agreement** — the native engine is measured both ways;
+  disagreement >2% fails calibration and blocks measurement.
+
+---
+
+## 7. The process-boundary confounder, and its frozen resolution
+
+`commerce-core` is an **in-process Rust library**. Solr and Elasticsearch are
+**HTTP servers inside JVMs inside containers**. Comparing a direct function
+call against an HTTP round trip is precisely the "process-boundary
+differences" confounder Issue #60 forbids, and it would inflate any native
+advantage.
+
+E1 freezes this resolution:
+
+1. **Uniform containment.** Every engine — *including the native benchmark
+   binary* — runs inside a Docker container with identical limits. CPU is
+   attributed from that container's own `cpu.stat`. Neither side gets a
+   privileged accounting boundary.
+2. **Transport floor published.** The per-request HTTP/JVM tax is measured
+   directly (§6.4) so a reader can see how much of any gap is protocol
+   overhead rather than retrieval work. Both raw and floor-subtracted CPU
+   are reported; neither is suppressed.
+3. **Timer floor respected.** Native structural primitives can execute in
+   microseconds. Batch sizing guarantees every measured interval clears both
+   the timer floor and cgroup's 1 µs accounting granularity.
+4. **End-to-end latency published separately**, carrying an explicit
+   transport-asymmetry label, and never used as a gated metric in E1.
+
+This is a *mitigation*, not an elimination. The residual asymmetry —
+native pays no serialization cost — is a real limitation and is restated in
+§12.
+
+---
+
+## 8. Resource limits and isolation
+
+Single source of truth: `benchmarks/configs/issue61/container_limits.env`.
+
+```
+--cpus=3  --cpuset-cpus=0-2  --memory=6g  --memory-swap=6g
+```
+
+- `--memory-swap` is pinned **equal to** `--memory`. The host has 4 GiB of
+  swap enabled; without this, a memory-pressured engine is silently rescued by
+  swap and every RSS number becomes meaningless.
+- The benchmark driver runs on the host pinned to the remaining core
+  (`taskset -c 3`) so the driver never competes with the engine under test.
+- The native benchmark binary asserts `VmSwap == 0` and aborts otherwise.
+- **Engines are executed strictly serially and are never co-resident.** On a
+  4-vCPU host, co-residency would make every number a contention measurement.
+
+---
+
+## 9. Warm/cold protocol and repetition policy
+
+### 9.1 Regimes
+
+- **Cold** — freshly started container/process, index built, first full
+  workload pass. This is a *cold process*, not a cold page cache: dropping the
+  host page cache requires root, which is unavailable. **Disclosed as a
+  limitation, not silently labelled "cold".**
+- **Warm** — three full workload warm-up passes, then measurement. The same
+  warm-up policy applies to every engine, while acknowledging that JIT makes
+  the JVM engines more sensitive to early iterations than the native binary.
+
+### 9.2 Repetitions
+
+n=10 independent repetitions per
+(engine x dataset x query-class x regime) cell.
+
+Engine order is round-robin across repetitions using
+`bench_harness::round_robin_schedule` with a frozen seed, so a monotonic drift
+in host conditions cannot be absorbed entirely by whichever engine happened to
+run first.
+
+### 9.3 Steal-time exclusion rule (preregistered)
+
+A repetition is **excluded** if `/proc/stat` steal time over that repetition
+exceeds **1.0%** of elapsed CPU. At most **2 exclusions per cell** are
+tolerated; a third means the cell **FAILS as environment-unstable**.
+
+Exclusions are logged with their measured steal percentage. Excluding a
+repetition without recording it is prohibited.
+
+### 9.4 Batch sizing
+
+Every timed interval must satisfy both:
+- `Δ cpu_usage_usec >= 1000` (i.e. >=1000x cgroup's 1 µs granularity);
+- measured wall interval `>= 100x` the timer floor.
+
+Where a single query is too cheap, queries are executed in a batch of M and
+per-query values are derived from the batch. M is recorded per cell.
+
+---
+
+## 10. Decision criteria — fixed now, before any data
+
+**KEEP** — all gated cells pass §11's statistic **and** the §5 equivalence
+audit passes for every compared path. #62 may begin.
+
+**FIX MEASUREMENT** (this issue's REJECT-equivalent) — any gated cell fails, or
+equivalence fails. Enumerate the noise source or the semantic defect. Do not
+start #62. Do not relax the thresholds.
+
+**REFINE** — equivalence passes and exactly one dataset's cells pass. Freeze
+E1's scope to the passing dataset and name the other as explicit pre-#62 work.
+
+Changing any threshold after observing data requires a **new numbered protocol
+revision** in this file, dated, with the original preserved.
+
+---
+
+## 11. Gate statistic
+
+For each gated metric in each cell, over the n=10 (minus exclusions)
+repetition means:
+
+- **percentile bootstrap 95% CI of the mean** —
+  `bench_harness::bootstrap_ci_mean`, 10,000 resamples, `alpha=0.05`,
+  `seed=61`;
+- **relative half-width** = `(ci_high - ci_low) / (2 * mean)`;
+- **PASS** iff relative half-width `<= 7.5%` for `cpu_us_per_query` and warm
+  `latency_p50_us`, and `<= 2%` for `serving_rss_bytes` and
+  `index_serialized_bytes`;
+- **secondary check**: coefficient of variation `<= 10%`;
+- a cell whose mean is `0.0` **FAILS** (relative half-width is defined as
+  infinite) rather than producing `NaN`.
+
+**Power justification, stated before measurement.** At n=10 with CV <=10%, a
+Welch t-test has power >0.95 to detect a 25% difference at `alpha=0.05`.
+Equivalently: two means separated by a true 25% gap cannot have overlapping
++-7.5% confidence intervals. The 7.5% bound is therefore not arbitrary — it is
+the precision required to make the campaign's own 25% materiality bar
+decidable.
+
+Cold build time is reported with a CV only and is **not** gated.
+
+---
+
+## 12. Known confounders and how each is handled
+
+| # | Confounder | Handling |
+|---|---|---|
+| C1 | Process-boundary / HTTP asymmetry | uniform containerized cgroup CPU + published transport floor + separately-labelled E2E latency (§7). Residual asymmetry disclosed, not eliminated. |
+| C2 | Steal time on a shared QEMU host | measured per repetition; preregistered 1.0% exclusion rule; >2 exclusions fails the cell (§9.3) |
+| C3 | No hardware performance counters (`perf_event_paranoid=4`, no root) | **no cycles/instructions claim will be made anywhere in this campaign.** #63's "cycles/query where practical" degrades to CPU-time accounting. Disclosed, not silently skipped. |
+| C4 | No CPU-frequency pinning (virtualized, no `cpufreq`) | disclosed; partially mitigated by round-robin engine ordering (§9.2) |
+| C5 | Host page cache cannot be dropped (no root) | "cold" is scoped to **cold process**, explicitly (§9.1) |
+| C6 | JVM warm-up / JIT | uniform warm-up policy + published transport floor; JVM sensitivity acknowledged |
+| C7 | `forceMerge(1)` favours Lucene | retained deliberately; direction is conservative against native |
+| C8 | Index-bytes definitional asymmetry | two separate disclosed metrics, never mixed (§6.3) |
+| C9 | Host page cache shared across serial engine runs | round-robin ordering; engines never co-resident |
+| C10 | 4 vCPU ceiling | #66's planned 16/8/4/2-core sweep is **impossible on this host**; it must become 4/3/2/1 via cgroup `cpu.max`. Recorded here because it changes a downstream issue's stated protocol and must be surfaced in #60 before #66 runs. |
+| C11 | Swap enabled (4 GiB) | `--memory-swap == --memory`; native asserts `VmSwap == 0` (§8) |
+
+---
+
+## 13. Stop conditions
+
+- Any Solr/ES transport, query, or parse failure during a measured run —
+  **abort before printing any number** and investigate.
+- Steal-time exclusions exceeding the §9.3 budget in any cell — stop, record
+  `FIX MEASUREMENT`.
+- Calibration disagreement between cgroup and `getrusage` accounting >2% —
+  stop; the instrument disagrees with itself.
+- WANDS routing split differing from 21/459 — stop; the workload is not the
+  workload prior evidence was measured on.
+
+---
+
+## 14. Traceability
+
+- Baseline SHA: `c6953063e2641ceada1992d1372766a2e6ad63cd`
+- Branch: `i61/baseline-freeze`
+- Host: Ubuntu 26.04 LTS, Linux 7.0.0-30-generic x86_64, 4 vCPU
+  (QEMU Virtual CPU version 2.5+), 15 GiB RAM, cgroup v2, Docker 29.7.2
+- Rust: `cargo 1.98.0 (797e8a9bc 2026-08-05)` / `rustc 1.98.0 (88d9e12ae 2026-08-18)`
+- Append-only log: `docs/experiments/ISSUE61_LOG.md`
+- Decision record: `docs/decisions/ISSUE61_DECISION.md`
+- Benchmark manifest: `benchmarks/manifests/i61_e1_baseline_freeze.yaml`
+- Result manifest: `artifacts/manifests/i61_e1.json`
+- Raw artifacts: `docs/research/artifacts/i61_e1_baseline_run1/`
+
+---
+
+# 15. Revision 2 — corrections required by adversarial protocol review
+
+**Status: supersedes Revision 1 wherever the two conflict. Written before any
+measured run; no data existed when these thresholds were changed.**
+
+An adversarial review was commissioned specifically to falsify Revision 1
+before data collection. It returned **BREAKS** and named six defects. Each was
+then independently verified against the actual code rather than accepted on
+assertion. All six reproduced. This section records the correction.
+
+The defects are recorded here, not quietly fixed, because a protocol that
+silently improves between drafts is indistinguishable from one tuned to a
+desired answer.
+
+## R2.0 The six confirmed defects
+
+| # | Defect | Verified evidence | Why it invalidates results |
+|---|---|---|---|
+| D1 | Solr's exact structured filters were emitted as **regular expressions** | `comparator-eval/src/translate.rs` emits `format!("{field}:/{}/", case_insensitive_field_regex(name))` for `Brand`/`ProductType`/`Category` | Forces a regex automaton over the term dictionary instead of an O(1) term lookup. **The baseline was a straw man.** Any native CPU win would have been partly manufactured. |
+| D2 | Malformed documents silently dropped | `solr.rs`: `docs.iter().filter_map(\|d\| d["id"].as_str()...)` still returns `Success` | A shortened result set with no error — the "failure becomes a favourable number" class this crate exists to prevent |
+| D3 | `numFound` discarded | `EngineComparator::search` returns "at most `rows` document ids" | Full candidate-set equality is impossible; top-K equality can pass while filters differ |
+| D4 | `queryResultCache` sized 4096 against a **480-query** workload | `provision_solr.sh` + `wc -l dataset_cache/wands/query.csv` = 481 | Three warm-up passes would cache *every* result. "Warm Solr" would have measured a hash lookup, not retrieval, against a native engine that has no whole-query result cache |
+| D5 | `CgroupSnapshot::delta_since` used `saturating_sub` | `issue61-eval/src/cgroup.rs` | A counter reset or wrong-cgroup read silently becomes **0 CPU** — a favourable number |
+| D6 | Protocol contradicted itself on latency | §6.1 gates `latency_p50_us`; §7.4 says end-to-end latency is "never used as a gated metric in E1" | The gate was undefined |
+
+D4 was this protocol's own error, introduced by its own provisioning script. It
+is recorded with the same weight as the inherited ones.
+
+## R2.1 Measurement boundary — one boundary, no subtraction
+
+Revision 1's transport-floor subtraction is **withdrawn**.
+
+The review's argument is accepted: Revision 1's accounting was neither
+engine-only nor total-system. Native's query loop ran inside its measured
+cgroup, while Solr's request construction, encoding, socket handling and JSON
+parsing ran in the host driver and escaped Solr's `cpu.stat`. Worse,
+subtracting a point-estimate floor `F` from measured CPU `Q` is not valid:
+`Var(Q-F) = Var(Q) + Var(F) - 2Cov(Q,F)`, so a point estimate understates
+uncertainty, and `Q = engine work + fixed floor` is not an established model —
+protocol cost varies with hit count, body size, cache state, GC and JIT. A
+match-nothing `rows=0` probe can also short-circuit to `MatchNoDocsQuery` and
+skip nearly all index work, so it *under*-estimates the tax it claims to
+measure.
+
+**Revision 2 requires:**
+
+1. The native engine is placed behind a **minimal HTTP endpoint** returning the
+   same response contract as Solr (`id` list + total match count). Both arms
+   are then driven by the **same external client over a persistent connection**.
+2. The primary metric is **raw server-side container CPU**, measured at an
+   identical boundary on both sides. No adjusted, corrected or floor-subtracted
+   CPU comparison is published.
+3. No-op probes are retained as **diagnostics only**, published beside the raw
+   numbers, never subtracted from them.
+4. Because both arms now share one boundary, **end-to-end p50 becomes legitimately
+   gateable**, which resolves D6. §6.1 stands; §7.4's blanket prohibition is
+   superseded.
+
+## R2.2 Baseline competence — corrections to Solr
+
+- **Exact filters, not regex.** Structured string constraints are issued as
+  exact term queries against a lowercased companion field populated at index
+  time. Semantics are identical to Revision 1's case-insensitive regex; the
+  automaton is gone. Implemented as an **opt-in** translator mode so the five
+  existing evaluation binaries and their published numbers are untouched.
+- **`queryResultCache` disabled (size 0).** It memoizes whole result lists and
+  the workload is a fixed 480 queries.
+- **`filterCache` retained and generously sized.** It caches filter-context
+  bitsets and is the closest Solr analogue to the native engine's precomputed
+  Roaring bitmaps. Disabling it would be a straw man in the opposite direction.
+  Hit/miss/eviction counters are published with every result.
+- **`documentCache` retained** — both engines materialize documents.
+- Exact heap, GC, cache sizes, schema and connection settings are frozen and
+  checksummed **before** the first measured run.
+
+## R2.3 Equivalence — full candidate sets, not top-K
+
+Revision 1's top-K ID-set equality is **insufficient** and is replaced.
+
+Two different candidate sets can share a top-K, and identical candidate sets
+can differ at the K boundary through score ties. `numFound` equality alone is
+also insufficient, since two different sets can share a cardinality.
+
+**Revision 2 requires:** outside the timed path, retrieve the **complete**
+structural candidate set from both engines and compare a canonical sorted-ID
+digest **and** the total count; emit both directional set differences on
+mismatch; audit every hybrid query's structural prefilter independently of
+ranking; treat any document lacking a valid string id as a hard `ParseError`,
+never a short success.
+
+The Revision 1 phrase "enumerated per `query_id` before the gate is evaluated"
+was a **post-hoc loophole** — it permitted observing mismatches and then adding
+them to the allowed list. Any known-difference manifest must now be frozen and
+checksummed **before execution**.
+
+Carried-forward limitation: WANDS and ESCI both map one product to one variant,
+so product-ID equality **cannot** validate same-variant conjunction semantics.
+E1 makes no same-variant claim.
+
+## R2.4 Statistics — paired blocks, Student-t, and a ratio decision rule
+
+Revision 1's gate is **withdrawn**. Three independent problems:
+
+1. **The percentile bootstrap is anti-conservative at n=10.** At CV=10%, its
+   half-width is ≈5.88% against a correct Student-t half-width of
+   `t(9,.975)·0.10/√10` ≈ 7.15% — about 18% too narrow, giving ≈90.4% actual
+   coverage for a nominal 95% interval. Resampling cannot add information the
+   sample does not contain. After Revision 1's permitted two exclusions (n=8)
+   coverage falls to ≈89.1%.
+2. **Non-overlapping intervals do not establish a ≥25% saving.** With A=1.00,
+   B=0.75 and both at ±7.5%, the compatible ratio spans
+   `0.75·0.925/1.075 = 0.645` to `0.75·1.075/0.925 = 0.872` — savings anywhere
+   from **12.8% to 35.5%**. A 25% point estimate is *not* decisively above a
+   25% bar. Revision 1's power justification was arithmetically true but
+   answered a Welch test the protocol never runs.
+3. **Repetitions are not independent.** Page cache, engine caches and host
+   drift induce serial dependence, so an IID bootstrap over raw repetitions is
+   unjustified.
+
+**Revision 2 requires:**
+
+- **≥30 randomized paired blocks.** Within a block both engines run under the
+  same host conditions; the block yields one paired ratio. The block, not the
+  repetition, is the unit of analysis.
+- **Student-t intervals**, computed on the **log** scale for ratios (ratios are
+  multiplicative and right-skewed) and exponentiated back.
+- **The decision is made on the ratio directly**: a ≥25% saving is claimed only
+  when the **upper** 95% bound on `treatment/baseline` is ≤ 0.75. Otherwise the
+  verdict is `Inconclusive` — never a pass.
+- **A known-effect calibration arm is mandatory.** A deliberately injected
+  effect (5 workload passes vs 4, true ratio 1.25) must be recovered: the
+  observed interval must contain 1.25 **and** exclude 1.0. Repeatability alone
+  cannot detect systematic accounting bias — an instrument that cannot recover
+  an effect it was told to expect cannot be trusted on an unknown one.
+  **A missing calibration is `FIX MEASUREMENT`, never a pass.**
+- **Index bytes are an exact artifact measurement**, not a bootstrapped
+  statistic. Revision 1's 2% bound was near-vacuous for a deterministic native
+  estimate.
+- Cells with fewer than 30 blocks are marked `underpowered` and force
+  `FIX MEASUREMENT`.
+
+## R2.5 Steal time — no post-run exclusion in the primary analysis
+
+Revision 1's exclusion rule is **withdrawn from the primary gate**.
+
+Preregistering an exclusion does not remove its selection bias, and here the
+bias is fatal: virtualization noise is exactly the phenomenon H1 is meant to
+detect, and the rule deletes precisely the repetitions that demonstrate it.
+Because cgroup CPU counts time actually scheduled, steal inflates *wall
+latency* more than CPU, so excluding high-steal repetitions suppresses latency
+variance and makes the instrument look more stable than it is.
+
+**Revision 2 requires:** every scheduled block enters the primary analysis.
+Clean-only results are published as a **sensitivity analysis** that may never
+rescue a failed all-data gate. Host conditions are screened *before* a block
+runs; a rejected block is rerun **whole**, and every rejection is recorded.
+Excessive rejection is itself `FIX MEASUREMENT`. Steal is measured on the
+assigned CPUs, not the aggregate line, and `throttled_usec`, CPU PSI, OOM and
+swap counters are recorded alongside.
+
+## R2.6 Resource definitions
+
+- `serving_rss_bytes` is renamed **`cgroup_memory_footprint_bytes`**. In
+  cgroup v2 this includes anonymous memory, charged page cache, sockets and
+  kernel memory. It remains the right cross-engine metric — it is the memory
+  the container actually needs — but calling it "RSS" was inaccurate.
+- `memory.peak` is **cumulative since cgroup creation** and may include
+  indexing, force-merge and startup. Serving memory is therefore sampled
+  across the serving window; the lifetime peak is reported separately and never
+  used as serving memory.
+- `memory.stat` components are recorded so the anonymous/page-cache split is
+  visible rather than inferred.
+- Native `approximate_size_bytes()` **excludes** the `Catalog`, `HashMap`
+  buckets, location maps and allocator overhead, while Lucene's `du -sb` is
+  actual persisted storage. These are **not** comparable. E1 therefore reports
+  each engine's index bytes descriptively and makes **no cross-engine index-byte
+  claim**; `cgroup_memory_footprint_bytes` carries the memory comparison.
+
+## R2.7 Counter integrity
+
+`CgroupSnapshot::delta_since` returns an error on any backwards counter
+movement instead of saturating to zero. A wrong-cgroup read or counter reset
+must be a loud failure, because saturating produced a *favourable* zero-CPU
+measurement.
+
+## R2.8 Narrowed scope of a KEEP verdict
+
+A Revision 2 `KEEP` authorizes **only** what it calibrated: mean CPU/query and
+p50 latency at the standardized HTTP boundary, on the two frozen datasets.
+
+It explicitly does **not** authorize p95/p99 claims, concurrent-load claims, or
+minimum-resource-envelope claims. #65 (tails, load) and #66 (envelope) each
+require their own calibration before their measured matrices begin. Revision 1
+implied a broader licence than its evidence could support.
+
+`QPS/core = 1e6/p50` (ADR 0007) is **not used** in this campaign: median
+latency is not CPU time and does not imply sustainable single-core throughput
+for a multithreaded engine. Throughput per core, where needed, is measured
+throughput divided by measured CPU.
+
+---
+
+# 16. Revision 2.1 — operational constants, frozen before measurement
+
+**Status: additive to Revision 2. Written and committed before any measured
+artifact exists.**
+
+Revision 2 fixed the *method* but left seven operational quantities
+unspecified. An unspecified constant is a degree of freedom, and a degree of
+freedom that survives into the measurement phase is a place where a result can
+be tuned after the fact without anyone being able to prove it. This section
+closes them. Every value below is frozen; changing one after data exists
+requires a numbered Revision 3 with the original preserved.
+
+## 16.1 Block structure
+
+| Constant | Value |
+|---|---|
+| Blocks per gated cell | **30** |
+| Warm-up passes per engine session | **3** |
+| Measured passes per engine session | **2** |
+| Engine order within a block | randomized per block, seed **61** |
+| Engine sessions | restarted every block; **never co-resident** |
+
+A *block* is two adjacent single-engine sessions (boot → 3 warm-up passes → 2
+measured passes → cgroup/memory snapshots → teardown) in randomized order. The
+block, not the pass, is the unit of analysis.
+
+Two measured passes give within-block averaging. One WANDS pass costs on the
+order of 5–15 s of CPU per engine, which is ≥10⁶× cgroup's 1 µs accounting
+granularity and far above the timer floor, so §9.4's batching requirement is
+satisfied without additional batching. Per-query client latencies are recorded
+individually — **p50 is never derived by dividing a batch time by N.**
+
+## 16.2 Calibration arm
+
+| Constant | Value |
+|---|---|
+| Injected effect | **5 measured passes vs 4**, true CPU ratio **1.25** |
+| Measured quantity | **block-total container CPU** (`Δ cpu.stat usage_usec`) |
+| Engines calibrated | **both** native and Solr |
+| Dataset | WANDS |
+| Blocks | 30 per engine |
+| Pass condition | 95% Student-t CI on the log-ratio **contains 1.25 AND excludes 1.0** |
+
+Two decisions here are load-bearing.
+
+**The calibration metric is block-total CPU, not per-query CPU.** Running five
+passes instead of four multiplies the *total* work in the measured interval by
+1.25, but leaves *per-query* cost at approximately 1.0. Calibrating a per-query
+metric against an expected ratio of 1.25 would be a category error and would
+fail for the wrong reason.
+
+**Both engines are calibrated, not just native.** Calibrating only the quiet
+single-threaded Rust binary and then asserting the instrument is sound would be
+exactly the shortcut an adversarial reviewer should attack: the JVM, with JIT
+and GC, is the noisy case the instrument actually has to survive. The extra
+machine time is the price of the claim.
+
+No additional point-estimate tolerance is defined. The interval rule above *is*
+the test; inventing a supplementary tolerance after seeing the observed ratio
+would be threshold-tampering.
+
+**Disclosed limitation:** p50 latency has no injectable known effect under this
+design — adding passes does not change per-query latency. Latency credibility
+therefore rests on three other checks rather than on calibration: the shared
+HTTP boundary (R2.1), the measured timer floor (§6.4), and the
+cgroup-vs-`getrusage` agreement check (≤2%, §13). This is stated here so the
+decision record cannot later imply latency was calibrated when it was not.
+
+## 16.3 Candidate-set digest
+
+```
+digest = SHA-256( join(sort(unique(ids)), "\n") )   # UTF-8, no trailing newline
+```
+
+Compared together with `numFound`. A digest match with a count mismatch, or
+vice versa, is a failure. On mismatch both directional set differences are
+emitted.
+
+Retrieved **outside the timed path**, in a separate audit stage that runs
+before any measured block, so retrieval cost cannot contaminate measurement by
+construction. Solr uses `cursorMark` pagination (`sort=id asc`, `fl=id`,
+`rows=5000`) with the terminal invariant `collected.len() == numFound`, else a
+hard error. Native uses its full candidate set directly.
+
+Scope: the structural WANDS queries, every hybrid query's structural prefilter
+audited independently of ranking, and the same for ESCI. Free-text disjunction
+sets are **not** audited — unbounded and not required by R2.3.
+
+## 16.4 Steal-time pre-screen (replaces Revision 1's post-run exclusion)
+
+| Constant | Value |
+|---|---|
+| Probe | 5 s, measured on the engine's assigned CPUs (`cpuset 0-2`), not the aggregate line |
+| Reject-block threshold | steal > **1.0%** |
+| Action on reject | rerun the **whole block**; log the measured steal % |
+| "Excessive" rejection | > **20%** of scheduled blocks ⇒ `FIX MEASUREMENT` (environment) |
+
+Every block that *runs* enters the primary analysis. Screening happens before a
+block, never after it — that is the difference between controlling conditions
+and deleting inconvenient data.
+
+## 16.5 Memory sampling
+
+`memory.current` sampled every **500 ms** during measured passes. The
+**per-block median** is the gated statistic; the per-block max is reported
+alongside. Lifetime `memory.peak` is recorded but is **never** used as serving
+memory, because it is cumulative since cgroup creation and includes indexing,
+force-merge and startup.
+
+## 16.6 Enumerated cells
+
+**Gated** (warm regime only): `cpu_us_per_query` and `latency_p50_us` per
+engine × dataset; `cgroup_memory_footprint_bytes` at the footprint bound; index
+bytes as an exact artifact **per engine** with no cross-engine claim.
+
+**Descriptive, never gated:** the cold regime (n=5 per engine × dataset), cold
+build time, p95/p99, Solr cache hit/miss counters, the no-op transport probe.
+
+## 16.7 Standing clauses restated
+
+- Revision 1 §10's **REFINE** clause remains operative under Revision 2: if
+  equivalence passes and exactly one dataset's cells pass, E1's scope freezes to
+  the passing dataset and the other is named as explicit pre-#62 work. REFINE is
+  an *outcome*, not a pre-hoc option — neither dataset may be dropped before
+  data exists.
+- ESCI-electronics **remains a measured dataset**. Its known shape (no
+  product_type, no category, no price, flat products) is disclosed, and E1 makes
+  no same-variant claim on it. A corpus with weak structural signal is still a
+  valid *stability* corpus, and E1 gates stability, not effect size.
+- Seed **61** everywhere a seed is required.
+
+## 16.8 Stop rule if calibration fails
+
+1. Root-cause first. If a concrete instrument defect is found and fixed, the
+   **entire** measured campaign — calibration and blocks — reruns from scratch.
+   Superseded data is preserved, never overwritten.
+2. At most **two** such fix-and-rerun cycles.
+3. After two failed cycles, or if no defect can be identified, the verdict is
+   `FIX MEASUREMENT`, and **the pull request still merges.**
+
+The third point is deliberate. Issue #61's own gate text makes
+`FIX MEASUREMENT` a legitimate terminal outcome, and the deliverables — the
+harness, the protocol, the equivalence audit, the raw negative evidence — are
+exactly the "negative results are first-class outputs" case in `CLAUDE.md`.
+What a failed calibration blocks is **#62**, not the merge. The decision record
+then names the enumerated defect as explicit pre-#62 work.
+
+## 16.9 The frozen workload carries the per-engine request contract
+
+Hands-on QA of the harness, before any measurement, found that the benchmark
+driver sent `q` and `rows` to **both** engines and nothing else — so Solr
+received no `fq`, no `defType`, no `qf` and no `fl=id`, answering an
+unconstrained question over every stored field while native applied its
+structural constraints and returned ids only.
+
+This is the **third** occurrence of the same defect class in this repository
+(`ISSUE55_PAIRED_COMPARATOR_DECISION.md`,
+`ISSUE55_ROUTING_OUTCOME_REPLICATION_DECISION.md`). Both earlier occurrences
+were found only after numbers had been published.
+
+The recurrence is the important part. Issue #55 A3 centralized the translator
+into `comparator-eval` to stop this, and that did eliminate the *translation*
+defect — but not the *call-site* defect. A newly written binary can still
+simply fail to call the shared translator, and nothing in the type system or
+the test suite notices, because the resulting request is perfectly valid; it
+just asks a different question.
+
+Revision 2.1 therefore removes the opportunity rather than relying on the
+author remembering:
+
+1. `i61_workload_freeze` emits, for every query, the **fully translated,
+   per-engine request** — native's `q`, and Solr's `q` + `fq[]` + explicit
+   `params` (`defType`, `qf`, `fl`, `rows`) — into the checksummed workload
+   artifact.
+2. If translation reports **any** unresolvable constraint, the freeze **fails
+   and exits non-zero**. A partially translated `fq` sent to Solr while native
+   enforces the full constraint set is the defect itself, so a partial `fq` is
+   never emitted.
+3. `i61_bench` **replays** those requests verbatim and synthesizes no engine
+   parameter of its own. A record missing its per-engine block is a hard error,
+   never a fall-back to a bare `q`.
+
+The consequence is that the comparator contract becomes a frozen, checksummed
+**artifact** committed before measurement, rather than behaviour reconstructed
+at run time by whichever binary happens to be driving. It is auditable by
+reading a file, and a reviewer can diff what each engine was actually asked
+without reading any Rust.
+
+## 16.10 Disclosed response-payload asymmetry
+
+Solr's response body carries two scalars the native endpoint does not emit
+(`numFoundExact`, `start`):
+
+```
+native: {"response":{"docs":[{"id":..}],"numFound":..},"responseHeader":{"status":..}}
+solr:   {"response":{"docs":[{"id":..}],"numFound":..,"numFoundExact":..,"start":..},
+         "responseHeader":{"status":..}}
+```
+
+This is a small amount of serialization work Solr does and native does not. It
+is **not** corrected — matching it would mean adding dead fields to the native
+endpoint purely to equalize a benchmark, which is the kind of
+architecture-for-benchmark change `CLAUDE.md` forbids. It is disclosed here so
+it appears in the record rather than being discovered by a reviewer, and it
+biases *against* native's measured advantage rather than for it.
+
+## 16.11 E1-only lexical-equivalence profile
+
+Issue #61 calibrates the measuring instrument and makes no architecture or
+native-vs-Solr effect claim. For E1 only, Solr residual lexical matching is
+forced to the native endpoint's conjunctive candidate-generation contract.
+
+Every frozen Solr request carries these explicit values:
+
+- `defType=edismax`;
+- WANDS `qf=title description`;
+- ESCI-electronics `qf=title description bullet_point`;
+- `q.op=AND`;
+- `mm=100%`;
+- `mm.autoRelax=false`;
+- `tie=0.0`;
+- `sow=true`;
+- `lowercaseOperators=false`;
+- `ps=0`, `ps2=0`, `ps3=0`, and `qs=0`;
+- `rows=10`;
+- `fl=id`;
+- `sort=id asc`; and
+- `wt=json`.
+
+No `pf`, `pf2`, `pf3`, `bq`, `bf`, `boost`, or `q.alt` parameter is emitted.
+The phrase-slop values above are inert because phrase boost fields are absent;
+they are explicit only to close request-handler/default degrees of freedom.
+
+Residual query text is emitted as literal eDisMax input. Backslash and every
+Lucene query-language metacharacter (`+ - && || ! ( ) { } [ ] ^ " ~ * ? : /`)
+is backslash-escaped before HTTP form encoding. Fielded queries, boosts,
+grouping, unary operators, and unescaped quote syntax are therefore not
+permitted in the generated request. Empty residual text uses `*:*` only when
+the compiled query carries at least one structural filter.
+
+Before any timed block, the audit retrieves the complete result set for every
+query from both engines. It compares `numFound` and the §16.3 sorted,
+unique-ID digest and emits both directional differences on mismatch. This
+supersedes §16.3's exclusion of free-text candidate sets for E1. Any mismatch
+is `FIX MEASUREMENT`; it cannot become a post-hoc known difference.
+
+The complete effective Solr configset is archived and checksummed: effective
+managed schema, `solrconfig.xml`, config overlay, request handlers, stopwords,
+synonyms, protected-word/mapping/language resources, and any loaded plugin.
+Every field named by a frozen `fq`, `qf`, `fl`, or `sort` is validated against
+that live configset before the audit runs.
+
+Gated stability cells are engine × dataset × each non-empty admission class
+(`FastPath`, `Hybrid`, `Punt`) plus the all-workload aggregate. Class-specific
+CPU cells run as separately measured frozen sub-workloads and must satisfy the
+timer/cgroup floor. CPU/query remains the primary metric; candidate count,
+`numFound`, returned rows and zero-hit rate are diagnostics, never divisors used
+to normalize away candidate-pruning work.
+
+E1's forced-AND profile and its CPU values are calibration artifacts only.
+They are forbidden as effect-size baselines for Issues #63 or #65. Those
+issues must freeze their own production comparator settings and correctness/
+relevance non-inferiority gates before measurement.
+
+## 16.12 Audit-order and ambiguity-only corrections
+
+The first workload regeneration under §16.11 happened before any timed data
+and exposed two remaining contract defects.
+
+First, `sort=score desc,id asc` was inconsistent with §16.3's full-set
+cursor audit and needlessly retained scorer work in an experiment whose only
+semantic gate is candidate-set equality. E1 therefore freezes `sort=id asc`.
+This correction was committed before workload regeneration completed.
+
+Second, WANDS query IDs `7` (`driftwood mirror`) and `160` (`marble`) compile
+to explicit ambiguity with no hard constraint and no residual lexical term.
+The current native endpoint consequently executes its unconstrained candidate
+set. For E1 parity, any non-empty source query with no executable hard or
+residual term freezes Solr `q=*:*` with an empty `fq` list. A truly empty or
+whitespace-only source query remains a hard generation error. The complete-set
+audit must return the full corpus on both arms for these two records; otherwise
+the equivalence gate fails.
+
+## 16.13 Dataset-specific Solr contract gate
+
+Before any correctness audit or timed request, provisioning must validate the
+live core against a dataset-specific frozen schema and config snapshot. WANDS
+and ESCI-electronics have different lexical and structured fields, so one
+generic snapshot cannot validate both.
+
+Validation is fail-closed and requires exact semantic JSON equality after one
+documented normalization: Solr's top-level `config.znodeVersion` is managed
+metadata that changes when the config API writes a new version, so it is
+omitted from frozen snapshots and removed from the live config before
+comparison. No other schema or config key is ignored. The gate separately
+asserts the E1 unique key, lexical fields, lowercase exact-filter analyzer,
+copy fields, and cache settings so a defective frozen snapshot cannot bless a
+straw baseline.
+
+The four normalized snapshots and their SHA-256 values are frozen in
+`benchmarks/configs/issue61/solr_frozen.sha256`; provisioning verifies that
+manifest before reading the snapshots. Any later change requires a numbered
+protocol correction before another provision or measurement.
+
+# Revision 3 — native-compatible lexical analyzers
+
+**Frozen 2026-09-04 after the first complete-set audit failed and before any
+corrected audit or timed measurement.** Revision 2.1 and its failed artifact
+remain preserved. All Revision 2 clauses remain binding except where this
+revision explicitly replaces the lexical field analyzer.
+
+## 17.1 Trigger and competing explanations
+
+The first ESCI-electronics complete-set audit matched 542/600 queries and
+failed all remaining 58. Every mismatch was Punt; every structural/hybrid
+query matched. The primary hypothesis is therefore that Solr `text_general`
+does not reproduce native's asymmetric catalog/query tokenization.
+
+Competing explanations remain live until the corrected audit passes: omitted
+lexical fields or content during indexing, query-parser escape behavior,
+Unicode classification differences, and source-ID mapping defects. Any
+remaining mismatch is evidence for one of these alternatives and remains
+`FIX MEASUREMENT`; it cannot be added to the known-difference manifest.
+
+## 17.2 Frozen analyzer treatment
+
+The WANDS `title`/`description` and ESCI-electronics `title`/`description`/
+`bullet_point` fields use a new `native_lexical` Solr field type:
+
+- index analyzer: PatternTokenizerFactory with pattern
+  `[^\\p{L}\\p{N}]+`, then LowerCaseFilterFactory;
+- query analyzer: WhitespaceTokenizerFactory, then LowerCaseFilterFactory;
+- no stopword, synonym, stemming, delimiter, folding or n-gram filter.
+
+This mirrors the current native endpoint rather than improving it: catalog
+text is split on every non-alphanumeric character, while compiled residual
+query terms retain punctuation inside whitespace-delimited tokens. The frozen
+literal eDisMax escaping and every other §16.11 request parameter remain
+unchanged.
+
+Provisioning creates the field type, replaces only those named lexical fields,
+reindexes the complete corpus, force-merges, captures new dataset-specific
+schema/config snapshots and passes §16.13. The failed Revision 2.1 core is not
+reused.
+
+## 17.3 Corrected-audit gate
+
+The corrected audit reruns from scratch for all 480 WANDS and all 600
+ESCI-electronics queries. The preregistered pass condition is exact: every
+query must match both `numFound` and the §16.3 digest, with zero native or Solr
+failures. Any mismatch on either dataset blocks timing. No threshold is relaxed
+and no dataset, admission class or punctuation case may be excluded.
+
+# Revision 4 — one explicit lexical token stream
+
+**Frozen 2026-09-04 after the Revision 3 complete-set audit failed and after
+untimed diagnostic toggles, but before regenerating either workload or running
+another authoritative audit or timed measurement.** Revision 3's failed result
+and both rejected diagnostic treatments remain preserved in the append-only
+log. All prior clauses remain binding except where this revision explicitly
+replaces native residual lookup and Solr `q` construction.
+
+## 18.1 Trigger and corrected mechanism
+
+Revision 3 reached 595/600 on ESCI-electronics. Its five misses exposed a
+pre-existing native endpoint defect: `CommerceQuery::residual_lexical` entries
+may contain multiple words, but `CatalogIndex::lexical_and_candidates` accepts
+the individual tokens produced by public `commerce_core::index::tokenize`.
+Passing residual entries directly therefore looked up impossible phrase keys.
+
+Tokenizing only native residuals was rejected at 581/600. Changing Solr's query
+analyzer to PatternTokenizer as well was rejected at 596/600. The final four
+misses occurred because eDisMax kept punctuation-split subtokens inside one
+original whitespace clause and required those subtokens in one `qf` field;
+native postings are deliberately attribute-agnostic across title and every
+Text attribute. An untimed four-query toggle that made every token a top-level
+Solr clause matched 4/4 exactly.
+
+## 18.2 Frozen treatment
+
+Both engines consume one deterministic token stream derived from the compiled
+residual entries:
+
+1. apply `commerce_core::index::tokenize` independently to every
+   `residual_lexical` entry;
+2. preserve entry order and token order, including duplicates;
+3. perform no second compiler stopword pass — punctuation splitting may expose
+   a token such as `to`, and that token remains part of the request;
+4. native passes the resulting token vector to
+   `lexical_and_candidates`;
+5. Solr joins the same tokens with one ASCII space and applies the existing
+   literal eDisMax escaping before freezing `solr.q`.
+
+Revision 3's `native_lexical` index PatternTokenizer and query
+WhitespaceTokenizer remain frozen. Because each Solr whitespace chunk is now
+one native token, eDisMax constructs one top-level cross-field DisMax clause
+per token. No field, parser parameter, filter, ranking parameter or corpus
+changes.
+
+## 18.3 Workload and evidence replacement
+
+Regenerate both JSONL workloads from the unchanged source query files and
+catalogs. Native requests, admission classes and structural constraints must
+remain unchanged; only Solr `q` values affected by residual token normalization
+may differ. Record new SHA-256 values and retain the superseded workload hashes
+in the log rather than rewriting history.
+
+The authoritative audit then reruns from clean provisioned cores for all 600
+ESCI-electronics and all 480 WANDS queries. The pass condition remains exact
+count-plus-digest equality for every query with zero engine failures. Any
+remaining mismatch blocks timing and may not be whitelisted.
+
+# Revision 5 — WANDS structured-field parity
+
+**Frozen 2026-09-04 after the Revision 4 WANDS complete-set audit failed and
+after untimed diagnostic queries, but before changing provisioning, replacing
+the frozen schema snapshot, or running another authoritative audit or timed
+measurement.** Revision 4's failed 480-row artifact remains preserved. All
+prior clauses remain binding except where this revision explicitly replaces
+the WANDS lowercase companion-field set and `product_class_lc` analysis.
+
+## 19.1 Trigger and confirmed mechanisms
+
+Revision 4 passed all 600 ESCI-electronics queries but WANDS reached 473/480:
+five engine failures and two native-only mismatches. Live response bodies
+identified every engine failure as an undefined lowercase companion field:
+`color_lc`, `primarymaterial_lc`, `style_lc`, or `material_lc`. Those fields
+are emitted by the exhaustive shared constraint translator and occur in the
+frozen workload, but WANDS provisioning created companions only for
+`product_class` and `category_leaf`.
+
+Both mismatches came from WANDS's disclosed pipe-delimited product classes.
+Native ingestion uses the first segment before `|`, while Solr copied the raw
+compound value into an exact-term field. All 17 native-only IDs for query 126
+carry `Dining Chairs|Office Chairs`. Query 252's 37 native-only IDs carry an
+`Accent Chairs` first segment followed by one or two other classes. Untimed
+first-segment-aware filters changed the two Solr counts from 568 to 585 and
+from 373 to 410 respectively, exactly matching native. Changing only that
+filter recovered every missing query-252 ID, refuting a lexical-field cause.
+
+## 19.2 Frozen treatment
+
+WANDS provisioning adds non-stored, single-valued lowercase exact-filter
+companions for every attribute field referenced by the frozen workload:
+`color_lc`, `style_lc`, `primarymaterial_lc`, and `material_lc`. Each is
+populated from its same-named source through `copyField` and retains the
+Revision 2 `string_lc` KeywordTokenizer plus LowerCaseFilter semantics.
+
+`product_class_lc` instead uses a dedicated `first_pipe_segment_lc` TextField.
+Its analyzer applies `PatternReplaceCharFilterFactory` with pattern `\|.*$`
+and empty replacement, then KeywordTokenizerFactory and
+LowerCaseFilterFactory. The existing `product_class -> product_class_lc`
+copy therefore indexes the same first non-empty segment that WANDS native
+ingestion uses, without a query-time regex or automaton. No source field,
+query translator, filter value, lexical field, parser parameter, corpus, or
+native behavior changes.
+
+The dataset-specific schema contract must fail closed unless all six WANDS
+companion fields exist with their frozen field types and all six copy-field
+pairs exist. It must separately assert the dedicated product-class analyzer,
+so a generic lowercase keyword snapshot cannot bless raw pipe compounds.
+
+## 19.3 Corrected-audit gate
+
+Provision a clean WANDS core, regenerate its schema snapshot and checksum, and
+rerun all 480 frozen queries. Then reprovision a clean ESCI-electronics core and
+rerun all 600 frozen queries as the independent regression gate. Passing still
+requires exact count-plus-digest equality for every query with zero native or
+engine failures. Any mismatch blocks timing; no query, field, admission class,
+or dataset may be excluded.
+
+# Revision 6: campaign matrix, lifecycle, and dry-run contract
+
+**Frozen 2026-09-06 before analyzer or driver implementation and before any authoritative timed artifact.** Revisions 1 through 5 remain preserved verbatim. All prior governing thresholds, equivalence rules, calibration bounds, noise floors, 2% reconciliation requirements, seeds, block limits, and materiality rules remain binding. Revision 6 freezes the remaining campaign execution matrix, artifact lifecycle, sequence ordering, rejection count limits, and dry-run contract.
+
+## 20.1 Trigger and scope
+
+Revision 6 freezes campaign execution details prior to driver implementation and timed benchmark execution. No measurement, result claim, or architecture verdict is introduced.
+
+## 20.2 Frozen execution matrix and class cell resolution
+
+The campaign execution matrix is frozen at 310 logical pairs and 620 total engine sessions:
+
+- Warm series: 2 datasets (WANDS, ESCI) x 4 query projections (`FastPath`, `Hybrid`, `Punt`, aggregate `All`) x 30 paired blocks = 240 blocks / 480 sessions.
+- Calibration series: 2 engine types (native, Solr) x 30 WANDS 4-vs-5 measured-pass paired blocks = 60 blocks / 120 sessions.
+- Cold series: 2 datasets (WANDS, ESCI) x 5 aggregate native-vs-Solr paired blocks = 10 blocks / 20 sessions.
+
+Admission class cells (`FastPath`, `Hybrid`, `Punt`) are measured as separate frozen sub-workloads derived from baseline query compilation. Each dataset must validate that every class cell is non-empty prior to execution. If a frozen class cell is empty for a dataset, execution aborts immediately before timing rather than silently dropping the cell.
+
+## 20.3 Deterministic scheduling and sequence order
+
+Engine session execution order within paired blocks uses deterministic seed-61 schedules:
+
+- Warm native-versus-Solr paired blocks use the existing seed-61 schedule.
+- Calibration four-pass versus five-pass paired blocks use a new deterministic balanced seed-61 schedule, placing 15 blocks in four-pass-first order and 15 blocks in five-pass-first order.
+
+The pre-timing setup and campaign sequence proceed in exact linear order:
+
+1. Validate checksums and static configuration contracts.
+2. Clean provision cores and run complete-set equivalence audits (WANDS 480/480, ESCI 600/600).
+3. Record exact index metadata and schema snapshots.
+4. Execute both-engine measured-pass calibration blocks (60 blocks / 120 sessions).
+5. Perform calibration analysis and stop before warm execution if either engine fails it.
+6. Execute warm paired blocks (240 blocks / 480 sessions).
+7. Execute cold descriptive paired blocks (10 blocks / 20 sessions).
+8. Generate final campaign analysis and summary reports.
+
+## 20.4 Cycle identity and directory lifecycle
+
+Campaign execution cycles are strictly named `run1`, `rerun1`, and `rerun2`. A third rerun (`rerun3`) is forbidden. Reruns require a concrete, documented instrument or infrastructure defect fix. A rerun preserves all prior cycle artifacts without modification or deletion, and restarts calibration plus all measured blocks from scratch.
+
+Cycle output directories use create-once paths under `artifacts/issue61/i61_e1_<cycle>/`. The execution driver refuses to start if the target cycle directory exists. Execution cannot resume across sessions or append to a past cycle directory. Within an active cycle run, events and raw records write to append-only typed streams. Truncation or overwriting of existing event or raw files within a cycle is prohibited.
+
+## 20.5 Artifact roles and rejection count semantics
+
+Cycle directories organize evidence into distinct file roles:
+
+- `events.jsonl`: append-only typed event stream recording cycle lifecycle, block starts, session completion, teardowns, and rejected attempt metadata.
+- `raw.jsonl`: append-only typed stream containing measured runtime metrics for accepted sessions. Raw measured records must never represent rejected prescreens or failed blocks.
+- `index_artifacts.jsonl`: exact index metadata, document counts, and schema snapshot identities.
+- `analysis.json`: normalized summary tables, statistical calculations, and gate evaluations.
+- `commands.log`: captured command invocations, launch arguments, and environment parameters.
+- `checksums.sha256`: SHA-256 verification hashes for static assets, launch adapters, and output files.
+
+Rejection limits enforce strict count semantics for scheduled attempts under the >20% rejection rule:
+
+- A 30-block series permits at most 6 rejected attempts. A seventh rejected attempt halts the campaign.
+- A 5-block cold series permits at most 1 rejected attempt. A second rejected attempt halts the campaign.
+- Rejected attempts rerun the whole logical block and log details exclusively in the event stream.
+
+No partial-pair resume is permitted. If any slot or session fails during a paired block, the driver tears down the environment, preserves partial evidence, aborts the cycle, and does not execute the partner slot.
+
+Primary gate analysis includes every completed block that ran after passing its prescreen; no completed block may be excluded post hoc. Sensitivity views or secondary filtering passes cannot override or rescue a failed primary quality gate.
+
+## 20.6 Dry-run rendering contract and protected launcher boundary
+
+The `--dry-run` flag operates as pure plan rendering:
+
+- `--dry-run` creates no files or directories, spawns no subprocesses, and touches no Docker, HTTP, sleep, prescreen, provision, audit, or timing functions.
+- The dry-run output must report exact plan summary metrics: 310 logical pairs, 620 total sessions, 480 warm sessions, 120 calibration sessions, 20 cold sessions, 48 stability cells, 4 exact index cells, 0 external commands, and 0 filesystem writes.
+
+This revision keeps the protected native launcher script (`scripts/issue61/run_native_container.sh`) outside until its adapter contract and checksum are explicitly frozen. `--dry-run` does not inspect, validate, or invoke the protected launcher script. Authoritative campaign execution remains blocked until that adapter contract is explicitly frozen.
+
+# Revision 7: campaign analyzer matching, metric precision, and purity contracts
+
+**Frozen 2026-09-06 before analyzer implementation and authoritative timed artifacts.** Revisions 1 through 6 remain preserved verbatim. All prior governing thresholds, the 310/620 campaign matrix, equivalence rules, materiality criteria, rejection limits, 2% process-reconciliation requirements, and rerun rules remain binding. Revision 7 freezes campaign analyzer matching rules, metric precision targets, calibration evaluation logic, exact index artifact inputs, and analyzer purity boundaries.
+
+## 21.1 Trigger and scope
+
+Revision 7 removes analyzer matching and precision ambiguity prior to analyzer implementation and authoritative timed benchmark execution. It preserves all prior revisions, thresholds, and campaign matrices verbatim.
+
+## 21.2 Raw schema and campaign plan matching
+
+The raw record schema remains v4. An external typed argument supplies the analyzer cycle. Each raw session record is matched against `campaign_plan(cycle)` by `(calibration, engine, dataset, query_class, regime, rep, engine_order)`, never by JSONL file adjacency or line order. In this match tuple, `rep` represents the logical block index and `engine_order` represents the paired slot index. Calibration pass identity is recovered directly from the typed campaign plan combined with the regime tag. Any duplicate, missing, unexpected, or post-hoc excluded records cause the analyzer to fail closed immediately.
+
+## 21.3 Metric precision and memory footprint sample definition
+
+Warm `cpu_us_per_query` and `latency_p50_us` precision evaluation uses a maximum 7.5% relative Student-t half-width at 95% confidence. Evaluating warm per-block footprint precision uses a maximum 2% relative Student-t half-width on `cgroup_memory_current_median_bytes`. All three stability metrics retain the maximum 10% coefficient of variation and 30-block requirement. This 2% memory precision limit formalizes the footprint bound referenced in §16.6, removing sample field ambiguity prior to execution rather than retuning bounds post-result.
+
+## 21.4 Calibration pass criteria
+
+Calibration evaluation requires independent passes for native and Solr using block-total `cpu_usage_usec` across 30 paired blocks, testing against the expected 4-vs-5 ratio of 1.25. If either engine arm is missing or fails the calibration test, the campaign status becomes `FIX MEASUREMENT`, blocking warm execution.
+
+## 21.5 Exact index evidence gate
+
+Exact index evidence is ingested as a separate four-record typed input covering each engine and dataset pair (`index_artifacts.jsonl`). Index size metrics are exact descriptive artifacts without bootstrap confidence intervals or cross-engine claims. The analyzer ignores `RawRecord.index_serialized_bytes` when evaluating the exact index gate.
+
+## 21.6 Analyzer purity and execution boundary
+
+The analyzer module is strictly pure. It does not create cycle directories, spawn subprocesses, invoke Docker or HTTP calls, or enable non-dry-run execution. Execution via the protected launcher script remains blocked until its adapter contract and checksum are explicitly frozen in a future revision.
+
+# Revision 8: aggregate analyzer evidence and verdict contract
+
+**Frozen 2026-09-06 before analyzer implementation and authoritative timed artifacts.** Revisions 1 through 7 remain preserved verbatim. All prior governing thresholds, raw schema v4, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, and purity rules remain binding. Revision 8 freezes candidate audit identity and validation, native process CPU reconciliation, dataset-scoped verdict precedence, and analyzer exit behavior.
+
+## 22.1 Trigger and scope
+
+Revision 8 closes the remaining analyzer degrees of freedom identified by adversarial review prior to analyzer implementation. Sections 5, 6.4, 10, 16.3, 16.7, and 16.11 remain binding.
+
+## 22.2 Candidate audit validation and complete-set equivalence
+
+Candidate audit evidence must supply exactly 1,080 records matching the frozen workload slices: 480 WANDS queries and 600 ESCI-electronics queries. The analyzer validates an exact bijection by typed dataset and `query_id` against the supplied workload slices, confirming that the admission class recorded in each audit entry matches the workload slice entry.
+
+Each audit record is structurally validated as one of `Match`, `Mismatch`, `NativeFailure`, or `EngineFailure`. Count and digest fields must be present or absent as a pair. A `Match` requires equal counts, equal lowercase SHA-256 digests, empty directional differences, and no failure reason. A `Mismatch` requires both count/digest pairs, at least one count or digest inequality, and no failure reason; its directional differences may both be empty when only the count differs. A failure verdict requires a non-empty reason, empty directional differences, and an absent count/digest pair for the failed side. Equivalence requires that all 1,080 records be `Match`. Any complete `Mismatch`, `NativeFailure`, or `EngineFailure` is valid negative evidence that fails the equivalence gate. Missing, duplicate, unexpected, class-mismatched, or structurally malformed records produce an `AnalysisError`.
+
+## 22.3 Native process CPU reconciliation and 2% bound
+
+Every native campaign record must include `process_cpu_user_usec`, `process_cpu_system_usec`, `process_cpu_total_usec`, and `process_cgroup_disagreement_pct`, whereas Solr records must omit all four fields. The process tuple must verify that the checked sum of `process_cpu_user_usec` and `process_cpu_system_usec` equals `process_cpu_total_usec`. The stored disagreement percentage must be finite, non-negative, and exactly equal to the percentage recomputed by the analyzer using the same expression as the measurement harness.
+
+Disagreement between process CPU time and container cgroup CPU usage (`cpu_usage_usec`) is recomputed using integer cross multiplication to avoid floating point imprecision. Disagreement of exactly 2% or less passes calibration. Disagreement greater than 2% constitutes complete negative evidence that forces `FIX MEASUREMENT`. Malformed or missing process tuples on native records produce an `AnalysisError`.
+
+## 22.4 Dataset-scoped cells and global verdict precedence
+
+Each dataset owns 24 warm stability cells (2 engines x 4 projections x 3 metrics: `cpu_us_per_query`, `latency_p50_us`, and `cgroup_memory_current_median_bytes`). Cold series and exact-index artifacts are evaluated as descriptive evidence only.
+
+Verdict evaluation follows strict precedence:
+
+1. Any global calibration failure, equivalence failure, or process CPU reconciliation failure overrides `REFINE` and forces `FIX MEASUREMENT`.
+2. If no global failure exists, dataset outcomes are evaluated independently across their 24 warm cells.
+3. If both datasets pass all warm cells, the campaign verdict is `KEEP`.
+4. If exactly one dataset passes all warm cells, the campaign verdict is `REFINE`, naming both the passing and blocked datasets.
+5. If zero datasets pass all warm cells, the campaign verdict is `FIX MEASUREMENT`.
+
+## 22.5 Analyzer exit behavior
+
+The analyzer process exit code is strictly tied to the final campaign verdict:
+
+- Only a `KEEP` verdict exits with code zero (0).
+- A `REFINE` verdict names the passing and blocked datasets and exits with a non-zero code.
+- A `FIX MEASUREMENT` verdict or any `AnalysisError` exits with a non-zero code.
+
+# Revision 9: completed-cycle analysis boundary
+
+**Frozen 2026-09-06 before loader or report implementation and before cycle-result inspection.** Revisions 1 through 8 remain preserved verbatim. All prior governing thresholds, raw schema v4, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, purity rules, and verdict precedence remain binding. Revision 9 decision-completely freezes the post-run completed-cycle analysis interface, input contract, verification seal, file structure, and CLI invocation before any loader or report implementation or cycle-result inspection.
+
+## 23.1 Trigger and scope
+
+Revision 9 freezes post-run completed-cycle analysis boundaries for already completed campaign cycles. It introduces no measured result, alters no prior threshold, and explicitly supersedes only Revision 6's ambiguous phrase stating that `checksums.sha256` covers output files. For this checkpoint, `checksums.sha256` is a pre-analysis seal: it excludes itself and `analysis.json`.
+
+## 23.2 CLI invocation and path derivation
+
+Analysis executes through a dedicated CLI interface with exact flag order:
+
+`i61_analyze --repository-root <PATH> --cycle <run1|rerun1|rerun2>`
+
+The CLI accepts no other arguments, optional flags, environment overrides, or force flags. The repository root path must resolve to a canonical non-symlink directory. The cycle directory is derived strictly as `<PATH>/artifacts/issue61/i61_e1_<cycle>/` and must exist as a canonical non-symlink directory.
+
+## 23.3 File structure and regular-file boundary
+
+The analyzer operates on an exact required set of files within the derived cycle directory. The cycle directory must contain:
+
+- `candidate_audit_esci.jsonl`
+- `candidate_audit_wands.jsonl`
+- `events.jsonl`
+- `raw.jsonl`
+- `index_artifacts.jsonl`
+- `commands.log`
+- `checksums.sha256`
+
+The file `analysis.json` must be absent before analysis begins and is created exactly once upon successful completion. Every existing input must be a strict regular file, and the repository root, cycle directory, and every parent path component of an input or output must not be a symlink. A successfully created `analysis.json` must be a strict regular file.
+
+## 23.4 Pre-analysis checksum verification seal
+
+Before semantically parsing any artifact, the analyzer verifies the pre-analysis seal in `checksums.sha256`; files may first be opened and read only as opaque bytes for checksum verification. The checksum file must exist in strict immutable format, containing exactly twelve bytewise-sorted repository-relative path entries with lower-case hexadecimal SHA-256 digests and two space separators:
+
+```
+<HASH>  artifacts/issue61/i61_e1_<cycle>/candidate_audit_esci.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/candidate_audit_wands.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/commands.log
+<HASH>  artifacts/issue61/i61_e1_<cycle>/events.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/index_artifacts.jsonl
+<HASH>  artifacts/issue61/i61_e1_<cycle>/raw.jsonl
+<HASH>  benchmarks/configs/issue61/solr_esci_electronics_config.json
+<HASH>  benchmarks/configs/issue61/solr_esci_electronics_schema.json
+<HASH>  benchmarks/configs/issue61/solr_wands_config.json
+<HASH>  benchmarks/configs/issue61/solr_wands_schema.json
+<HASH>  benchmarks/workloads/i61_esci_electronics.jsonl
+<HASH>  benchmarks/workloads/i61_wands_480.jsonl
+```
+
+The checksum file must not contain self-references, an entry for `analysis.json`, or any other path. Parsing rejects CRLF, comments, blank lines, duplicate paths, uppercase or non-hexadecimal digests, separators other than exactly two ASCII spaces, absolute paths, backslashes, and `.` or `..` path components.
+
+The six static input files in `checksums.sha256` must match these exact verified hashes:
+
+- WANDS workload `benchmarks/workloads/i61_wands_480.jsonl`: `462b5bf8cae6e12fdcfa2cb5177a648d4de43aec0936c35e61aaffaacb0cad08`
+- ESCI workload `benchmarks/workloads/i61_esci_electronics.jsonl`: `531e39d0feda45591c0f3f17adfa25b1b52d73ff70994a3e31cad739364f050e`
+- WANDS schema snapshot `benchmarks/configs/issue61/solr_wands_schema.json`: `997e321ed081133b9a83fce5f35e42a75cfd3333bf91505f876501343600463a`
+- WANDS config snapshot `benchmarks/configs/issue61/solr_wands_config.json`: `ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b`
+- ESCI schema snapshot `benchmarks/configs/issue61/solr_esci_electronics_schema.json`: `62266803df8715b3b09485fdc168b580c1ae337d1dd7b5b43ae1ce09e74eca2e`
+- ESCI config snapshot `benchmarks/configs/issue61/solr_esci_electronics_config.json`: `ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b`
+
+The two cycle-local candidate audit files bind equivalence evidence to the analyzed cycle. They are generated by that cycle's clean-provision complete-set audits and sealed with their actual per-cycle hashes; the earlier Revision 5 audits remain preserved historical evidence but are not substitutes for cycle-local evidence. The four Solr snapshot files are both hashed as manifest inputs and compared against the exact path and digest identities recorded by the Solr index records.
+
+Any missing entry, hash mismatch, unsorted order, malformed line, extra entry, self-reference, or presence of `analysis.json` in `checksums.sha256` fails verification immediately. Checksum verification must complete successfully before semantic parsing of any JSON or JSONL content.
+
+## 23.5 Artifact formatting and strict JSONL constraints
+
+All semantically parsed JSONL input files require strict LF line endings, UTF-8 encoding, and exactly one object per line. Parsing rejects blank lines, CRLF line endings, unknown fields, duplicate fields, missing nullable keys, malformed enums, and trailing data. `events.jsonl` is not semantically parsed by this checkpoint and is verified only as sealed opaque completion evidence.
+
+Input file record constraints:
+
+- `raw.jsonl`: must contain exactly 620 v4 raw records matching the campaign matrix.
+- `benchmarks/workloads/i61_wands_480.jsonl`: must contain exactly 480 workload entries with non-null per-engine request blocks.
+- `benchmarks/workloads/i61_esci_electronics.jsonl`: must contain exactly 600 workload entries with non-null per-engine request blocks.
+- `candidate_audit_wands.jsonl`: must contain exactly 480 candidate audit records for the active cycle.
+- `candidate_audit_esci.jsonl`: must contain exactly 600 candidate audit records for the active cycle.
+
+Events and commands files are validated as checksum-verified opaque completion evidence.
+
+## 23.6 Index schema v1 specification
+
+The `index_artifacts.jsonl` file must adhere strictly to index schema v1 and forms an exact four-record bijection with the Cartesian product of engines (`native`, `solr`) and datasets (`wands`, `esci_electronics`). Parsing rejects unknown fields.
+
+Every index record must include:
+
+- `schema_version`: integer `1`
+- `experiment_id`: string `"I61-E1"`
+- `cycle`: string matching the active cycle (`"run1"`, `"rerun1"`, or `"rerun2"`)
+- `engine`: string (`"native"` or `"solr"`)
+- `dataset`: string (`"wands"` or `"esci_electronics"`)
+- `document_count`: integer (`42994` for WANDS, `2075` for ESCI)
+- `index_serialized_bytes`: integer in the range `1..=9007199254740992` (1 to 2^53)
+
+Engine-specific snapshot fields:
+
+- Native records must not contain snapshot fields (`schema_snapshot` and `config_snapshot` must be omitted).
+- Solr records require `schema_snapshot` and `config_snapshot` objects containing exactly the fields `path` and `sha256` with these dataset-specific values:
+  - WANDS Solr record requires `schema_snapshot` (`path`: `"benchmarks/configs/issue61/solr_wands_schema.json"`, `sha256`: `"997e321ed081133b9a83fce5f35e42a75cfd3333bf91505f876501343600463a"`) and `config_snapshot` (`path`: `"benchmarks/configs/issue61/solr_wands_config.json"`, `sha256`: `"ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b"`).
+  - ESCI Solr record requires `schema_snapshot` (`path`: `"benchmarks/configs/issue61/solr_esci_electronics_schema.json"`, `sha256`: `"62266803df8715b3b09485fdc168b580c1ae337d1dd7b5b43ae1ce09e74eca2e"`) and `config_snapshot` (`path`: `"benchmarks/configs/issue61/solr_esci_electronics_config.json"`, `sha256`: `"ae5c0e1c8de23a798a550b6042617f0bedd4b8e04a1ecbe5d8d9633df5bfff5b"`).
+
+## 23.7 Deterministic report format and output behavior
+
+Successful completed analysis generates a create-new report file at `artifacts/issue61/i61_e1_<cycle>/analysis.json`. The complete report is serialized to memory before the file is opened. Publication uses create-new semantics, `write_all`, and a successful file sync. A write or sync failure closes and removes the incomplete file before returning exit code 2; if cleanup itself fails, the diagnostic names the incomplete residue and the next invocation continues to reject it as a collision.
+
+Report serialization constraints:
+
+- Format: UTF-8 pretty JSON, two-space indentation, exactly one trailing LF newline.
+- Exclusions: must contain no timestamps, absolute file paths, hostnames, or unordered maps.
+- Exact top-level key order:
+  1. `schema_version`
+  2. `experiment_id`
+  3. `cycle`
+  4. `inputs`
+  5. `decision`
+  6. `global_gates`
+  7. `calibrations`
+  8. `candidate_audit`
+  9. `process_cpu`
+  10. `warm_cells`
+  11. `exact_index_cells`
+  12. `cold`
+- `schema_version` is integer `1`; `experiment_id` is `"I61-E1"`; and `cycle` is the typed active cycle.
+- Each `inputs` item contains exactly `path` and `sha256`.
+- `decision` contains, in order, `verdict`, `passing_dataset`, `blocked_dataset`, and `exit_code`. Verdict strings are `"KEEP"`, `"REFINE"`, and `"FIX MEASUREMENT"`. `KEEP` and `FIX MEASUREMENT` require both dataset fields to be JSON `null`; `REFINE` requires both fields to be non-null lowercase protocol names copied from `GateVerdict::Refine`.
+- `global_gates` contains, in order, `calibration_passed`, `equivalence_passed`, and `process_cpu_reconciliation_passed`.
+- `calibrations` contains `passed` followed by `arms`. Arms are ordered native then Solr and each contains, in order, `engine`, `expected_ratio`, `observed`, and `passed`; `observed` is either JSON `null` for a missing arm or an object containing `n_blocks`, `point_ratio`, `ci_low`, and `ci_high` in that order. A missing arm has `passed: false`.
+- `candidate_audit` contains, in order, `total_records`, `matched_records`, `mismatched_records`, `native_failure_records`, `engine_failure_records`, and `equivalence_passed`.
+- `process_cpu` contains, in order, `native_records`, `solr_records`, `max_disagreement_pct`, and `reconciliation_passed`.
+- Every `warm_cells` and `exact_index_cells` item contains the existing `CellStability` fields in order: `cell`, `metric`, `kind`, `n`, `n_blocks`, `mean`, `ci_low`, `ci_high`, `rel_halfwidth`, `max_relative_halfwidth`, `cv`, `underpowered`, and `passes`. `kind` uses exactly `"CPU_OR_LATENCY"`, `"FOOTPRINT"`, or `"EXACT_ARTIFACT"`.
+- `cold` contains, in order, `session_count` and `gated`, where `gated` is always `false`.
+- Array orderings:
+  - `inputs`: preserves exact checksum manifest order (the twelve bytewise-sorted checksum entries).
+  - `warm_cells`: preserves analyzer order: engine (`native`, `solr`), then dataset (`wands`, `esci_electronics`), then projection (`all`, `fast-path`, `hybrid`, `punt`), then metric (`cpu_us_per_query`, `latency_p50_us`, `cgroup_memory_current_median_bytes`).
+  - `exact_index_cells`: preserves analyzer order: native/WANDS, native/ESCI, Solr/WANDS, Solr/ESCI. Typed document counts and snapshot identities remain sealed source evidence in `index_artifacts.jsonl`; this report array is explicitly the analyzer's normalized exact-cell view.
+
+Execution and exit behavior:
+
+- On successful completed analysis:
+  - Writes create-new `analysis.json`.
+  - stdout: prints exactly one summary line formatted as `i61_analyze: cycle=<cycle> verdict=<verdict> passing_dataset=<passing|null> blocked_dataset=<blocked|null> exit_code=<exit_code>\n`.
+  - stderr: empty.
+  - exit code: `0` for `KEEP`, `1` for `REFINE` or `FIX MEASUREMENT`.
+- On failure (CLI invocation error, path error, checksum failure, symlink violation, parse error, schema error, `AnalysisError`, serialization failure, file collision, or write failure):
+  - Writes no successful report (leaves any existing file untouched on collision).
+  - stdout: empty.
+  - stderr: prints exactly one line `i61_analyze: <detail>\n`.
+  - exit code: `2`.
+
+## 23.8 Component isolation and purity boundary
+
+Existing campaign dry-run functionality (`i61_campaign --dry-run`) and pure analyzer core logic remain unchanged. This revision explicitly excludes launch, provisioning, timing, lifecycle management, and authoritative campaign execution.
+
+# Revision 10: launcher-neutral lifecycle core boundary
+
+**Frozen 2026-09-07 before lifecycle-core implementation or authoritative execution.** Revisions 1 through 9 remain preserved verbatim. All prior governing thresholds, raw schema v4, index schema v1, the 310/620 campaign matrix, equivalence rules, calibration bounds, noise floors, seeds, block limits, purity rules, seal verification, and verdict precedence remain binding. Revision 10 decision-completely freezes the testable launcher-neutral lifecycle core and explicit external contract boundaries while keeping authoritative execution blocked.
+
+## 24.1 Trigger, scope, and compilation gate
+
+Revision 10 registers the remaining launcher-neutral tracked lifecycle core before implementation. Scope is limited to an experiment-only Rust module within `issue61-eval`, driven by the existing `CampaignPlan`. Injected command, process, and filesystem abstractions allow unit testing against deterministic fakes.
+
+The entire lifecycle module, all ports, fakes, and unit tests are placed behind a module-level `#[cfg(test)]` attribute within `issue61-eval`. There is no normal-target compilation, public export, cargo feature flag, or `#[allow(dead_code)]` workaround. A future launcher protocol revision must explicitly remove or update this `#[cfg(test)]` compilation gate.
+
+Production exposure remains frozen. Command `i61_campaign` stays dry-run-only. Revision 10 introduces no non-dry-run CLI, launch command, container execution, measurement, or result claim.
+
+## 24.2 Ordered lifecycle state model
+
+The lifecycle core enforces an explicit, ordered phase transition model covering ten exact phases:
+
+1. `StaticValidation`: Validate static inputs and snapshot assets.
+2. `Initialization`: Initialize create-once cycle directory and open six local evidence files using create-new.
+3. `EquivalenceAudit`: Provision cores and run complete-set candidate equivalence audits for WANDS and ESCI.
+4. `IndexCapture`: Capture and validate four exact index cells into `index_artifacts.jsonl`.
+5. `EquivalenceGate`: Evaluate candidate equivalence gate.
+6. `Calibration`: Execute calibration blocks (60 blocks, 120 sessions).
+7. `CalibrationGate`: Evaluate calibration gate using existing pure calibration analysis.
+8. `Warm`: Execute warm blocks (240 blocks, 480 sessions).
+9. `Cold`: Execute cold blocks (10 blocks, 20 sessions).
+10. `EvidenceFinalization`: Close the five non-event evidence files, emit `EvidenceFinalized`, close `events.jsonl`, create and verify the seal, and invoke the completed-cycle analyzer.
+
+Phase transition rules:
+
+- Gate phases (`EquivalenceGate` and `CalibrationGate`) emit `GatePassed` or `GateFailed`.
+- If a gate evaluates to `GateFailed`, the core emits `LifecycleTerminated` and terminates cleanly before the subsequent execution phase (`Calibration` or `Warm`).
+- Equivalence gate failure and calibration gate failure are valid terminal transitions.
+- Gate failures and failures before `EvidenceFinalization` create no `checksums.sha256`; failure during seal creation or verification may leave an unverified checksum as specified in §24.3. No failed or unverified seal permits `i61_analyze` invocation.
+- State transitions must strictly follow this sequence and cannot skip or reorder any phase.
+
+## 24.3 Directory safety, derivation, symlink rules, and persistence
+
+Repository root path must resolve to a canonical non-symlink directory. Base directory `artifacts/issue61` preexists in the repository. Cycle output directories derive strictly as `<root>/artifacts/issue61/i61_e1_<cycle>/` where `<cycle>` is `run1`, `rerun1`, or `rerun2`.
+
+Target cycle directory, repository root, and all parent path components must not be symlinks. Initialization fails immediately if any path component is a symlink. Create-once semantics apply: if the target cycle directory exists, execution refuses to start. Resuming an existing cycle directory or appending across sessions is forbidden.
+
+All six local evidence files (`candidate_audit_esci.jsonl`, `candidate_audit_wands.jsonl`, `commands.log`, `events.jsonl`, `index_artifacts.jsonl`, `raw.jsonl`) are opened during `Initialization` using create-new semantics. Subsequent writes use append-only `write_all`.
+
+On handled failure or gate termination, the driver executes environment teardown, writes a `LifecycleTerminated` event to `events.jsonl` when possible, and flushes, syncs, and closes all open evidence files. If an abrupt crash occurs, only previously synced bytes persist on disk; resuming incomplete runs is prohibited.
+
+A completed cycle directory contains exactly seven regular files (`candidate_audit_esci.jsonl`, `candidate_audit_wands.jsonl`, `commands.log`, `events.jsonl`, `index_artifacts.jsonl`, `raw.jsonl`, `checksums.sha256`) after a successful seal. Incomplete or terminated cycles contain fewer files, or seven files with an invalid or incomplete seal, and are never analyzed.
+
+## 24.4 Typed command and event logging contracts
+
+Both `commands.log` and `events.jsonl` use LF line endings, UTF-8 encoding, and schema version 1. A single lifecycle-global sequence counter starts at integer 1 and increments monotonically across every command and event record emitted during the cycle. Revision 9 treats `commands.log` and `events.jsonl` as semantically opaque byte files during post-run analysis; Revision 10 defines their schema-v1 layout for emission by the lifecycle core.
+
+`StaticValidation` events and `Initialization` `PhaseStarted` are staged in memory. After all six evidence files are successfully opened, the core appends the staged records in sequence order and then appends `Initialization` `PhaseCompleted`. A failure before `events.jsonl` exists produces no event file; a failure after it exists appends the staged records and `LifecycleTerminated` when possible.
+
+Value classification type `LoggedText` is defined strictly as a JSON object:
+`{"Public":"<value>"}` or `{"Redacted":"<redacted>"}`.
+
+Command record schema (`commands.log`):
+Each line is a JSON object with these exact fields in order:
+1. `schema_version`: integer `1`
+2. `experiment_id`: string `"I61-E1"`
+3. `cycle`: string (`"run1"`, `"rerun1"`, or `"rerun2"`)
+4. `seq`: integer (lifecycle-global sequence number starting at 1)
+5. `executable`: string (executable identity)
+6. `args`: array of `LoggedText` objects
+7. `env`: array of key-value objects representing allowlisted environment variables with exact ordered fields `{"name":"<NAME>","value":<LoggedText>}`. Environment variable names are public strings that must exactly match the allowlist and are not `LoggedText`; only environment values use `LoggedText` classification. The array must contain unique names and be bytewise-sorted by `name`.
+8. `outcome`: tagged outcome object representing process completion, being exactly one of:
+   - `{"Exited":{"exit_code":<code_int>}}`
+   - `{"SpawnFailed":{"reason":<LoggedText>}}`
+   - `{"Signaled":{"signal":<signal_int>}}`
+   - `{"TimedOut":{"timeout_ms":<timeout_ms_uint>}}`
+9. `stdout`: `LoggedText` object
+10. `stderr`: `LoggedText` object
+
+Input classifications (args and allowlisted environment values) and output visibility policies are fixed before execution. Unclassified input values are rejected before execution. Captured stdout and stderr strings are classified after capture according to the visibility policy before logging. Redacted fields serialize strictly as `"<redacted>"`. Direct argument vectors are used without shell interpolation.
+
+Event record schema (`events.jsonl`):
+Each line is a JSON object with these exact fields in order:
+1. `schema_version`: integer `1`
+2. `experiment_id`: string `"I61-E1"`
+3. `cycle`: string (`"run1"`, `"rerun1"`, or `"rerun2"`)
+4. `seq`: integer (lifecycle-global sequence number)
+5. `phase`: string enum (`"StaticValidation"`, `"Initialization"`, `"EquivalenceAudit"`, `"IndexCapture"`, `"EquivalenceGate"`, `"Calibration"`, `"CalibrationGate"`, `"Warm"`, `"Cold"`, `"EvidenceFinalization"`)
+6. `series`: string or JSON `null` (`"calibration"`, `"warm"`, `"cold"`, or `null`)
+7. `block_index`: integer or JSON `null` (0-based logical block index when inside a series)
+8. `attempt`: integer or JSON `null` (1-based attempt counter when inside a block)
+9. `slot_index`: integer or JSON `null` (0 or 1 for paired slots)
+10. `engine`: string or JSON `null` (`"native"`, `"solr"`, or `null`)
+11. `dataset`: string or JSON `null` (`"wands"`, `"esci_electronics"`, or `null`)
+12. `projection`: string or JSON `null` (`"all"`, `"fast-path"`, `"hybrid"`, `"punt"`, or `null`)
+13. `event_type`: string enum (`"PhaseStarted"`, `"PhaseCompleted"`, `"BlockStarted"`, `"PrescreenRejected"`, `"SlotStarted"`, `"SlotCompleted"`, `"SlotFailed"`, `"TeardownStarted"`, `"TeardownCompleted"`, `"TeardownFailed"`, `"BlockCompleted"`, `"GatePassed"`, `"GateFailed"`, `"LifecycleTerminated"`, `"EvidenceFinalized"`)
+14. `reason`: `LoggedText` object or JSON `null`
+
+Event emission requirements:
+
+- The first nine phases emit `PhaseStarted` at entry and `PhaseCompleted` at successful completion. `EvidenceFinalization` instead ends with the single final `EvidenceFinalized` event defined in §24.8.
+- A rejected prescreen probe emits `PrescreenRejected` and emits no `BlockStarted` event.
+- Every started slot emits `SlotStarted` and exactly one completion or failure event (`SlotCompleted` or `SlotFailed`), followed by teardown events (`TeardownStarted` then `TeardownCompleted` or `TeardownFailed`).
+- Evaluated gates emit strictly `GatePassed` or `GateFailed`.
+- The `EvidenceFinalized` event concludes `events.jsonl` emission during `EvidenceFinalization`.
+- `projection` is required for every warm-series block, slot, teardown, rejection, and completion event and is JSON `null` otherwise. `series`, `block_index`, and `attempt` are required on block-scoped events. `slot_index` and `engine` are required on slot and teardown events. `reason` is JSON `null` for successful events and non-null for rejection, failure, and termination events.
+
+## 24.5 Pair execution semantics, attempts, and rejection staging
+
+Block execution freezes attempt counting starting at integer 1. The steal-time prescreen probe runs before attempting either slot in a paired block.
+
+If a prescreen probe is rejected, a `PrescreenRejected` event is logged in `events.jsonl`, the `CampaignSeries`-scoped rejection counter increments, no engine session runs, and the driver retries the entire logical block.
+
+Slot execution and failure rules:
+
+- Raw measured records for both slots are staged in memory during block execution.
+- When slot zero fails during execution, slot one is not executed, slot zero command and event logs are recorded, no raw record is written, the driver executes environment teardown, and the campaign cycle aborts without retry.
+- If slot one fails after slot zero succeeds, slot zero diagnostic logs remain recorded in `commands.log` and `events.jsonl`, both staged raw records (slot zero and slot one) are discarded, the driver executes environment teardown, and the campaign cycle aborts without retry.
+- Staged raw records append to `raw.jsonl` only after both slots in the paired block complete successfully.
+
+Rejection threshold limits follow Revision 6: a 7th rejection in a 30-block series or a 2nd rejection in a 5-block cold series halts the campaign immediately. File `raw.jsonl` contains accepted measured records only; it never records rejected prescreen attempts or failed block sessions.
+
+## 24.6 Index capture and validation
+
+Index evidence capture uses a typed index provider interface. Four exact cells are captured into `index_artifacts.jsonl` in strict deterministic order:
+
+1. `engine: "native"`, `dataset: "wands"`
+2. `engine: "native"`, `dataset: "esci_electronics"`
+3. `engine: "solr"`, `dataset: "wands"`
+4. `engine: "solr"`, `dataset: "esci_electronics"`
+
+Before timing begins, the core validates that the four records form a complete bijection with the Cartesian product of engines and datasets, satisfy index schema v1, verify document counts (42,994 for WANDS, 2,075 for ESCI), and contain exact dataset-specific snapshot paths and SHA-256 hashes for Solr records.
+
+## 24.7 Pre-warm calibration gate
+
+The calibration gate evaluates before warm blocks start. It uses existing pure calibration analysis over exactly 120 accepted calibration sessions (30 paired blocks per engine arm).
+
+If either engine arm is missing or fails the calibration test, the campaign emits `GateFailed` and `LifecycleTerminated`, stopping immediately. No warm or cold sessions run when calibration fails.
+
+## 24.8 Finalization, seal creation, and analyzer integration
+
+Phase `EvidenceFinalization` runs after cold blocks complete. The lifecycle core first flushes, syncs, and closes the five non-event evidence files in this exact order:
+
+1. `candidate_audit_esci.jsonl`
+2. `candidate_audit_wands.jsonl`
+3. `commands.log`
+4. `index_artifacts.jsonl`
+5. `raw.jsonl`
+
+If closing any of those five files fails, the core appends `LifecycleTerminated` when possible, flushes, syncs, and closes `events.jsonl`, and creates no seal. After all five close successfully, the core appends `EvidenceFinalized` as the final event, then flushes, syncs, and closes `events.jsonl`. There is no `PhaseCompleted` event for finalization and no event is attempted after that point.
+
+Only after all six evidence files are closed does the core create `checksums.sha256` using create-new semantics, write it using `write_all` with the exact Revision 9 twelve-entry format (six static benchmark or config files plus six local evidence files), flush, sync, close, and verify it immediately. Seal creation or verification failure may leave an incomplete or invalid checksum file but never invokes analysis.
+
+Upon successful seal verification, the completed-cycle analyzer (`i61_analyze`) is invoked. Invocation of `i61_analyze` is governed by §23.7: it is excluded from `commands.log` and `events.jsonl`. Analyzer `i61_analyze` exits with code 0 for `KEEP`, code 1 for `REFINE` or `FIX MEASUREMENT`, or code 2 for failure.
+
+A completed cycle directory contains exactly seven regular files before analysis. Successful analysis adds only `analysis.json`.
+
+## 24.9 External launcher contract specification and boundary isolation
+
+Revision 10 records no launcher identity. A future revision will freeze schema-versioned launcher path and hash inside existing sealed evidence files (`commands.log` or `events.jsonl`). Launcher identity will never appear as an eighth file in the cycle directory or a thirteenth entry in `checksums.sha256`.
+
+This subsection serves as a specification checklist for a future revision. Authoritative execution remains blocked until an explicit launcher contract is provided declaring:
+
+- Immutable adapter script path and SHA-256 hash.
+- Exact executable path and ordered CLI arguments.
+- Allowlisted environment variables and volume mounts.
+- Container and process identity parameters.
+- Server endpoint URL and port bindings.
+- Cgroup path discovery method.
+- Readiness probe definition and timeout.
+- Teardown procedure and timeout.
+- Emitted metadata fields.
+- Failure mapping rules.
+
+## 24.10 RED test requirements
+
+Before implementing the lifecycle core, automated RED tests must verify:
+
+- Module-level `#[cfg(test)]` compilation isolation with no normal-target exports or feature flags.
+- Deterministic phase (`StaticValidation` through `EvidenceFinalization`), command, and event sequence ordering.
+- Rejection of existing cycle directories, non-preexisting parent paths, and symlinks during create-once initialization.
+- Append-only file writing with prohibition of truncation or overwriting (`write_all` enforcement).
+- Incomplete cycle directory behavior (contains fewer than seven files or an unverified seal, refusing analyzer invocation).
+- Immediate campaign termination on `EquivalenceGate` failure (`GateFailed`) before `Calibration`.
+- Prescreen rejection emitting `PrescreenRejected` without `BlockStarted`, incrementing `CampaignSeries` rejection counter, and retrying logical block.
+- Staging raw records in memory and discarding both staged records on slot failure (slot zero failure prevents slot one; slot one failure discards both staged records so slot zero raw record never leaks to `raw.jsonl`).
+- Whole-block rejection accounting and strict enforcement of Revision 6 rejection limits (7th in 30-block series, 2nd in 5-block cold series).
+- Immediate campaign termination on `CalibrationGate` failure (`GateFailed`) before `Warm`.
+- Typed index provider validation with exact four-cell bijection, document count check, snapshot verification, and deterministic order (`native/wands`, `native/esci_electronics`, `solr/wands`, `solr/esci_electronics`).
+- Schema-v1 JSONL validation and redaction filtering for `commands.log` and `events.jsonl` (using `LoggedText`, tagged outcome objects, ordered and unique env arrays, serializing `Redacted` as `"<redacted>"`, rejecting unclassified values).
+- Exact flush, sync, and close order for the five non-event evidence files, failure termination through the still-open event stream, final `EvidenceFinalized` emission, event-stream close, and only then twelve-entry `checksums.sha256` creation, verifying no writes after seal.
+- Analyzer invocation governed by §23.7 only after valid seal verification, and refusal to run analyzer on unsealed, invalid, or incomplete directories.
+- Byte-for-byte dry-run plan stability.
+- Absolute isolation of protected launcher execution in unit tests (`cfg(test)` fakes only).
+
+## 24.11 Stop condition and entry criteria for Issue #62
+
+Completing Revision 10 implementation delivers only the generic lifecycle core and its `cfg(test)` suite. Revision 10 alone never satisfies entry criteria for Issue #62.
+
+Before execution: a future protocol revision must freeze the concrete launcher contract and checksum, the live adapter must be peer-reviewed, and the execution PR must be merged into green main.
+
+After execution: the campaign cycle must be sealed, analyzed via `i61_analyze`, adversarially reviewed, and the decision record merged into green main.
+
+Issue #62 entry follows existing decision verdict rules:
+
+- `KEEP` permits entry for both datasets.
+- `FIX MEASUREMENT` blocks entry.
+- `REFINE` permits entry only after completing named pre-work, limited strictly to the passing dataset.

@@ -28,7 +28,9 @@ mod distribution;
 mod manifest;
 mod repeat;
 
-pub use bootstrap::{bootstrap_ci_diff_of_means, BootstrapCi};
+pub use bootstrap::{
+    bootstrap_ci_diff_of_means, bootstrap_ci_mean, t_ci_mean, BootstrapCi, MeanCi,
+};
 pub use csv_out::{append_raw_samples, append_summary_row};
 pub use distribution::Distribution;
 pub use manifest::RunManifest;
