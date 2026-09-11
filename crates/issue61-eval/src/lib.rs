@@ -11,8 +11,7 @@ mod equivalence;
 mod floor;
 mod gate;
 mod lexical_tokens;
-#[cfg(test)]
-mod lifecycle;
+pub mod lifecycle;
 mod memory_sampler;
 mod native_candidates;
 mod pid_namespace;
