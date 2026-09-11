@@ -1,27 +1,52 @@
 use issue61_eval::{
-    campaign_plan, CampaignCycle, CampaignPhase, EXACT_INDEX_CELLS, STABILITY_CELLS,
+    campaign_plan, lifecycle::live::validate_repository_root, CampaignCycle, CampaignPhase,
+    EXACT_INDEX_CELLS, STABILITY_CELLS,
 };
+use std::path::PathBuf;
 
 struct DryRunConfig {
     cycle: CampaignCycle,
 }
 
-fn parse_config(args: &[String]) -> Result<DryRunConfig, String> {
-    let cycle = match args {
+struct ExecutionConfig {
+    repository_root: PathBuf,
+    cycle: CampaignCycle,
+}
+
+enum CampaignConfig {
+    DryRun(DryRunConfig),
+    Execute(ExecutionConfig),
+}
+
+enum CampaignError {
+    Invocation(String),
+    Execution(String),
+}
+
+fn parse_config(args: &[String]) -> Result<CampaignConfig, String> {
+    match args {
         [_, dry_run, cycle_flag, value] if dry_run == "--dry-run" && cycle_flag == "--cycle" => {
-            value.parse()?
+            Ok(CampaignConfig::DryRun(DryRunConfig {
+                cycle: value.parse()?,
+            }))
         }
         [_, cycle_flag, value, dry_run] if cycle_flag == "--cycle" && dry_run == "--dry-run" => {
-            value.parse()?
+            Ok(CampaignConfig::DryRun(DryRunConfig {
+                cycle: value.parse()?,
+            }))
         }
-        _ => {
-            return Err(
-                "execution is unavailable; expected exactly --dry-run --cycle <run1|rerun1|rerun2>"
-                    .to_string(),
-            )
+        [_, execute, root_flag, root, cycle_flag, value]
+            if execute == "--execute"
+                && root_flag == "--repository-root"
+                && cycle_flag == "--cycle" =>
+        {
+            Ok(CampaignConfig::Execute(ExecutionConfig {
+                repository_root: PathBuf::from(root),
+                cycle: value.parse()?,
+            }))
         }
-    };
-    Ok(DryRunConfig { cycle })
+        _ => Err("expected exactly --dry-run --cycle <run1|rerun1|rerun2> or --execute --repository-root <canonical-root> --cycle <run1|rerun1|rerun2>".to_owned()),
+    }
 }
 
 fn render(config: &DryRunConfig) -> String {
@@ -51,16 +76,30 @@ fn render(config: &DryRunConfig) -> String {
     )
 }
 
-fn run(args: &[String]) -> Result<String, String> {
-    parse_config(args).map(|config| render(&config))
+fn run(args: &[String]) -> Result<String, CampaignError> {
+    match parse_config(args).map_err(CampaignError::Invocation)? {
+        CampaignConfig::DryRun(config) => Ok(render(&config)),
+        CampaignConfig::Execute(config) => {
+            validate_repository_root(&config.repository_root)
+                .map_err(|error| CampaignError::Execution(error.to_string()))?;
+            Err(CampaignError::Execution(format!(
+                "live execution is not implemented for cycle {}",
+                config.cycle.as_str()
+            )))
+        }
+    }
 }
 
 fn main() {
     match run(&std::env::args().collect::<Vec<_>>()) {
         Ok(summary) => print!("{summary}"),
-        Err(error) => {
+        Err(CampaignError::Invocation(error)) => {
             eprintln!("i61_campaign: {error}");
             std::process::exit(1);
+        }
+        Err(CampaignError::Execution(error)) => {
+            eprintln!("i61_campaign: {error}");
+            std::process::exit(2);
         }
     }
 }
