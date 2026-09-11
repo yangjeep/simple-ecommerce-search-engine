@@ -5,6 +5,7 @@ mod initialization;
 mod observability;
 mod revision10;
 mod revision10_evidence;
+mod revision11_live;
 mod seal_durability;
 mod slot_contract;
 
