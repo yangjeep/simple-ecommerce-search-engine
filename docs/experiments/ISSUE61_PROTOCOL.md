@@ -1605,3 +1605,157 @@ Issue #62 entry follows existing decision verdict rules:
 - `KEEP` permits entry for both datasets.
 - `FIX MEASUREMENT` blocks entry.
 - `REFINE` permits entry only after completing named pre-work, limited strictly to the passing dataset.
+
+# Revision 11: concrete live launcher and execution boundary
+
+**Frozen 2026-09-10 before live-adapter implementation or authoritative
+execution.** Revisions 1 through 10 remain preserved verbatim. All thresholds,
+the 310-pair/620-session matrix, seed-61 ordering, workloads, engine semantics,
+resource limits, rejection rules, evidence schemas, seal rules, analyzer rules,
+and verdict precedence remain binding. This revision freezes the missing live
+execution boundary only. It introduces no measurement or result claim.
+
+## 25.1 Tracked launcher and exact CLI
+
+The sole authoritative wrapper path is
+`scripts/run-benchmarks/i61_campaign_live.sh`. It accepts exactly one positional
+cycle argument: `run1`, `rerun1`, or `rerun2`. Its exact invocation is:
+
+```bash
+bash scripts/run-benchmarks/i61_campaign_live.sh <run1|rerun1|rerun2>
+```
+
+The wrapper resolves the repository root to a canonical non-symlink directory,
+sources `benchmarks/configs/issue61/container_limits.env`, validates the frozen
+static inputs and required release binaries, and then replaces itself with:
+
+```text
+target/release/i61_campaign --execute --repository-root <canonical-root> --cycle <cycle>
+```
+
+No other positional arguments, optional flags, environment overrides, force
+flags, or resume mode are accepted. Existing `--dry-run --cycle <cycle>` parsing
+and its exact zero-command/zero-write output remain unchanged.
+
+The protected untracked path `scripts/issue61/run_native_container.sh` is not an
+input: it must not be read into authority, modified, staged, deleted,
+checksummed, invoked, or copied by this work.
+
+## 25.2 Native launcher identity and resources
+
+The live adapter owns one native container named `i61-native-live`. It uses the
+immutable image
+`debian@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171`
+and the frozen resource values from `container_limits.env`:
+
+- `--cpus=3`;
+- `--cpuset-cpus=0-2`;
+- `--memory=6g`;
+- `--memory-swap=6g`.
+
+Host and container port are both `9900`; the endpoint is
+`http://127.0.0.1:9900`. The release binary is mounted read-only as
+`/opt/i61_native_server`. Exactly one selected dataset directory is mounted
+read-only as `/dataset`. The command is exactly:
+
+```text
+/opt/i61_native_server --catalog /dataset/<catalog> --dataset <dataset> --port 9900
+```
+
+The only dataset/catalog pairs are `wands`/`catalog.jsonl` and
+`esci_electronics`/`esci_electronics_products.jsonl`. The adapter records the
+container PID from `docker inspect --format {{.State.Pid}} i61-native-live` and
+derives the cgroup-v2 path from `/proc/<pid>/cgroup` through the existing
+`CgroupReader`; guessed or caller-supplied cgroup paths are forbidden.
+
+Readiness probes `GET /ping` once per second for at most 90 seconds. Early
+container exit, timeout, malformed PID/cgroup identity, wrong document count,
+or an unreachable endpoint fails the current slot and triggers lifecycle
+cleanup. Native teardown targets only `i61-native-live`, waits at most 30
+seconds, and reports failure rather than hiding it.
+
+## 25.3 Solr ownership and execution
+
+Solr remains the frozen primary mature-engine comparator. The live adapter
+invokes the already tracked `scripts/issue61/provision_solr.sh <dataset>` and
+uses the image digest, `i61-solr` identity, port 8983, heap, CPU, memory,
+schema/config snapshots, clean provisioning, force-merge, parity check, and
+contract checks already frozen by prior revisions and
+`container_limits.env`. It does not edit that script or any frozen Solr input.
+
+The adapter may tear down only `i61-solr` instances it provisioned for the
+active slot. Teardown is bounded at 30 seconds. A teardown failure is fatal and
+must be represented in the typed event stream. Elasticsearch remains governed
+by the existing time-boxed secondary-baseline rule and cannot alter E1's
+native-plus-Solr verdict.
+
+## 25.4 Lifecycle production boundary
+
+The existing lifecycle core, model, and port modules may compile in normal
+`issue61-eval` targets so the campaign binary can reuse their exact phase,
+retry, evidence, cleanup, seal, and analyzer semantics. The fake adapter and all
+lifecycle test helpers remain `#[cfg(test)]`. Only the minimum types required to
+implement the live port may be exported; `Driver`, fake state, fault injection,
+and internal serializers remain private. Product crates must not depend on the
+experiment crate.
+
+For each slot, the live port constructs the existing typed `i61_bench` command
+from the frozen `SessionSpec`, executes it on driver CPU 3, records classified
+argv/environment/stdout/stderr and the real process outcome, appends raw output
+only after both paired slots succeed, and delegates all ordering and rejection
+accounting to the existing lifecycle core. It must not duplicate schedule,
+query projection, metric, analyzer, or verdict logic.
+
+## 25.5 Evidence, failures, and cleanup
+
+Create-once/no-resume cycle paths and all existing append-only evidence rules
+remain unchanged. Existing files under `artifacts/issue61/` are immutable. The
+live port emits schema-v1 command/event records, captures the exact four index
+cells, preserves the twelve-entry seal contract, verifies the seal, and invokes
+the existing completed-cycle analyzer only after a valid seven-file cycle.
+
+CLI result classes are fixed:
+
+- completed lifecycle plus analyzer `KEEP`: exit 0;
+- completed lifecycle plus analyzer `REFINE` or `FIX MEASUREMENT`: exit 1;
+- invocation, static validation, launch, readiness, slot, teardown, evidence,
+  seal, or analyzer failure: exit 2.
+
+On every handled failure the adapter attempts bounded cleanup of only resources
+it owns, while the lifecycle preserves the first failure and durably closes any
+opened evidence streams. No failed or unverified cycle is analyzed.
+
+## 25.6 RED requirements
+
+Before production implementation, RED tests must prove:
+
+- exact execution CLI parsing and rejection of missing, duplicate, reordered,
+  unknown, dry-run-plus-execute, and `rerun3` arguments;
+- byte-for-byte preservation of the existing dry-run output and zero side
+  effects;
+- canonical-root, create-once, missing-parent, and symlink rejection;
+- exact native image/name/resource/mount/argv contract;
+- early-exit and 90-second readiness-timeout failure mapping;
+- PID-to-cgroup-v2 resolution without caller-supplied paths;
+- teardown affects only adapter-owned native/Solr resources and surfaces a
+  30-second timeout or non-success;
+- existing equivalence/calibration gates still stop later phases;
+- finalization still closes, seals, verifies, and only then analyzes.
+
+Tests use injected process, HTTP, clock, and filesystem ports. They never invoke
+Docker, sleep, live HTTP, or the protected launcher. Existing lifecycle fake
+tests remain unchanged and green.
+
+## 25.7 Checksum freeze and execution gate
+
+Revision 11 freezes the wrapper path and SHA-256 algorithm but cannot truthfully
+record hashes for files that do not yet exist. After implementation and peer
+review, a mandatory append-only Revision 12 must record the exact SHA-256 of the
+completed wrapper and all live-adapter source identities. Revision 12 must be
+committed before `run1`; authoritative execution before that commit is invalid.
+
+Issue #62 remains blocked until the live adapter is peer-reviewed, Revision 12
+is committed, the authoritative cycle is sealed and analyzed, the evidence is
+adversarially reviewed, the E1 decision is merged into green `main`, and the
+result is recorded on Issue #60. Existing `KEEP`, `REFINE`, and
+`FIX MEASUREMENT` entry rules remain unchanged.
