@@ -49,8 +49,9 @@ evidence each aborted cycle preserved, not an automated analyzer output.
    process-vs-cgroup CPU reconciliation check (`ProcessCpuDelta::reconcile_cgroup`,
    `crates/issue61-eval/src/process_cpu.rs`, not touched by #73) rejected a
    native session where process CPU (13313µs) and cgroup CPU (13029µs)
-   disagreed by 2.13%, one hundredth of a percentage point over the frozen
-   2% threshold.
+   disagreed by 2.18% (disagreement is computed as `abs(process - cgroup) /
+   cgroup`, per `ProcessCpuDelta::reconcile_cgroup`), 0.18 points over the
+   frozen 2% threshold.
 
 Both infra defects (item 3's connection bug, and the calibration/warm
 engine-schedule mismatch bug documented in Revision 12 §26.8) are fixed and
@@ -84,7 +85,7 @@ function of the denominator: negligible for calibration's ~4-5M µs sessions,
 still comfortable at fast-path's ~121K µs, and marginal-to-over-threshold at
 hybrid's ~16K µs, where a ~250-300µs fixed cost is 1.5-2.1% of the total.
 
-The failed observation (2.13%) is not an outlier requiring exclusion — it is
+The failed observation (2.18%) is not an outlier requiring exclusion — it is
 the same ~284µs fixed discrepancy as every passing hybrid session (which
 ranged 1.14-1.89%), landing over 2% only because this particular session's
 total CPU (13,029µs) happened to be slightly smaller than its passing

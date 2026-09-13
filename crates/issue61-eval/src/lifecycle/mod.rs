@@ -4,6 +4,10 @@ mod fake;
 pub mod live;
 pub use live_port::run_live;
 mod live_port;
+// `model` now compiles unconditionally (see `mod core`/`mod port` above) so
+// `live_port` can drive real execution, but some items (e.g. `Snapshot`,
+// `SealStage`) are still only ever constructed by the `#[cfg(test)]`-only
+// `fake`/`tests` modules.
 #[allow(dead_code)]
 mod model;
 mod port;

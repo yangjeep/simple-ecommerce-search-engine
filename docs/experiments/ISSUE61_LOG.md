@@ -792,8 +792,10 @@ all passed again (120/120). Warm phase completed all 30 `all`-projection and
 all 30 `fast-path`-projection blocks (both engines, WANDS) — independently
 confirming the `Connection: close` fix past `run1`'s failure point. Aborted 9
 blocks into the `hybrid` projection on `i61_bench`'s pre-existing (Issue #61)
-process-vs-cgroup CPU reconciliation check: 13313µs vs 13029µs, 2.13%,
-0.13 points over the frozen 2% threshold.
+process-vs-cgroup CPU reconciliation check: 13313µs vs 13029µs, 2.18%
+(disagreement is computed against the cgroup value per
+`ProcessCpuDelta::reconcile_cgroup`), 0.18 points over the frozen 2%
+threshold.
 
 Forensic analysis across all 189 process-CPU-bearing records from all three
 cycles found the absolute process/cgroup discrepancy statistically constant
