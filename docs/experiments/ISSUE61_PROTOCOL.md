@@ -1759,3 +1759,215 @@ is committed, the authoritative cycle is sealed and analyzed, the evidence is
 adversarially reviewed, the E1 decision is merged into green `main`, and the
 result is recorded on Issue #60. Existing `KEEP`, `REFINE`, and
 `FIX MEASUREMENT` entry rules remain unchanged.
+
+# Revision 12: live adapter checksum freeze and implementation record
+
+**Frozen 2026-09-13 after live-adapter implementation, before authoritative
+execution.** Revisions 1 through 11 remain preserved verbatim. All thresholds,
+the 310-pair/620-session matrix, seed-61 ordering, workloads, engine
+semantics, resource limits, rejection rules, evidence schemas, seal rules,
+analyzer rules, and verdict precedence remain binding. This revision records
+the completed live-adapter implementation, discloses the small number of
+additions the frozen model needed to support it, and freezes the wrapper
+identity per §25.7.
+
+## 26.1 Wrapper identity
+
+`scripts/run-benchmarks/i61_campaign_live.sh` is now committed exactly per
+§25.1. It validates the twelve required static inputs plus
+`scripts/issue61/provision_solr.sh` and `target/release/i61_campaign` itself,
+confirms `docker` is on `PATH`, and execs
+`target/release/i61_campaign --execute --repository-root <root> --cycle <cycle>`.
+The protected untracked `scripts/issue61/run_native_container.sh` was not
+read, modified, staged, or invoked by this work.
+
+## 26.2 Lifecycle core production exposure
+
+`crates/issue61-eval/src/lifecycle/{core,model,port}` are no longer
+`#[cfg(test)]`-gated; they compile in normal (release) targets so
+`i61_campaign --execute` can drive the real campaign through the unchanged
+Revision 10 phase/gate/retry/evidence/seal state machine. `fake` and `tests`
+remain `#[cfg(test)]`-only. No phase, gate, retry, schema, or verdict logic in
+`core`/`model` was changed; only its compilation gate moved, per §24.1's own
+instruction that "a future launcher protocol revision must explicitly remove
+or update this `#[cfg(test)]` compilation gate."
+
+## 26.3 Live port
+
+`crates/issue61-eval/src/lifecycle/live_port.rs` implements `LifecyclePort`
+for real Docker containers and real `i61_bench` subprocesses:
+
+- Native: `docker run` with the exact Revision 11 `NativeLaunchContract`
+  image/name/resources/mounts/argv, `GET /ping` readiness polling, document
+  count validated against the `NATIVE_READY docs=… index_bytes=…` startup
+  line, PID-derived cgroup-v2 discovery.
+- Solr: invokes the already-tracked `scripts/issue61/provision_solr.sh
+  <dataset>` unmodified, parses its `PROVISION_OK core=… docs=… index_bytes=…`
+  line, derives the cgroup from the fixed `i61-solr` container's PID.
+- Sessions: each of the 620 timed slots spawns
+  `taskset -c 3 target/release/i61_bench …` (§8's driver CPU, so the driver's
+  own HTTP/serialization work never competes with the engine's reserved
+  `0-2` cpuset) with the exact eleven-flag CLI contract already frozen by
+  `bench_request.rs`, environment cleared except allowlisted `GIT_SHA` and
+  `HOSTNAME`, capturing classified argv/env/outcome/stdout/stderr for
+  `commands.log` exactly per §24.4. `i61_bench` itself is unchanged; it
+  already performs all HTTP timing, cgroup/process-CPU/memory sampling, and
+  timer-floor validation per Revisions 1-9.
+- Environment lifecycle: at most one native and one Solr container exist at
+  a time. The port only tears down and relaunches when the next phase/block
+  actually needs a different (dataset, engine-need) pair, which the plan's
+  fixed ordering (audit → calibration → warm → cold, each already grouped by
+  dataset/engine in `campaign_plan()`) reduces to eight transitions for the
+  whole cycle. Per-slot `teardown()` is a no-op — the frozen driver calls it
+  after every one of the 620 slots, and the live port spawns nothing per-slot
+  beyond the already-reaped `i61_bench` child. `teardown_environment()` (the
+  failure-path hook) and a `Drop` impl on the live port both remove whatever
+  containers are currently up, so every exit path — success, gate failure, or
+  hard error — leaves no container running.
+- Equivalence audit and native index capture run in-process (load the frozen
+  catalog, build `CatalogIndex`, call `native_candidate_ids`/
+  `frozen_native_query`/`audit_candidate_sets` directly) rather than through
+  the native HTTP container. This crate's own module documentation states the
+  reason uniform server-side cgroup accounting exists at all: to neutralize
+  the process-boundary asymmetry between an in-process native engine and an
+  HTTP-server comparator *for timed measurement*. Candidate-set equivalence
+  and index byte size are deterministic functions of the frozen catalog with
+  no such timing asymmetry, so computing them in-process is a legitimate,
+  strictly cheaper substitute that changes no measured quantity. Solr's side
+  of the audit still queries the real provisioned container via the existing
+  `fetch_complete_solr` cursor-paginated reader; Solr's `index_serialized_bytes`
+  cell is the real byte count `provision_solr.sh` reported during that audit
+  provisioning, cached rather than re-measured for `IndexCapture`.
+- `--out` scratch files live under `target/i61_live_scratch/`, named
+  deterministically from `(cycle, series, dataset, projection, block_index,
+  engine, slot)` so no two sessions ever collide, and are deleted immediately
+  after their single record is read back into the sealed `raw.jsonl`. They
+  are never inside the sealed cycle directory and are not part of
+  `checksums.sha256`.
+- A non-sealed, human-readable operational log,
+  `artifacts/issue61/i61_e1_<cycle>_live_infra.log`, sits beside (never
+  inside) the sealed cycle directory and records infrastructure actions
+  (launches, teardowns, failures) for debugging. It carries no evidentiary
+  weight and is excluded from the seal.
+
+## 26.4 Disclosed model additions
+
+The frozen `LifecycleError` enum gained exactly two new unit variants, added
+because the fake port never needed a real-infrastructure failure path:
+
+- `EnvironmentLaunch` — any Docker/provisioning/readiness/document-count
+  failure while bringing up the native or Solr environment (`prescreen`,
+  `audit_equivalence`).
+- `AnalyzerFailed` — the in-process `i61_analyze` call itself erroring,
+  distinct from `InvalidSeal` (the seal failing verification), matching
+  §25.5's explicit "analyzer failure" exit-code category.
+
+No existing variant's meaning changed; both new variants map to CLI exit
+code 2 exactly like every other `LifecycleError` per §25.5. `append_raw`'s
+own write failures reuse the existing `SlotFailed` variant rather than adding
+a third (a failed raw-evidence append means the block's result cannot be
+evidenced, which is what `SlotFailed` already denotes elsewhere in the
+model); `compute_hash`'s read failure reuses `SealWriteAll` (it prevents a
+valid seal entry from being produced, the same failure class that variant
+already covers for the write side).
+
+## 26.5 CLI result classes: gate failure clarified
+
+§25.5 enumerated three CLI result classes but did not name where
+`Terminal::GateFailed(phase)` (no analyzer invoked) falls. This revision
+states it explicitly: a gate failure is a completed, informative negative
+result, not a measurement or implementation failure, but no analyzer verdict
+exists to report as exit 0/1 in the analyzer's own sense — `i61_campaign`
+reports it as exit code 1 with a message naming the failed phase. Only
+invocation/static-validation/launch/readiness/slot/teardown/evidence/seal/
+analyzer failures (`LifecycleError`, any variant) report exit code 2.
+
+## 26.6 Checksum freeze
+
+Per §25.7, the completed wrapper and live-adapter source identities and their
+exact SHA-256 digests as authored are:
+
+- `scripts/run-benchmarks/i61_campaign_live.sh`
+  `5fdb716a3d9d9d3e954505706cb72ae931364e85432f156181389d34845d6ed1`
+- `crates/issue61-eval/src/lifecycle/live_port.rs`
+  `b5ffb8c71abb0e8c204ed7f566a95c25e7ac6dc3efafa5d7ea1b66c3154b0bf6`
+- `crates/issue61-eval/src/lifecycle/live_port/tests.rs`
+  `5813cb0dc6c55e0555400e68d834b931e656546560139dfd08be42bdcafb6c04`
+
+These freeze the identity of the files subject to peer review, per §25.7's
+requirement that Revision 12 precede `run1` rather than follow it. Any
+post-review correction (formatting, a genuine bug fix that changes no
+threshold/schedule/workload value) requires recomputing and updating these
+three digests in this same section before `run1` executes; it does not
+require a new revision number.
+
+## 26.8 Peer review findings and fixes
+
+An independent Rust-focused peer review (per §24.11/§25.7's requirement) was
+run against §26.1-26.6 before any execution attempt. It found one critical
+defect in already-merged pre-Revision-11 code that the live adapter's real
+argv construction newly exercises, plus infrastructure-robustness gaps in the
+live adapter itself. All are fixed here; §26.6's `live_port.rs` digest above
+is the corrected version.
+
+**Critical, in already-merged code:** `bench_request.rs::parse_config`
+validated every session's `--engine` against `campaign_schedule()`'s
+warm/cold pairing unconditionally, including calibration sessions. Both
+slots in a calibration block always share one fixed engine
+(`BlockSpec::calibration`), while `campaign_schedule()`'s pairs never repeat
+an engine across slots — so the check rejected every one of the 60
+calibration blocks (120 sessions), which would have aborted `run1` at the
+first calibration block after already paying for full `EquivalenceAudit`/
+`IndexCapture` provisioning, collecting zero warm/cold data. This was never
+caught before because no prior revision executed a real calibration session
+end to end (Revisions 1-9's audits were untimed correctness checks; the
+lifecycle core was `#[cfg(test)]`-only against a fake port). Fixed by scoping
+the schedule check to `SessionMode::Warm`/`Cold` only. A new regression test,
+`crates/issue61-eval/src/bin/i61_bench/tests/cli_tests.rs::every_real_campaign_session_produces_an_accepted_config`,
+drives every one of the real `run1` plan's 620 sessions through
+`parse_config` and asserts none are rejected, closing the gap without
+requiring Docker or a live campaign.
+
+**In the live adapter:**
+
+- `run_bounded`'s timeout killed only the direct child, not any grandchild a
+  shell wrapper (`provision_solr.sh`) leaves behind if it hangs; an orphaned
+  `curl`/`docker exec` could hold the piped stdout/stderr open forever,
+  hanging the 300-second provisioning bound indefinitely. Fixed: the child
+  is placed in its own process group (`nix::unistd::setpgid`, added as a new
+  `"process"` feature of the crate's existing `nix` dependency) and a timeout
+  now SIGKILLs the whole group via the external `kill -KILL -- -<pgid>`.
+- Container teardown failures were discarded (`let _ = ...`), contradicting
+  §25.2/§25.3's "reports failure rather than hiding it" / "must be
+  represented" requirements. Fixed: `remove_container` now returns whether
+  the container is confirmed absent (treating "No such container" as
+  success), and `teardown_current`/`teardown_environment`/`ensure_environment`
+  propagate a real failure instead of silently continuing.
+- Failure detail (the underlying Docker/HTTP/parse error) was visible only in
+  the best-effort, non-sealed infra log, which could itself silently fail to
+  open or write. Fixed: a `LivePort::last_error` field captures the most
+  recent failure detail in memory regardless of the log file's state, and
+  `run_live`'s exit-code-2 message now includes it.
+- `scratch_counter: AtomicU64` was incremented but never read; removed (dead
+  state — `scratch_path`'s own `(cycle, series, dataset, projection,
+  block_index, engine, slot)` key was independently verified unique across
+  the full 620-session campaign without it).
+- The native readiness check required `NATIVE_READY` to already be in
+  `docker logs` output on the very first read after `/ping` succeeds. Fixed
+  defensively with up to 5 retries at 200ms, though Rust's line-buffered
+  stdout means the line is expected to already be visible in practice.
+
+Not fixed, disclosed as a known limitation: the 90-second native readiness
+bound (§25.2) is checked only between polls, so a single slow `/ping` call
+(bounded at 30s by the HTTP agent's own timeout) can push the effective wait
+up to ~30s past the nominal deadline. Left as-is rather than adding a harder
+interrupt mechanism, since the overrun is bounded and small relative to the
+90s budget.
+
+## 26.9 Entry state
+
+Authoritative execution (`run1`) may now proceed once this revision, the live
+adapter, and its RED test coverage (`crates/issue61-eval/src/lifecycle/live_port/tests.rs`
+and `crates/issue61-eval/src/bin/i61_bench/tests/cli_tests.rs`) are merged to
+green `main`. Issue #62 remains gated on the sealed cycle's analyzer verdict
+and adversarial review per §24.11 and §25.7, unchanged.

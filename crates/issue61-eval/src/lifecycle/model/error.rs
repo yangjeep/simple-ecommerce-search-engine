@@ -25,6 +25,8 @@ pub(crate) enum LifecycleError {
     SealSync,
     SealClose,
     InvalidSeal,
+    EnvironmentLaunch,
+    AnalyzerFailed,
 }
 
 impl LifecycleError {
@@ -53,6 +55,8 @@ impl LifecycleError {
             Self::SealSync => "seal_sync_failed".to_owned(),
             Self::SealClose => "seal_close_failed".to_owned(),
             Self::InvalidSeal => "invalid_seal".to_owned(),
+            Self::EnvironmentLaunch => "environment_launch_failed".to_owned(),
+            Self::AnalyzerFailed => "analyzer_failed".to_owned(),
         })
     }
 }

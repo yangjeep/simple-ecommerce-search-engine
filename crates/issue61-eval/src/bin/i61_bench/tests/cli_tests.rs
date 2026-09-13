@@ -73,6 +73,70 @@ fn config_rejects_engine_that_does_not_match_its_frozen_block_slot() {
     assert!(parse_config(&args).is_err());
 }
 
+/// Regression guard for a defect an adversarial review caught by simulation:
+/// the frozen warm/cold engine-schedule check was applied unconditionally,
+/// which rejected every real calibration session (both slots in a
+/// calibration block always share one engine; `campaign_schedule()`'s pairs
+/// never do). This drives `parse_config` with the exact argv shape
+/// `LivePort::command_request` builds for every session in the real,
+/// 310-block `run1` plan, so any future schedule/mode interaction bug is
+/// caught here without needing Docker or a live campaign run.
+#[test]
+fn every_real_campaign_session_produces_an_accepted_config() {
+    use issue61_eval::{campaign_plan, CampaignCycle};
+
+    let plan = campaign_plan(CampaignCycle::Run1);
+    let mut rejected = Vec::new();
+    for block in plan.blocks() {
+        for session in block.sessions() {
+            let args: Vec<String> = [
+                "i61_bench",
+                "--workload",
+                "workload.jsonl",
+                "--dataset",
+                session.series().dataset().as_str(),
+                "--query-class",
+                session.series().projection().as_str(),
+                "--engine",
+                session.engine().as_str(),
+                "--session-mode",
+                session.plan().mode().as_str(),
+                "--engine-url",
+                "http://engine:9999",
+                "--engine-cgroup",
+                "/sys/fs/cgroup/engine",
+                "--block",
+                &session.block_index().get().to_string(),
+                "--engine-order",
+                &session.slot().index().to_string(),
+                "--seed",
+                "61",
+                "--out",
+                "raw.jsonl",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+
+            if parse_config(&args).is_err() {
+                rejected.push((
+                    format!("{:?}", block.series()),
+                    session.block_index().get(),
+                    session.slot().index(),
+                    session.engine().as_str(),
+                ));
+            }
+        }
+    }
+
+    assert!(
+        rejected.is_empty(),
+        "parse_config rejected {} of {} real campaign sessions: {rejected:?}",
+        rejected.len(),
+        plan.sessions().count(),
+    );
+}
+
 #[test]
 fn config_rejects_arbitrary_pass_counts_and_calibration_outside_wands() {
     // Given

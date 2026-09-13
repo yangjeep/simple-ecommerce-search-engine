@@ -1,6 +1,6 @@
 use issue61_eval::{
-    campaign_plan, lifecycle::live::validate_repository_root, CampaignCycle, CampaignPhase,
-    EXACT_INDEX_CELLS, STABILITY_CELLS,
+    campaign_plan, lifecycle::live::validate_repository_root, lifecycle::run_live, CampaignCycle,
+    CampaignPhase, EXACT_INDEX_CELLS, STABILITY_CELLS,
 };
 use std::path::PathBuf;
 
@@ -16,11 +16,6 @@ struct ExecutionConfig {
 enum CampaignConfig {
     DryRun(DryRunConfig),
     Execute(ExecutionConfig),
-}
-
-enum CampaignError {
-    Invocation(String),
-    Execution(String),
 }
 
 fn parse_config(args: &[String]) -> Result<CampaignConfig, String> {
@@ -76,30 +71,28 @@ fn render(config: &DryRunConfig) -> String {
     )
 }
 
-fn run(args: &[String]) -> Result<String, CampaignError> {
-    match parse_config(args).map_err(CampaignError::Invocation)? {
-        CampaignConfig::DryRun(config) => Ok(render(&config)),
-        CampaignConfig::Execute(config) => {
-            validate_repository_root(&config.repository_root)
-                .map_err(|error| CampaignError::Execution(error.to_string()))?;
-            Err(CampaignError::Execution(format!(
-                "live execution is not implemented for cycle {}",
-                config.cycle.as_str()
-            )))
-        }
-    }
-}
-
 fn main() {
-    match run(&std::env::args().collect::<Vec<_>>()) {
-        Ok(summary) => print!("{summary}"),
-        Err(CampaignError::Invocation(error)) => {
+    let config = match parse_config(&std::env::args().collect::<Vec<_>>()) {
+        Ok(config) => config,
+        Err(error) => {
             eprintln!("i61_campaign: {error}");
             std::process::exit(1);
         }
-        Err(CampaignError::Execution(error)) => {
-            eprintln!("i61_campaign: {error}");
-            std::process::exit(2);
+    };
+    match config {
+        CampaignConfig::DryRun(config) => print!("{}", render(&config)),
+        CampaignConfig::Execute(config) => {
+            if let Err(error) = validate_repository_root(&config.repository_root) {
+                eprintln!("i61_campaign: {error}");
+                std::process::exit(2);
+            }
+            let (exit_code, message) = run_live(config.repository_root, config.cycle);
+            if exit_code == 0 {
+                print!("{message}");
+            } else {
+                eprint!("{message}");
+            }
+            std::process::exit(exit_code);
         }
     }
 }

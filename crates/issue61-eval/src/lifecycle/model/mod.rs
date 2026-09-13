@@ -13,8 +13,10 @@ pub(super) use command::{
 };
 pub(super) use error::LifecycleError;
 pub(super) use event::{Event, EventIdentity, EventRecord, EventType};
+#[allow(unused_imports)]
 pub(super) use index::{validate_index, IndexArtifact, IndexCell, IndexError, Snapshot};
 pub(super) use path::CyclePath;
+#[allow(unused_imports)]
 pub(super) use seal::{
     ResolvedSealEntry, ResolvedSealManifest, SealHashSource, SealManifest, SealStage,
 };

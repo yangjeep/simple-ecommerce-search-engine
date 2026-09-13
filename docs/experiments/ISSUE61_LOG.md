@@ -758,3 +758,54 @@ and all 600 per-query records were unchanged. No timed block was run.
   verdict (`INCLUDED` or `DEFERRED-TO-PRE-E2`) is recorded below when reached.
 - Oracle protocol review of the process-boundary resolution (§7) and the gate
   statistic (§11) must complete before any measured run.
+
+---
+
+## Step 13 — Issue #73 live execution: run1, rerun1, rerun2
+
+Revision 10 froze the launcher-neutral lifecycle core (`#[cfg(test)]`-only,
+no live execution). Revision 11 froze the concrete Docker/`i61_bench` launch
+contract. Revision 12 implemented and peer-reviewed the real
+`LifecyclePort` (`crates/issue61-eval/src/lifecycle/live_port.rs`) and ran
+the first three authoritative attempts. Full narrative and the forensic CPU-
+reconciliation analysis are in
+`docs/decisions/ISSUE61_E1_LIVE_EXECUTION_DECISION.md`; only the timeline is
+recorded here.
+
+`run1`: equivalence audit reproduced the Revision 5 rev-5 hashes exactly for
+both datasets, index capture, equivalence gate, and calibration (120/120,
+both engines) all passed. Aborted on the first Warm-phase native session
+(`SlotFailed`, client HTTP read timeout). A concurrent low-memory SIGKILL on
+the *host* (unrelated to the campaign, other sessions sharing a then-10 GiB
+box) briefly confused diagnosis before the host was upgraded to 32 GiB.
+
+`rerun1`: failed immediately on a newly-added native self-check, before any
+Warm session ran. Root cause found by direct reproduction: `i61_native_server`
+is single-threaded/one-connection-at-a-time, and `ureq`'s persistent `Agent`
+keeps HTTP connections alive by default, so the readiness poll's own kept-
+alive `/ping` connection permanently blocked the server from accepting the
+next connection. Fixed by sending `Connection: close` on health-check
+requests; verified against a standalone reproduction before retrying.
+
+`rerun2`: equivalence audit, index capture, equivalence gate, and calibration
+all passed again (120/120). Warm phase completed all 30 `all`-projection and
+all 30 `fast-path`-projection blocks (both engines, WANDS) — independently
+confirming the `Connection: close` fix past `run1`'s failure point. Aborted 9
+blocks into the `hybrid` projection on `i61_bench`'s pre-existing (Issue #61)
+process-vs-cgroup CPU reconciliation check: 13313µs vs 13029µs, 2.13%,
+0.13 points over the frozen 2% threshold.
+
+Forensic analysis across all 189 process-CPU-bearing records from all three
+cycles found the absolute process/cgroup discrepancy statistically constant
+(247.7-270.4µs mean across every workload class, pooled stdev 40.8µs)
+regardless of total session CPU — a fixed instrumentation cost that only
+crosses the *relative* 2% gate once per-session CPU drops to roughly 10-15ms
+(the `hybrid` projection's magnitude). Terminal verdict: **REFINE —
+measurement-contract limitation**, recorded in the decision doc above. A
+follow-up issue evaluates a hybrid absolute+relative reconciliation
+tolerance; #61's frozen 2% threshold is unchanged by this step.
+
+Raw evidence preserved exactly as produced:
+`artifacts/issue61/i61_e1_run1_aborted_slotfailed_20260913/`,
+`artifacts/issue61/i61_e1_rerun1_aborted_stuckconnection_20260913/`,
+`artifacts/issue61/i61_e1_rerun2/`.

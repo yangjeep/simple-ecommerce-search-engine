@@ -1,11 +1,11 @@
-#[cfg(test)]
 mod core;
 #[cfg(test)]
 mod fake;
 pub mod live;
-#[cfg(test)]
+pub use live_port::run_live;
+mod live_port;
+#[allow(dead_code)]
 mod model;
-#[cfg(test)]
 mod port;
 #[cfg(test)]
 mod tests;
