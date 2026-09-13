@@ -1,27 +1,47 @@
 use issue61_eval::{
-    campaign_plan, CampaignCycle, CampaignPhase, EXACT_INDEX_CELLS, STABILITY_CELLS,
+    campaign_plan, lifecycle::live::validate_repository_root, lifecycle::run_live, CampaignCycle,
+    CampaignPhase, EXACT_INDEX_CELLS, STABILITY_CELLS,
 };
+use std::path::PathBuf;
 
 struct DryRunConfig {
     cycle: CampaignCycle,
 }
 
-fn parse_config(args: &[String]) -> Result<DryRunConfig, String> {
-    let cycle = match args {
+struct ExecutionConfig {
+    repository_root: PathBuf,
+    cycle: CampaignCycle,
+}
+
+enum CampaignConfig {
+    DryRun(DryRunConfig),
+    Execute(ExecutionConfig),
+}
+
+fn parse_config(args: &[String]) -> Result<CampaignConfig, String> {
+    match args {
         [_, dry_run, cycle_flag, value] if dry_run == "--dry-run" && cycle_flag == "--cycle" => {
-            value.parse()?
+            Ok(CampaignConfig::DryRun(DryRunConfig {
+                cycle: value.parse()?,
+            }))
         }
         [_, cycle_flag, value, dry_run] if cycle_flag == "--cycle" && dry_run == "--dry-run" => {
-            value.parse()?
+            Ok(CampaignConfig::DryRun(DryRunConfig {
+                cycle: value.parse()?,
+            }))
         }
-        _ => {
-            return Err(
-                "execution is unavailable; expected exactly --dry-run --cycle <run1|rerun1|rerun2>"
-                    .to_string(),
-            )
+        [_, execute, root_flag, root, cycle_flag, value]
+            if execute == "--execute"
+                && root_flag == "--repository-root"
+                && cycle_flag == "--cycle" =>
+        {
+            Ok(CampaignConfig::Execute(ExecutionConfig {
+                repository_root: PathBuf::from(root),
+                cycle: value.parse()?,
+            }))
         }
-    };
-    Ok(DryRunConfig { cycle })
+        _ => Err("expected exactly --dry-run --cycle <run1|rerun1|rerun2> or --execute --repository-root <canonical-root> --cycle <run1|rerun1|rerun2>".to_owned()),
+    }
 }
 
 fn render(config: &DryRunConfig) -> String {
@@ -51,16 +71,28 @@ fn render(config: &DryRunConfig) -> String {
     )
 }
 
-fn run(args: &[String]) -> Result<String, String> {
-    parse_config(args).map(|config| render(&config))
-}
-
 fn main() {
-    match run(&std::env::args().collect::<Vec<_>>()) {
-        Ok(summary) => print!("{summary}"),
+    let config = match parse_config(&std::env::args().collect::<Vec<_>>()) {
+        Ok(config) => config,
         Err(error) => {
             eprintln!("i61_campaign: {error}");
             std::process::exit(1);
+        }
+    };
+    match config {
+        CampaignConfig::DryRun(config) => print!("{}", render(&config)),
+        CampaignConfig::Execute(config) => {
+            if let Err(error) = validate_repository_root(&config.repository_root) {
+                eprintln!("i61_campaign: {error}");
+                std::process::exit(2);
+            }
+            let (exit_code, message) = run_live(config.repository_root, config.cycle);
+            if exit_code == 0 {
+                print!("{message}");
+            } else {
+                eprint!("{message}");
+            }
+            std::process::exit(exit_code);
         }
     }
 }

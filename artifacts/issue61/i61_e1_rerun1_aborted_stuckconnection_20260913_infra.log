@@ -1,0 +1,6 @@
+host provenance: cpus=4 mem_total_kb=31711064 mem_available_kb=29904188 swap_total_kb=4194300
+solr ready dataset=wands core=i61_wands pid=34274
+teardown solr
+solr ready dataset=esci_electronics core=i61_esci_electronics pid=35567
+teardown solr
+native self-check query never answered dataset=wands

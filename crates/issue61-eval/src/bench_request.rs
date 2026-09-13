@@ -143,13 +143,22 @@ pub(super) fn parse_config(args: &[String]) -> Result<Config, String> {
     let block = required_arg(args, "--block")?.parse::<BlockIndex>()?;
     let order = required_arg(args, "--engine-order")?.parse::<EngineOrder>()?;
     let seed = required_arg(args, "--seed")?.parse::<CampaignSeed>()?;
-    let scheduled_engine = campaign_schedule()
-        .into_iter()
-        .nth(block.get())
-        .ok_or_else(|| "block is absent from the frozen schedule".to_string())?
-        .engine(order);
-    if scheduled_engine != engine {
-        return Err("engine does not match the frozen block order".to_string());
+    // `campaign_schedule()` decides which of native/solr is first/second within
+    // a *paired* warm/cold block; it has no bearing on calibration, where both
+    // slots in a block always share the same fixed engine (`BlockSpec::calibration`)
+    // and `calibration_schedule()` instead only orders the four-pass/five-pass
+    // sessions against each other. Checking the warm/cold pairing schedule
+    // against a calibration session's engine would reject every calibration
+    // session, since that schedule's pairs never repeat the same engine twice.
+    if matches!(mode, SessionMode::Warm | SessionMode::Cold) {
+        let scheduled_engine = campaign_schedule()
+            .into_iter()
+            .nth(block.get())
+            .ok_or_else(|| "block is absent from the frozen schedule".to_string())?
+            .engine(order);
+        if scheduled_engine != engine {
+            return Err("engine does not match the frozen block order".to_string());
+        }
     }
     match (mode, dataset) {
         (SessionMode::Warm | SessionMode::Cold, Dataset::Wands | Dataset::EsciElectronics)

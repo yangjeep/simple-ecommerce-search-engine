@@ -101,3 +101,97 @@ fn unknown_duplicate_missing_and_execution_shaped_arguments_are_rejected() {
         directory.assert_empty();
     }
 }
+
+#[test]
+fn exact_execution_dispatch_reaches_static_validation() {
+    // Given
+    let directory = TemporaryDirectory::create();
+    let repository_root = std::fs::canonicalize(directory.path())
+        .expect("temporary repository root has a canonical path");
+    let repository_root = repository_root
+        .to_str()
+        .expect("temporary repository root is UTF-8");
+
+    // When
+    let output = campaign(
+        &[
+            "--execute",
+            "--repository-root",
+            repository_root,
+            "--cycle",
+            "run1",
+        ],
+        directory.path(),
+    );
+    let stderr = String::from_utf8(output.stderr).expect("UTF-8 stderr");
+
+    // Then
+    assert!(
+        !stderr.contains("execution is unavailable"),
+        "execution dispatch remained on the dry-run-only branch; stderr: {stderr:?}"
+    );
+    assert!(
+        stderr.contains("static validation"),
+        "execution dispatch did not reach static validation; stderr: {stderr:?}"
+    );
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    directory.assert_empty();
+}
+
+#[test]
+fn mixed_reordered_and_unknown_execution_arguments_fail_closed() {
+    // Given / When / Then
+    for args in [
+        &[
+            "--execute",
+            "--repository-root",
+            "/canonical/repository",
+            "--cycle",
+        ][..],
+        &[
+            "--repository-root",
+            "/canonical/repository",
+            "--execute",
+            "--cycle",
+            "run1",
+        ][..],
+        &[
+            "--execute",
+            "--repository-root",
+            "/canonical/repository",
+            "--cycle",
+            "run1",
+            "--unknown",
+        ][..],
+        &[
+            "--execute",
+            "--execute",
+            "--repository-root",
+            "/canonical/repository",
+            "--cycle",
+            "run1",
+        ][..],
+        &[
+            "--execute",
+            "--dry-run",
+            "--repository-root",
+            "/canonical/repository",
+            "--cycle",
+            "run1",
+        ][..],
+        &[
+            "--execute",
+            "--repository-root",
+            "/canonical/repository",
+            "--cycle",
+            "rerun3",
+        ][..],
+    ] {
+        let directory = TemporaryDirectory::create();
+        let output = campaign(args, directory.path());
+        assert!(!output.status.success(), "accepted {args:?}");
+        assert!(output.stdout.is_empty());
+        directory.assert_empty();
+    }
+}
