@@ -162,22 +162,61 @@ pub fn pairwise_stability(outcomes: &[CanonicalOutcome]) -> StabilityCounts {
 }
 
 /// An accepted/promoted descriptor whose oracle-confirmed real role is
-/// Identifier or Relationship -- the cross-item-identity conflation R3's
-/// own identifier-serving-primitive work exists to prevent. Matches
-/// E2b's own corrected definition exactly.
+/// Identifier or Relationship, but which was NOT promoted with that same
+/// role -- the cross-item-identity conflation R3/R5's own identifier-
+/// serving-primitive work exists to prevent (a genuine identifier or
+/// relationship field silently accepted as an ordinary structural
+/// attribute). A genuine identifier/relationship correctly promoted
+/// *as* Identifier/Relationship (e.g. cleared through R5's own real
+/// classifier gate) is the safe, intended outcome R5/R7 exist to
+/// produce, not an unsafe one. Matches E2b's own corrected definition.
+///
+/// **Issue #47 (E2d) confirmed defect, fixed here**: the original
+/// filter (`|(key, _)| ...`) discarded the promoted role entirely and
+/// flagged every promoted oracle-Identifier/Relationship key regardless
+/// of whether it was actually promoted with a mismatched role --
+/// contradicting this function's own doc comment and this file's own
+/// `unsafe_accepted_is_zero_when_promoted_role_matches_oracle_or_oracle_is_not_identity`
+/// test name (which never actually exercised the Identifier/Relationship
+/// branch, so it passed without verifying its own stated intent).
+/// `e2c_canonicalization_eval.rs`'s own established usage pre-filters to
+/// `is_structural` (Enum/Numeric/Boolean) before ever calling this
+/// function, so E2c's own already-published "zero unsafe" numbers were
+/// never exposed to this defect (verified by rerunning both existing
+/// E2c binaries after this fix -- byte-identical output, preserved in
+/// `docs/research/artifacts/i47_e2d_e2c_regression_check_run1/`). The
+/// defect surfaced only in Issue #47/E2d's own broader safety scope
+/// (which does not pre-filter to structural-only, deliberately, to
+/// exercise Identifier/Relationship promotions too).
 pub fn unsafe_accepted_count(
     promoted_keys_and_roles: &[(String, SemanticRole)],
     oracle_by_key: &BTreeMap<String, SemanticRole>,
 ) -> usize {
+    unsafe_accepted_keys(promoted_keys_and_roles, oracle_by_key).len()
+}
+
+/// The actual keys `unsafe_accepted_count` counts, for callers that need
+/// to report *which* keys were flagged (e.g. an adversarial-review
+/// transparency field), not merely how many. Both this function and
+/// `unsafe_accepted_count` share this one predicate -- deliberately not
+/// duplicated at any call site, per this repo's own "do not
+/// independently reimplement safety logic that could silently drift"
+/// discipline (`e2b_pipeline.rs`'s own `resolve_real_key` reuse is the
+/// precedent this follows).
+pub fn unsafe_accepted_keys(
+    promoted_keys_and_roles: &[(String, SemanticRole)],
+    oracle_by_key: &BTreeMap<String, SemanticRole>,
+) -> Vec<String> {
     promoted_keys_and_roles
         .iter()
-        .filter(|(key, _)| {
+        .filter(|(key, role)| {
             matches!(
                 oracle_by_key.get(key),
                 Some(SemanticRole::Identifier) | Some(SemanticRole::Relationship)
-            )
+            ) && oracle_by_key.get(key) != Some(role)
         })
-        .count()
+        .map(|(key, _)| key.clone())
+        .collect()
 }
 
 /// Oracle-labeled retrieval-significant real keys that end up `Promoted`
@@ -285,5 +324,103 @@ mod tests {
         let mut oracle = BTreeMap::new();
         oracle.insert("color".to_string(), SemanticRole::Enum);
         assert_eq!(unsafe_accepted_count(&promoted, &oracle), 0);
+    }
+
+    /// **Issue #47 (E2d) confirmed defect, found while building the
+    /// adaptive controller's own safety accounting**: this test's own
+    /// sibling above (`unsafe_accepted_is_zero_when_promoted_role_matches_oracle_or_oracle_is_not_identity`)
+    /// is named to assert "zero when promoted role matches oracle,"
+    /// exactly matching this function's own doc comment ("an
+    /// accepted/promoted descriptor whose oracle-confirmed real role is
+    /// Identifier/Relationship" being the unsafe case -- i.e. a genuine
+    /// identifier/relationship field silently promoted as something
+    /// else, the "cross-item-identity conflation R3's own identifier-
+    /// serving-primitive work exists to PREVENT"). But that sibling
+    /// test's own example ("color", oracle=Enum) never actually
+    /// exercises the Identifier/Relationship branch at all -- it passes
+    /// by coincidence, not by verifying the role-match half of its own
+    /// name. The real implementation's filter closure
+    /// (`|(key, _)| ...`) discards the promoted role entirely and only
+    /// checks whether *oracle* says Identifier/Relationship, flagging
+    /// EVERY promoted oracle-Identifier/Relationship key as "unsafe" --
+    /// including one correctly, safely promoted AS Identifier through
+    /// R5's own real classifier gate, which is exactly the SAFE outcome
+    /// R5 exists to produce (`ISSUE45_DECISION.md`'s own "R5 blocks
+    /// compatibledrainassemblypartnumber's Identifier claim... regardless
+    /// of vote count" names blocking/demotion as the failure R5 prevents;
+    /// a real identifier that correctly clears R5's bar and gets promoted
+    /// as `Identifier` is the intended, safe result, not an unsafe one).
+    /// This reproduces that exact scenario: a genuine identifier
+    /// (`part_number`-shaped, oracle role Identifier) correctly promoted
+    /// with the SAME role -- must not be flagged unsafe, but the
+    /// pre-fix implementation flags it anyway because it never compares
+    /// the promoted role to oracle at all.
+    #[test]
+    fn unsafe_accepted_does_not_flag_an_identifier_correctly_promoted_as_identifier() {
+        let promoted = vec![("part_number".to_string(), SemanticRole::Identifier)];
+        let mut oracle = BTreeMap::new();
+        oracle.insert("part_number".to_string(), SemanticRole::Identifier);
+        assert_eq!(
+            unsafe_accepted_count(&promoted, &oracle),
+            0,
+            "a genuine identifier correctly promoted as Identifier (matching oracle exactly, \
+             via R5's real classifier gate) is the safe, intended outcome, not an unsafe one"
+        );
+    }
+
+    /// The true positive this function exists to catch, preserved
+    /// alongside the fix: a genuine identifier/relationship silently
+    /// promoted as an ordinary structural role IS unsafe.
+    #[test]
+    fn unsafe_accepted_still_flags_an_identifier_promoted_as_something_else() {
+        let promoted = vec![("part_number".to_string(), SemanticRole::Enum)];
+        let mut oracle = BTreeMap::new();
+        oracle.insert("part_number".to_string(), SemanticRole::Identifier);
+        assert_eq!(unsafe_accepted_count(&promoted, &oracle), 1);
+    }
+
+    /// **Adversarial-review-requested coverage gap, closed**: the fix's
+    /// own regression tests only exercised Identifier<->Enum mismatches;
+    /// the Identifier<->Relationship cross-conflation the fix's own doc
+    /// comment claims to catch (both are "Identifier or Relationship" in
+    /// the `matches!` guard) was never independently verified in either
+    /// direction. Both directions checked here.
+    #[test]
+    fn unsafe_accepted_flags_relationship_identifier_cross_conflation_both_directions() {
+        let mut oracle = BTreeMap::new();
+        oracle.insert("compatible_part".to_string(), SemanticRole::Relationship);
+        let promoted_as_identifier =
+            vec![("compatible_part".to_string(), SemanticRole::Identifier)];
+        assert_eq!(
+            unsafe_accepted_count(&promoted_as_identifier, &oracle),
+            1,
+            "a genuine Relationship field promoted as Identifier is still a cross-item-identity \
+             conflation risk, not a safe substitution"
+        );
+
+        let mut oracle2 = BTreeMap::new();
+        oracle2.insert("part_number".to_string(), SemanticRole::Identifier);
+        let promoted_as_relationship =
+            vec![("part_number".to_string(), SemanticRole::Relationship)];
+        assert_eq!(
+            unsafe_accepted_count(&promoted_as_relationship, &oracle2),
+            1,
+            "a genuine Identifier field promoted as Relationship is also flagged, not silently \
+             treated as an acceptable substitution between the two protected roles"
+        );
+    }
+
+    #[test]
+    fn unsafe_accepted_keys_returns_exactly_the_keys_the_count_counts() {
+        let promoted = vec![
+            ("part_number".to_string(), SemanticRole::Enum),
+            ("color".to_string(), SemanticRole::Enum),
+        ];
+        let mut oracle = BTreeMap::new();
+        oracle.insert("part_number".to_string(), SemanticRole::Identifier);
+        oracle.insert("color".to_string(), SemanticRole::Enum);
+        let keys = unsafe_accepted_keys(&promoted, &oracle);
+        assert_eq!(keys, vec!["part_number".to_string()]);
+        assert_eq!(keys.len(), unsafe_accepted_count(&promoted, &oracle));
     }
 }

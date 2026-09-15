@@ -1,0 +1,44 @@
+{
+  "baseline_sha": "d965b7444e1ae563707af987da1a55b98d939135",
+  "bundles": {
+    "canonicalizer": {
+      "build_ms": 637.950712,
+      "index_size_bytes": 6382086,
+      "label": "canonicalizer",
+      "n_products": 42994
+    },
+    "oracle": {
+      "build_ms": 832.07538,
+      "index_size_bytes": 7955852,
+      "label": "oracle",
+      "n_products": 42994
+    }
+  },
+  "experiment_id": "I45-E2c-serving-overhead",
+  "result": {
+    "execute_ranked_top10": {
+      "canonical_p50_ms": 0.0002690875,
+      "canonical_p95_ms": 0.0655980725,
+      "canonical_p99_ms": 0.6221106536,
+      "gate_p50": "INCONCLUSIVE",
+      "gate_p95": "PASS",
+      "gate_p99": "PASS",
+      "oracle_p50_ms": 0.00026914749999999997,
+      "oracle_p95_ms": 0.0649476205,
+      "oracle_p99_ms": 0.6342618752999999,
+      "overhead_pct_p50": -0.022292609071222633,
+      "overhead_pct_p95": 1.0015024337958554,
+      "overhead_pct_p99": -1.9158051544959285
+    },
+    "go_gate_criterion_6": "PASS",
+    "indexed_candidates": {
+      "below_timer_floor": true,
+      "candidate_set_mismatches": 0,
+      "canonical_p50_ms": 0.000125815,
+      "gate": "INCONCLUSIVE",
+      "n_queries": 68,
+      "oracle_p50_ms": 0.0001254475,
+      "overhead_pct_p50": 0.2929512345801916
+    }
+  }
+}

@@ -1,0 +1,804 @@
+{
+  "configuration": "wands_baseline",
+  "run_index": 4,
+  "descriptors": [
+    {
+      "key": "adultassemblyrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "assembly required",
+        "requires assembly",
+        "no assembly required",
+        "ready to assemble",
+        "some assembly required"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.88,
+      "evidence": "distinct_values=2 over 25258 occurrences (uniqueness 0.00008); sample_values exactly ['no','yes']; mean_value_length 2.76 consistent with only yes/no tokens",
+      "abstain": false
+    },
+    {
+      "key": "basecolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "color",
+        "base color",
+        "what color",
+        "brass",
+        "black",
+        "walnut"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.55,
+      "evidence": "1613 distinct over 8145 occurrences (uniqueness 0.198), numeric_parseable 0, mean_value_length 8.1; samples mix true colors ('acorn','aged brass') with materials ('acacia','acrylic') and an empty string, so the vocabulary is categorical but uncontrolled and needs normalization before a clean bitmap",
+      "abstain": false
+    },
+    {
+      "key": "color",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "color",
+        "colour",
+        "blue",
+        "white",
+        "what colors does it come in"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.5,
+      "evidence": "4686 distinct over 26295 occurrences (uniqueness 0.178), mean_value_length 8.1; sample '[ tied to : color ]' points at an option tied to a variant axis, and samples '', '0', ';' and '2 taupe , 2 teal , 2 white' show junk sentinels and multi-value strings that must be split/normalized (variant_scoped statistic is null, so scope is inferred only from that one sample)",
+      "abstain": false
+    },
+    {
+      "key": "commercialwarranty",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "commercial warranty",
+        "commercial use warranty",
+        "contract grade warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "distinct_values=2 with samples ['no','yes'] over 30534 occurrences (uniqueness 0.00007); mean_value_length 2.25 implies 'no' dominates; clean high-coverage boolean is a cheap bitmap filter",
+      "abstain": false
+    },
+    {
+      "key": "compatiblediningchairpartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "exact_lookup",
+        "eq"
+      ],
+      "aliases": [
+        "compatible dining chair",
+        "matching chair",
+        "chair part number",
+        "goes with which chair"
+      ],
+      "relationship_semantics": "value is a part number identifying a separate dining-chair product this item is compatible with (product-to-product compatibility edge)",
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.6,
+      "evidence": "uniqueness_ratio 1.0 (71 distinct / 71 occurrences), numeric_parseable only 0.028, mean_value_length 10.9, samples are opaque SKU-shaped codes ('01-0619-884-01/01-0619-885-01','140-c6501s-t','1wf54a0jsv'); one sample carries two codes separated by '/', so multi-valued edges exist; coverage is only 71 rows",
+      "abstain": false
+    },
+    {
+      "key": "compatibledrainassemblypartnumber",
+      "semantic_role": "relationship",
+      "value_type": "string",
+      "scope": "relationship",
+      "supported_operators": [
+        "exact_lookup",
+        "eq"
+      ],
+      "aliases": [
+        "compatible drain assembly",
+        "matching drain",
+        "drain part number"
+      ],
+      "relationship_semantics": "value is a part number identifying a drain-assembly product this item is compatible with (product-to-part compatibility edge)",
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.4,
+      "evidence": "78 distinct over only 161 occurrences (uniqueness 0.484) and mean_value_length 10.4, but samples include bare '1','2','330' alongside '140780','1795'; numeric_parseable 0.13 is low yet the short numeric samples are equally consistent with counts or codes, so the identifier reading is weakly supported",
+      "abstain": false
+    },
+    {
+      "key": "countryoforigin",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "made in",
+        "country of origin",
+        "made in usa",
+        "imported from",
+        "origin"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.9,
+      "evidence": "71 distinct over 34034 occurrences (uniqueness 0.0021), numeric_parseable 0, samples are country names ('afghanistan','argentina','australia','bahrain','bangladesh') \u2014 a closed, high-coverage vocabulary",
+      "abstain": false
+    },
+    {
+      "key": "drawersincluded",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "with drawers",
+        "has drawers",
+        "drawer storage",
+        "includes drawers"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "distinct_values=2 with samples ['no','yes'] over 8696 occurrences (uniqueness 0.00023); mean_value_length 2.39",
+      "abstain": false
+    },
+    {
+      "key": "dsprimaryproductstyle",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "style",
+        "boho",
+        "coastal",
+        "farmhouse",
+        "country style",
+        "decor style"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "16 distinct over 18227 occurrences (uniqueness 0.00088), numeric_parseable 0; samples are style labels ('boho','coastal','country','country / farmhouse') plus an empty string \u2014 small controlled vocabulary, though 'country' vs 'country / farmhouse' shows overlapping labels",
+      "abstain": false
+    },
+    {
+      "key": "dswoodtone",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "wood tone",
+        "dark wood",
+        "light wood",
+        "espresso finish",
+        "gray wood"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "9 distinct over 10223 occurrences (uniqueness 0.00088); samples are tone labels ('dark brown wood','gray wood','light wood'), and the misspelling 'esptresso wood' next to 'espresso wood' proves the vocabulary is unnormalized and needs a canonicalization step before bitmap assignment",
+      "abstain": false
+    },
+    {
+      "key": "estimatedtimetosetup",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "setup time",
+        "how long to assemble",
+        "assembly time",
+        "quick setup"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.5,
+      "evidence": "numeric_parseable_fraction 0.999 with 83 distinct over 8602 occurrences and mean_value_length 2.03; samples '0','1','10','100' plus '' \u2014 clearly numeric, but no unit is present in the data (minutes vs hours is unknowable here) and '0' is a plausible missing-value sentinel, so range filtering is unsafe without a unit decision",
+      "abstain": false
+    },
+    {
+      "key": "finish",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "finish",
+        "matte black finish",
+        "brushed nickel",
+        "brass finish",
+        "chrome"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.55,
+      "evidence": "1294 distinct over 7719 occurrences (uniqueness 0.168), mean_value_length 9.7, numeric_parseable 0.00013; samples 'aged ash','aged brass','acrylic' are categorical finish descriptors, but '' and '0' are junk and the cardinality/overlap with basecolor implies normalization is required",
+      "abstain": false
+    },
+    {
+      "key": "firerated",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "fire rated",
+        "fire resistant",
+        "flame rated"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "3 distinct over 7541 occurrences (uniqueness 0.0004) where the three samples are '', 'no', 'yes' \u2014 a boolean with an explicit empty/unknown state that must be preserved as missing rather than folded into 'no'; mean_value_length 2.12",
+      "abstain": false
+    },
+    {
+      "key": "framematerial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "frame material",
+        "metal frame",
+        "wood frame",
+        "aluminum frame",
+        "solid wood"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.78,
+      "evidence": "77 distinct over 10396 occurrences (uniqueness 0.0074), numeric_parseable 0, mean_value_length 12.3; samples are material names ('acacia wood','acrylic','aluminium','aluminum') \u2014 the 'aluminium'/'aluminum' pair in the first five samples shows spelling variants that must be merged before enum assignment",
+      "abstain": false
+    },
+    {
+      "key": "fullorlimitedwarranty",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "full warranty",
+        "limited warranty",
+        "warranty type"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.55,
+      "evidence": "12 distinct over 16579 occurrences (uniqueness 0.00072), mean_value_length 6.76; samples show a small vocabulary ('full','full warranty','limited') polluted by duration text ('1 year limited warranty') and an empty string, so the type axis must be extracted from mixed labels",
+      "abstain": false
+    },
+    {
+      "key": "installationrequired",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "installation required",
+        "no installation",
+        "professional installation",
+        "easy to install"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "3 distinct over 12555 occurrences (uniqueness 0.00024) with samples '', 'no', 'yes'; mean_value_length 2.6 \u2014 boolean plus an explicit unknown state",
+      "abstain": false
+    },
+    {
+      "key": "levelofassembly",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "assembly level",
+        "full assembly",
+        "no assembly",
+        "light assembly",
+        "easy to assemble"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.68,
+      "evidence": "10 distinct over 16986 occurrences (uniqueness 0.00059) but mean_value_length 15.7; samples 'full', 'full assembly', 'full assembly needed' are three surface forms of one ordinal level, so the 10 raw values collapse to far fewer canonical buckets",
+      "abstain": false
+    },
+    {
+      "key": "organic",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "organic",
+        "organic cotton",
+        "certified organic",
+        "natural organic"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "3 distinct over 7459 occurrences (uniqueness 0.0004) with samples '', 'no', 'yes'; mean_value_length 2.04",
+      "abstain": false
+    },
+    {
+      "key": "overalldepth-fronttoback",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "depth",
+        "how deep",
+        "front to back",
+        "depth in inches",
+        "under 20 inches deep"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction 0.99997 over 29674 occurrences with 2006 distinct (uniqueness 0.068) and mean_value_length 2.98; samples '.2','.375','.5','.625','.75' are bare decimals with no unit token, so a unit convention (implied inches) must be asserted at compile time",
+      "abstain": false
+    },
+    {
+      "key": "overallheight-toptobottom",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "height",
+        "how tall",
+        "tall",
+        "height in inches",
+        "under 30 inches tall"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.88,
+      "evidence": "numeric_parseable_fraction 0.99987 over 37136 occurrences, 2604 distinct (uniqueness 0.07), mean_value_length 2.89; samples '', '.5', '0', '0.04', '0.08' \u2014 note the empty string and '0', which are missing-value cases that must not enter the range structure as real zeros",
+      "abstain": false
+    },
+    {
+      "key": "overallproductweight",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "weight",
+        "how heavy",
+        "product weight",
+        "lbs",
+        "pounds"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "highest coverage of any field here (57110 occurrences), numeric_parseable_fraction 0.9996, 6071 distinct (uniqueness 0.106), mean_value_length 2.95; samples '', '.02', '.1', '.2024', '.25' are unitless decimals, and '.2024' looks like a year leaking into the column",
+      "abstain": false
+    },
+    {
+      "key": "overallwidth-sidetoside",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "width",
+        "how wide",
+        "side to side",
+        "width in inches",
+        "72 inch wide"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction 0.99931 over 46687 occurrences, 2734 distinct (uniqueness 0.059), mean_value_length 2.78; samples '', '.5', '.66', '0', '0.1' \u2014 unitless decimals with empty/zero missing markers",
+      "abstain": false
+    },
+    {
+      "key": "pattern",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "pattern",
+        "striped",
+        "floral",
+        "geometric",
+        "solid color",
+        "abstract print"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.72,
+      "evidence": "93 distinct over 8453 occurrences (uniqueness 0.011), numeric_parseable 0, mean_value_length 12.0; samples are pattern labels ('abstract','abstract cubism','abstract/geometric') but include the sentinel '[ doesnotapply ]' and '' which must be dropped rather than indexed as a pattern",
+      "abstain": false
+    },
+    {
+      "key": "piecesincluded",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "what's included",
+        "pieces included",
+        "includes",
+        "comes with"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.55,
+      "evidence": "mean_value_length 27.0 with 2706 distinct over 6881 occurrences (uniqueness 0.393); samples are per-product prose inventories ('( 1 ) stand mixer , ( 1 ) 6 quart bowl , ( 1 ) wire , ...') with leading punctuation noise ('! bed frame'), so there is no shared vocabulary to enumerate \u2014 only residual lexical value, and matching component nouns here risks cross-entity false positives",
+      "abstain": false
+    },
+    {
+      "key": "primarymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "material",
+        "made of",
+        "cotton",
+        "solid wood",
+        "porcelain",
+        "what material"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.7,
+      "evidence": "250 distinct over 10860 occurrences (uniqueness 0.023), numeric_parseable 0, mean_value_length 7.7; samples embed composition percentages ('100 % cotton','100 % fine porcelain','100 % medium density fiberboard'), so the material token must be extracted from the percentage prefix before enum assignment \u2014 contains is needed until then",
+      "abstain": false
+    },
+    {
+      "key": "productcare",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "care instructions",
+        "how to clean",
+        "machine washable",
+        "wipe clean",
+        "easy to clean"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.65,
+      "evidence": "mean_value_length 50.76 \u2014 by far the longest here \u2014 with 3500 distinct over 15802 occurrences (uniqueness 0.221); samples are full care sentences with quoting artifacts (\"'' wipe clean with a damp cloth ''\"), i.e. instructional prose, not a filterable attribute",
+      "abstain": false
+    },
+    {
+      "key": "productwarranty",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "warranty",
+        "has warranty",
+        "lifetime warranty",
+        "1 year warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.45,
+      "evidence": "only 7 distinct over 29209 occurrences (uniqueness 0.00024), yet mean_value_length is 2.77 while every shown sample is far longer ('1 year','90 days','lifetime', and a 120-char support-URL string) \u2014 the length statistic implies the mass of values are 2-3 character tokens not in the sample window (yes/no-like), with the shown duration/prose values as rare outliers; the field therefore mixes a boolean-ish signal with stray free text",
+      "abstain": false
+    },
+    {
+      "key": "samplepartnumber",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "exact_lookup",
+        "eq"
+      ],
+      "aliases": [
+        "part number",
+        "sample sku",
+        "swatch part number",
+        "model number",
+        "item number"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.55,
+      "evidence": "uniqueness_ratio 0.979 (2004 distinct / 2048 occurrences), mean_value_length 16.7, numeric_parseable only 0.034; samples are opaque codes ('06.mmfpbdv.44','069556530416') \u2014 near-unique opaque strings are exact-lookup keys, not enum values. Sample '# ref !' is a spreadsheet #REF! error leaking into the column, so the dictionary needs a validity filter. Whether this identifies this product or a separate swatch product cannot be determined from these statistics; if the latter it is a relationship edge instead",
+      "abstain": false
+    },
+    {
+      "key": "shape",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "shape",
+        "round",
+        "rectangular",
+        "oval",
+        "square",
+        "shaped"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "99 distinct over 9122 occurrences (uniqueness 0.011), numeric_parseable 0, mean_value_length 8.3; samples are shape labels ('abstract','abstract/novelty','amphora','arabesque') plus an empty string \u2014 bounded categorical vocabulary",
+      "abstain": false
+    },
+    {
+      "key": "style",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "style",
+        "modern",
+        "traditional",
+        "mid century",
+        "asian inspired",
+        "decor style"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.78,
+      "evidence": "70 distinct over 19221 occurrences (uniqueness 0.0036), numeric_parseable 0, mean_value_length 15.2; samples are style labels ('american traditional','antik','apothecary','asian inspired'). Note 'animal' is a motif rather than a style, and this field's vocabulary is disjoint from dsprimaryproductstyle's 16 values, so two competing style taxonomies exist and will need reconciliation",
+      "abstain": false
+    },
+    {
+      "key": "title",
+      "semantic_role": "free_text",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "contains"
+      ],
+      "aliases": [
+        "named",
+        "called",
+        "titled"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.5,
+      "evidence": "uniqueness_ratio 0.903 (493 distinct / 546 occurrences) with mean_value_length 23.1 and numeric_parseable 0; samples are per-item names, mostly artwork titles ('1881 oahu hawaii vintage map','a pelican and other birds near a pool the floating feather 1680') \u2014 near-unique descriptive names are lexical retrieval keys, not filters. Coverage is tiny (546 rows), so its retrieval contribution is confined to a small subset of the catalog",
+      "abstain": false
+    },
+    {
+      "key": "upholstered",
+      "semantic_role": "boolean",
+      "value_type": "boolean",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "upholstered",
+        "upholstered bed",
+        "fabric covered",
+        "padded"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "distinct_values=2 with samples ['no','yes'] over 10779 occurrences (uniqueness 0.00019); mean_value_length 2.51",
+      "abstain": false
+    },
+    {
+      "key": "upholsterycolor",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "upholstery color",
+        "fabric color",
+        "seat color",
+        "gray upholstery"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "lexical_postings",
+      "confidence": 0.5,
+      "evidence": "2176 distinct over 7306 occurrences (uniqueness 0.298), numeric_parseable 0, mean_value_length 11.1; samples mix descriptive colors ('2 tone espresso','2-tone brown','2-tone latte') with raw vendor codes ('0354-92 ; 0354-92', which is also a duplicated multi-value string) and an empty string \u2014 categorical in intent but too dirty for a direct bitmap",
+      "abstain": false
+    },
+    {
+      "key": "upholsterymaterial",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "upholstery material",
+        "fabric",
+        "velvet",
+        "linen",
+        "leather",
+        "polyester"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.62,
+      "evidence": "113 distinct over 7247 occurrences (uniqueness 0.016), numeric_parseable 0, mean_value_length 12.3; samples are composition blends ('10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame','100 % cotton','100 % fabrics') \u2014 multi-material blends mean one row can belong to several material buckets, so a multi-valued extraction is required and 'fabrics' is a non-informative label",
+      "abstain": false
+    },
+    {
+      "key": "warrantylength",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "contains"
+      ],
+      "aliases": [
+        "warranty length",
+        "warranty period",
+        "how long is the warranty",
+        "1 year warranty",
+        "10 year warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ranking_only",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.5,
+      "evidence": "112 distinct over 21320 occurrences (uniqueness 0.0053), mean_value_length 6.75, but numeric_parseable_fraction is only 0.00028 \u2014 so despite being a duration, essentially nothing parses as a number; samples '1', '1 year', '1 year from the date of purchase.', '1 year limited manufacturer warranty' are four surface forms of the same duration, meaning a duration+unit parser is needed before any range filtering is possible",
+      "abstain": false
+    },
+    {
+      "key": "weightcapacity",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "range",
+        "eq"
+      ],
+      "aliases": [
+        "weight capacity",
+        "holds up to",
+        "max weight",
+        "supports lbs",
+        "weight limit"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.8,
+      "evidence": "numeric_parseable_fraction 0.99974 over 15125 occurrences with 531 distinct (uniqueness 0.035) and mean_value_length 2.87; samples '0','0.01','0.2','0.22','0.5' are unitless and implausibly small for a load rating, indicating either mixed units or missing-value zeros that must be excluded from the range structure",
+      "abstain": false
+    }
+  ]
+}

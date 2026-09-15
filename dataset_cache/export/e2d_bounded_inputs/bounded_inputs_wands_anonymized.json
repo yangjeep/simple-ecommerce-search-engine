@@ -1,0 +1,560 @@
+[
+  {
+    "shown_key": "feature_0",
+    "occurrences": 25258,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.00007918283316177053,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.7606302953519677,
+    "variant_scoped": null,
+    "sample_values": [
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_1",
+    "occurrences": 8145,
+    "distinct_values": 1613,
+    "uniqueness_ratio": 0.19803560466543893,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 8.14585635359116,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "acacia",
+      "acorn",
+      "acrylic",
+      "aged brass"
+    ]
+  },
+  {
+    "shown_key": "feature_10",
+    "occurrences": 8602,
+    "distinct_values": 83,
+    "uniqueness_ratio": 0.00964891885607998,
+    "numeric_parseable_fraction": 0.9990699837247152,
+    "mean_value_length": 2.0265054638456172,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "0",
+      "1",
+      "10",
+      "100"
+    ]
+  },
+  {
+    "shown_key": "feature_11",
+    "occurrences": 7719,
+    "distinct_values": 1294,
+    "uniqueness_ratio": 0.16763829511594766,
+    "numeric_parseable_fraction": 0.00012955045990413266,
+    "mean_value_length": 9.677289804378805,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "0",
+      "acrylic",
+      "aged ash",
+      "aged brass"
+    ]
+  },
+  {
+    "shown_key": "feature_12",
+    "occurrences": 7541,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.00039782522211908233,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.115501922821907,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_13",
+    "occurrences": 10396,
+    "distinct_values": 77,
+    "uniqueness_ratio": 0.007406694882647172,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 12.333012697191228,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "acacia wood",
+      "acrylic",
+      "aluminium",
+      "aluminum"
+    ]
+  },
+  {
+    "shown_key": "feature_14",
+    "occurrences": 16579,
+    "distinct_values": 12,
+    "uniqueness_ratio": 0.0007238072260088063,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 6.762832498944448,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "1 year limited warranty",
+      "full",
+      "full warranty",
+      "limited"
+    ]
+  },
+  {
+    "shown_key": "feature_15",
+    "occurrences": 12555,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.00023894862604540023,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.595300677021107,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_16",
+    "occurrences": 16986,
+    "distinct_values": 10,
+    "uniqueness_ratio": 0.0005887201224537854,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 15.736724361238668,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "full",
+      "full assembly",
+      "full assembly needed",
+      "light"
+    ]
+  },
+  {
+    "shown_key": "feature_17",
+    "occurrences": 7459,
+    "distinct_values": 3,
+    "uniqueness_ratio": 0.0004021986861509586,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.038611073870492,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_18",
+    "occurrences": 29674,
+    "distinct_values": 2006,
+    "uniqueness_ratio": 0.06760126710251399,
+    "numeric_parseable_fraction": 0.9999663004650536,
+    "mean_value_length": 2.981296758104738,
+    "variant_scoped": null,
+    "sample_values": [
+      ".2",
+      ".375",
+      ".5",
+      ".625",
+      ".75"
+    ]
+  },
+  {
+    "shown_key": "feature_19",
+    "occurrences": 37136,
+    "distinct_values": 2604,
+    "uniqueness_ratio": 0.07012063765618268,
+    "numeric_parseable_fraction": 0.9998653597587247,
+    "mean_value_length": 2.894065058164584,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      ".5",
+      "0",
+      "0.04",
+      "0.08"
+    ]
+  },
+  {
+    "shown_key": "feature_2",
+    "occurrences": 26295,
+    "distinct_values": 4686,
+    "uniqueness_ratio": 0.17820878494010267,
+    "numeric_parseable_fraction": 0.00019015021867275147,
+    "mean_value_length": 8.12135386955695,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "0",
+      "2 taupe , 2 teal , 2 white",
+      ";",
+      "[ tied to : color ]"
+    ]
+  },
+  {
+    "shown_key": "feature_20",
+    "occurrences": 57110,
+    "distinct_values": 6071,
+    "uniqueness_ratio": 0.10630362458413588,
+    "numeric_parseable_fraction": 0.9996322885659255,
+    "mean_value_length": 2.9477674662931186,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      ".02",
+      ".1",
+      ".2024",
+      ".25"
+    ]
+  },
+  {
+    "shown_key": "feature_21",
+    "occurrences": 46687,
+    "distinct_values": 2734,
+    "uniqueness_ratio": 0.0585601987705357,
+    "numeric_parseable_fraction": 0.9993145843596719,
+    "mean_value_length": 2.7783965557864074,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      ".5",
+      ".66",
+      "0",
+      "0.1"
+    ]
+  },
+  {
+    "shown_key": "feature_22",
+    "occurrences": 8453,
+    "distinct_values": 93,
+    "uniqueness_ratio": 0.011002011120312315,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 11.983201230332426,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "[ doesnotapply ]",
+      "abstract",
+      "abstract cubism",
+      "abstract/geometric"
+    ]
+  },
+  {
+    "shown_key": "feature_23",
+    "occurrences": 6881,
+    "distinct_values": 2706,
+    "uniqueness_ratio": 0.39325679407062925,
+    "numeric_parseable_fraction": 0.11175701206220026,
+    "mean_value_length": 27.016712687109433,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "! bed frame",
+      "( 1 ) - kitchen cart",
+      "( 1 ) pvc shower curtain liner",
+      "( 1 ) stand mixer , ( 1 ) 6 quart bowl , ( 1 ) wire , ( 1 ) flat beater , ( 1 ) spiral dough hook , splash guard , pouring shield"
+    ]
+  },
+  {
+    "shown_key": "feature_24",
+    "occurrences": 10860,
+    "distinct_values": 250,
+    "uniqueness_ratio": 0.02302025782688766,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 7.6794659300184165,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "100 % cotton",
+      "100 % fine porcelain",
+      "100 % medium density fiberboard",
+      "100 % water hyacinth"
+    ]
+  },
+  {
+    "shown_key": "feature_25",
+    "occurrences": 15802,
+    "distinct_values": 3500,
+    "uniqueness_ratio": 0.22149095051259335,
+    "numeric_parseable_fraction": 0.0003164156435894191,
+    "mean_value_length": 50.75642323756487,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "'' brush off dust then wipe clean with a damp cloth , '' `` do not use strong liquid cleaners . ``",
+      "'' wipe clean with a damp cloth ''",
+      "'' wipe clean with a dry/damp soft cloth . do not use strong liquid cleaners ''",
+      "( cover only ) clean or remove stains by using soap or detergent and rinsing with clean water . air dry."
+    ]
+  },
+  {
+    "shown_key": "feature_26",
+    "occurrences": 29209,
+    "distinct_values": 7,
+    "uniqueness_ratio": 0.0002396521620048615,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.770070868567907,
+    "variant_scoped": null,
+    "sample_values": [
+      "1 year",
+      "1 year limited warranty",
+      "1 year warranty for car , 6 month warranty for . for customer support please go to https : //blazinwheelssupport.com/",
+      "90 days",
+      "lifetime"
+    ]
+  },
+  {
+    "shown_key": "feature_27",
+    "occurrences": 2048,
+    "distinct_values": 2004,
+    "uniqueness_ratio": 0.978515625,
+    "numeric_parseable_fraction": 0.03369140625,
+    "mean_value_length": 16.69775390625,
+    "variant_scoped": null,
+    "sample_values": [
+      "# ref !",
+      "06.mmfpbdv.44",
+      "06.mmfpg25v.44",
+      "06.mmfprd25v.44",
+      "069556530416"
+    ]
+  },
+  {
+    "shown_key": "feature_28",
+    "occurrences": 9122,
+    "distinct_values": 99,
+    "uniqueness_ratio": 0.010852883139662355,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 8.331835123876344,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "abstract",
+      "abstract/novelty",
+      "amphora",
+      "arabesque"
+    ]
+  },
+  {
+    "shown_key": "feature_29",
+    "occurrences": 19221,
+    "distinct_values": 70,
+    "uniqueness_ratio": 0.003641850059830394,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 15.204307788356486,
+    "variant_scoped": null,
+    "sample_values": [
+      "american traditional",
+      "animal",
+      "antik",
+      "apothecary",
+      "asian inspired"
+    ]
+  },
+  {
+    "shown_key": "feature_3",
+    "occurrences": 30534,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.00006550075325866247,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.247003340538416,
+    "variant_scoped": null,
+    "sample_values": [
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_30",
+    "occurrences": 546,
+    "distinct_values": 493,
+    "uniqueness_ratio": 0.9029304029304029,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 23.05860805860806,
+    "variant_scoped": null,
+    "sample_values": [
+      "'wild zen i'",
+      "1881 oahu hawaii vintage map",
+      "1971 enfant",
+      "a pelican and other birds near a pool the floating feather 1680",
+      "aahna lemon yellow large 40 x 64"
+    ]
+  },
+  {
+    "shown_key": "feature_31",
+    "occurrences": 10779,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.00018554596901382316,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.507282679283793,
+    "variant_scoped": null,
+    "sample_values": [
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_32",
+    "occurrences": 7306,
+    "distinct_values": 2176,
+    "uniqueness_ratio": 0.2978373939228032,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 11.080344921981933,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "0354-92 ; 0354-92",
+      "2 tone espresso",
+      "2-tone brown",
+      "2-tone latte"
+    ]
+  },
+  {
+    "shown_key": "feature_33",
+    "occurrences": 7247,
+    "distinct_values": 113,
+    "uniqueness_ratio": 0.015592659031323307,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 12.296398509728164,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "10 % mdf/ 10 % half pu/ 10 % non-woven/ 10 % sponge/ 60 % metal frame",
+      "10 % polyester fiber",
+      "100 % cotton",
+      "100 % fabrics"
+    ]
+  },
+  {
+    "shown_key": "feature_34",
+    "occurrences": 21320,
+    "distinct_values": 112,
+    "uniqueness_ratio": 0.00525328330206379,
+    "numeric_parseable_fraction": 0.00028142589118198874,
+    "mean_value_length": 6.748264540337711,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "1",
+      "1 year",
+      "1 year from the date of purchase.",
+      "1 year limited manufacturer warranty"
+    ]
+  },
+  {
+    "shown_key": "feature_35",
+    "occurrences": 15125,
+    "distinct_values": 531,
+    "uniqueness_ratio": 0.03510743801652893,
+    "numeric_parseable_fraction": 0.9997355371900827,
+    "mean_value_length": 2.8709421487603306,
+    "variant_scoped": null,
+    "sample_values": [
+      "0",
+      "0.01",
+      "0.2",
+      "0.22",
+      "0.5"
+    ]
+  },
+  {
+    "shown_key": "feature_4",
+    "occurrences": 71,
+    "distinct_values": 71,
+    "uniqueness_ratio": 1.0,
+    "numeric_parseable_fraction": 0.028169014084507043,
+    "mean_value_length": 10.901408450704226,
+    "variant_scoped": null,
+    "sample_values": [
+      "01-0619-884-01/01-0619-885-01",
+      "120767wht",
+      "140-c6501s-t",
+      "1c-285",
+      "1wf54a0jsv"
+    ]
+  },
+  {
+    "shown_key": "feature_5",
+    "occurrences": 161,
+    "distinct_values": 78,
+    "uniqueness_ratio": 0.484472049689441,
+    "numeric_parseable_fraction": 0.13043478260869565,
+    "mean_value_length": 10.440993788819876,
+    "variant_scoped": null,
+    "sample_values": [
+      "1",
+      "140780",
+      "1795",
+      "2",
+      "330"
+    ]
+  },
+  {
+    "shown_key": "feature_6",
+    "occurrences": 34034,
+    "distinct_values": 71,
+    "uniqueness_ratio": 0.0020861491449726743,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 6.725362872421696,
+    "variant_scoped": null,
+    "sample_values": [
+      "afghanistan",
+      "argentina",
+      "australia",
+      "bahrain",
+      "bangladesh"
+    ]
+  },
+  {
+    "shown_key": "feature_7",
+    "occurrences": 8696,
+    "distinct_values": 2,
+    "uniqueness_ratio": 0.00022999080036798528,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 2.387879484820607,
+    "variant_scoped": null,
+    "sample_values": [
+      "no",
+      "yes"
+    ]
+  },
+  {
+    "shown_key": "feature_8",
+    "occurrences": 18227,
+    "distinct_values": 16,
+    "uniqueness_ratio": 0.0008778186207274921,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 8.212541833543645,
+    "variant_scoped": null,
+    "sample_values": [
+      "",
+      "boho",
+      "coastal",
+      "country",
+      "country / farmhouse"
+    ]
+  },
+  {
+    "shown_key": "feature_9",
+    "occurrences": 10223,
+    "distinct_values": 9,
+    "uniqueness_ratio": 0.0008803677981023183,
+    "numeric_parseable_fraction": 0.0,
+    "mean_value_length": 10.661058397730608,
+    "variant_scoped": null,
+    "sample_values": [
+      "dark brown wood",
+      "espresso wood",
+      "esptresso wood",
+      "gray wood",
+      "light wood"
+    ]
+  }
+]
