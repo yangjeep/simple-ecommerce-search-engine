@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I77-E3",
+  "engine": "native",
+  "tier": "100k",
+  "run": 1,
+  "status": "ok",
+  "failure_reason": null,
+  "correctness_checks": [
+    {
+      "query_name": "full_positive_match",
+      "expected_product_ids": [
+        "B"
+      ],
+      "actual_product_ids": [
+        "B"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "cross_variant_leakage_negative",
+      "expected_product_ids": [
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "color_only",
+      "expected_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "available_only",
+      "expected_product_ids": [
+        "A",
+        "B"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B"
+      ],
+      "passed": true
+    }
+  ],
+  "correctness_all_passed": true,
+  "workload_cells": [
+    {
+      "name": "base_plp_narrow",
+      "p50_ms": 1.7552290000000002,
+      "p95_ms": 2.475989,
+      "p99_ms": 2.793377,
+      "mean_wall_ms": 1.7940260550000011,
+      "mean_cpu_usec_per_query": 531.895,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 9,
+      "facet_field_count": 0
+    },
+    {
+      "name": "base_plp_medium",
+      "p50_ms": 2.331572,
+      "p95_ms": 3.136536,
+      "p99_ms": 5.2937590000000005,
+      "mean_wall_ms": 2.419160475,
+      "mean_cpu_usec_per_query": 816.785,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 39,
+      "facet_field_count": 0
+    },
+    {
+      "name": "base_plp_broad",
+      "p50_ms": 4.668875,
+      "p95_ms": 6.432229,
+      "p99_ms": 7.44445,
+      "mean_wall_ms": 4.8487133799999995,
+      "mean_cpu_usec_per_query": 3197.625,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 3309,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_1",
+      "p50_ms": 6.155987,
+      "p95_ms": 7.575241,
+      "p99_ms": 8.934941,
+      "mean_wall_ms": 6.23891691,
+      "mean_cpu_usec_per_query": 4506.78,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 4314,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_3",
+      "p50_ms": 2.349731,
+      "p95_ms": 3.262652,
+      "p99_ms": 3.5395909999999997,
+      "mean_wall_ms": 2.41882449,
+      "mean_cpu_usec_per_query": 811.41,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 9,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_5",
+      "p50_ms": 1.9700540000000002,
+      "p95_ms": 2.5178459999999996,
+      "p99_ms": 2.730676,
+      "mean_wall_ms": 1.9644949599999995,
+      "mean_cpu_usec_per_query": 677.95,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 3,
+      "facet_field_count": 0
+    },
+    {
+      "name": "facet_low_cardinality_style",
+      "p50_ms": 59.921312,
+      "p95_ms": 74.30912000000001,
+      "p99_ms": 111.328457,
+      "mean_wall_ms": 56.89775307,
+      "mean_cpu_usec_per_query": 55151.39,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 128982,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_medium_cardinality_primarymaterial",
+      "p50_ms": 61.036473,
+      "p95_ms": 83.969962,
+      "p99_ms": 99.818526,
+      "mean_wall_ms": 58.677336729999986,
+      "mean_cpu_usec_per_query": 56973.765,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 128982,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_high_cardinality_color",
+      "p50_ms": 72.433797,
+      "p95_ms": 88.978533,
+      "p99_ms": 103.888621,
+      "mean_wall_ms": 69.05166647499996,
+      "mean_cpu_usec_per_query": 67081.54,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 128982,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_disjunctive_multi_dim",
+      "p50_ms": 35.088834,
+      "p95_ms": 45.851898000000006,
+      "p99_ms": 52.806406,
+      "mean_wall_ms": 34.826422345,
+      "mean_cpu_usec_per_query": 32965.81,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 4083,
+      "facet_field_count": 5
+    },
+    {
+      "name": "numeric_range_sort",
+      "p50_ms": 228.234755,
+      "p95_ms": 365.974252,
+      "p99_ms": 431.50872899999996,
+      "mean_wall_ms": 249.92838753499996,
+      "mean_cpu_usec_per_query": 248506.28,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 95901,
+      "facet_field_count": 0
+    }
+  ],
+  "throughput": {
+    "concurrency": 8,
+    "duration_secs": 15.0,
+    "total_requests": 10831,
+    "requests_per_sec": 722.0666666666667
+  },
+  "rss_before_load_bytes": 1115017216,
+  "rss_during_serving_bytes": 1114935296,
+  "peak_rss_during_serving_bytes": 1115394048,
+  "container_name": "i77-native",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "jvm_configured_heap_bytes": null,
+  "git_sha": "c9d2c6e18fa92e92713dc934448e41b58ecffb68",
+  "hostname": "yangjeep-dev",
+  "timestamp_utc": "1789968074"
+}

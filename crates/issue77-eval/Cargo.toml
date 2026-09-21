@@ -1,0 +1,17 @@
+[package]
+name = "issue77-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #77 (Infra E3) category PLP / disjunctive-faceting H2H benchmark. Experiment code only."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
+issue61-eval = { path = "../issue61-eval" }
+issue62-eval = { path = "../issue62-eval" }
+roaring = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
