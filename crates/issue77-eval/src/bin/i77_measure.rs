@@ -248,16 +248,20 @@ fn launch_native(repository_root: &Path, catalog_path: &Path) -> Result<Instant,
         read_env_var(repository_root, "I77_MEMORY_SWAP").unwrap_or_else(|| memory.clone());
     let port =
         read_env_var(repository_root, "I77_NATIVE_PORT").unwrap_or_else(|| "9902".to_owned());
+    // CPUs/cpuset must be read live from resource_envelope.env, not hardcoded --
+    // an adversarial review of this round found this was hardcoded while every
+    // competitor's provisioning script (and native's own memory args, right
+    // below) sourced the env file, contradicting the frozen-envelope "no
+    // hardcoded exemption anywhere" guarantee (same class of bug E2's review
+    // found for memory). The values happened to already match, so this fix
+    // changes no measured number, but the guarantee is now actually true.
+    let cpus = read_env_var(repository_root, "I77_CPUS").unwrap_or_else(|| "3".to_owned());
+    let cpuset = read_env_var(repository_root, "I77_CPUSET").unwrap_or_else(|| "0-2".to_owned());
     let started = Instant::now();
-    let mut command = docker(&[
-        "run",
-        "-d",
-        "--name",
-        Engine::Native.container_name(),
-        "--cpus=3",
-        "--cpuset-cpus=0-2",
-    ]);
+    let mut command = docker(&["run", "-d", "--name", Engine::Native.container_name()]);
     command
+        .arg(format!("--cpus={cpus}"))
+        .arg(format!("--cpuset-cpus={cpuset}"))
         .arg(format!("--memory={memory}"))
         .arg(format!("--memory-swap={memory_swap}"))
         .arg("-p")
@@ -1473,13 +1477,20 @@ fn typesense_correctness(
 }
 
 /// Typesense has no server-side facet-domain-exclusion mechanism (unlike
-/// Solr's `excludeTags`/ES's `post_filter`+per-agg `filter`) -- true
-/// disjunctive faceting genuinely requires one extra search request per
-/// requested facet, each with that facet's own filter excluded, plus one
-/// base request for the returned document hits. This is a real capability
-/// difference, not a harness shortcut: `backend_requests` reports the true
-/// count (1 + facet_fields.len() when facets are requested), matching the
-/// preregistered "sum of all N calls, never just the cheapest one" rule.
+/// Solr's `excludeTags`/ES's `post_filter`+per-agg `filter`) for the ONE
+/// facet field whose own filter is currently active -- that field genuinely
+/// needs its own request with its own filter excluded. Every OTHER
+/// requested facet field shares the same filter set as the base hits
+/// request (no exclusion needed) and is combined into that one base request
+/// via `facet_by=a,b,c`, matching how a maximally-efficient Typesense client
+/// would actually query. An earlier version of this function issued one
+/// extra request per facet field unconditionally, even when no exclusion
+/// was needed -- an adversarial review of this round found that inflated
+/// competitor CPU/latency cost and understated native's reported
+/// faceting-slowdown multiplier; fixed here. `backend_requests` (1, or 2
+/// when one field needs its own excluded request) reports the true minimum
+/// count, per the preregistered "sum of all N calls, never just the
+/// cheapest one" rule -- N is now the honestly-minimal N, not an inflated one.
 fn typesense_urls(cell: &WorkloadCell, port: &str) -> Vec<(String, &'static str)> {
     let base = format!("http://127.0.0.1:{port}/collections/i77_wands/documents/search");
     let mut filters: Vec<(String, String)> = Vec::new();
@@ -1530,26 +1541,45 @@ fn typesense_urls(cell: &WorkloadCell, port: &str) -> Vec<(String, &'static str)
         parts.join(" && ")
     };
 
+    let excluded_field = active_filter
+        .as_ref()
+        .map(|(a, _)| a.as_str())
+        .filter(|field| facet_fields.iter().any(|f| f == field));
+    let combined_facets: Vec<&String> = facet_fields
+        .iter()
+        .filter(|f| Some(f.as_str()) != excluded_field)
+        .collect();
+
     let mut urls = Vec::new();
-    // Base request: returns hits (topk docs), num_found.
+    // Base request: returns hits (topk docs), num_found, plus every facet
+    // field that doesn't need its own filter excluded (combined via
+    // facet_by=a,b,c -- one request serves hits and N-1 of the N facets).
     let mut base_url = format!(
         "{base}?q=*&query_by=title&filter_by={}&per_page={}",
         urlencode(&render_filter_by(None)),
         cell.top_k
     );
+    if !combined_facets.is_empty() {
+        let fields = combined_facets
+            .iter()
+            .map(|f| f.as_str())
+            .collect::<Vec<_>>()
+            .join(",");
+        base_url.push_str(&format!(
+            "&facet_by={}&max_facet_values=200",
+            urlencode(&fields)
+        ));
+    }
     if let Some(s) = &sort_param {
         base_url.push_str(&format!("&sort_by={}", urlencode(s)));
     }
     urls.push((base_url, "base"));
-    // One extra request per requested facet, each excluding its own filter.
-    for field in &facet_fields {
-        let exclude = active_filter
-            .as_ref()
-            .filter(|(a, _)| a == field)
-            .map(|(a, _)| a.as_str());
+    // Only the one field whose own filter is currently active needs its own
+    // separate, exclusion-applied request.
+    if let Some(field) = excluded_field {
         let facet_url = format!(
             "{base}?q=*&query_by=title&filter_by={}&facet_by={field}&max_facet_values=200&per_page=0",
-            urlencode(&render_filter_by(exclude))
+            urlencode(&render_filter_by(Some(field)))
         );
         urls.push((facet_url, "facet"));
     }
@@ -1618,7 +1648,14 @@ fn run_typesense_workload_cell(
         wall_times_ms[idx.min(wall_times_ms.len() - 1)]
     };
     let mean_wall_ms = wall_times_ms.iter().sum::<f64>() / wall_times_ms.len() as f64;
-    let facet_field_count = (urls.len() - 1) as u32;
+    // facet_field_count is the number of facet FIELDS computed, not the
+    // number of backend requests -- since the fix above combines multiple
+    // facet fields into one request where no exclusion is needed, these two
+    // counts are no longer always equal.
+    let facet_field_count = match &cell.kind {
+        WorkloadKind::Facet { facet_fields, .. } => facet_fields.len() as u32,
+        _ => 0,
+    };
 
     Ok(WorkloadCellResult {
         name: cell.name.to_owned(),
@@ -1773,10 +1810,13 @@ fn meili_correctness(
 /// Meilisearch's `facets` search param returns `facetDistribution` computed
 /// over the filtered result set, with no built-in mechanism to exclude a
 /// facet's own active filter (no ES `post_filter`/Solr `excludeTags`
-/// equivalent) -- same real limitation as Typesense, and handled the same
-/// way: one extra request per requested facet, each with that facet's own
-/// filter excluded, plus one base request. `backend_requests` reports the
-/// true count.
+/// equivalent) for the ONE field whose own filter is active -- same real
+/// limitation as Typesense, handled the same way (see `typesense_urls`'s
+/// doc comment): every facet field that does NOT need its own filter
+/// excluded is combined into the base request's `facets` array (Meilisearch
+/// accepts multiple facet fields in one `facets: [...]` list), and only the
+/// field needing exclusion gets its own separate request. `backend_requests`
+/// (1, or 2 when one field needs exclusion) reports the true minimum.
 fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
     let mut filters: Vec<(String, String)> = Vec::new();
     let mut facet_fields: Vec<String> = Vec::new();
@@ -1830,22 +1870,30 @@ fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
         parts.join(" AND ")
     };
 
+    let excluded_field = active_filter
+        .as_ref()
+        .map(|(a, _)| a.as_str())
+        .filter(|field| facet_fields.iter().any(|f| f == field));
+    let combined_facets: Vec<&String> = facet_fields
+        .iter()
+        .filter(|f| Some(f.as_str()) != excluded_field)
+        .collect();
+
     let mut bodies = Vec::new();
     let mut base = serde_json::json!({
         "filter": render_filter(None),
         "limit": cell.top_k,
     });
+    if !combined_facets.is_empty() {
+        base["facets"] = serde_json::json!(combined_facets);
+    }
     if let Some(s) = &sort {
         base["sort"] = serde_json::json!(s);
     }
     bodies.push((base, "base"));
-    for field in &facet_fields {
-        let exclude = active_filter
-            .as_ref()
-            .filter(|(a, _)| a == field)
-            .map(|(a, _)| a.as_str());
+    if let Some(field) = excluded_field {
         let facet_body = serde_json::json!({
-            "filter": render_filter(exclude),
+            "filter": render_filter(Some(field)),
             "facets": [field],
             "limit": 0,
         });
@@ -1914,7 +1962,10 @@ fn run_meili_workload_cell(
         wall_times_ms[idx.min(wall_times_ms.len() - 1)]
     };
     let mean_wall_ms = wall_times_ms.iter().sum::<f64>() / wall_times_ms.len() as f64;
-    let facet_field_count = (bodies.len() - 1) as u32;
+    let facet_field_count = match &cell.kind {
+        WorkloadKind::Facet { facet_fields, .. } => facet_fields.len() as u32,
+        _ => 0,
+    };
 
     Ok(WorkloadCellResult {
         name: cell.name.to_owned(),
@@ -2075,11 +2126,14 @@ fn vespa_correctness(
 /// Vespa's grouping API (`| all(group(field) each(output(count())))`) has no
 /// built-in mechanism to exclude a facet's own active filter from its own
 /// domain (no Solr `excludeTags`/ES `post_filter` equivalent available
-/// through a single request) -- same real limitation as Typesense/
-/// Meilisearch, handled the same way: one extra grouping-only request per
-/// requested facet, each with that facet's own filter excluded, plus one
-/// base request for the returned document hits. `backend_requests` reports
-/// the true count.
+/// through a single request) for the ONE field whose own filter is active --
+/// same real limitation as Typesense/Meilisearch, handled the same way (see
+/// `typesense_urls`'s doc comment): every facet field that does NOT need its
+/// own filter excluded is combined into the base request via multiple
+/// sibling `all(group(...) each(output(count())))` blocks (Vespa supports
+/// several independent groupings in one query), and only the field needing
+/// exclusion gets its own separate request. `backend_requests` (1, or 2 when
+/// one field needs exclusion) reports the true minimum.
 fn vespa_yqls(cell: &WorkloadCell) -> Vec<(String, &'static str)> {
     let mut filters: Vec<(String, String)> = Vec::new();
     let mut facet_fields: Vec<String> = Vec::new();
@@ -2142,7 +2196,21 @@ fn vespa_yqls(cell: &WorkloadCell) -> Vec<(String, &'static str)> {
         }
     };
 
+    let excluded_field = active_filter
+        .as_ref()
+        .map(|(a, _)| a.as_str())
+        .filter(|field| facet_fields.iter().any(|f| f == field));
+    let combined_facets: Vec<&String> = facet_fields
+        .iter()
+        .filter(|f| Some(f.as_str()) != excluded_field)
+        .collect();
+
     let mut yqls = Vec::new();
+    // `order by` is part of the where-statement and must precede the `|
+    // grouping` pipe stage in YQL grammar; the current workload matrix never
+    // combines sort and facets in the same cell (NumericRangeSort sets
+    // sort_param with empty facet_fields, Facet sets facet_fields with no
+    // sort_param), but this order is kept grammar-correct regardless.
     let mut base_yql = format!("select * from wands where {}", render_where(None));
     if let Some((field, desc)) = &sort_param {
         base_yql.push_str(&format!(
@@ -2150,16 +2218,27 @@ fn vespa_yqls(cell: &WorkloadCell) -> Vec<(String, &'static str)> {
             if *desc { "desc" } else { "asc" }
         ));
     }
+    if !combined_facets.is_empty() {
+        // Multiple sibling top-level groupings in one Vespa query must be
+        // wrapped as SPACE-separated (not comma-separated -- tried first,
+        // HTTP 400 "was expecting ... <SPACE> ... \"all\"") children of one
+        // outer all(...). Verified live against a running container:
+        // `all(all(group(style) each(output(count()))) all(group(x)...))`
+        // returns totalCount matching every other engine's num_found for
+        // this cell.
+        let groupings = combined_facets
+            .iter()
+            .map(|f| format!("all(group({f}) each(output(count())))"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        base_yql.push_str(&format!(" | all({groupings})"));
+    }
     let hits = cell.top_k;
     yqls.push((format!("{base_yql}&hits={hits}"), "base"));
-    for field in &facet_fields {
-        let exclude = active_filter
-            .as_ref()
-            .filter(|(a, _)| a == field)
-            .map(|(a, _)| a.as_str());
+    if let Some(field) = excluded_field {
         let facet_yql = format!(
             "select * from wands where {} | all(group({field}) each(output(count())))&hits=0",
-            render_where(exclude)
+            render_where(Some(field))
         );
         yqls.push((facet_yql, "facet"));
     }
@@ -2233,7 +2312,10 @@ fn run_vespa_workload_cell(
         wall_times_ms[idx.min(wall_times_ms.len() - 1)]
     };
     let mean_wall_ms = wall_times_ms.iter().sum::<f64>() / wall_times_ms.len() as f64;
-    let facet_field_count = (requests.len() - 1) as u32;
+    let facet_field_count = match &cell.kind {
+        WorkloadKind::Facet { facet_fields, .. } => facet_fields.len() as u32,
+        _ => 0,
+    };
 
     Ok(WorkloadCellResult {
         name: cell.name.to_owned(),
