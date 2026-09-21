@@ -1,0 +1,110 @@
+{
+  "baseline_sha": "d965b7444e1ae563707af987da1a55b98d939135",
+  "c_single_run_stability_stricter_self_check": {
+    "full_pct": 95.19999999999999,
+    "primitive_pct": 95.19999999999999,
+    "role_pct": 95.19999999999999,
+    "scope_pct": 97.11999999999999,
+    "total_pairs": 1250,
+    "type_pct": 97.11999999999999
+  },
+  "experiment_id": "I45-E2c-canonicalization",
+  "go_gate": {
+    "C": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "D": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "go_gate_single_run_stricter_reading": {
+    "c1_zero_unsafe_worst_case": true,
+    "c2_primitive_ge_99pct": false,
+    "c3_full_ge_98pct": false,
+    "full_pct": 95.19999999999999,
+    "primitive_pct": 95.19999999999999,
+    "single_run_worst_case_unsafe_count": 0
+  },
+  "raw_stability_extended": {
+    "full_pct": 74.96000000000001,
+    "primitive_pct": 89.12,
+    "role_pct": 97.2,
+    "scope_pct": 83.04,
+    "total_pairs": 1250,
+    "type_pct": 99.68
+  },
+  "relevance_criterion_5": {
+    "check_reliable": false,
+    "oracle_n_scored": 270,
+    "oracle_ndcg10": 0.009995636366187282,
+    "oracle_recall10": 0.00039009560645701245,
+    "relative_ndcg_gap": 0.0,
+    "treatment_c_n_scored": 270,
+    "treatment_c_ndcg10": 0.009995636366187282,
+    "treatment_c_recall10": 0.00039009560645701245,
+    "within_5pct": true
+  },
+  "treatments": [
+    {
+      "abstention_rate_pct": 13.207547169811317,
+      "label": "B_majority_vote",
+      "n_promoted": 46,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 97.36842105263158,
+      "stability": {
+        "full_pct": 81.67999999999999,
+        "primitive_pct": 92.80000000000001,
+        "role_pct": 99.68,
+        "scope_pct": 85.92,
+        "total_pairs": 1250,
+        "type_pct": 99.68
+      },
+      "unsafe_accepted_count": 0
+    },
+    {
+      "abstention_rate_pct": 20.75471698113207,
+      "label": "C_canonicalizer",
+      "n_promoted": 42,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 89.47368421052632,
+      "stability": {
+        "full_pct": 100.0,
+        "primitive_pct": 100.0,
+        "role_pct": 100.0,
+        "scope_pct": 100.0,
+        "total_pairs": 1250,
+        "type_pct": 100.0
+      },
+      "unsafe_accepted_count": 0
+    },
+    {
+      "abstention_rate_pct": 20.75471698113207,
+      "label": "D_conservative",
+      "n_promoted": 42,
+      "n_total_keys": 53,
+      "retrieval_significant_recall_pct": 89.47368421052632,
+      "stability": {
+        "full_pct": 100.0,
+        "primitive_pct": 100.0,
+        "role_pct": 100.0,
+        "scope_pct": 100.0,
+        "total_pairs": 1250,
+        "type_pct": 100.0
+      },
+      "unsafe_accepted_count": 0
+    }
+  ],
+  "unstable_to_stable_conversion": {
+    "now_stable_under_c": 11,
+    "raw_unstable_keys": 11,
+    "stable_but_wrong_under_c": 2
+  }
+}

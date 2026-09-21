@@ -1,0 +1,73 @@
+=== Issue #45 E2c serving-overhead measurement (GO-gate criterion 6) ===
+baseline_sha: d965b7444e1ae563707af987da1a55b98d939135
+oracle: 29 WANDS structural descriptors accepted
+Treatment C (canonicalizer): 27 WANDS structural descriptors promoted
+
+building oracle-compiled bundle...
+  42994 products, build=832.08ms, index size=7955852 bytes
+building Treatment C-compiled bundle...
+  42994 products, build=637.95ms, index size=6382086 bytes
+
+16 fields common to both bundles' own accepted Enum set, with real shared values
+workload: 68 queries
+candidate-set cross-check: 68/68 match
+
+=== indexed_candidates (ms) ===
+  oracle: n=2040 mean=0.0002ms sd=0.0001ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0002 p90=0.0003 p95=0.0003 p99=0.0005 | min=0.0001 max=0.0007ms
+  canonicalizer: n=2040 mean=0.0002ms sd=0.0001ms | p10=0.0001 p25=0.0001 p50=0.0001 p75=0.0002 p90=0.0003 p95=0.0003 p99=0.0005 | min=0.0001 max=0.0007ms
+P50 overhead: +0.29% below_floor=true => INCONCLUSIVE
+
+=== execute_ranked top-10 (ms) ===
+  oracle: n=2040 mean=0.0226ms sd=0.1028ms | p10=0.0002 p25=0.0002 p50=0.0003 p75=0.0006 p90=0.0325 p95=0.0649 p99=0.6343 | min=0.0002 max=0.7126ms
+  canonicalizer: n=2040 mean=0.0223ms sd=0.1009ms | p10=0.0002 p25=0.0002 p50=0.0003 p75=0.0006 p90=0.0323 p95=0.0656 p99=0.6221 | min=0.0002 max=0.7052ms
+execute_ranked P50: -0.02% floor=true => INCONCLUSIVE
+execute_ranked P95: +1.00% floor=false => PASS
+execute_ranked P99: -1.92% floor=false => PASS
+
+=> E2c serving-overhead gate (criterion 6): PASS
+
+{
+  "baseline_sha": "d965b7444e1ae563707af987da1a55b98d939135",
+  "bundles": {
+    "canonicalizer": {
+      "build_ms": 637.950712,
+      "index_size_bytes": 6382086,
+      "label": "canonicalizer",
+      "n_products": 42994
+    },
+    "oracle": {
+      "build_ms": 832.07538,
+      "index_size_bytes": 7955852,
+      "label": "oracle",
+      "n_products": 42994
+    }
+  },
+  "experiment_id": "I45-E2c-serving-overhead",
+  "result": {
+    "execute_ranked_top10": {
+      "canonical_p50_ms": 0.0002690875,
+      "canonical_p95_ms": 0.0655980725,
+      "canonical_p99_ms": 0.6221106536,
+      "gate_p50": "INCONCLUSIVE",
+      "gate_p95": "PASS",
+      "gate_p99": "PASS",
+      "oracle_p50_ms": 0.00026914749999999997,
+      "oracle_p95_ms": 0.0649476205,
+      "oracle_p99_ms": 0.6342618752999999,
+      "overhead_pct_p50": -0.022292609071222633,
+      "overhead_pct_p95": 1.0015024337958554,
+      "overhead_pct_p99": -1.9158051544959285
+    },
+    "go_gate_criterion_6": "PASS",
+    "indexed_candidates": {
+      "below_timer_floor": true,
+      "candidate_set_mismatches": 0,
+      "canonical_p50_ms": 0.000125815,
+      "gate": "INCONCLUSIVE",
+      "n_queries": 68,
+      "oracle_p50_ms": 0.0001254475,
+      "overhead_pct_p50": 0.2929512345801916
+    }
+  }
+}
+summary written to docs/research/artifacts/i47_e2d_e2c_regression_check_run1/after_serving.json
