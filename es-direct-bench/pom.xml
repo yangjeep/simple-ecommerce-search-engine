@@ -9,7 +9,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <es.version>8.15.0</es.version>
+    <es.version>8.19.8</es.version>
     <catalog.path>../dataset_cache/wands/catalog.jsonl</catalog.path>
     <solr.base.url>http://localhost:8983/solr/wands_bench</solr.base.url>
     <repo.root>..</repo.root>
