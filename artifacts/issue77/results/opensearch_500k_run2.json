@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I77-E3",
+  "engine": "opensearch",
+  "tier": "500k",
+  "run": 2,
+  "status": "ok",
+  "failure_reason": null,
+  "correctness_checks": [
+    {
+      "query_name": "full_positive_match",
+      "expected_product_ids": [
+        "B"
+      ],
+      "actual_product_ids": [
+        "B"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "cross_variant_leakage_negative",
+      "expected_product_ids": [
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "color_only",
+      "expected_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "available_only",
+      "expected_product_ids": [
+        "A",
+        "B"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B"
+      ],
+      "passed": true
+    }
+  ],
+  "correctness_all_passed": true,
+  "workload_cells": [
+    {
+      "name": "base_plp_narrow",
+      "p50_ms": 28.701552000000003,
+      "p95_ms": 43.439678,
+      "p99_ms": 69.567191,
+      "mean_wall_ms": 30.393126135,
+      "mean_cpu_usec_per_query": 67723.12,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 36,
+      "facet_field_count": 0
+    },
+    {
+      "name": "base_plp_medium",
+      "p50_ms": 27.665999,
+      "p95_ms": 35.99942,
+      "p99_ms": 47.065913,
+      "mean_wall_ms": 28.271912784999994,
+      "mean_cpu_usec_per_query": 54557.48,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 156,
+      "facet_field_count": 0
+    },
+    {
+      "name": "base_plp_broad",
+      "p50_ms": 25.855583000000003,
+      "p95_ms": 34.118984,
+      "p99_ms": 41.871264,
+      "mean_wall_ms": 26.784321915,
+      "mean_cpu_usec_per_query": 41120.325,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 13236,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_1",
+      "p50_ms": 34.71328,
+      "p95_ms": 44.777938000000006,
+      "p99_ms": 47.151041,
+      "mean_wall_ms": 35.873002310000004,
+      "mean_cpu_usec_per_query": 48522.655,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 17256,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_3",
+      "p50_ms": 32.746184,
+      "p95_ms": 44.265293,
+      "p99_ms": 50.007841,
+      "mean_wall_ms": 33.45656917,
+      "mean_cpu_usec_per_query": 42865.655,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 36,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_5",
+      "p50_ms": 23.681637,
+      "p95_ms": 36.046417999999996,
+      "p99_ms": 47.913035,
+      "mean_wall_ms": 24.636286229999985,
+      "mean_cpu_usec_per_query": 38143.175,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 12,
+      "facet_field_count": 0
+    },
+    {
+      "name": "facet_low_cardinality_style",
+      "p50_ms": 101.098672,
+      "p95_ms": 137.31268699999998,
+      "p99_ms": 160.996883,
+      "mean_wall_ms": 102.22040105000008,
+      "mean_cpu_usec_per_query": 116468.735,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_medium_cardinality_primarymaterial",
+      "p50_ms": 102.04484699999999,
+      "p95_ms": 129.201514,
+      "p99_ms": 147.803455,
+      "mean_wall_ms": 101.84469728000002,
+      "mean_cpu_usec_per_query": 135515.92,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_high_cardinality_color",
+      "p50_ms": 134.549358,
+      "p95_ms": 165.96904800000002,
+      "p99_ms": 205.075386,
+      "mean_wall_ms": 123.75041674499998,
+      "mean_cpu_usec_per_query": 147001.925,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_disjunctive_multi_dim",
+      "p50_ms": 182.230419,
+      "p95_ms": 266.19142800000003,
+      "p99_ms": 334.711857,
+      "mean_wall_ms": 179.41656345500004,
+      "mean_cpu_usec_per_query": 196799.925,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 16332,
+      "facet_field_count": 5
+    },
+    {
+      "name": "numeric_range_sort",
+      "p50_ms": 75.341063,
+      "p95_ms": 102.05733599999999,
+      "p99_ms": 138.77149699999998,
+      "mean_wall_ms": 76.51558511499998,
+      "mean_cpu_usec_per_query": 85635.355,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 383604,
+      "facet_field_count": 0
+    }
+  ],
+  "throughput": {
+    "concurrency": 8,
+    "duration_secs": 15.0,
+    "total_requests": 4061,
+    "requests_per_sec": 270.73333333333335
+  },
+  "rss_before_load_bytes": 4356034560,
+  "rss_during_serving_bytes": 4067270656,
+  "peak_rss_during_serving_bytes": 4356034560,
+  "container_name": "i77-opensearch",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "jvm_configured_heap_bytes": 3221225472,
+  "git_sha": "63cd47089baf4569e963f694a64295c2bcb8e39b",
+  "hostname": "yangjeep-dev",
+  "timestamp_utc": "1789978933"
+}
