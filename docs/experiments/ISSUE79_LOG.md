@@ -27,3 +27,40 @@ Fix: walk runs by numeric `==` and merge a run's sign-split sub-runs by ordinal.
 ### Correctness gate, 100k calibration tier (pre-measurement sanity)
 
 `e3b_correctness_gate --catalog catalog_3x.jsonl` compared 980 candidate-variant checks against the oracle, with **0 failures**. It also recorded 60 baseline divergences, all from the legacy (N0) sort component: #77's comparator orders missing values *first* on ascending sorts (`Option` ordering), whereas the preregistered semantics put them last. They show up in N0' and in F1/F2 × legacy-sort combinations, which keep N0's result path by design. All five facet fields are single-valued `Enum` (the ordinal path is exact), and there are 0 NaN numeric values.
+
+## 2026-09-28 — smoke checks (100k; not preregistered evidence)
+
+- One-cell smoke runs of both native binaries through the scope driver, at 100k, to validate the harness: `facet_high_cardinality_color` and `numeric_range_sort`, one run each.
+- These numbers were seen before calibration. They are **not** used for any rule or threshold, and they are not reported as results. Disclosed because they were seen early: at 100k, the F1/F2 facet paths barely changed end-to-end CPU on the full-catalog color facet, while bounded result assembly cut it by about 5x. That pointed toward H-F-b before any preregistered measurement.
+
+## 2026-09-28 — corrected competitor facet baseline (500k, 3 clean runs, scope envelope) — BEFORE any native candidate measurement
+
+- **Harness:** `i77_measure` (#77's corrected request builders) with `I77_RUNTIME=scope`, `--cells` set to the four facet cells plus `numeric_range_sort`, and `--skip-throughput true`. Driver on CPU 3; engine on CPUs 0-2 with CPUQuota 300%, MemoryMax 6G, swap 0. Git SHA in every raw file: `6c80fef`.
+- **Results:** all 9 runs (Meilisearch, Typesense, Solr × 3) `status=Ok`, `correctness_all_passed=true`, with `num_found` identical to #77's 500k values (515,928 / 16,332 / 383,604). Raw files are in `artifacts/issue79/results/competitor/`.
+- **Backend requests (corrected builders):** 1 on single-facet cells for Typesense and Meilisearch (E3: 2), and 2 on `facet_disjunctive_multi_dim` (E3: 6). Solr is 1 everywhere, unchanged.
+
+Median CPU/query in µs over 3 runs (P95 in ms). The E3 column is #77's 500k median from `yangjeep-dev` (Docker, uncorrected builders), preserved unchanged; the old→corrected ratio is **cross-host**.
+
+| cell | engine | E3b µs (runs) | CV | P95 ms | E3 µs | old→corrected |
+|---|---|---|---|---|---|---|
+| facet_low_cardinality_style | meilisearch | **9,948** (9,504 / 9,948 / 10,278) | 0.039 | 24.5 | 19,358 | 0.51x |
+| | solr | 48,123 | 0.055 | 47.3 | 63,884 | 0.75x |
+| | typesense | 268,560 | 0.041 | 171.8 | 375,066 | 0.72x |
+| facet_medium_cardinality_primarymaterial | meilisearch | **9,326** (9,326 / 11,006 / 8,051) | 0.157 | 24.0 | 18,939 | 0.49x |
+| | solr | 42,470 | 0.046 | 48.0 | 59,578 | 0.71x |
+| | typesense | 271,582 | 0.029 | 173.9 | 364,086 | 0.75x |
+| facet_high_cardinality_color | meilisearch | **7,987** (7,987 / 7,854 / 8,361) | 0.033 | 20.5 | 17,645 | 0.45x |
+| | solr | 43,654 | 0.056 | 60.1 | 58,833 | 0.74x |
+| | typesense | 267,879 | 0.033 | 182.3 | 381,389 | 0.70x |
+| facet_disjunctive_multi_dim | meilisearch | **20,206** (20,963 / 20,206 / 17,493) | 0.093 | 38.5 | 48,004 | 0.42x |
+| | solr | 47,505 | 0.044 | 49.0 | 64,015 | 0.74x |
+| | typesense | 313,822 | 0.023 | 220.3 | 578,686 | 0.54x |
+| numeric_range_sort | meilisearch | **9,164** (6,678 / 9,164 / 9,249) | 0.175 | 22.9 | 13,235 | 0.69x |
+| | solr | 9,432 (8,504 / 10,984 / 9,432) | 0.130 | 8.9 | 11,814 | 0.80x |
+| | typesense | 318,875 | 0.003 | 187.8 | 397,761 | 0.80x |
+
+**Reading the delta:** Solr's request builder was not touched by the correction, so its 0.71–0.80x factor estimates the host change alone. Dividing Meilisearch's 0.42–0.51x by that factor attributes roughly 0.57–0.68x to the request-count correction, i.e. the extra backend request cost Meilisearch about 32–43%. Typesense's single-facet delta (0.70–0.75x) matches the host factor, so its extra request cost little relative to its large per-request cost.
+
+The **fastest same-host competitor is Meilisearch on every cell.** On `numeric_range_sort` it effectively ties Solr (9,164 vs 9,432 µs, both CV > 0.13). Solr's P95 there is far lower (8.9 vs 22.9 ms). Classification uses CPU/query as preregistered, and the P95 disagreement is reported.
+
+**Harness incident (disclosed; measurement unaffected):** `run_e3b.sh` was edited (headline branch only) while the competitor phase was running. Bash parses the whole `case … esac` before executing it, so the competitor branch ran as originally parsed. After `esac` it resumed reading at a shifted offset and failed with a syntax error at EOF; only the trailing `phase competitor done` log line was lost. All 9 runs had completed and been stopped cleanly. From here on, scripts are committed before a phase starts and are not edited while it runs.
