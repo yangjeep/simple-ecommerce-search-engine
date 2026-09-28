@@ -256,6 +256,10 @@ struct MeasurementResult {
     /// Issue #79: `docker` (#77) or `scope`; absent in #77's raw files.
     #[serde(default)]
     runtime: String,
+    /// Issue #79: Meilisearch like-for-like sensitivity configuration
+    /// (`I77_MEILI_LIKE_FOR_LIKE=1`); absent/false in #77's raw files.
+    #[serde(default)]
+    meili_like_for_like: bool,
     cpus: String,
     cpuset: String,
     memory_limit: String,
@@ -327,6 +331,7 @@ fn base_result(config: &Config) -> MeasurementResult {
         peak_rss_during_serving_bytes: None,
         container_name: config.engine.container_name().to_owned(),
         runtime: runtime_name().to_owned(),
+        meili_like_for_like: config.engine == Engine::Meilisearch && meili_like_for_like(),
         cpus: read_env_var(&config.repository_root, "I77_CPUS").unwrap_or_default(),
         cpuset: read_env_var(&config.repository_root, "I77_CPUSET").unwrap_or_default(),
         memory_limit,
@@ -1992,6 +1997,15 @@ fn meili_correctness(
 /// accepts multiple facet fields in one `facets: [...]` list), and only the
 /// field needing exclusion gets its own separate request. `backend_requests`
 /// (1, or 2 when one field needs exclusion) reports the true minimum.
+/// Issue #79: `I77_MEILI_LIKE_FOR_LIKE=1` (process env) selects the
+/// like-for-like Meilisearch configuration: id-only hits here, plus
+/// `faceting.maxValuesPerFacet` raised in `provision_meilisearch.sh` so every
+/// facet value is counted (Meilisearch's default of 100 truncates facet
+/// distributions that native, Solr and Typesense count in full).
+fn meili_like_for_like() -> bool {
+    std::env::var("I77_MEILI_LIKE_FOR_LIKE").is_ok_and(|value| value == "1")
+}
+
 fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
     let mut filters: Vec<(String, String)> = Vec::new();
     let mut facet_fields: Vec<String> = Vec::new();
@@ -2059,6 +2073,12 @@ fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
         "filter": render_filter(None),
         "limit": cell.top_k,
     });
+    // Issue #79 like-for-like sensitivity (adversarial-review finding): #77's
+    // Meilisearch request returns full documents while native/Solr return ids
+    // only. Opt-in only; the default request is #77's, unchanged.
+    if meili_like_for_like() {
+        base["attributesToRetrieve"] = serde_json::json!(["id"]);
+    }
     if !combined_facets.is_empty() {
         base["facets"] = serde_json::json!(combined_facets);
     }

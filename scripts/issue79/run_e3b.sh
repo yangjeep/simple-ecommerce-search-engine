@@ -8,6 +8,8 @@
 #   bash scripts/issue79/run_e3b.sh calibration   # calibration cells only
 #   bash scripts/issue79/run_e3b.sh headline      # held-out cells (needs E3B_TAU_F/E3B_RHO_S or none)
 #   bash scripts/issue79/run_e3b.sh memory        # load/build/RSS launch configurations
+#   bash scripts/issue79/run_e3b.sh meili_lfl     # review follow-up: like-for-like Meilisearch
+#   bash scripts/issue79/run_e3b.sh fidelity      # review follow-up: interleaved N0 vs N0' A/B
 #
 # Every engine runs in the scope envelope (scripts/issue79/scope_runtime.sh,
 # frozen #77 CPU/memory values); the driver is pinned to CPU 3. Nothing else
@@ -117,6 +119,40 @@ case "$phase" in
           --out "$OUT/memory/${config}_500k_run${run}.json" --cells none --modes none \
           --server-args "${CONFIGS[$config]}"
       done
+    done
+    ;;
+  meili_lfl)
+    # Adversarial-review follow-up: like-for-like Meilisearch sensitivity
+    # (maxValuesPerFacet=3000, id-only hits). Same cells/harness otherwise.
+    CELLS=facet_low_cardinality_style,facet_medium_cardinality_primarymaterial,facet_high_cardinality_color,facet_disjunctive_multi_dim,numeric_range_sort
+    for run in $RUNS; do
+      out="$OUT/meili_lfl/meilisearch_lfl_500k_run${run}.json"
+      log "meilisearch like-for-like run=$run"
+      e3b_scope_stop "$I77_MEILISEARCH_CONTAINER"
+      I77_MEILI_LIKE_FOR_LIKE=1 taskset -c "$I77_DRIVER_CPU" "$REPO_ROOT/target/release/i77_measure" \
+        --engine meilisearch --tier 500k --run "$run" --repository-root "$REPO_ROOT" \
+        --out "$out" --cells "$CELLS" --skip-throughput true
+      e3b_scope_stop "$I77_MEILISEARCH_CONTAINER"
+    done
+    ;;
+  fidelity)
+    # Adversarial-review follow-up: the preregistered N0' fidelity check
+    # (#79 section 4), interleaved A/B so host drift hits both arms equally:
+    # A = unchanged N0 binary, B = new server (legacy:legacy and FINAL).
+    : "${E3B_TAU_F:?}" "${E3B_RHO_S:?}"
+    echo "$N0_SHA256  $N0_BINARY" | sha256sum -c - || exit 1
+    CELLS=facet_low_cardinality_style,facet_high_cardinality_color,facet_disjunctive_multi_dim,numeric_range_sort
+    for run in $RUNS; do
+      log "fidelity A (N0 binary) run=$run"
+      taskset -c "$I77_DRIVER_CPU" "$DRIVER" --repository-root "$REPO_ROOT" \
+        --server-binary "$N0_BINARY" --catalog "$CATALOG" --label fidelity_n0 --run "$run" \
+        --out "$OUT/fidelity/n0_500k_run${run}.json" --cells "$CELLS" --modes none
+      log "fidelity B (new server) run=$run"
+      taskset -c "$I77_DRIVER_CPU" "$DRIVER" --repository-root "$REPO_ROOT" \
+        --server-binary "$NEW_BINARY" --catalog "$CATALOG" --label fidelity_new --run "$run" \
+        --out "$OUT/fidelity/new_500k_run${run}.json" --cells "$CELLS" \
+        --modes legacy:legacy,hybrid:hybrid \
+        --server-args "$ALL_STRUCTS --tau-f $E3B_TAU_F --rho-s $E3B_RHO_S"
     done
     ;;
   *)

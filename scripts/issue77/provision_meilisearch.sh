@@ -143,7 +143,23 @@ PAGINATION_RESP="$(curl -sf -X PATCH -H 'Content-Type: application/json' \
   "$BASE/indexes/$INDEX_UID/settings/pagination")"
 PAGINATION_TASK_UID="$(echo "$PAGINATION_RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskUid"])')"
 
+# Issue #79 like-for-like sensitivity (opt-in, I77_MEILI_LIKE_FOR_LIKE=1):
+# Meilisearch's default faceting.maxValuesPerFacet=100 truncates the facet
+# distribution (WANDS color has 2,825 values); native/Solr/Typesense count
+# every value. Raised above every WANDS facet's cardinality.
+FACETING_TASK_UID=""
+if [[ "${I77_MEILI_LIKE_FOR_LIKE:-0}" == "1" ]]; then
+  FACETING_RESP="$(curl -sf -X PATCH -H 'Content-Type: application/json' \
+    --data-binary '{"maxValuesPerFacet": 3000}' \
+    "$BASE/indexes/$INDEX_UID/settings/faceting")"
+  FACETING_TASK_UID="$(echo "$FACETING_RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskUid"])')"
+fi
+
 python3 "$POLL_HELPER" "$BASE" "$CREATE_TASK_UID"
+if [[ -n "$FACETING_TASK_UID" ]]; then
+  python3 "$POLL_HELPER" "$BASE" "$FACETING_TASK_UID"
+  echo "  like-for-like: faceting.maxValuesPerFacet=3000"
+fi
 python3 "$POLL_HELPER" "$BASE" "$FILTER_TASK_UID"
 python3 "$POLL_HELPER" "$BASE" "$SORT_TASK_UID"
 python3 "$POLL_HELPER" "$BASE" "$PAGINATION_TASK_UID"
