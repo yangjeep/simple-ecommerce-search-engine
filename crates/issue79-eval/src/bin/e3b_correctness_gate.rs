@@ -138,7 +138,10 @@ fn main() {
                 request_for(&cell, 0, Some(("rating_count", false))),
             ));
             // Unsorted bounded assembly with an offset.
-            cases.push((format!("{}+offset10", cell.name), request_for(&cell, 10, None)));
+            cases.push((
+                format!("{}+offset10", cell.name),
+                request_for(&cell, 10, None),
+            ));
         }
     }
 
