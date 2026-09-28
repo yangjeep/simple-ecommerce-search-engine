@@ -65,6 +65,10 @@ pub struct CgroupDelta {
     pub memory_swap_events: MemorySwapEvents,
 }
 
+/// `cpuset_cpus_effective` value recorded when the cgroup has no cpuset
+/// controller (Issue #79's scope runtime).
+pub const CPUSET_NOT_DELEGATED: &str = "not-delegated";
+
 #[derive(Debug, Clone)]
 pub struct CgroupReader {
     dir: PathBuf,
@@ -176,7 +180,12 @@ impl CgroupReader {
             memory_swap_current_bytes: read_integer_file(&self.dir.join("memory.swap.current"))?,
             memory_swap_peak_bytes: read_integer_file(&self.dir.join("memory.swap.peak"))?,
             memory_swap_events: MemorySwapEvents::parse(&swap_events)?,
-            cpuset_cpus_effective: read_trimmed(&self.dir.join("cpuset.cpus.effective"))?,
+            // Issue #79: a user-delegated cgroup (systemd `--user --scope`)
+            // may not have the cpuset controller; CPU affinity is then
+            // enforced by `taskset` instead. Every other counter is still
+            // required, so a genuinely broken cgroup still fails loudly.
+            cpuset_cpus_effective: read_trimmed(&self.dir.join("cpuset.cpus.effective"))
+                .unwrap_or_else(|_| CPUSET_NOT_DELEGATED.to_owned()),
             cpu_max: read_trimmed(&self.dir.join("cpu.max"))?,
             memory_max: read_trimmed(&self.dir.join("memory.max"))?,
             memory_swap_max: read_trimmed(&self.dir.join("memory.swap.max"))?,

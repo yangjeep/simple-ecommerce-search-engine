@@ -1,0 +1,18 @@
+[package]
+name = "issue79-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #79 (Infra E3b) facet & sort physical-design recovery experiment. Experiment code only."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
+issue61-eval = { path = "../issue61-eval" }
+issue62-eval = { path = "../issue62-eval" }
+issue77-eval = { path = "../issue77-eval" }
+roaring = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }

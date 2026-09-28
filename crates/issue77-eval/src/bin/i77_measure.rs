@@ -33,6 +33,12 @@ struct Config {
     run: u32,
     repository_root: PathBuf,
     out: PathBuf,
+    /// Issue #79: optional subset of workload-cell names to run (comma list
+    /// via `--cells`); `None` runs the full #77 matrix, unchanged.
+    cells: Option<Vec<String>>,
+    /// Issue #79: `--skip-throughput true` skips the fixed-concurrency
+    /// throughput test (out of scope for #79's bounded facet/sort reruns).
+    skip_throughput: bool,
 }
 
 fn parse_args(args: &[String]) -> Result<Config, String> {
@@ -41,6 +47,8 @@ fn parse_args(args: &[String]) -> Result<Config, String> {
     let mut run = None;
     let mut repository_root = None;
     let mut out = None;
+    let mut cells = None;
+    let mut skip_throughput = false;
     let mut iter = args.iter().skip(1);
     while let Some(flag) = iter.next() {
         let value = iter
@@ -52,6 +60,10 @@ fn parse_args(args: &[String]) -> Result<Config, String> {
             "--run" => run = Some(value.parse::<u32>().map_err(|error| error.to_string())?),
             "--repository-root" => repository_root = Some(PathBuf::from(value)),
             "--out" => out = Some(PathBuf::from(value)),
+            "--cells" => cells = Some(value.split(',').map(str::to_owned).collect()),
+            "--skip-throughput" => {
+                skip_throughput = value.parse::<bool>().map_err(|error| error.to_string())?;
+            }
             other => return Err(format!("unknown flag {other}")),
         }
     }
@@ -61,6 +73,8 @@ fn parse_args(args: &[String]) -> Result<Config, String> {
         run: run.ok_or("missing --run")?,
         repository_root: repository_root.ok_or("missing --repository-root")?,
         out: out.ok_or("missing --out")?,
+        cells,
+        skip_throughput,
     })
 }
 
@@ -103,6 +117,94 @@ fn container_pid(name: &str) -> Option<u32> {
         return None;
     }
     output.stdout.trim().parse().ok()
+}
+
+/// Issue #79: which process runtime enforces the frozen resource envelope.
+/// `docker` (default, #77's original contract) or `scope`: a transient user
+/// cgroup-v2 scope with the same CPU-quota/memory/swap knobs plus `taskset`
+/// CPU affinity, for hosts without Docker (see `scripts/issue79/scope_runtime.sh`
+/// and #79 section 2). Read from the process environment (`I77_RUNTIME`), so
+/// the frozen `resource_envelope.env` values themselves are never edited.
+fn runtime_is_scope() -> bool {
+    std::env::var("I77_RUNTIME").is_ok_and(|value| value == "scope")
+}
+
+fn runtime_name() -> &'static str {
+    if runtime_is_scope() {
+        "scope"
+    } else {
+        "docker"
+    }
+}
+
+fn systemctl_user(args: &[&str]) -> Command {
+    let mut command = Command::new("systemctl");
+    command.arg("--user").args(args);
+    scope_session_env(&mut command);
+    command
+}
+
+fn scope_session_env(command: &mut Command) {
+    let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| {
+        // Fallback: the conventional per-user runtime dir.
+        format!("/run/user/{}", current_uid())
+    });
+    command.env("XDG_RUNTIME_DIR", &runtime_dir);
+    command.env(
+        "DBUS_SESSION_BUS_ADDRESS",
+        format!("unix:path={runtime_dir}/bus"),
+    );
+}
+
+fn current_uid() -> String {
+    Command::new("id")
+        .arg("-u")
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .map(|value| value.trim().to_owned())
+        .unwrap_or_else(|| "1000".to_owned())
+}
+
+/// Stops (and forgets) the engine's process group in whichever runtime is
+/// active: `docker rm -f <name>` or `systemctl --user stop <name>.scope`.
+fn stop_engine(name: &str) {
+    if runtime_is_scope() {
+        let _ = systemctl_user(&["stop", &format!("{name}.scope")]).status();
+        let _ = systemctl_user(&["reset-failed", &format!("{name}.scope")]).status();
+    } else {
+        let _ = docker(&["rm", "-f", name]).status();
+    }
+}
+
+/// The cgroup that holds exactly this engine's processes -- the Docker
+/// container's cgroup, or the scope unit's cgroup -- used for batched CPU
+/// (`cpu.stat usage_usec`) and memory (`memory.current`) accounting.
+fn engine_cgroup(name: &str) -> Option<CgroupReader> {
+    if runtime_is_scope() {
+        let output = run_bounded(
+            &mut systemctl_user(&[
+                "show",
+                "-p",
+                "ControlGroup",
+                "--value",
+                &format!("{name}.scope"),
+            ]),
+            DOCKER_TIMEOUT,
+        )
+        .ok()?;
+        let group = output.stdout.trim();
+        if !output.succeeded() || group.is_empty() {
+            return None;
+        }
+        Some(CgroupReader::at_dir(PathBuf::from(format!(
+            "/sys/fs/cgroup{group}"
+        ))))
+    } else {
+        container_pid(name).and_then(|pid| {
+            CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
+        })
+    }
 }
 
 // --- Result schema ------------------------------------------------------------
@@ -151,6 +253,9 @@ struct MeasurementResult {
     rss_during_serving_bytes: Option<u64>,
     peak_rss_during_serving_bytes: Option<u64>,
     container_name: String,
+    /// Issue #79: `docker` (#77) or `scope`; absent in #77's raw files.
+    #[serde(default)]
+    runtime: String,
     cpus: String,
     cpuset: String,
     memory_limit: String,
@@ -221,6 +326,7 @@ fn base_result(config: &Config) -> MeasurementResult {
         rss_during_serving_bytes: None,
         peak_rss_during_serving_bytes: None,
         container_name: config.engine.container_name().to_owned(),
+        runtime: runtime_name().to_owned(),
         cpus: read_env_var(&config.repository_root, "I77_CPUS").unwrap_or_default(),
         cpuset: read_env_var(&config.repository_root, "I77_CPUSET").unwrap_or_default(),
         memory_limit,
@@ -234,7 +340,7 @@ fn base_result(config: &Config) -> MeasurementResult {
 // --- Native lifecycle -----------------------------------------------------
 
 fn launch_native(repository_root: &Path, catalog_path: &Path) -> Result<Instant, String> {
-    let _ = docker(&["rm", "-f", Engine::Native.container_name()]).status();
+    stop_engine(Engine::Native.container_name());
     let binary = repository_root.join("target/release/i77_native_plp_server");
     let dataset_dir = catalog_path
         .parent()
@@ -257,6 +363,9 @@ fn launch_native(repository_root: &Path, catalog_path: &Path) -> Result<Instant,
     // changes no measured number, but the guarantee is now actually true.
     let cpus = read_env_var(repository_root, "I77_CPUS").unwrap_or_else(|| "3".to_owned());
     let cpuset = read_env_var(repository_root, "I77_CPUSET").unwrap_or_else(|| "0-2".to_owned());
+    if runtime_is_scope() {
+        return launch_native_scope(&binary, catalog_path, &cpus, &cpuset, &memory, &port);
+    }
     let started = Instant::now();
     let mut command = docker(&["run", "-d", "--name", Engine::Native.container_name()]);
     command
@@ -286,6 +395,47 @@ fn launch_native(repository_root: &Path, catalog_path: &Path) -> Result<Instant,
     if output.timed_out() || !output.succeeded() {
         return Err(format!("native docker run failed: {}", output.stderr));
     }
+    Ok(started)
+}
+
+/// Issue #79 scope-runtime equivalent of the `docker run` above: same binary,
+/// same catalog, same CPU quota/affinity and memory ceiling (swap pinned to 0,
+/// matching `--memory-swap=<memory>`). The scope stays alive as long as the
+/// server process does; `stop_engine` tears it down.
+fn launch_native_scope(
+    binary: &Path,
+    catalog_path: &Path,
+    cpus: &str,
+    cpuset: &str,
+    memory: &str,
+    port: &str,
+) -> Result<Instant, String> {
+    let quota = cpus
+        .parse::<f64>()
+        .map_err(|error| format!("invalid I77_CPUS {cpus:?}: {error}"))?
+        * 100.0;
+    let log_path = std::env::temp_dir().join("i77_native_scope.log");
+    let log = std::fs::File::create(&log_path).map_err(|error| error.to_string())?;
+    let log_err = log.try_clone().map_err(|error| error.to_string())?;
+    let started = Instant::now();
+    let mut command = Command::new("systemd-run");
+    scope_session_env(&mut command);
+    command
+        .args(["--user", "--scope", "--quiet"])
+        .arg(format!("--unit={}", Engine::Native.container_name()))
+        .arg(format!("-pCPUQuota={quota:.0}%"))
+        .arg(format!("-pMemoryMax={}", memory.to_uppercase()))
+        .arg("-pMemorySwapMax=0")
+        .args(["taskset", "-c", cpuset])
+        .arg(binary)
+        .arg("--catalog")
+        .arg(catalog_path)
+        .args(["--dataset", "wands", "--port", port])
+        .stdout(log)
+        .stderr(log_err);
+    command
+        .spawn()
+        .map_err(|error| format!("native systemd-run failed: {error}"))?;
     Ok(started)
 }
 
@@ -338,6 +488,19 @@ struct WorkloadCell {
     name: &'static str,
     kind: WorkloadKind,
     top_k: usize,
+}
+
+/// Issue #79: the subset of `all` named by `--cells` (in matrix order), or
+/// every cell when `--cells` was not given. Selection never changes a cell's
+/// definition, request builder or accounting -- only which cells run.
+fn selected_cells<'a>(config: &Config, all: &'a [WorkloadCell]) -> Vec<&'a WorkloadCell> {
+    match &config.cells {
+        None => all.iter().collect(),
+        Some(names) => all
+            .iter()
+            .filter(|cell| names.iter().any(|name| name == cell.name))
+            .collect(),
+    }
 }
 
 fn workload_matrix(repository_root: &Path) -> Vec<WorkloadCell> {
@@ -761,14 +924,13 @@ fn run_native(
         }
     }
 
-    let cgroup = container_pid(Engine::Native.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(Engine::Native.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_native_workload_cell(&agent, &port, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -785,7 +947,11 @@ fn run_native(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_cell = &cells[2]; // base_plp_broad, the highest-candidate-set base workload
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_cell = &all_cells[2]; // base_plp_broad, the highest-candidate-set base workload
     let throughput_url = native_query_string(&port, throughput_cell);
     result.throughput = Some(run_throughput(&throughput_url));
 
@@ -1088,14 +1254,13 @@ fn run_solr(
         }
     }
 
-    let cgroup = container_pid(Engine::Solr.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(Engine::Solr.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_solr_workload_cell(&agent, &port, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -1112,7 +1277,11 @@ fn run_solr(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_cell = &cells[2];
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_cell = &all_cells[2];
     let (url_template, body) = solr_query_body(throughput_cell);
     let throughput_url = url_template.replace("{PORT}", &port);
     result.throughput = Some(run_throughput_with(|agent| {
@@ -1383,15 +1552,14 @@ fn run_es_like(
         }
     }
 
-    let cgroup = container_pid(engine.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(engine.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
     let search_url = format!("http://127.0.0.1:{port}/i77_wands/_search");
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_es_workload_cell(&agent, &search_url, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -1408,7 +1576,11 @@ fn run_es_like(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_body = es_query_body(&cells[2]);
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_body = es_query_body(&all_cells[2]);
     result.throughput = Some(run_throughput_with(|agent| {
         agent
             .post(&search_url)
@@ -1710,14 +1882,13 @@ fn run_typesense(
         }
     }
 
-    let cgroup = container_pid(Engine::Typesense.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(Engine::Typesense.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_typesense_workload_cell(&agent, &port, &api_key, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -1734,7 +1905,11 @@ fn run_typesense(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_urls = typesense_urls(&cells[2], &port);
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_urls = typesense_urls(&all_cells[2], &port);
     let throughput_url = throughput_urls[0].0.clone();
     result.throughput = Some(run_throughput_with(|agent| {
         agent
@@ -2018,14 +2193,13 @@ fn run_meilisearch(
         }
     }
 
-    let cgroup = container_pid(Engine::Meilisearch.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(Engine::Meilisearch.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_meili_workload_cell(&agent, &port, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -2042,7 +2216,11 @@ fn run_meilisearch(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_bodies = meili_bodies(&cells[2]);
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_bodies = meili_bodies(&all_cells[2]);
     let throughput_body = throughput_bodies[0].0.clone();
     let throughput_url = format!("http://127.0.0.1:{port}/indexes/i77_wands/search");
     result.throughput = Some(run_throughput_with(|agent| {
@@ -2369,14 +2547,13 @@ fn run_vespa(
         }
     }
 
-    let cgroup = container_pid(Engine::Vespa.container_name()).and_then(|pid| {
-        CgroupReader::for_pid(pid, Path::new("/proc"), Path::new("/sys/fs/cgroup")).ok()
-    });
+    let cgroup = engine_cgroup(Engine::Vespa.container_name());
     result.rss_before_load_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
 
-    let cells = workload_matrix(&config.repository_root);
+    let all_cells = workload_matrix(&config.repository_root);
+    let cells = selected_cells(config, &all_cells);
     let mut peak_rss = result.rss_before_load_bytes.unwrap_or(0);
-    for cell in &cells {
+    for cell in cells.iter().copied() {
         match run_vespa_workload_cell(&agent, &query_url, cell, cgroup.as_ref()) {
             Ok(cell_result) => result.workload_cells.push(cell_result),
             Err(error) => {
@@ -2393,7 +2570,11 @@ fn run_vespa(
     result.rss_during_serving_bytes = cgroup.as_ref().and_then(|r| r.read_memory_current().ok());
     result.peak_rss_during_serving_bytes = Some(peak_rss);
 
-    let throughput_requests = vespa_yqls(&cells[2]);
+    if config.skip_throughput {
+        result.status = RunStatus::Ok;
+        return result;
+    }
+    let throughput_requests = vespa_yqls(&all_cells[2]);
     let (throughput_yql, throughput_hits) = throughput_requests[0]
         .0
         .split_once("&hits=")
