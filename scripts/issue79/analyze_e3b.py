@@ -184,8 +184,8 @@ def report():
         except (ValueError, AssertionError):
             engine, comp = None, None
             print("no competitor data (native-only cell)")
-        print("| variant | cpu us | CV | p50 ms | p95 ms | facets us | sort us | inspected | path | vs N0 | vs fastest |")
-        print("|---|---|---|---|---|---|---|---|---|---|---|")
+        print("| variant | cpu us | CV | p50 ms | p95 ms | cand us | facets us | sort us | server total us | inspected | path | N0/variant | vs fastest |")
+        print("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         rows = [("N0 (unchanged #77 binary)", n0e)] + [(m, head[(cell, m)]) for m in modes]
         n0cpu = med(metric(n0e, "cpu_usec_per_query")) if n0e else None
         for label, e in rows:
@@ -196,14 +196,95 @@ def report():
             paths = ",".join(d["path"] for d in diag.get("facet_diag", [])) or diag.get("sort_path", "-")
             fus = med(metric(e, "mean_facets_us"))
             sus = med(metric(e, "mean_sort_us"))
+            cus = med(metric(e, "mean_candidates_us"))
+            tus = med(metric(e, "mean_total_us"))
+            fmt = lambda v: "-" if v is None else f"{v:.0f}"
             print(f"| {label} | {cpu:.0f} | {cv(metric(e, 'cpu_usec_per_query')) or 0:.3f} | "
                   f"{med(metric(e, 'p50_ms')):.2f} | {med(metric(e, 'p95_ms')):.2f} | "
-                  f"{'-' if fus is None else f'{fus:.0f}'} | {'-' if sus is None else f'{sus:.0f}'} | "
+                  f"{fmt(cus)} | {fmt(fus)} | {fmt(sus)} | {fmt(tus)} | "
                   f"{diag.get('ids_inspected', '-')} | {paths} | "
                   f"{(n0cpu / cpu) if n0cpu else float('nan'):.2f}x | "
                   f"{(cpu / comp) if comp else float('nan'):.3g} |")
         print()
 
 
+def classify(ratio, n0_over_final):
+    if ratio is None:
+        return "NOT MEASURED (no competitor)"
+    if ratio <= 0.75:
+        return "STRONG (cell-level: >=25% faster)"
+    if ratio <= 1.25:
+        return "RECOVERED / PARITY"
+    if n0_over_final >= 2:
+        return "PARTIAL RECOVERY"
+    return "NOT RECOVERED"
+
+
+def verdict():
+    head = native_table(load("headline"))
+    n0 = native_table(load("n0"))
+    final = "hybrid:hybrid"
+    print("## Preregistered classification (CPU/query, run medians; FINAL = hybrid:hybrid)\n")
+    print("| cell | N0 us | FINAL us | FINAL CV | fastest competitor | its us | r = FINAL/fastest | N0/FINAL | N0/fastest (gap before) | P95 FINAL ms | P95 fastest ms | class |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    out = {}
+    for cell in FACET_CELLS + SORT_HEADLINE:
+        n0cpu = med(metric(n0[(cell, "n0_binary")], "cpu_usec_per_query"))
+        fe = head[(cell, final)]
+        fcpu = med(metric(fe, "cpu_usec_per_query"))
+        fp95 = med(metric(fe, "p95_ms"))
+        try:
+            engine, comp, _ = fastest_competitor(cell)
+            cp95 = med([c["p95_ms"] for r in load("competitor") if r["engine"] == engine
+                        for c in r["workload_cells"] if c["name"] == cell])
+        except ValueError:
+            engine, comp, cp95 = None, None, None
+        ratio = fcpu / comp if comp else None
+        cls = classify(ratio, n0cpu / fcpu)
+        out[cell] = (ratio, n0cpu / fcpu, cls)
+        print(f"| {cell} | {n0cpu:.0f} | {fcpu:.0f} | {cv(metric(fe, 'cpu_usec_per_query')) or 0:.3f} | "
+              f"{engine or '-'} | {'-' if comp is None else f'{comp:.0f}'} | "
+              f"{'-' if ratio is None else f'{ratio:.3f}'} | {n0cpu / fcpu:.1f}x | "
+              f"{'-' if comp is None else f'{n0cpu / comp:.1f}x'} | {fp95:.2f} | "
+              f"{'-' if cp95 is None else f'{cp95:.2f}'} | {cls} |")
+    worst = max(FACET_CELLS[:3], key=lambda c: out[c][0])
+    print(f"\nSub-dimension (a) single-facet full-catalog: worst cell = {worst} -> {out[worst][2]}")
+    print(f"Sub-dimension (b) disjunctive: {out['facet_disjunctive_multi_dim'][2]}")
+    strong = out["facet_disjunctive_multi_dim"][0] <= 0.75 and any(out[c][0] <= 0.75 for c in FACET_CELLS[:3])
+    print(f"Overall facet STRONG condition met: {strong}")
+    print(f"Sort (SH1 numeric_range_sort): {out['numeric_range_sort'][2]}")
+
+
+def memory():
+    runs = load("memory")
+    by = {}
+    for r in runs:
+        assert r["status"] == "ok", r["label"]
+        by.setdefault(r["label"], []).append(r)
+    n0runs = load("n0")
+    print("## Memory / build accounting (median of 3 launches; memory.current after load, 2 s settle)\n")
+    print("| configuration | RSS after load MiB | peak after load MiB | launch->ready s | index build ms | sort columns bytes | presence bytes | columns build ms | presence build ms |")
+    print("|---|---|---|---|---|---|---|---|---|")
+    mib = lambda b: b / 1048576
+    print(f"| N0 binary (#77, from N0 runs) | {mib(med([r['rss_after_load_bytes'] for r in n0runs])):.1f} | "
+          f"{mib(med([r['peak_after_load_bytes'] for r in n0runs])):.1f} | "
+          f"{med([r['launch_to_ready_ms'] for r in n0runs]) / 1000:.1f} | - | - | - | - | - |")
+    base = None
+    for label in ["mem_base", "mem_facet_only", "mem_sort_columns_only", "mem_presence_only", "mem_combined"]:
+        rs = by[label]
+        rss = med([r["rss_after_load_bytes"] for r in rs])
+        if label == "mem_base":
+            base = rss
+        ready = [r["server_ready"] for r in rs]
+        print(f"| {label[4:]} | {mib(rss):.1f} (delta vs base {mib(rss - base):+.1f}) | "
+              f"{mib(med([r['peak_after_load_bytes'] for r in rs])):.1f} | "
+              f"{med([r['launch_to_ready_ms'] for r in rs]) / 1000:.1f} | "
+              f"{med([x['index_build_ms'] for x in ready]):.0f} | {ready[0]['sort_columns_bytes']} | "
+              f"{ready[0]['presence_bytes']} | {med([x['sort_columns_build_ms'] for x in ready]):.1f} | "
+              f"{med([x['presence_build_ms'] for x in ready]):.1f} |")
+    print(f"\nindex_approx_bytes (on-heap estimate) = {by['mem_base'][0]['server_ready']['index_approx_bytes']}, "
+          f"ordinal_facet_approx_bytes = {by['mem_base'][0]['server_ready']['ordinal_facet_approx_bytes']}, N = {N}")
+
+
 if __name__ == "__main__":
-    {"calibration": calibration, "report": report}[sys.argv[1]]()
+    {"calibration": calibration, "report": report, "verdict": verdict, "memory": memory}[sys.argv[1]]()
