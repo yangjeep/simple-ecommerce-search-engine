@@ -73,3 +73,18 @@ The **fastest same-host competitor is Meilisearch on every cell.** On `numeric_r
 - **Headline** (`run_e3b.sh headline` with the frozen constants and FINAL = hybrid:hybrid, 3 launches, 47 (cell, mode) pairs each, all `ok`). Report: `artifacts/issue79/results/headline_report.md`.
 - **Memory** (`run_e3b.sh memory`, 5 configurations × 3 launches, all `ok`, fixture green). Report: `artifacts/issue79/results/memory_report.md`. The measured RSS delta (+0.5 MiB) is below the deterministic structure bytes (12.6 MB): cgroup `memory.current` cannot resolve structures this small here.
 - **Verdict:** sort RECOVERED / PARITY (0.855x); facets PARTIAL RECOVERY (single-facet worst cell 2.863x; disjunctive 1.280x). See `docs/decisions/ISSUE79_FACET_SORT_RECOVERY_DECISION.md`.
+
+## 2026-09-28 — adversarial review and follow-ups
+
+- The independent review (a fresh read-only agent) found no classification arithmetic error. Confirmed findings:
+  - Meilisearch's default `maxValuesPerFacet = 100` made facet work non-like-for-like (and it returned full documents);
+  - the preregistered N0′ fidelity check had not been reported;
+  - the §5 gate-coverage text was wrong;
+  - one table cell and the ES/OpenSearch ratio wording were wrong.
+
+  Plausible concerns: the gate compares product IDs, not ordinals; the resource tag's RSS half is vacuous; phase-timer noise.
+- **Follow-ups executed (all raw kept):**
+  - Gate rerun with the frozen τ/ρ plus unsorted offset cases: 1,680 checks, 0 failures (`gate_500k_calibrated.json`).
+  - **Like-for-like Meilisearch sensitivity** (`run_e3b.sh meili_lfl`, 10:44–11:28 UTC; 100k pre-check confirmed all 2,825 color values with exact counts): facets 9.6 / 14.3 / 48.6 / 47.9 ms, sort 6.0 ms.
+  - **Interleaved fidelity A/B** (`run_e3b.sh fidelity`, 11:28–12:05 UTC): N0′/N0 per-pair 0.80–1.15x with identical outputs, so the new server adds no overhead. Across time, however, FINAL was 1.07–1.43x its headline-phase value, i.e. host drift of up to about 40% between sequential phases.
+- **Effect on conclusions:** the preregistered verdicts (sort PARITY, facets PARTIAL) are kept. The like-for-like sensitivity (facets FH3/FH4 about 0.52–0.54x, sort 1.31x) is reported separately as not preregistered. Given host drift, the competitive position is recorded as **unresolved**. A confirmation run with interleaved native/competitor launches and equalized facet work is recommended before #64.

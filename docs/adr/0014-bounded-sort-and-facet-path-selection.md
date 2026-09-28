@@ -43,6 +43,8 @@ Same host, 500k WANDS, FINAL vs the fastest competitor (Meilisearch), CPU/query:
   - **color 2.86x** and the **disjunctive** cell **1.28x** (partial);
   - no facet cell ≥25% *faster* than Meilisearch.
 
+  A post-review like-for-like sensitivity, in which Meilisearch's default 100-value facet cap is removed and hits are ID-only, instead puts FH3/FH4 at about 0.52–0.54x and sort at 1.31x. Host-state drift of up to about 40% between sequential phases means neither reading is robust. The competitive facet position is unresolved (decision doc §11).
+
   The residual is full-catalog candidate-bitmap construction (`all_ordinals()`, about 7–9 ms, unchanged retrieval code) plus high-cardinality counting over dense candidate sets (about 12 ms), where ordinal and bitmap counting tie.
 - **Planner:** on held-out cells, the rules chose the cheaper path on 6/7 and statistically tied on the 7th. Choosing presorted on narrow sets would have cost up to 25x (SH3), and bitmap counting on narrow facet sets up to 395x (FC7). A single fixed strategy is therefore wrong somewhere, and the rule is load-bearing.
 - **Correctness:** there is an exhaustive subset test on a multi-variant fixture, and a 500k oracle gate with 980 candidate checks and 0 failures. Writing the RED test found a real ±0.0 tie-order bug in strategy B before any measurement.

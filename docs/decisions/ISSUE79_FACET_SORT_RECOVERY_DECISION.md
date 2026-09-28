@@ -2,15 +2,15 @@
 
 **Question (#79):** Are E3's (#77) severe faceting and sort negatives caused by the commerce-native execution model itself, or does the current implementation lack physical execution structures suited to those workloads?
 
-**Answer, per dimension (preregistered classification; details below):**
+**Answer, per dimension.** The verdict column is the preregistered classification against the preregistered baseline (#77's corrected builders), and it stays primary. The last column is a post-review, like-for-like **sensitivity** result. It is *not* preregistered: its baseline configuration was chosen after native numbers were seen, so it cannot replace the verdict (§11).
 
-| dimension | E3 (frozen) | E3b same-host gap before (N0 ÷ fastest) | E3b FINAL ÷ fastest (r) | verdict |
-|---|---|---|---|---|
-| Sort (`numeric_range_sort`, held-out) | 71x slower | 72.7x slower | **0.855** | **RECOVERED / PARITY**; resource-neutral by the preregistered tag (+24.4 B/doc on-heap estimate = +0.29% RSS, +10.8% of the index estimate; §8) |
-| Facet (a): single facet, full catalog (FH1–FH3; worst cell sets the class) | 9.4–11.5x slower | 17.2x / 18.7x / 23.7x slower | 0.858 / 1.200 / **2.863** | **PARTIAL RECOVERY** (8.3–20.0x vs N0; style and primarymaterial reach parity, high-cardinality color does not) |
-| Facet (b): disjunctive, 5 facets, active filter (FH4, the core realistic cell) | 1.9x slower | 2.9x slower | **1.280** | **PARTIAL RECOVERY** (2.2x vs N0; misses the parity band by 0.03) |
-| Overall facet STRONG condition (r ≤ 0.75 on FH4 plus one more cell) | — | — | not met | no material facet *advantage* shown |
-| Memory / physical footprint (E2) | REFINE (negative at 1M) | — | — | **unchanged, not addressed** |
+| dimension | E3 (frozen) | E3b same-host gap before (N0 ÷ fastest) | E3b FINAL ÷ fastest (r) | **verdict (preregistered)** | like-for-like sensitivity r (not preregistered) |
+|---|---|---|---|---|---|
+| Sort (`numeric_range_sort`, held-out) | 71x slower | 72.7x slower | **0.855** | **RECOVERED / PARITY**; resource-neutral by the preregistered tag (+24.4 B/doc on-heap estimate = +0.29% RSS, +10.8% of the index estimate; §8) | 1.307: Meilisearch with ID-only hits is cheaper |
+| Facet (a): single facet, full catalog (FH1–FH3; worst cell sets the class) | 9.4–11.5x slower | 17.2x / 18.7x / 23.7x slower | 0.858 / 1.200 / **2.863** | **PARTIAL RECOVERY** (8.3–20.0x vs N0; style and primarymaterial reach parity, high-cardinality color does not) | 0.886 / 0.781 / 0.524 |
+| Facet (b): disjunctive, 5 facets, active filter (FH4, the core realistic cell) | 1.9x slower | 2.9x slower | **1.280** | **PARTIAL RECOVERY** (2.2x vs N0; misses the parity band by 0.03) | 0.544 |
+| Overall facet STRONG condition (r ≤ 0.75 on FH4 plus one more cell) | — | — | not met | no material facet *advantage* shown | would be met (FH4 0.544, FH3 0.524); unconfirmed |
+| Memory / physical footprint (E2) | REFINE (negative at 1M) | — | — | **unchanged, not addressed** | — |
 
 **Reading.** The E3 sort negative was a missing-physical-structure problem, with no fundamental execution-model limit behind it.
 
@@ -50,7 +50,7 @@ systemd-run --user --scope -p CPUQuota=300% -p MemoryMax=6G -p MemorySwapMax=0 \
 
 These are the same kernel knobs Docker's `--cpus` / `--memory` / `--memory-swap` set. The driver ran on `taskset -c 3`. CPU/query is the scope's `cpu.stat usage_usec` delta over the batch.
 
-Because the host changed, **every compared number in E3b was measured on this host**, including a same-host rerun of the fastest competitors. Vespa could not run without Docker (`EXCLUDED_ENVIRONMENTALLY`). ES and OpenSearch were not re-measured: their builders were unaffected by the correction, and they were ≥2.4x slower than Solr/Meilisearch on every target cell in E3.
+Because the host changed, **every compared number in E3b was measured on this host**, including a same-host rerun of the fastest competitors. Vespa could not run without Docker (`EXCLUDED_ENVIRONMENTALLY`). ES and OpenSearch were not re-measured: their builders were unaffected by the correction, and in E3 they were ≥3.0x slower than the fastest engine and ≥2.2x slower than Solr on every target cell.
 
 ## 3. Order of operations (as preregistered; commits on the PR branch)
 
@@ -81,9 +81,11 @@ Solr's builder is untouched by the correction, and it moved 0.71–0.80x from th
 
 ## 5. Correctness (gate: `e3b_correctness_gate`, 500k, before interpretation)
 
-The gate covers every E3b cell and every variant (legacy/F1/F2 × legacy/S1/S2, plus hybrid × 4 τ × 3 ρ, including the calibrated constants). It adds asc, offset-10 and "sorted facet cell" probes. Everything is compared against an independent oracle, a `Catalog` + `effective_attributes` linear scan with its own comparator.
+The gate covers every E3b cell and every variant (legacy/F1/F2 × legacy/S1/S2, plus hybrid × 4 τ × 3 ρ). It adds asc, offset-10 and "sorted facet cell" probes. Everything is compared against an independent oracle, a `Catalog` + `effective_attributes` linear scan with its own comparator.
 
-- **980 candidate checks, 0 failures.** Each check covers:
+The first gate run (`gate_500k.json`, before calibration) used only the generic constants τ ∈ {0, 1, 100, 10¹²} and ρ ∈ {0, 1, 10¹²}. After adversarial review it was **rerun with the frozen calibrated τ/ρ added**, plus unsorted offset-10 cases on facet cells (`gate_500k_calibrated.json`): **1,680 candidate checks, 0 failures**, of which 60 are at exactly the frozen constants.
+
+- **980 candidate checks, 0 failures (first run).** Each check covers:
   - filter-result ordinals (equal to the oracle);
   - `num_found`;
   - facet maps for all five WANDS facet fields, including disjunctive self-exclusion, nulls never counted and zeros omitted;
@@ -101,7 +103,7 @@ FINAL = F3 + S3 with the frozen constants. The "cand / facets / sort" columns ar
 |---|---|---|---|---|---|---|---|---|
 | FH1 style (V = 65) | 170,669 | 185,975 (hybrid) | 16,179 | **8,538** | 7,521 / 571 / 117 | 9,948 | 0.858 | 12.8 vs 24.5 |
 | FH2 primarymaterial (V = 244) | 174,457 | 180,097 (hybrid) | 19,065 | **11,186** | 9,087 / 1,539 / 125 | 9,326 | 1.200 | 20.6 vs 24.0 |
-| FH3 color (V = 2825) | 188,889 | 194,407 (hybrid) | 41,554 | **22,868** | 8,683 / 12,332 / 126 | 7,987 | 2.863 | 34.9 vs 20.5 |
+| FH3 color (V = 2825) | 188,889 | 182,892 (bitmap) | 41,554 | **22,868** | 8,683 / 12,332 / 126 | 7,987 | 2.863 | 34.9 vs 20.5 |
 | FH4 disjunctive (16,332 cand.) | 57,773 | 34,414 (hybrid) | 61,890 | **25,857** | 30 / 24,301 / 122 | 20,206 | 1.280 | 47.5 vs 38.5 |
 | SH1 range + sort (383,604 cand.) | 666,125 | — | 7,038 | **7,832** | 7,292 / 1 / 146 | 9,164 | 0.855 | 14.5 vs 22.9 |
 | SH2 medium sort (17,256 cand.) | 43,474 | — | 538 | **646** | 23 / 0 / 269 | — | — | — |
@@ -203,6 +205,7 @@ Disk footprint: **NOT COMPARABLE**, since native still persists nothing.
   - Once removed, low/medium-cardinality full-catalog facets reach parity.
   - A real residual disadvantage remains for high-cardinality full-catalog counting (2.86x) and for the disjunctive cell that needs it (1.28x).
   - No STRONG facet recovery: there is no ≥25% native facet advantage anywhere.
+- **Post-review sensitivity (§11a, not preregistered).** With Meilisearch configured to do equal facet work (no 100-value cap, ID-only hits), FH3/FH4 would be about 0.52–0.54x the fastest competitor (Solr), and sort 1.31x. Combined with the host-drift finding (§11b), native's facet position relative to mature engines is **unresolved in both directions**. That is the main open question, not a claimed win.
 - **Branch taken.** Neither facet nor sort "still clearly fails", so #64 is **not** paused on this evidence. The next step is **#63**, attributing the primitives with bytes-touched measurements. It should start with the two residuals this round isolated but was not allowed to change:
   1. full-catalog candidate materialization (`all_ordinals()` / match-all representation, about 7–9 ms at 516k);
   2. high-cardinality counting over dense candidate sets.
@@ -213,9 +216,80 @@ Disk footprint: **NOT COMPARABLE**, since native still persists nothing.
 ## 10. Limitations
 
 - **Different host and runtime from E3.** A cgroup scope instead of Docker, and cpuset via affinity. All E3b comparisons are same-host, but E3b ratios are not directly comparable with E3's.
-- **Competitor coverage.** Vespa was excluded environmentally, and ES/OpenSearch were not re-measured. "Fastest competitor" assumes E3's ranking holds for those two, which were ≥2.4x slower than Solr/Meilisearch in E3.
+- **Competitor coverage.** Vespa was excluded environmentally, and ES/OpenSearch were not re-measured. "Fastest competitor" assumes E3's ranking holds for those two, which were ≥3.0x slower than the fastest engine in E3.
+- **The gate compares `(product source id, sort_value)` sequences, not variant ordinals.** On WANDS (one variant per product) the two are equivalent. The multi-variant ordinal-level semantics are checked by the exhaustive fixture unit tests.
+- **In-process phase timers carry about ±30% noise between modes.** The identical `all_ordinals()` phase reads 6.3–7.1 ms in legacy modes and 7.3–9.8 ms in bounded modes. FH4's FINAL (25.9 ms) and `ordinal:hybrid` (24.5 ms) run the same path yet fall on opposite sides of 1.25x. Residual attributions (about 8.7 ms, about 12 ms) are approximate.
+- **SH1 P95.** Native FINAL P95 is 14.5 ms. That is better than Meilisearch (22.9 ms) but worse than Solr (8.9 ms), whose CPU/query effectively ties Meilisearch.
 - **In-process phase timers** are wall-clock inside one single-threaded request, used for decomposition and calibration only. The headline is batched cgroup CPU (≥200 requests and ≥2 s windows, per the #74 rule).
 - **FH4's r = 1.280 is within one run-spread of the 1.25 PARITY bound** (FINAL CV 0.195; runs 25.9 / 23.5 / 33.8 ms). The preregistered class is PARTIAL, and it is reported as such.
 - **Bounded unsorted assembly also changes E3's non-facet unsorted PLP path** (e.g. `base_plp_broad`). Those cells were not re-measured or re-claimed here.
 - **The sort boundary ρ is loosely constrained** by calibration (a feasible interval spanning about 4 orders of magnitude).
+- **Host-state drift, the dominant limitation.** An interleaved check (§11b) shows the host's cost for identical work moving by up to about 40% over hours. Competitor, N0, calibration and headline phases ran sequentially, so every cross-phase ratio, including every r in the verdict table, carries that uncertainty. Within-phase and interleaved comparisons are reliable to about ±15%.
 - **The in-process server is still single-connection** (E3 confound, out of scope). Latency and CPU were measured with serial requests.
+
+## 11. Adversarial review and follow-ups (after the headline phase)
+
+An independent adversarial review (a fresh agent with read-only access to the code, raw JSON and docs) recomputed every classification from the raw data and found no arithmetic error. It reported:
+
+1. **CONFIRMED (high): facet work was not like-for-like with Meilisearch.**
+   - `provision_meilisearch.sh` (#77) never set `faceting.maxValuesPerFacet`, so Meilisearch's default of **100 values per facet** truncates the distribution.
+   - Native counts every value. Solr and Typesense count every value and return the top 200.
+   - As-run Meilisearch CPU *fell* as cardinality rose (style 9.9 → color 8.0 ms). It also returned full documents where native returns IDs only.
+2. **CONFIRMED (high): the preregistered N0′ fidelity check (#79 §4) was not reported.**
+   - The new server's `legacy:legacy` cost 1.04–1.52x the unchanged N0 binary, with identical outputs (response fingerprints equal).
+   - The cause could be new-server overhead or host drift.
+3. **CONFIRMED (medium): §5 overstated gate coverage.** The first gate ran before calibration, so it did not include the calibrated constants. The text is corrected, and the gate was rerun with them (1,680 checks, 0 failures).
+4. **PLAUSIBLE: the gate compares product IDs, not ordinals.** Disclosed in §10. The unsorted-offset path was untested; it is now covered.
+5. **PLAUSIBLE: the resource tag's RSS half is vacuous at this resolution.** The caveat is now in the verdict row and in §8.
+6. **CONFIRMED (low): errors in the text.**
+   - The FH3 "F-best + legacy" cell was wrong; fixed to 182,892 (bitmap).
+   - The ES/OpenSearch ratio wording was wrong; fixed.
+   - Phase-timer noise (about ±30%) and SH1's P95 vs Solr are now disclosed in §10.
+
+### 11a. Like-for-like Meilisearch sensitivity (post-review; not preregistered)
+
+- **Configuration:** `I77_MEILI_LIKE_FOR_LIKE=1`, i.e. `faceting.maxValuesPerFacet = 3000` (above every WANDS facet's cardinality) plus `attributesToRetrieve: ["id"]`. The #77 default request is unchanged when the variable is unset.
+- **Verification** at 100k before the rerun: Meilisearch returned all 2,825 color values with exact counts, exact style counts, and ID-only hits.
+- **Rerun:** 3 clean 500k runs, same harness and envelope. Raw data: `artifacts/issue79/results/meili_lfl/`. All `ok`, correctness passed.
+
+Medians, CPU/query µs. FINAL is unchanged from §6.
+
+| cell | FINAL | Meilisearch as-run (capped) | **Meilisearch like-for-like** (runs) | Solr | fastest like-for-like | r | class under the same §9 rule |
+|---|---|---|---|---|---|---|---|
+| FH1 style (65 ≤ 100: cap not binding) | 8,538 | 9,948 | 9,635 (10,174 / 9,635 / 8,004) | 48,123 | Meilisearch | 0.886 | parity |
+| FH2 primarymaterial (244) | 11,186 | 9,326 | 14,329 (15,594 / 14,329 / 8,809) | 42,470 | Meilisearch | 0.781 | parity |
+| FH3 color (2,825) | 22,868 | 7,987 | **48,612** (58,964 / 48,612 / 34,986) | 43,654 | Solr | **0.524** | ≥25% faster |
+| FH4 disjunctive | 25,857 | 20,206 | **47,920** (78,983 / 47,920 / 45,181) | 47,505 | Solr | **0.544** | ≥25% faster |
+| SH1 sort | 7,832 | 9,164 | 5,994 (7,713 / 5,994 / 4,896) | 9,432 | Meilisearch | 1.307 | partial |
+
+**Reading.**
+
+- With equalized facet work, the facet picture flips. High-cardinality and disjunctive facets would be ≥25% *faster* than the fastest competitor, and the overall STRONG condition would be met. Sub-dimension (a) would be PARITY, set by its worst cell FH1 at 0.886.
+- Equalizing the response shape also makes Meilisearch's sort cheaper, which moves sort from parity to 1.31x.
+- **The preregistered verdict is not changed by this.** The baseline configuration was selected *after* the native numbers were known, which #79 explicitly forbids for the classification baseline.
+- The like-for-like Meilisearch runs themselves drifted downward by about 40% run over run, a host-level pattern also seen in N0. The medians are therefore noisy.
+- Solr and Typesense still cap their *returned* buckets at 200 (they count every value), so native serializes more facet values than they do. That residual asymmetry favours the competitors.
+
+**What is established either way.** The E3 facet and sort negatives were predominantly missing physical structures and implementation artifacts, not the execution model. Whether native has a *material* facet advantage depends on how facet work is equalized across engines, so this experiment does **not** establish it. It needs a preregistered confirmation with equalized facet limits and response shape for every engine: Meilisearch `maxValuesPerFacet ≥ V`, Solr `limit: -1`, Typesense `max_facet_values ≥ V`, and ID-only hits everywhere. That is recommended as the first facet item for #63/#64, before any cost-economics claim.
+
+### 11b. N0 vs N0′ fidelity (interleaved A/B; post-review execution of a preregistered check)
+
+`run_e3b.sh fidelity`, 11:28–12:05 UTC. Three pairs, each a clean launch of the unchanged N0 binary immediately followed by a clean launch of the new server (`legacy:legacy` and FINAL), on FH1, FH3, FH4 and SH1. Raw data: `artifacts/issue79/results/fidelity/`.
+
+| cell | N0 binary (pairs 1/2/3) | N0′ = new server `legacy:legacy` | per-pair N0′/N0 | outputs identical (docs + facets fingerprints, N0 = N0′ = FINAL) | FINAL in this window (median) | FINAL in the headline phase |
+|---|---|---|---|---|---|---|
+| FH1 style | 202,022 / 163,921 / 144,052 | 180,916 / 150,380 / 160,712 | 0.90 / 0.92 / 1.12 | yes | 8,607 / 10,867 / 12,429 (10,867) | 8,538 |
+| FH3 color | 226,301 / 186,478 / 169,117 | 203,163 / 168,714 / 191,278 | 0.90 / 0.90 / 1.13 | yes | 31,252 / 36,064 / 32,805 (32,805) | 22,868 |
+| FH4 disjunctive | 70,438 / 77,513 / 65,329 | 67,860 / 71,793 / 75,262 | 0.96 / 0.93 / 1.15 | yes | 35,031 / 37,775 / 36,720 (36,720) | 25,857 |
+| SH1 sort | 877,220 / 850,205 / 686,796 | 700,400 / 693,103 / 731,310 | 0.80 / 0.82 / 1.06 | yes | 10,450 / 8,391 / 6,841 (8,391) | 7,832 |
+
+**Fidelity holds.** Interleaved, the new server's legacy path costs 0.80–1.15x the unchanged N0 binary (per-pair ratio), and it returns byte-identical results. So there is no new-server overhead inflating FINAL, and N0 → FINAL attributions stand. The earlier 1.04–1.52x N0′/N0 gap came from comparing sequential phases.
+
+**But host state moves.** In this later window FINAL was 1.07–1.43x its headline-phase value, while N0 drifted the other way. This host's CPU cost for the same work varies by up to about 40% over hours, and not uniformly across workloads. Every ratio in this document that crosses phases (FINAL from 08:53–09:43 vs competitors from 05:51–07:20) carries that uncertainty. For example, taken from this window, FINAL would be 1.82x as-run Meilisearch on FH4 and 0.77x like-for-like Solr. Neither the preregistered PARTIAL nor the sensitivity STRONG is robust to this. The robust conclusions are the within-phase ones:
+
+- N0 → FINAL recovery (8–85x);
+- the facet/sort decomposition;
+- the crossovers and planner choices;
+- correctness.
+
+The confirmation run recommended in §11a must interleave native and competitor launches in the same window.

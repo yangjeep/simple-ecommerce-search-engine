@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I77-E3",
+  "engine": "meilisearch",
+  "tier": "500k",
+  "run": 2,
+  "status": "ok",
+  "failure_reason": null,
+  "correctness_checks": [
+    {
+      "query_name": "full_positive_match",
+      "expected_product_ids": [
+        "B"
+      ],
+      "actual_product_ids": [
+        "B"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "cross_variant_leakage_negative",
+      "expected_product_ids": [
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "color_only",
+      "expected_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "available_only",
+      "expected_product_ids": [
+        "A",
+        "B"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B"
+      ],
+      "passed": true
+    }
+  ],
+  "correctness_all_passed": true,
+  "workload_cells": [
+    {
+      "name": "facet_low_cardinality_style",
+      "p50_ms": 10.693418999999999,
+      "p95_ms": 14.867920999999999,
+      "p99_ms": 16.184546,
+      "mean_wall_ms": 10.622984509999998,
+      "mean_cpu_usec_per_query": 9634.895,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_medium_cardinality_primarymaterial",
+      "p50_ms": 15.727709999999998,
+      "p95_ms": 31.482722999999996,
+      "p99_ms": 44.181157,
+      "mean_wall_ms": 16.255350674999985,
+      "mean_cpu_usec_per_query": 14329.38,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_high_cardinality_color",
+      "p50_ms": 62.537627,
+      "p95_ms": 93.34205600000001,
+      "p99_ms": 105.066407,
+      "mean_wall_ms": 61.79367460000001,
+      "mean_cpu_usec_per_query": 48611.685,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_disjunctive_multi_dim",
+      "p50_ms": 52.764987,
+      "p95_ms": 93.440937,
+      "p99_ms": 124.853661,
+      "mean_wall_ms": 59.646798149999974,
+      "mean_cpu_usec_per_query": 47919.835,
+      "mean_backend_requests": 2.0,
+      "sample_num_found": 16332,
+      "facet_field_count": 5
+    },
+    {
+      "name": "numeric_range_sort",
+      "p50_ms": 5.796275,
+      "p95_ms": 10.996653,
+      "p99_ms": 17.449038,
+      "mean_wall_ms": 6.3538788299999975,
+      "mean_cpu_usec_per_query": 5993.96,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 383604,
+      "facet_field_count": 0
+    }
+  ],
+  "throughput": null,
+  "rss_before_load_bytes": 5547036672,
+  "rss_during_serving_bytes": 5550919680,
+  "peak_rss_during_serving_bytes": 5552443392,
+  "container_name": "i77-meilisearch",
+  "runtime": "scope",
+  "meili_like_for_like": true,
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "jvm_configured_heap_bytes": null,
+  "git_sha": "f2712dbf4d07cc409bc700a347eebf440046e04e",
+  "hostname": "athos-dev",
+  "timestamp_utc": "1790593111"
+}
