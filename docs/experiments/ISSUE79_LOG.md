@@ -64,3 +64,12 @@ Median CPU/query in µs over 3 runs (P95 in ms). The E3 column is #77's 500k med
 The **fastest same-host competitor is Meilisearch on every cell.** On `numeric_range_sort` it effectively ties Solr (9,164 vs 9,432 µs, both CV > 0.13). Solr's P95 there is far lower (8.9 vs 22.9 ms). Classification uses CPU/query as preregistered, and the P95 disagreement is reported.
 
 **Harness incident (disclosed; measurement unaffected):** `run_e3b.sh` was edited (headline branch only) while the competitor phase was running. Bash parses the whole `case … esac` before executing it, so the competitor branch ran as originally parsed. After `esac` it resumed reading at a shifted offset and failed with a syntax error at EOF; only the trailing `phase competitor done` log line was lost. All 9 runs had completed and been stopped cleanly. From here on, scripts are committed before a phase starts and are not edited while it runs.
+
+## 2026-09-28 — N0, gate, calibration, headline, memory
+
+- **N0** (`run_e3b.sh n0`): the frozen binary's sha256 was verified, 3 clean launches × 20 cells, all `ok`. Raw: `artifacts/issue79/results/n0/`. N0 CPU drifted down across launches (FH1: 195 → 171 → 134 ms; SH1: 893 → 632 → 666 ms). Host-level variance; disclosed in the decision doc.
+- **500k gate** (`artifacts/issue79/results/gate/`): 980 candidate checks, 0 failures. The 60 baseline divergences are all from legacy sort on ascending requests.
+- **Calibration** (`run_e3b.sh calibration`, 3 launches, calibration cells only). Both crossovers exist. τ_F = 919.4972390657695 and ρ_S = 0.0833779131971903 were frozen in commit `4d78435` and posted to #79 **before** the headline phase: `artifacts/issue79/results/calibration_fit.md`, `planner_constants.json`.
+- **Headline** (`run_e3b.sh headline` with the frozen constants and FINAL = hybrid:hybrid, 3 launches, 47 (cell, mode) pairs each, all `ok`). Report: `artifacts/issue79/results/headline_report.md`.
+- **Memory** (`run_e3b.sh memory`, 5 configurations × 3 launches, all `ok`, fixture green). Report: `artifacts/issue79/results/memory_report.md`. The measured RSS delta (+0.5 MiB) is below the deterministic structure bytes (12.6 MB): cgroup `memory.current` cannot resolve structures this small here.
+- **Verdict:** sort RECOVERED / PARITY (0.855x); facets PARTIAL RECOVERY (single-facet worst cell 2.863x; disjunctive 1.280x). See `docs/decisions/ISSUE79_FACET_SORT_RECOVERY_DECISION.md`.
