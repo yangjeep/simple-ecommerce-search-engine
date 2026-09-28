@@ -82,7 +82,9 @@ case "$phase" in
     [[ -n "${E3B_RHO_S:-}" ]] && CONSTS="$CONSTS --rho-s $E3B_RHO_S"
     FACET_MODES="legacy:legacy,ordinal:legacy,bitmap:legacy"
     [[ -n "${E3B_TAU_F:-}" ]] && FACET_MODES="$FACET_MODES,hybrid:legacy"
-    FACET_MODES="$FACET_MODES,$E3B_FACET_FINAL:$E3B_SORT_FINAL"
+    # legacy facet + final result path isolates bounded assembly alone.
+    FACET_MODES="$FACET_MODES,legacy:$E3B_SORT_FINAL,ordinal:$E3B_SORT_FINAL,bitmap:$E3B_SORT_FINAL"
+    [[ "$E3B_FACET_FINAL" == hybrid ]] && FACET_MODES="$FACET_MODES,hybrid:$E3B_SORT_FINAL"
     SORT_MODES="legacy:legacy,legacy:topk,legacy:presorted"
     [[ -n "${E3B_RHO_S:-}" ]] && SORT_MODES="$SORT_MODES,legacy:hybrid"
     SORT_MODES="$SORT_MODES,$E3B_FACET_FINAL:$E3B_SORT_FINAL"
