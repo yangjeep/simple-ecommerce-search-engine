@@ -47,7 +47,7 @@ Same host, 500k WANDS, FINAL vs the fastest competitor (Meilisearch), CPU/query:
 
   The residual is full-catalog candidate-bitmap construction (`all_ordinals()`, about 7–9 ms, unchanged retrieval code) plus high-cardinality counting over dense candidate sets (about 12 ms), where ordinal and bitmap counting tie.
 - **Planner:** on held-out cells, the rules chose the cheaper path on 6/7 and statistically tied on the 7th. Choosing presorted on narrow sets would have cost up to 25x (SH3), and bitmap counting on narrow facet sets up to 395x (FC7). A single fixed strategy is therefore wrong somewhere, and the rule is load-bearing.
-- **Correctness:** there is an exhaustive subset test on a multi-variant fixture, and a 500k oracle gate with 980 candidate checks and 0 failures. Writing the RED test found a real ±0.0 tie-order bug in strategy B before any measurement.
+- **Correctness:** there is an exhaustive subset test on a multi-variant fixture, and a 500k oracle gate: 980 candidate checks with 0 failures, then 1,680 with 0 failures after rerunning with the calibrated constants and offset cases. Writing the RED test found a real ±0.0 tie-order bug in strategy B before any measurement.
 - **Memory:** facet paths add 0 bytes. The S1 columns add 24 B/doc and the S2 presence bitmaps 0.38 B/doc (on-heap estimates, never disk): +10.8% of the index on-heap estimate, +0.29% of measured RSS. The measured RSS delta could not resolve structures this small (decision doc §8).
 - **Not solved here, named for #63:**
   - a match-all / full-catalog candidate representation (`all_ordinals()` inserts N elements per request);

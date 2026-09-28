@@ -250,7 +250,8 @@ An independent adversarial review (a fresh agent with read-only access to the co
 
 - **Configuration:** `I77_MEILI_LIKE_FOR_LIKE=1`, i.e. `faceting.maxValuesPerFacet = 3000` (above every WANDS facet's cardinality) plus `attributesToRetrieve: ["id"]`. The #77 default request is unchanged when the variable is unset.
 - **Verification** at 100k before the rerun: Meilisearch returned all 2,825 color values with exact counts, exact style counts, and ID-only hits.
-- **Rerun:** 3 clean 500k runs, same harness and envelope. Raw data: `artifacts/issue79/results/meili_lfl/`. All `ok`, correctness passed.
+- **Rerun:** 3 clean 500k runs, 10:44–11:28 UTC, same harness and envelope. Raw data: `artifacts/issue79/results/meili_lfl/`; the 100k pre-check is in `meili_lfl/precheck_100k/`. All `ok`, correctness passed.
+- **Timing caveat:** this is a *third* time window, separate from Solr (05:51–07:20) and FINAL (08:53–09:43). In the adjacent fidelity window (11:28–12:05), FINAL ran 1.42–1.43x high on FH3/FH4, so these like-for-like Meilisearch numbers may also be inflated by host state. On FH3/FH4 the sensitivity r is FINAL ÷ the *original* Solr runs.
 
 Medians, CPU/query µs. FINAL is unchanged from §6.
 
@@ -283,11 +284,11 @@ Medians, CPU/query µs. FINAL is unchanged from §6.
 | FH4 disjunctive | 70,438 / 77,513 / 65,329 | 67,860 / 71,793 / 75,262 | 0.96 / 0.93 / 1.15 | yes | 35,031 / 37,775 / 36,720 (36,720) | 25,857 |
 | SH1 sort | 877,220 / 850,205 / 686,796 | 700,400 / 693,103 / 731,310 | 0.80 / 0.82 / 1.06 | yes | 10,450 / 8,391 / 6,841 (8,391) | 7,832 |
 
-**Fidelity holds.** Interleaved, the new server's legacy path costs 0.80–1.15x the unchanged N0 binary (per-pair ratio), and it returns byte-identical results. So there is no new-server overhead inflating FINAL, and N0 → FINAL attributions stand. The earlier 1.04–1.52x N0′/N0 gap came from comparing sequential phases.
+**Fidelity holds.** Interleaved, the new server's legacy path costs 0.80–1.15x the unchanged N0 binary (per-pair ratio), and its responses have identical docs/facets fingerprints (64-bit FNV over canonical JSON). So there is no new-server overhead inflating FINAL, and N0 → FINAL attributions stand. The earlier 1.04–1.52x N0′/N0 gap came from comparing sequential phases.
 
-**But host state moves.** In this later window FINAL was 1.07–1.43x its headline-phase value, while N0 drifted the other way. This host's CPU cost for the same work varies by up to about 40% over hours, and not uniformly across workloads. Every ratio in this document that crosses phases (FINAL from 08:53–09:43 vs competitors from 05:51–07:20) carries that uncertainty. For example, taken from this window, FINAL would be 1.82x as-run Meilisearch on FH4 and 0.77x like-for-like Solr. Neither the preregistered PARTIAL nor the sensitivity STRONG is robust to this. The robust conclusions are the within-phase ones:
+**But host state moves.** In this later window FINAL was 1.07–1.43x its headline-phase value. N0 moved in different directions per cell (lower on FH1/FH3, higher on FH4/SH1 than in the N0 phase). This host's CPU cost for the same work varies by up to about 40% over hours, and not uniformly across workloads. Every ratio in this document that crosses phases (FINAL from 08:53–09:43 vs competitors from 05:51–07:20) carries that uncertainty. For example, taken from this window, FINAL would be 1.82x as-run Meilisearch on FH4 and 0.77x like-for-like Solr. Neither the preregistered PARTIAL nor the sensitivity STRONG is robust to this. The robust conclusions are the within-phase ones:
 
-- N0 → FINAL recovery (8–85x);
+- N0 → FINAL recovery (2.2–85x on the cells N0 made expensive; SH3, already cheap in N0, is unchanged at 0.93x);
 - the facet/sort decomposition;
 - the crossovers and planner choices;
 - correctness.
