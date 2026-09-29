@@ -287,7 +287,20 @@ fn main() {
                                     value: *v,
                                 }));
                             }
-                            index.indexed_candidates(&cs).iter().collect()
+                            let mut bitmap = index.indexed_candidates(&cs);
+                            // Issue #64 multi-select: OR within the attribute,
+                            // AND with the rest (the gate recomputes base
+                            // retrieval itself, so it must apply it too).
+                            for (a, values) in &req.any_filters {
+                                let mut union = roaring::RoaringBitmap::new();
+                                for v in values {
+                                    if let Some(b) = index.enum_value_bitmap(a, v) {
+                                        union |= b;
+                                    }
+                                }
+                                bitmap &= union;
+                            }
+                            bitmap.iter().collect()
                         };
                         bitmap_ordinals == expected.candidate_ordinals
                     };
