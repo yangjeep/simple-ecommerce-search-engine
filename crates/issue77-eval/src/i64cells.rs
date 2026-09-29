@@ -206,6 +206,9 @@ mod tests {
                 "category_depth_5"
             ]
         );
+        // scripts/issue64/cell_names.py prints exactly this list.
+        let joined: Vec<&str> = cells.iter().map(|c| c.name).collect();
+        assert_eq!(joined.join(","), "i64_s0_k0,i64_s0_k1,i64_s0_k3,i64_s0_k5,i64_s0_k8,i64_s0_k11,i64_s0_color,i64_s1_k0,i64_s1_k1,i64_s1_k3,i64_s1_k5,i64_s1_k8,i64_s1_k10,i64_s1_color,i64_s2_k0,i64_s2_k1,i64_s2_k3,i64_s2_k5,i64_s2_k8,i64_s2_k10,i64_s2_color,i64_s2_k5_style1,i64_s2_k5_style2,i64_s3_k0,i64_s3_k1,i64_s3_k3,i64_s3_k5,i64_s3_k8,i64_s3_k9,i64_s3_color,i64_s3_k5_style1,i64_s3_k5_style2,i64_s4_k0,i64_s4_k1,i64_s4_k3,i64_s4_k5,i64_s4_k8,i64_s4_color,i64_s5_k0,i64_s5_k1,i64_s5_k3,i64_s5_k5,i64_s5_k8,i64_s5_color");
         let multi = cells.iter().find(|c| c.name == "i64_s2_k5_style2").unwrap();
         assert_eq!(
             multi.any_filters,
