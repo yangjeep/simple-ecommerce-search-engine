@@ -7,6 +7,7 @@
 #   bash scripts/issue63/run_i63.sh micro       # B1/B2/C microbenchmarks, 3 runs
 #   I63_NPLUS=<p0r|p1|p2|p2b|none> \
 #   bash scripts/issue63/run_i63.sh confirm     # Part A Latin square, 3 runs
+#   bash scripts/issue63/run_i63.sh solr_sensitivity  # post-review, NOT preregistered
 #
 # Every engine runs in #79's scope envelope (scripts/issue79/scope_runtime.sh,
 # frozen #77 CPU/memory values); drivers are pinned to CPU 3, the microbench to
@@ -150,6 +151,50 @@ case "$phase" in
         --out "$RUN_DIR/equivalence.json" >"$RUN_DIR/equivalence.log" 2>&1
       echo "equivalence_exit=$?" >>"$RUN_DIR/equivalence.log"
       grep -E 'NOT_EQUIVALENT|UNREADABLE|I63_EQUIVALENCE|equivalence_exit' "$RUN_DIR/equivalence.log"
+    done
+    ;;
+  solr_sensitivity)
+    # Post-review Solr configuration sensitivity (NOT preregistered; the
+    # preregistered Part A verdict is unchanged by it): equal-work Solr with
+    # buckets in term order (I63_SOLR_FACET_SORT=index) instead of count
+    # order, interleaved in one window with native FINAL + N+ (P0r), 3 pairs
+    # in alternating order, FH1-FH4 only.
+    FH=facet_low_cardinality_style,facet_medium_cardinality_primarymaterial,facet_high_cardinality_color,facet_disjunctive_multi_dim
+    SERVER_ARGS="$ALL_STRUCTS --tau-f $TAU_F --rho-s $RHO_S"
+    declare -A ORDER=([1]="solr native" [2]="native solr" [3]="solr native")
+    AMBIENT="$OUT/solr_sensitivity/ambient.jsonl"
+    for run in $RUNS; do
+      RUN_DIR="$OUT/solr_sensitivity/run${run}"
+      mkdir -p "$RUN_DIR/dumps"
+      modes="hybrid:hybrid,hybrid:hybrid:p0r"
+      (( run % 2 == 0 )) && modes="hybrid:hybrid:p0r,hybrid:hybrid"
+      for arm in ${ORDER[$run]}; do
+        ambient "$run" "$arm" before "$AMBIENT"
+        log "solr_sensitivity run=$run arm=$arm"
+        case "$arm" in
+          native)
+            I63_DUMP_DIR="$RUN_DIR/dumps" taskset -c "$I77_DRIVER_CPU" "$BIN/e3b_native_measure" \
+              --repository-root "$REPO_ROOT" --server-binary "$BIN/e3b_native_plp_server" \
+              --catalog "$CATALOG_500K" --label i63_solr_sensitivity --run "$run" \
+              --out "$RUN_DIR/native_500k.json" --cells "$FH" --modes "$modes" \
+              --server-args "$SERVER_ARGS"
+            ;;
+          solr)
+            e3b_scope_stop "$I77_SOLR_CONTAINER"
+            I63_EQUAL_WORK=1 I63_SOLR_FACET_SORT=index I63_DUMP_DIR="$RUN_DIR/dumps" \
+              taskset -c "$I77_DRIVER_CPU" "$BIN/i77_measure" --engine solr --tier 500k --run "$run" \
+              --repository-root "$REPO_ROOT" --out "$RUN_DIR/solr_500k.json" \
+              --cells "$FH" --skip-throughput true
+            e3b_scope_stop "$I77_SOLR_CONTAINER"
+            ;;
+        esac
+        echo "arm_exit=$? run=$run arm=$arm"
+        ambient "$run" "$arm" after "$AMBIENT"
+      done
+      "$BIN/i63_facet_equivalence" --catalog "$CATALOG_500K" --dump-dir "$RUN_DIR/dumps" \
+        --out "$RUN_DIR/equivalence.json" >"$RUN_DIR/equivalence.log" 2>&1
+      echo "equivalence_exit=$?" >>"$RUN_DIR/equivalence.log"
+      grep -E 'NOT_EQUIVALENT|UNREADABLE|I63_EQUIVALENCE' "$RUN_DIR/equivalence.log"
     done
     ;;
   *)

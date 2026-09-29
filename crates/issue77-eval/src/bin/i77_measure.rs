@@ -264,6 +264,9 @@ struct MeasurementResult {
     /// #77/#79's raw files.
     #[serde(default)]
     i63_equal_work: bool,
+    /// Issue #63 post-review Solr sensitivity: `I63_SOLR_FACET_SORT`.
+    #[serde(default)]
+    i63_solr_facet_sort: Option<String>,
     cpus: String,
     cpuset: String,
     memory_limit: String,
@@ -337,6 +340,7 @@ fn base_result(config: &Config) -> MeasurementResult {
         runtime: runtime_name().to_owned(),
         meili_like_for_like: config.engine == Engine::Meilisearch && meili_like_for_like(),
         i63_equal_work: i63_equal_work(),
+        i63_solr_facet_sort: std::env::var("I63_SOLR_FACET_SORT").ok(),
         cpus: read_env_var(&config.repository_root, "I77_CPUS").unwrap_or_default(),
         cpuset: read_env_var(&config.repository_root, "I77_CPUSET").unwrap_or_default(),
         memory_limit,
@@ -1118,6 +1122,14 @@ fn solr_query_body(cell: &WorkloadCell) -> (String, serde_json::Value) {
                 let limit = if i63_equal_work() { -1 } else { 200 };
                 let mut facet_def =
                     serde_json::json!({"type": "terms", "field": field, "limit": limit});
+                // Issue #63 post-review Solr sensitivity (not preregistered):
+                // `I63_SOLR_FACET_SORT=index` returns buckets in term order
+                // instead of Solr's default count order -- still every bucket.
+                if let Ok(sort) = std::env::var("I63_SOLR_FACET_SORT") {
+                    if sort == "index" {
+                        facet_def["sort"] = serde_json::json!("index asc");
+                    }
+                }
                 if active_filter.as_ref().is_some_and(|(a, _)| a == field) {
                     facet_def["domain"] = serde_json::json!({"excludeTags": [field]});
                 }
