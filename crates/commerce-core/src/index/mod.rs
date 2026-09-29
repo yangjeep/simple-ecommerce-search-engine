@@ -109,6 +109,67 @@ pub struct CatalogIndex {
     product_text_tokens: Vec<rank::PrecomputedTextTokens>,
 }
 
+/// Issue #63: a query's candidate set with the match-all case kept logical.
+/// [`CatalogIndex::indexed_candidates`] always materializes every ordinal
+/// when no constraint is indexable; [`CatalogIndex::candidate_set`]
+/// returns [`CandidateSet::All`] instead, so a consumer that has a dense
+/// full-catalog path (facet counts, unsorted paging, `len`) never builds the
+/// bitmap, and one that does not calls [`CandidateSet::materialize`].
+#[derive(Debug, Clone, PartialEq)]
+pub enum CandidateSet {
+    /// Every ordinal `0..count`.
+    All { count: u32 },
+    /// An explicit (possibly empty) ordinal set.
+    Set(RoaringBitmap),
+}
+
+impl CandidateSet {
+    #[must_use]
+    pub fn len(&self) -> u64 {
+        match self {
+            Self::All { count } => u64::from(*count),
+            Self::Set(bitmap) => bitmap.len(),
+        }
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// The explicit bitmap, or `None` for [`CandidateSet::All`].
+    #[must_use]
+    pub fn as_bitmap(&self) -> Option<&RoaringBitmap> {
+        match self {
+            Self::All { .. } => None,
+            Self::Set(bitmap) => Some(bitmap),
+        }
+    }
+
+    /// The equivalent explicit bitmap (built with `insert_range` for `All`).
+    #[must_use]
+    pub fn materialize(&self) -> RoaringBitmap {
+        match self {
+            Self::All { count } => {
+                let mut bitmap = RoaringBitmap::new();
+                bitmap.insert_range(0..*count);
+                bitmap
+            }
+            Self::Set(bitmap) => bitmap.clone(),
+        }
+    }
+
+    /// The first `limit` ordinals in ascending order -- the order
+    /// `RoaringBitmap::iter` yields for the materialized set.
+    #[must_use]
+    pub fn first_ordinals(&self, limit: usize) -> Vec<u32> {
+        match self {
+            Self::All { count } => (0..*count).take(limit).collect(),
+            Self::Set(bitmap) => bitmap.iter().take(limit).collect(),
+        }
+    }
+}
+
 /// Split text into lowercased alphanumeric tokens. Public so callers that
 /// need to look tokens up against [`CatalogIndex::lexical_and_candidates`]/
 /// [`CatalogIndex::lexical_or_candidates`] tokenize identically to how the
@@ -388,6 +449,23 @@ impl CatalogIndex {
         (0..self.ordinals.len() as Ordinal).collect()
     }
 
+    /// Issue #63 (P0): the full ordinal set, materialized exactly as
+    /// `indexed_candidates` does when no constraint is indexable -- by
+    /// per-element insertion. Public so the match-all representation cost
+    /// can be measured in isolation.
+    pub fn all_ordinals_bitmap(&self) -> RoaringBitmap {
+        self.all_ordinals()
+    }
+
+    /// Issue #63 (P0r): the same set as [`Self::all_ordinals_bitmap`],
+    /// materialized with one `insert_range` call instead of per-element
+    /// insertion. Identical contents; only the construction differs.
+    pub fn all_ordinals_bitmap_by_range(&self) -> RoaringBitmap {
+        let mut bitmap = RoaringBitmap::new();
+        bitmap.insert_range(0..self.ordinals.len() as Ordinal);
+        bitmap
+    }
+
     fn structural_bitmap(&self, s: &StructuralConstraint) -> RoaringBitmap {
         match s {
             StructuralConstraint::Brand(id) => {
@@ -466,6 +544,27 @@ impl CatalogIndex {
     /// from an index (everything except `Constraint::Text`). Returns the
     /// full ordinal set when there are no indexable constraints at all.
     pub fn indexed_candidates(&self, constraints: &[ResolvedConstraint]) -> RoaringBitmap {
+        self.indexable_intersection(constraints)
+            .unwrap_or_else(|| self.all_ordinals())
+    }
+
+    /// Issue #63 (P2): the same candidate set as [`Self::indexed_candidates`],
+    /// but the "no indexable constraint" case stays logical
+    /// ([`CandidateSet::All`]) instead of being materialized. An indexable
+    /// constraint that matches nothing is still an empty
+    /// [`CandidateSet::Set`], never `All`.
+    pub fn candidate_set(&self, constraints: &[ResolvedConstraint]) -> CandidateSet {
+        match self.indexable_intersection(constraints) {
+            Some(bitmap) => CandidateSet::Set(bitmap),
+            None => CandidateSet::All {
+                count: self.ordinals.len() as Ordinal,
+            },
+        }
+    }
+
+    /// The intersection of every indexable constraint's bitmap, or `None`
+    /// when no constraint is indexable (the match-all case).
+    fn indexable_intersection(&self, constraints: &[ResolvedConstraint]) -> Option<RoaringBitmap> {
         let mut acc: Option<RoaringBitmap> = None;
         for c in constraints {
             let bm = match c {
@@ -479,7 +578,7 @@ impl CatalogIndex {
                 });
             }
         }
-        acc.unwrap_or_else(|| self.all_ordinals())
+        acc
     }
 
     /// Index-accelerated equivalent of `CommerceQuery::execute`: narrow via
@@ -720,6 +819,76 @@ impl CatalogIndex {
             }
         }
         counts
+    }
+
+    /// Issue #63 (P2 dense path): [`Self::facet_counts_ordinal`] over the
+    /// whole catalog, scanning the ordinal column sequentially instead of
+    /// iterating a materialized all-ordinals bitmap. Same semantics
+    /// (single-valued `Enum` only, zero counts omitted).
+    pub fn facet_counts_ordinal_all(&self, attribute: &str) -> BTreeMap<String, u64> {
+        let mut result = BTreeMap::new();
+        let (Some(dictionary), Some(column)) = (
+            self.enum_dictionary.get(attribute),
+            self.enum_columns.get(attribute),
+        ) else {
+            return result;
+        };
+        let mut counts = vec![0u64; dictionary.len()];
+        for &value_ord in column {
+            if value_ord != u32::MAX {
+                counts[value_ord as usize] += 1;
+            }
+        }
+        for (value_ord, count) in counts.into_iter().enumerate() {
+            if count > 0 {
+                result.insert(dictionary[value_ord].clone(), count);
+            }
+        }
+        result
+    }
+
+    /// Issue #63 (P2 dense path): [`Self::facet_counts_bitmap`] over the
+    /// whole catalog. Intersecting a value bitmap with every ordinal is the
+    /// value bitmap itself, so each count is that bitmap's stored
+    /// cardinality: `O(V)` container-length sums, no intersection. Same
+    /// semantics (every `Enum` and `MultiEnum` value, zero counts omitted).
+    pub fn facet_counts_bitmap_all(&self, attribute: &str) -> BTreeMap<String, u64> {
+        let mut counts = BTreeMap::new();
+        let Some(dictionary) = self.enum_dictionary.get(attribute) else {
+            return counts;
+        };
+        let mut key = (attribute.to_owned(), String::new());
+        for value in dictionary {
+            key.1.clear();
+            key.1.push_str(value);
+            if let Some(bm) = self.enum_bitmaps.get(&key) {
+                let count = bm.len();
+                if count > 0 {
+                    counts.insert(value.clone(), count);
+                }
+            }
+        }
+        counts
+    }
+
+    /// Issue #63: read-only view of an attribute's value dictionary (dense
+    /// value ordinal -> value), for primitive characterization.
+    pub fn enum_dictionary(&self, attribute: &str) -> Option<&[String]> {
+        self.enum_dictionary.get(attribute).map(Vec::as_slice)
+    }
+
+    /// Issue #63: read-only view of an attribute's single-valued `Enum`
+    /// ordinal column (variant ordinal -> value ordinal, `u32::MAX` when
+    /// absent), for primitive characterization.
+    pub fn enum_column(&self, attribute: &str) -> Option<&[u32]> {
+        self.enum_columns.get(attribute).map(Vec::as_slice)
+    }
+
+    /// Issue #63: read-only view of one `(attribute, value)` bitmap, for
+    /// primitive characterization.
+    pub fn enum_value_bitmap(&self, attribute: &str, value: &str) -> Option<&RoaringBitmap> {
+        self.enum_bitmaps
+            .get(&(attribute.to_owned(), value.to_owned()))
     }
 
     /// Issue #79 (E3b): the attribute's value-dictionary size (every

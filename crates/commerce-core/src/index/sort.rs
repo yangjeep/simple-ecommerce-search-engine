@@ -267,6 +267,47 @@ pub fn top_k_presorted(
     direction: Direction,
     limit: usize,
 ) -> SortOutcome {
+    presorted_walk(
+        sorted,
+        presence,
+        |ordinal| candidates.contains(ordinal),
+        candidates.iter(),
+        direction,
+        limit,
+    )
+}
+
+/// Issue #63 (P2): [`top_k_presorted`] for the match-all candidate set
+/// `0..count` without materializing it: every list entry is a member, so
+/// the membership test is skipped, and the missing-value tail walks
+/// `0..count`. Identical output to `top_k_presorted` over the full bitmap.
+#[must_use]
+pub fn top_k_presorted_all(
+    sorted: &[(f64, u32)],
+    presence: &PresenceBitmap,
+    count: u32,
+    direction: Direction,
+    limit: usize,
+) -> SortOutcome {
+    presorted_walk(sorted, presence, |_| true, 0..count, direction, limit)
+}
+
+/// The walk shared by [`top_k_presorted`] and [`top_k_presorted_all`]:
+/// `member` decides candidate membership for list entries, and `tail`
+/// yields the candidate set in ascending ordinal order for the
+/// missing-value tail.
+fn presorted_walk<M, T>(
+    sorted: &[(f64, u32)],
+    presence: &PresenceBitmap,
+    member: M,
+    tail: T,
+    direction: Direction,
+    limit: usize,
+) -> SortOutcome
+where
+    M: Fn(u32) -> bool,
+    T: IntoIterator<Item = u32>,
+{
     let mut hits = Vec::with_capacity(limit);
     let mut inspected = 0u64;
     if limit == 0 {
@@ -308,7 +349,7 @@ pub fn top_k_presorted(
         }
         if merge_run(
             &valid[run_start..run_end],
-            candidates,
+            &member,
             limit,
             &mut hits,
             &mut inspected,
@@ -318,7 +359,7 @@ pub fn top_k_presorted(
         }
     }
     if !done {
-        for ordinal in candidates {
+        for ordinal in tail {
             if presence.contains(ordinal) {
                 continue;
             }
@@ -340,9 +381,9 @@ pub fn top_k_presorted(
 /// `0.0` entries, which `total_cmp` splits into two ordinal-ascending
 /// sub-runs (negative first); those are merged. Returns `true` once `hits`
 /// reaches `limit`.
-fn merge_run(
+fn merge_run<M: Fn(u32) -> bool>(
     run: &[(f64, u32)],
-    candidates: &RoaringBitmap,
+    member: &M,
     limit: usize,
     hits: &mut Vec<SortedHit>,
     inspected: &mut u64,
@@ -367,7 +408,7 @@ fn merge_run(
         };
         let &(value, ordinal) = next.expect("peeked");
         *inspected += 1;
-        if candidates.contains(ordinal) {
+        if member(ordinal) {
             hits.push(SortedHit {
                 ordinal,
                 value: Some(value),

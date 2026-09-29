@@ -219,6 +219,17 @@ pub fn urlencode(value: &str) -> String {
 /// binary receives the exact E3 request for E3 cells.
 #[must_use]
 pub fn query_string(cell: &Cell, modes: Option<(&str, &str)>) -> String {
+    query_string_with_cand(cell, modes, None)
+}
+
+/// [`query_string`] plus Issue #63's `cand_mode` parameter (omitted when
+/// `None`, so every #79 request string is unchanged).
+#[must_use]
+pub fn query_string_with_cand(
+    cell: &Cell,
+    modes: Option<(&str, &str)>,
+    cand_mode: Option<&str>,
+) -> String {
     let mut params: Vec<String> = Vec::new();
     if let Some(category) = cell.category {
         params.push(format!("category={}", urlencode(category)));
@@ -242,6 +253,9 @@ pub fn query_string(cell: &Cell, modes: Option<(&str, &str)>) -> String {
     if let Some((facet_mode, sort_mode)) = modes {
         params.push(format!("facet_mode={facet_mode}"));
         params.push(format!("sort_mode={sort_mode}"));
+    }
+    if let Some(cand_mode) = cand_mode {
+        params.push(format!("cand_mode={cand_mode}"));
     }
     format!("/plp?{}", params.join("&"))
 }

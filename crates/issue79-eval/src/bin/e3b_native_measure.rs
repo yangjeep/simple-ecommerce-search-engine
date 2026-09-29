@@ -7,6 +7,9 @@
 //!     [--modes none|<facet:sort,...>] [--facet-cell-modes <facet:sort,...>]
 //!     [--sort-cell-modes <facet:sort,...>] [--server-args "<args>"]
 //!
+//! Issue #63: a mode may carry a third component, `facet:sort:cand`, which
+//! adds `cand_mode=<cand>` (p0r|p1|p2|p2b) to the request.
+//!
 //! Launches the given native server binary inside #79's scope envelope
 //! (the frozen #77 values from `benchmarks/configs/issue77/resource_envelope.env`:
 //! CPU quota, CPU affinity, memory ceiling, swap 0), gates on #77's
@@ -21,7 +24,7 @@
 //! `--cells none` measures only load/build/RSS (memory-accounting launches).
 
 use issue61_eval::CgroupReader;
-use issue79_eval::cells::{all_cells, query_string, Cell, Family, Role};
+use issue79_eval::cells::{all_cells, query_string_with_cand, Cell, Family, Role};
 use issue79_eval::plp::Diag;
 use issue79_eval::{EXPERIMENT_ID, RAW_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -161,6 +164,9 @@ struct CellResult {
     family: String,
     facet_mode: Option<String>,
     sort_mode: Option<String>,
+    /// Issue #63 `cand_mode` (absent = p0, #79's path).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cand_mode: Option<String>,
     status: String,
     error: Option<String>,
     measured_queries: usize,
@@ -279,18 +285,31 @@ fn measure_cell(
     modes: Option<&(String, String)>,
     cgroup: Option<&CgroupReader>,
 ) -> CellResult {
+    // `facet:sort:cand` arrives as ("facet", "sort:cand").
+    let (sort_mode, cand_mode) = match modes.map(|m| m.1.as_str()) {
+        Some(sort) => match sort.split_once(':') {
+            Some((s, c)) => (Some(s), Some(c)),
+            None => (Some(sort), None),
+        },
+        None => (None, None),
+    };
     let mut result = CellResult {
         cell: cell.name.to_owned(),
         role: cell.role.as_str().to_owned(),
         family: cell.family.as_str().to_owned(),
         facet_mode: modes.map(|m| m.0.clone()),
-        sort_mode: modes.map(|m| m.1.clone()),
+        sort_mode: sort_mode.map(str::to_owned),
+        cand_mode: cand_mode.map(str::to_owned),
         status: "ok".to_owned(),
         ..CellResult::default()
     };
     let url = format!(
         "{base}{}",
-        query_string(cell, modes.map(|(f, s)| (f.as_str(), s.as_str())))
+        query_string_with_cand(
+            cell,
+            modes.zip(sort_mode).map(|((f, _), s)| (f.as_str(), s)),
+            cand_mode
+        )
     );
     for _ in 0..WARMUP {
         if let Err(error) = get(agent, &url) {
