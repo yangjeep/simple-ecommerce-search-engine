@@ -1,0 +1,9 @@
+i63_primitives tier=500k run=1 ordinals=515928
+  b1 construct p0: 5168589.7 ns/op (388 ops, 106.00 allocs/op)
+  b1 construct p0r: 16590.1 ns/op (120575 ops, 10.00 allocs/op)
+  b1 construct p1: 8.6 ns/op (200015871 ops, 0.00 allocs/op)
+  b1 construct p2: 0.5 ns/op (203423743 ops, 0.00 allocs/op)
+  b1 pipeline facet_low_cardinality_style:p0: 4883004.3 ns/op (410 ops, 241.00 allocs/op)
+  b1 pipeline facet_low_cardinality_style:p0r: 207945.1 ns/op (9623 ops, 146.00 allocs/op)
+  b1 pipeline facet_low_cardinality_style:p1: 176454.8 ns/op (11335 ops, 136.00 allocs/op)
+  b1 pipeline facet_low_cardinality_style:p2: 30978.0 ns/op (64575 ops, 136.00 allocs/op)

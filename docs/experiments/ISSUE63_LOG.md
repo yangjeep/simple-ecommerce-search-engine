@@ -65,3 +65,13 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
   - P2/P2b keep the P1 bitmap for candidate top-K over match-all, so their persistent memory is P1's, not 0.
   - If the within-5% tie set is also tied on memory, the larger FH3+FH4 reduction stands.
 - **Disclosed scope note.** No facet-loop change (for example u32 counters) was implemented as a server mode, so none is eligible for N⁺. B2 characterizes u32 counters only.
+
+## 2026-09-29 — smoke checks and early exposure (disclosed; not evidence)
+
+- **Harness smoke tests** at 100k, before any preregistered measurement. They cover the microbenchmark with a tiny floor, all Part A arms with dumps, and the equivalence checker, plus a negative control (Meilisearch's default configuration, correctly flagged `NOT_EQUIVALENT_WORK`). Outputs are under `artifacts/issue63/results/smoke_100k_not_evidence/`, without timings.
+- **Early exposure, as in #79's log.**
+  - The analysis script was dry-run on those smoke outputs to validate its tables.
+  - That run displayed single-launch, 100k, tiny-floor native-vs-competitor CPU figures and microbench figures.
+  - They were seen after amendment 1 and C1 were posted, and before N⁺ was frozen and before Part A.
+  - No rule, threshold, cell or configuration depends on them: the §3.4 adoption rule is native-only and mechanical, and the Part A classification is fixed.
+  - They are not reported as results.

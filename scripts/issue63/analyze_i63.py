@@ -4,19 +4,21 @@
   analyze_i63.py adopt    # section 3.4 adoption rule over micro/ + gate/ -> adoption.json/.md
   analyze_i63.py confirm  # Part A tables over confirm/ -> confirm_report.json/.md
   analyze_i63.py micro    # B1/B2/C tables over micro/ -> micro_report.md
+  analyze_i63.py report   # primitive table + FH3/FH4 residual attribution -> report.json/.md
 
 Rules implemented here are the preregistered ones (GitHub #63, amendment 1
 and clarification C1). Nothing is tuned after results: thresholds are
 module constants below.
 """
 import json
+import os
 import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RESULTS = ROOT / "artifacts/issue63/results"
+RESULTS = Path(os.environ.get("I63_RESULTS", ROOT / "artifacts/issue63/results"))
 
 # Section 3.4 adoption thresholds.
 ADOPT_MIN_FH_REDUCTION = 0.25
@@ -420,6 +422,137 @@ def micro():
     print("\n".join(lines))
 
 
+def micro_medians(tier):
+    """{(part, name, variant): (median cpu ns/op, point)} over runs."""
+    agg = defaultdict(list)
+    meta = {}
+    for run in load_micro(tier):
+        for p in run["points"]:
+            key = (p["part"], p["name"], p["variant"])
+            agg[key].append(p["sample"]["cpu_ns_per_op"])
+            meta[key] = p
+    return {k: (median(v), meta[k]) for k, v in agg.items()}
+
+
+# Section 4: primitives with a same-window Part A service cell.
+PRIMITIVES = [
+    # (label, C point (name, variant), Part A cell label or None, note)
+    ("exact lookup (per lookup)", ("exact_lookup", "variant_id_to_ordinal_and_record"), None, "per-op / 1000"),
+    ("single bitmap filter: color=white", ("single_bitmap_color_white", "indexed_candidates"), "FD1", ""),
+    ("single bitmap filter: color=white (borrowed)", ("single_bitmap_color_white", "borrowed_len"), None, ""),
+    ("single bitmap filter: category Accent Chairs", ("single_bitmap_category_accent_chairs", "indexed_candidates"), None, ""),
+    ("3-way bitmap conjunction", ("conjunction_3way", "indexed_candidates"), "FD3", ""),
+    ("5-way conjunction (4 enums + rating range)", ("conjunction_5way", "indexed_candidates"), "FD5",
+     "service cell FD5 = #77 filter_depth_5 = the 4 enum filters only"),
+    ("numeric range, broad (rating >= 4)", ("numeric_range_broad_rating_gte_4", "indexed_candidates"), "SH1",
+     "service cell SH1 = range + bounded sort"),
+    ("numeric range, narrow (review_count >= p99)", ("numeric_range_narrow_review_count_p99", "indexed_candidates"), None, ""),
+    ("same-variant conjunction (synthetic, 100k-derived)", ("same_variant_conjunction", "indexed_candidates"), None, "100k tier only"),
+    ("lexical residual: wood+bed", ("lexical_and:wood+bed", "lexical_and_candidates"), None, "reference only"),
+    ("lexical residual: outdoor+dining+table", ("lexical_and:outdoor+dining+table", "lexical_and_candidates"), None, "reference only"),
+]
+
+
+def report():
+    confirm_report = json.loads((RESULTS / "confirm_report.json").read_text())
+    cells = confirm_report["cells"]
+    m500 = micro_medians("500k")
+    m100 = micro_medians("100k")
+    lines = ["# Issue #63 report tables", ""]
+
+    # Native service floor: the lightest Part A native FINAL cell.
+    floor_label, floor = min(
+        ((label, c["arms"]["native"]["median"]) for label, c in cells.items() if "native" in c["arms"]),
+        key=lambda x: x[1])
+    lines += [f"Native per-request service floor = {floor:,.0f} µs CPU/query ({floor_label}, Part A native FINAL median).", ""]
+
+    # Primitive table.
+    lines += ["## Primitive table (500k unless noted; in-process thread CPU, median of 3 runs)", "",
+              "| primitive | CPU/op | allocs/op | bytes alloc/op | bytes touched (est.) | result | 100k→500k | same-window r (cell) | class |",
+              "|---|---|---|---|---|---|---|---|---|"]
+    rows = []
+    for label, (name, variant), service, note in PRIMITIVES:
+        key = ("c", name, variant)
+        src = m500 if key in m500 else m100
+        if key not in src:
+            continue
+        ns, p = src[key]
+        per = 1000 if name == "exact_lookup" else 1
+        ns /= per
+        small = m100.get(key)
+        scaling = f"{(ns * per) / small[0]:.2f}x" if small and src is m500 and small[0] else "—"
+        r = None
+        if service and service in cells and "native" in cells[service]["arms"]:
+            r = cells[service]["arms"]["native"].get("r")
+        if label.startswith("lexical"):
+            cls = "DELEGATE (reference; #57)"
+        elif r is not None:
+            cls = "KEEP" if r <= MATERIAL else ("REFINE" if r <= PARITY else "DELEGATE")
+        else:
+            cls = "KEEP-provisional" if ns / 1e3 <= 0.10 * floor else "REFINE"
+        rows.append({"primitive": label, "cpu_ns_per_op": ns, "allocs": p["sample"]["allocations_per_op"] / per,
+                     "alloc_bytes": p["sample"]["allocated_bytes_per_op"] / per,
+                     "bytes_touched": p["bytes_touched_estimate"] / per, "result": p["result_cardinality"],
+                     "scaling": scaling, "r": r, "service_cell": service, "class": cls, "note": note,
+                     "tier": "500k" if src is m500 else "100k"})
+        cpu = f"{ns:,.0f} ns" if ns < 1e4 else f"{ns / 1e3:,.1f} µs"
+        rstr = f"{r:.3f} ({service})" if r is not None else "—"
+        lines.append(f"| {label}{' [100k]' if src is m100 else ''} | {cpu} | {p['sample']['allocations_per_op'] / per:.2f} | "
+                     f"{p['sample']['allocated_bytes_per_op'] / per:,.0f} | {p['bytes_touched_estimate'] / per:,.0f} | "
+                     f"{p['result_cardinality']:,} | {scaling} | {rstr} | {cls} |")
+    notes = [f"- {r['primitive']}: {r['note']}" for r in rows if r["note"]]
+    lines += ["", *notes, ""]
+
+    # Residual attribution for FH3/FH4.
+    def pipe(cell, cand="p0"):
+        v = m500.get(("b1", "pipeline", f"{cell}:{cand}"))
+        return v[0] / 1e3 if v else None
+
+    def b2(name, variant):
+        v = m500.get(("b2", name, variant))
+        return v[0] / 1e3 if v else None
+
+    construct = m500[("b1", "construct", "p0")][0] / 1e3
+    lines += ["## Residual attribution (µs; service = Part A native FINAL median CPU/query; components from 500k microbenchmarks)", ""]
+    attribution = {}
+    for label, cell in (("FH3", "facet_high_cardinality_color"), ("FH4", "facet_disjunctive_multi_dim")):
+        service = cells[label]["arms"]["native"]["median"]
+        in_process = pipe(cell)
+        parts = {}
+        if label == "FH3":
+            color = "full|color"
+            parts["match-all construction (P0)"] = construct
+            d1 = m500[("b2", "full", "d1_iterate")][0] / 1e3
+            d2, d3, ordinal = b2(color, "d2_iterate_gather"), b2(color, "d3_count_u64"), b2(color, "ordinal")
+            parts["facet counting: bitmap iteration"] = d1
+            parts["facet counting: column gather"] = d2 - d1
+            parts["facet counting: counter increments"] = d3 - d2
+            parts["facet counting: output materialization"] = ordinal - d3
+        else:
+            black = "real:facet_disjunctive_multi_dim"
+            parts["match-all construction (P0, color self-exclusion)"] = construct
+            parts["color facet over full catalog (ordinal)"] = b2("full|color", "ordinal")
+            parts["4 facets over the color=black set (ordinal)"] = sum(
+                b2(f"{black}|{a}", "ordinal") or 0 for a in ("style", "primarymaterial", "material", "shape"))
+        modelled = sum(parts.values())
+        parts["other in-process (candidates for the base filter, assembly, maps)"] = in_process - modelled
+        parts["outside the in-process pipeline (HTTP, JSON, kernel, launch-state)"] = service - in_process
+        attribution[label] = {"service_us": service, "in_process_us": in_process, "parts": parts}
+        lines += [f"### {label}: service {service:,.0f} µs; in-process pipeline {in_process:,.0f} µs", "",
+                  "| component | µs | % of service |", "|---|---|---|"]
+        for k, v in parts.items():
+            lines.append(f"| {k} | {v:,.0f} | {100 * v / service:.1f}% |")
+        lines.append("")
+    lines += ["Components are separate microbenchmark medians (a model), not a profile of one request; "
+              "'other in-process' absorbs their interaction and noise. Service CPU and microbenchmarks "
+              "come from different processes and windows.", ""]
+    (RESULTS / "report.json").write_text(json.dumps({"floor_us": floor, "floor_cell": floor_label,
+                                                      "primitives": rows, "attribution": attribution}, indent=2) + "\n")
+    (RESULTS / "report.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines))
+
+
 if __name__ == "__main__":
     command = sys.argv[1] if len(sys.argv) > 1 else ""
-    {"adopt": adopt, "confirm": confirm, "micro": micro}.get(command, lambda: sys.exit(__doc__))()
+    {"adopt": adopt, "confirm": confirm, "micro": micro, "report": report}.get(
+        command, lambda: sys.exit(__doc__))()
