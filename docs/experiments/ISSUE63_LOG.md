@@ -17,3 +17,51 @@ Append-only. The preregistration is GitHub issue #63: the original body, **amend
 - **Reproducible binaries.** The release `e3b_native_plp_server` / `e3b_native_measure` / `e3b_correctness_gate` built from `31a82e9` have the same sha256 as the copies built earlier from the byte-identical salvage-branch tree: `ab24b45b…`, `2aa90330…`, `ead705bc…`.
 - **Amendment 1 and clarification C1** were posted to #63 before any #63 code existed.
 - **Host:** `athos-dev`, Xeon D-1518, 4 logical CPUs, 30 GB, and the #79 cgroup-v2 user-scope envelope. `perf_event_paranoid=4` with no sudo, so no hardware counters are available (amendment §1). They are not used.
+- **#79 revalidation on final `main`** (see `ISSUE79_LOG.md`, 2026-09-29):
+  - the gate repeats 1,680 checks with 0 failures;
+  - outputs and planner paths are identical;
+  - FH1/FH2/SH1 CPU fall within the declared band;
+  - FH3/FH4 are flagged (1.62x / 1.49x the #79 headline FINAL) and kept flagged.
+
+  The investigation found no server code change. The same level appears in #79's own fidelity window, and an interleaved N0 control is not inflated. The spread is per-launch, on the match-all and dense-counting phases. It is the reason Part A reports per-launch CV/min/max for every arm.
+
+## 2026-09-29 — implementation (before any preregistered measurement)
+
+All of it is additive. #79 FINAL's request, response and outputs are unchanged. The RED tests were written first and failed to compile, because the API did not exist yet.
+
+- **`commerce-core`** (engine):
+  - `CandidateSet { All { count }, Set(bitmap) }` and `CatalogIndex::candidate_set`. The match-all case stays logical. An indexable constraint that matches nothing is an empty `Set`, never `All`.
+  - `all_ordinals_bitmap` (P0, identical to the private `all_ordinals`) and `all_ordinals_bitmap_by_range` (P0r).
+  - Dense full-catalog facet paths: `facet_counts_ordinal_all` (a sequential column scan) and `facet_counts_bitmap_all` (value-bitmap `len()`).
+  - `sort::top_k_presorted_all`: a presorted walk without a membership test.
+  - Read-only views: `enum_column`, `enum_dictionary`, `enum_value_bitmap`.
+  - Tests: `tests/i63_match_all.rs` (6 tests, including exhaustive `top_k_presorted_all` ≡ `top_k_presorted(full)` over ties, ±0.0, NaN and missing values, in both directions and at every limit).
+- **FINAL-path refactors, disclosed.** Two changes touch code the FINAL path executes.
+  - `indexed_candidates` now calls a shared private `indexable_intersection`; the logic is unchanged.
+  - `top_k_presorted` now calls a generic `presorted_walk` with a `candidates.contains` closure and `candidates.iter()` tail; the behaviour is unchanged.
+  - Part A's native FINAL arm is therefore served by the #63 binary, not #79's. Its output identity with #79 FINAL is checked through the equivalence dumps and fingerprints.
+- **`issue79-eval`:**
+  - `plp::CandidateMode` (`cand_mode=p0|p0r|p1|p2|p2b`, default `p0`, which is #79 FINAL verbatim). Non-P0 modes run the FINAL facet/sort algorithms over the B1 representation, and legacy modes are rejected for them.
+  - The new `Diag` fields are skipped when unset, so P0's response JSON is byte-identical to #79's.
+  - Server flag `--prebuilt-all true` (the P1 bitmap; its build time and bytes appear on the ready line).
+  - Gate: `--cand-modes` (default `p0` reproduces #79) and `--include-reference true`.
+  - Driver: mode syntax `facet:sort[:cand]`, plus `I63_DUMP_DIR` dumps written after the timed batch.
+  - `cells::reference_cells()` returns #77's `filter_depth_{1,3,5}`, with byte-identical native request strings (tested). It is kept out of `all_cells()`.
+  - `tests/i63_cand_modes.rs`: 650 oracle checks (10 requests × 5 cand modes × 13 facet/sort/constant combinations) on a 60-product multi-variant fixture.
+- **`issue77-eval` `i77_measure`**, opt-in only. Unset, every #77/#79 request is byte-identical.
+  - `I63_EQUAL_WORK=1` sets Solr JSON facets to `limit: -1`. Meilisearch equal work is #79's existing `I77_MEILI_LIKE_FOR_LIKE=1`.
+  - `I63_DUMP_DIR` issues one untimed request per cell before the warmups and dumps the normalized `num_found`, complete facet maps, hit keys and backend request count.
+  - New raw field `i63_equal_work`.
+- **New `issue63-eval` crate:**
+  - a counting global allocator;
+  - the #74-floor runner (`CLOCK_THREAD_CPUTIME_ID`; ≥200 ops and ≥2 s CPU per point; chunked clock reads);
+  - analytical bytes-touched estimators;
+  - the equal-work `equivalence::compare` (exact maps and exact `num_found`; hits must be ID-only: `id`, plus native's `sort_value`);
+  - the deterministic synthetic multi-variant expansion (`synthetic`), which includes cross-variant "trap" products;
+  - binaries `i63_primitives` (B1/B2/C), `i63_facet_equivalence` and `i63_host_probe`;
+  - 9 unit tests.
+- **Driver** `scripts/issue63/run_i63.sh` (`gate`, `micro`, `confirm` phases) and **analysis** `scripts/issue63/analyze_i63.py`, which implements the §3.4 adoption rule and the §2 classification as preregistered.
+- **Disclosed interpretation of §3.4's tie-break.**
+  - P2/P2b keep the P1 bitmap for candidate top-K over match-all, so their persistent memory is P1's, not 0.
+  - If the within-5% tie set is also tied on memory, the larger FH3+FH4 reduction stands.
+- **Disclosed scope note.** No facet-loop change (for example u32 counters) was implemented as a server mode, so none is eligible for N⁺. B2 characterizes u32 counters only.
