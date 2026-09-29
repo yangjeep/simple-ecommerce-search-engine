@@ -24,7 +24,9 @@
 //! `--cells none` measures only load/build/RSS (memory-accounting launches).
 
 use issue61_eval::CgroupReader;
-use issue79_eval::cells::{all_cells, query_string_with_cand, Cell, Family, Role};
+use issue79_eval::cells::{
+    all_cells, query_string_with_cand, reference_cells, Cell, Family, Role,
+};
 use issue79_eval::plp::Diag;
 use issue79_eval::{EXPERIMENT_ID, RAW_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -377,6 +379,12 @@ fn measure_cell(
         result.mean_sort_us = mean(2);
         result.mean_total_us = mean(3);
     }
+    if let Some(last) = &last {
+        if let Err(error) = i63_dump(cell, modes, last) {
+            result.status = "error".to_owned();
+            result.error = Some(error);
+        }
+    }
     if let Some(last) = last {
         result.num_found = last["num_found"].as_u64().unwrap_or(0);
         result.facet_fields = last["facets"].as_object().map_or(0, |m| m.len());
@@ -390,10 +398,47 @@ fn measure_cell(
     result
 }
 
+/// Issue #63: when `I63_DUMP_DIR` is set, the last measured response of each
+/// (cell, mode) is written there (`num_found`, facet maps, hit keys) for the
+/// equal-work check against the oracle. Written after the timed batch, so
+/// it never enters a measurement window.
+fn i63_dump(
+    cell: &Cell,
+    modes: Option<&(String, String)>,
+    last: &serde_json::Value,
+) -> Result<(), String> {
+    let Ok(dir) = std::env::var("I63_DUMP_DIR") else {
+        return Ok(());
+    };
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let mode = modes.map_or_else(
+        || "none".to_owned(),
+        |(f, s)| format!("{f}-{}", s.replace(':', "-")),
+    );
+    let keys: Vec<String> = last["docs"]
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|d| d.as_object())
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default();
+    let dump = serde_json::json!({
+        "num_found": last["num_found"],
+        "facets": canonical(&last["facets"]),
+        "hit_keys": keys,
+        "backend_requests": last["backend_requests"],
+        "mode": mode,
+    });
+    let path = Path::new(&dir).join(format!("native__{}__{mode}.json", cell.name));
+    std::fs::write(&path, serde_json::to_string_pretty(&dump).map_err(|e| e.to_string())?)
+        .map_err(|e| format!("{}: {e}", path.display()))
+}
+
 fn select_cells(spec: &str) -> Vec<Cell> {
     let cells = all_cells();
     match spec {
         "all" => cells,
+        // Issue #63: #77's filter-depth cells (never part of "all").
+        "reference" => reference_cells(),
         "none" => Vec::new(),
         "headline" => cells
             .into_iter()
@@ -407,6 +452,7 @@ fn select_cells(spec: &str) -> Vec<Cell> {
             let wanted: Vec<&str> = names.split(',').collect();
             cells
                 .into_iter()
+                .chain(reference_cells())
                 .filter(|c| wanted.contains(&c.name))
                 .collect()
         }
