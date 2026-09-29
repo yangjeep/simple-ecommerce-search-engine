@@ -1,0 +1,744 @@
+{
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl",
+  "dump_dir": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/artifacts/issue63/results/confirm/run3/dumps",
+  "verdicts": [
+    {
+      "engine": "meilisearch",
+      "cell": "facet_disjunctive_multi_dim",
+      "equivalent": true,
+      "num_found_expected": 16332,
+      "num_found_returned": 16332,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 2,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 38,
+          "returned_values": 38,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 49,
+          "returned_values": 49,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 20,
+          "returned_values": 20,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 16,
+          "returned_values": 16,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "facet_high_cardinality_color",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "facet_low_cardinality_style",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "filter_depth_1",
+      "equivalent": true,
+      "num_found_expected": 17256,
+      "num_found_returned": 17256,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "filter_depth_3",
+      "equivalent": true,
+      "num_found_expected": 36,
+      "num_found_returned": 36,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "filter_depth_5",
+      "equivalent": true,
+      "num_found_expected": 12,
+      "num_found_returned": 12,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "numeric_range_sort",
+      "equivalent": true,
+      "num_found_expected": 383604,
+      "num_found_returned": 383604,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "facet_disjunctive_multi_dim",
+      "equivalent": true,
+      "num_found_expected": 16332,
+      "num_found_returned": 16332,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 38,
+          "returned_values": 38,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 49,
+          "returned_values": 49,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 20,
+          "returned_values": 20,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 16,
+          "returned_values": 16,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "facet_disjunctive_multi_dim",
+      "equivalent": true,
+      "num_found_expected": 16332,
+      "num_found_returned": 16332,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 38,
+          "returned_values": 38,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 49,
+          "returned_values": 49,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 20,
+          "returned_values": 20,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 16,
+          "returned_values": 16,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "facet_high_cardinality_color",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "facet_high_cardinality_color",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "facet_low_cardinality_style",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "facet_low_cardinality_style",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "filter_depth_1",
+      "equivalent": true,
+      "num_found_expected": 17256,
+      "num_found_returned": 17256,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "filter_depth_1",
+      "equivalent": true,
+      "num_found_expected": 17256,
+      "num_found_returned": 17256,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "filter_depth_3",
+      "equivalent": true,
+      "num_found_expected": 36,
+      "num_found_returned": 36,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "filter_depth_3",
+      "equivalent": true,
+      "num_found_expected": 36,
+      "num_found_returned": 36,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "filter_depth_5",
+      "equivalent": true,
+      "num_found_expected": 12,
+      "num_found_returned": 12,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "filter_depth_5",
+      "equivalent": true,
+      "num_found_expected": 12,
+      "num_found_returned": 12,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "numeric_range_sort",
+      "equivalent": true,
+      "num_found_expected": 383604,
+      "num_found_returned": 383604,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid",
+      "cell": "numeric_range_sort",
+      "equivalent": true,
+      "num_found_expected": 383604,
+      "num_found_returned": 383604,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "solr",
+      "cell": "facet_disjunctive_multi_dim",
+      "equivalent": true,
+      "num_found_expected": 16332,
+      "num_found_returned": 16332,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 38,
+          "returned_values": 38,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 49,
+          "returned_values": 49,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 20,
+          "returned_values": 20,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 16,
+          "returned_values": 16,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "solr",
+      "cell": "facet_high_cardinality_color",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "solr",
+      "cell": "facet_low_cardinality_style",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "solr",
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "solr",
+      "cell": "filter_depth_1",
+      "equivalent": true,
+      "num_found_expected": 17256,
+      "num_found_returned": 17256,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "solr",
+      "cell": "filter_depth_3",
+      "equivalent": true,
+      "num_found_expected": 36,
+      "num_found_returned": 36,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "solr",
+      "cell": "filter_depth_5",
+      "equivalent": true,
+      "num_found_expected": 12,
+      "num_found_returned": 12,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "solr",
+      "cell": "numeric_range_sort",
+      "equivalent": true,
+      "num_found_expected": 383604,
+      "num_found_returned": 383604,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id"
+      ],
+      "backend_requests": 1,
+      "fields": {}
+    }
+  ],
+  "unreadable": [],
+  "all_equivalent": true
+}

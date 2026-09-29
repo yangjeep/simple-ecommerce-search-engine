@@ -1,0 +1,1292 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I63-E3",
+  "tier": "100k",
+  "run": 1,
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_3x.jsonl",
+  "ordinals": 128982,
+  "min_ops": 200,
+  "min_cpu_ns": 2000000000,
+  "git_sha": "b6bcf6fabd8c44ef4f31577801910d8683f51c8b",
+  "hostname": "athos-dev",
+  "started_utc": 1790664018,
+  "load_ms": 2137.504979,
+  "index_build_ms": 17798.249966,
+  "points": [
+    {
+      "part": "b1",
+      "name": "construct",
+      "variant": "p0",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 32768,
+      "sample": {
+        "ops": 1733,
+        "cpu_ns": 2000341208,
+        "wall_ns": 2000676041,
+        "cpu_ns_per_op": 1154264.9786497403,
+        "allocations_per_op": 27.0,
+        "allocated_bytes_per_op": 82032.0,
+        "capped": false
+      },
+      "ns_per_item": 8.949039235317644,
+      "nominal_cycles_per_item": 19.68788631769882,
+      "extra": {
+        "persistent_bytes": 0,
+        "serialized_size": 16408
+      }
+    },
+    {
+      "part": "b1",
+      "name": "construct",
+      "variant": "p0r",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 16384,
+      "sample": {
+        "ops": 537599,
+        "cpu_ns": 2000884237,
+        "wall_ns": 2001232298,
+        "cpu_ns_per_op": 3721.8898044825232,
+        "allocations_per_op": 3.0,
+        "allocated_bytes_per_op": 16512.0,
+        "capped": false
+      },
+      "ns_per_item": 0.028855885352084193,
+      "nominal_cycles_per_item": 0.06348294777458523,
+      "extra": {
+        "persistent_bytes": 0,
+        "serialized_size": 16408
+      }
+    },
+    {
+      "part": "b1",
+      "name": "construct",
+      "variant": "p1",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 200278015,
+        "cpu_ns": 728015628,
+        "wall_ns": 728254663,
+        "cpu_ns_per_op": 3.6350251823696174,
+        "allocations_per_op": 0.0,
+        "allocated_bytes_per_op": 0.0,
+        "capped": true
+      },
+      "ns_per_item": 0.000028182422216817985,
+      "nominal_cycles_per_item": 0.00006200132887699957,
+      "extra": {
+        "persistent_bytes": 16408,
+        "serialized_size": 16408
+      }
+    },
+    {
+      "part": "b1",
+      "name": "construct",
+      "variant": "p2",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 203423743,
+        "cpu_ns": 96118231,
+        "wall_ns": 96132644,
+        "cpu_ns_per_op": 0.472502519039776,
+        "allocations_per_op": 0.0,
+        "allocated_bytes_per_op": 0.0,
+        "capped": true
+      },
+      "ns_per_item": 3.663321386238204e-6,
+      "nominal_cycles_per_item": 8.05930704972405e-6,
+      "extra": {
+        "persistent_bytes": 0,
+        "serialized_size": 16408
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_low_cardinality_style:p0",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 1257,
+        "cpu_ns": 2000889973,
+        "wall_ns": 2001602560,
+        "cpu_ns_per_op": 1591797.9101034207,
+        "allocations_per_op": 162.0,
+        "allocated_bytes_per_op": 91652.0,
+        "capped": false
+      },
+      "ns_per_item": 12.34124071656061,
+      "nominal_cycles_per_item": 27.150729576433346,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_low_cardinality_style",
+        "facet_paths": [
+          "bitmap"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 1091.8685600000003,
+          "facets": 65.24707999999998,
+          "sort": 27.565400000000004,
+          "total": 1184.9755999999995
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_low_cardinality_style:p0r",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 27023,
+        "cpu_ns": 2001055617,
+        "wall_ns": 2001379281,
+        "cpu_ns_per_op": 74050.09129260259,
+        "allocations_per_op": 139.0,
+        "allocated_bytes_per_op": 26135.0,
+        "capped": false
+      },
+      "ns_per_item": 0.5741118240731465,
+      "nominal_cycles_per_item": 1.2630460129609224,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_low_cardinality_style",
+        "facet_paths": [
+          "bitmap"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 3.9361800000000002,
+          "facets": 42.79242000000001,
+          "sort": 19.919640000000005,
+          "total": 66.89388
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_low_cardinality_style:p1",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 27967,
+        "cpu_ns": 2002108274,
+        "wall_ns": 2002449899,
+        "cpu_ns_per_op": 71588.23878142097,
+        "allocations_per_op": 136.0,
+        "allocated_bytes_per_op": 9622.0,
+        "capped": false
+      },
+      "ns_per_item": 0.5550250328062906,
+      "nominal_cycles_per_item": 1.2210550721738394,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_low_cardinality_style",
+        "facet_paths": [
+          "bitmap"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.12737999999999997,
+          "facets": 43.0125,
+          "sort": 18.55144,
+          "total": 61.94194000000003
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_low_cardinality_style:p2",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 66431,
+        "cpu_ns": 2000044849,
+        "wall_ns": 2000358319,
+        "cpu_ns_per_op": 30107.101338230645,
+        "allocations_per_op": 136.0,
+        "allocated_bytes_per_op": 9630.0,
+        "capped": false
+      },
+      "ns_per_item": 0.23342095283241573,
+      "nominal_cycles_per_item": 0.5135260962313146,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_low_cardinality_style",
+        "facet_paths": [
+          "bitmap_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.10420000000000001,
+          "facets": 17.915880000000005,
+          "sort": 9.072279999999997,
+          "total": 27.325340000000008
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_low_cardinality_style:p2b",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 64959,
+        "cpu_ns": 2000904468,
+        "wall_ns": 2001316244,
+        "cpu_ns_per_op": 30802.574978063087,
+        "allocations_per_op": 136.0,
+        "allocated_bytes_per_op": 9631.0,
+        "capped": false
+      },
+      "ns_per_item": 0.23881297373325802,
+      "nominal_cycles_per_item": 0.5253885422131677,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_low_cardinality_style",
+        "facet_paths": [
+          "bitmap_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.09921999999999997,
+          "facets": 16.89516,
+          "sort": 8.267859999999999,
+          "total": 25.4676
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_medium_cardinality_primarymaterial:p0",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 778,
+        "cpu_ns": 2001854581,
+        "wall_ns": 2002232201,
+        "cpu_ns_per_op": 2573077.8676092546,
+        "allocations_per_op": 365.0,
+        "allocated_bytes_per_op": 105741.0,
+        "capped": false
+      },
+      "ns_per_item": 19.94912365763637,
+      "nominal_cycles_per_item": 43.88807204680002,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_medium_cardinality_primarymaterial",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 1127.4477399999998,
+          "facets": 1453.5294599999997,
+          "sort": 51.3598,
+          "total": 2632.7332200000005
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_medium_cardinality_primarymaterial:p0r",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 1301,
+        "cpu_ns": 2001178896,
+        "wall_ns": 2001538139,
+        "cpu_ns_per_op": 1538185.1621829362,
+        "allocations_per_op": 342.0,
+        "allocated_bytes_per_op": 40224.0,
+        "capped": false
+      },
+      "ns_per_item": 11.925580020335676,
+      "nominal_cycles_per_item": 26.23627604473849,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_medium_cardinality_primarymaterial",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 4.6461,
+          "facets": 1385.7333599999997,
+          "sort": 27.314419999999995,
+          "total": 1417.9986400000003
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_medium_cardinality_primarymaterial:p1",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 1269,
+        "cpu_ns": 2000117762,
+        "wall_ns": 2000540457,
+        "cpu_ns_per_op": 1576136.928289992,
+        "allocations_per_op": 339.0,
+        "allocated_bytes_per_op": 23711.0,
+        "capped": false
+      },
+      "ns_per_item": 12.219820814454668,
+      "nominal_cycles_per_item": 26.88360579180027,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_medium_cardinality_primarymaterial",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.7182399999999999,
+          "facets": 1919.45544,
+          "sort": 79.30758000000002,
+          "total": 2000.6551
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_medium_cardinality_primarymaterial:p2",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 3713,
+        "cpu_ns": 2001622947,
+        "wall_ns": 2001921444,
+        "cpu_ns_per_op": 539085.092108807,
+        "allocations_per_op": 339.0,
+        "allocated_bytes_per_op": 23719.0,
+        "capped": false
+      },
+      "ns_per_item": 4.179537393658084,
+      "nominal_cycles_per_item": 9.194982266047784,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_medium_cardinality_primarymaterial",
+        "facet_paths": [
+          "ordinal_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.3131600000000001,
+          "facets": 831.9641399999998,
+          "sort": 47.268480000000004,
+          "total": 879.9419599999999
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_medium_cardinality_primarymaterial:p2b",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 15935,
+        "cpu_ns": 2001633756,
+        "wall_ns": 2001973993,
+        "cpu_ns_per_op": 125612.4101663006,
+        "allocations_per_op": 342.0,
+        "allocated_bytes_per_op": 21887.0,
+        "capped": false
+      },
+      "ns_per_item": 0.9738755032973639,
+      "nominal_cycles_per_item": 2.142526107254201,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_medium_cardinality_primarymaterial",
+        "facet_paths": [
+          "bitmap_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.16232,
+          "facets": 99.56633999999998,
+          "sort": 12.69946,
+          "total": 112.71324000000001
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_high_cardinality_color:p0",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 437,
+        "cpu_ns": 2003227277,
+        "wall_ns": 2003575968,
+        "cpu_ns_per_op": 4584044.112128146,
+        "allocations_per_op": 3292.0,
+        "allocated_bytes_per_op": 295893.0,
+        "capped": false
+      },
+      "ns_per_item": 35.54018477096142,
+      "nominal_cycles_per_item": 78.18840649611512,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_high_cardinality_color",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 1104.6549399999997,
+          "facets": 3016.5713400000013,
+          "sort": 67.20522,
+          "total": 4188.83866
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_high_cardinality_color:p0r",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 696,
+        "cpu_ns": 2001504796,
+        "wall_ns": 2001828166,
+        "cpu_ns_per_op": 2875725.2816091953,
+        "allocations_per_op": 3269.0,
+        "allocated_bytes_per_op": 230376.0,
+        "capped": false
+      },
+      "ns_per_item": 22.295555051163692,
+      "nominal_cycles_per_item": 49.05022111256012,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_high_cardinality_color",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 6.276699999999998,
+          "facets": 3038.1310400000007,
+          "sort": 49.38568,
+          "total": 3094.3254599999987
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_high_cardinality_color:p1",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 659,
+        "cpu_ns": 2002620359,
+        "wall_ns": 2002961318,
+        "cpu_ns_per_op": 3038877.631259484,
+        "allocations_per_op": 3266.0,
+        "allocated_bytes_per_op": 213863.0,
+        "capped": false
+      },
+      "ns_per_item": 23.56047844861674,
+      "nominal_cycles_per_item": 51.833052586956825,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_high_cardinality_color",
+        "facet_paths": [
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.5637,
+          "facets": 2766.2002199999997,
+          "sort": 48.01749999999999,
+          "total": 2815.31726
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_high_cardinality_color:p2",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 1047,
+        "cpu_ns": 2000169358,
+        "wall_ns": 2000496184,
+        "cpu_ns_per_op": 1910381.4307545368,
+        "allocations_per_op": 3266.0,
+        "allocated_bytes_per_op": 213871.0,
+        "capped": false
+      },
+      "ns_per_item": 14.811225060508727,
+      "nominal_cycles_per_item": 32.584695133119205,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_high_cardinality_color",
+        "facet_paths": [
+          "ordinal_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.5242600000000001,
+          "facets": 1866.3129599999997,
+          "sort": 37.02507999999999,
+          "total": 1904.4179199999999
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_high_cardinality_color:p2b",
+      "work_items": 128982,
+      "result_cardinality": 128982,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 808,
+        "cpu_ns": 2037029266,
+        "wall_ns": 2037535724,
+        "cpu_ns_per_op": 2521075.824257426,
+        "allocations_per_op": 3271.0,
+        "allocated_bytes_per_op": 191585.0,
+        "capped": false
+      },
+      "ns_per_item": 19.54595078582613,
+      "nominal_cycles_per_item": 43.001091728817485,
+      "extra": {
+        "base_match_all": true,
+        "cell": "facet_high_cardinality_color",
+        "facet_paths": [
+          "bitmap_all"
+        ],
+        "family": "facet",
+        "num_found": 128982,
+        "phase_us": {
+          "candidates": 0.5105000000000001,
+          "facets": 2033.47732,
+          "sort": 38.458439999999996,
+          "total": 2073.0063000000005
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted_all"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_disjunctive_multi_dim:p0",
+      "work_items": 4083,
+      "result_cardinality": 4083,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 374,
+        "cpu_ns": 2004391234,
+        "wall_ns": 2004789080,
+        "cpu_ns_per_op": 5359334.85026738,
+        "allocations_per_op": 3459.0,
+        "allocated_bytes_per_op": 318219.0,
+        "capped": false
+      },
+      "ns_per_item": 1312.5973182139064,
+      "nominal_cycles_per_item": 2887.714100070594,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_disjunctive_multi_dim",
+        "facet_paths": [
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 4083,
+        "phase_us": {
+          "candidates": 6.12578,
+          "facets": 5615.150700000002,
+          "sort": 65.27763999999999,
+          "total": 5686.97786
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_disjunctive_multi_dim:p0r",
+      "work_items": 4083,
+      "result_cardinality": 4083,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 529,
+        "cpu_ns": 2000305847,
+        "wall_ns": 2000669729,
+        "cpu_ns_per_op": 3781296.4971644613,
+        "allocations_per_op": 3436.0,
+        "allocated_bytes_per_op": 252702.0,
+        "capped": false
+      },
+      "ns_per_item": 926.1073958276908,
+      "nominal_cycles_per_item": 2037.4362708209198,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_disjunctive_multi_dim",
+        "facet_paths": [
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 4083,
+        "phase_us": {
+          "candidates": 5.4608799999999995,
+          "facets": 3481.4332799999993,
+          "sort": 64.8741,
+          "total": 3552.5473600000014
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_disjunctive_multi_dim:p1",
+      "work_items": 4083,
+      "result_cardinality": 4083,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 539,
+        "cpu_ns": 2000008981,
+        "wall_ns": 2000400347,
+        "cpu_ns_per_op": 3710591.80148423,
+        "allocations_per_op": 3433.0,
+        "allocated_bytes_per_op": 236189.0,
+        "capped": false
+      },
+      "ns_per_item": 908.7905465305486,
+      "nominal_cycles_per_item": 1999.339202367207,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_disjunctive_multi_dim",
+        "facet_paths": [
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 4083,
+        "phase_us": {
+          "candidates": 3.9797999999999996,
+          "facets": 3081.9493600000005,
+          "sort": 39.88272,
+          "total": 3126.3887400000003
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_disjunctive_multi_dim:p2",
+      "work_items": 4083,
+      "result_cardinality": 4083,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 682,
+        "cpu_ns": 2000924078,
+        "wall_ns": 2001369805,
+        "cpu_ns_per_op": 2933906.272727273,
+        "allocations_per_op": 3433.0,
+        "allocated_bytes_per_op": 236193.0,
+        "capped": false
+      },
+      "ns_per_item": 718.5663171019527,
+      "nominal_cycles_per_item": 1580.845897624296,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_disjunctive_multi_dim",
+        "facet_paths": [
+          "ordinal_all",
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 4083,
+        "phase_us": {
+          "candidates": 3.5807999999999995,
+          "facets": 2045.9887200000003,
+          "sort": 34.63290000000001,
+          "total": 2084.6861000000004
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "b1",
+      "name": "pipeline",
+      "variant": "facet_disjunctive_multi_dim:p2b",
+      "work_items": 4083,
+      "result_cardinality": 4083,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 709,
+        "cpu_ns": 2000046928,
+        "wall_ns": 2000405846,
+        "cpu_ns_per_op": 2820940.660084626,
+        "allocations_per_op": 3438.0,
+        "allocated_bytes_per_op": 213907.0,
+        "capped": false
+      },
+      "ns_per_item": 690.8990105521984,
+      "nominal_cycles_per_item": 1519.9778232148367,
+      "extra": {
+        "base_match_all": false,
+        "cell": "facet_disjunctive_multi_dim",
+        "facet_paths": [
+          "bitmap_all",
+          "ordinal",
+          "ordinal",
+          "ordinal",
+          "ordinal"
+        ],
+        "family": "facet",
+        "num_found": 4083,
+        "phase_us": {
+          "candidates": 6.93464,
+          "facets": 3376.5912599999992,
+          "sort": 82.37855999999998,
+          "total": 3466.814479999999
+        },
+        "role": "headline",
+        "sort_path": "bounded_unsorted"
+      }
+    },
+    {
+      "part": "c",
+      "name": "exact_lookup",
+      "variant": "variant_id_to_ordinal_and_record",
+      "work_items": 1000,
+      "result_cardinality": 1000,
+      "bytes_touched_estimate": 256000,
+      "sample": {
+        "ops": 9551,
+        "cpu_ns": 2000763495,
+        "wall_ns": 2001139315,
+        "cpu_ns_per_op": 209482.0955920846,
+        "allocations_per_op": 0.0,
+        "allocated_bytes_per_op": 0.0,
+        "capped": false
+      },
+      "ns_per_item": 209.4820955920846,
+      "nominal_cycles_per_item": 460.8606103025861,
+      "extra": {
+        "identifier_fields_accepted": 0,
+        "lookups_per_op": 1000
+      }
+    },
+    {
+      "part": "c",
+      "name": "single_bitmap_color_white",
+      "variant": "indexed_candidates",
+      "work_items": 1,
+      "result_cardinality": 4314,
+      "bytes_touched_estimate": 17256,
+      "sample": {
+        "ops": 3790847,
+        "cpu_ns": 2000997463,
+        "wall_ns": 2001289367,
+        "cpu_ns_per_op": 527.8497029819457,
+        "allocations_per_op": 5.0,
+        "allocated_bytes_per_op": 8702.0,
+        "capped": false
+      },
+      "ns_per_item": 527.8497029819457,
+      "nominal_cycles_per_item": 1161.2693465602806,
+      "extra": {
+        "constraints": 1,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "single_bitmap_category_accent_chairs",
+      "variant": "indexed_candidates",
+      "work_items": 1,
+      "result_cardinality": 3309,
+      "bytes_touched_estimate": 13236,
+      "sample": {
+        "ops": 5562367,
+        "cpu_ns": 2000072179,
+        "wall_ns": 2000436498,
+        "cpu_ns_per_op": 359.57213520790697,
+        "allocations_per_op": 3.0,
+        "allocated_bytes_per_op": 6682.0,
+        "capped": false
+      },
+      "ns_per_item": 359.57213520790697,
+      "nominal_cycles_per_item": 791.0586974573954,
+      "extra": {
+        "constraints": 1,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "conjunction_3way",
+      "variant": "indexed_candidates",
+      "work_items": 3,
+      "result_cardinality": 9,
+      "bytes_touched_estimate": 41414,
+      "sample": {
+        "ops": 203647,
+        "cpu_ns": 2000710552,
+        "wall_ns": 2001038658,
+        "cpu_ns_per_op": 9824.40473957387,
+        "allocations_per_op": 15.0,
+        "allocated_bytes_per_op": 41644.0,
+        "capped": false
+      },
+      "ns_per_item": 3274.8015798579568,
+      "nominal_cycles_per_item": 7204.563475687505,
+      "extra": {
+        "constraints": 3,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "conjunction_5way",
+      "variant": "indexed_candidates",
+      "work_items": 5,
+      "result_cardinality": 3,
+      "bytes_touched_estimate": 1583882,
+      "sample": {
+        "ops": 2025,
+        "cpu_ns": 2001074991,
+        "wall_ns": 2001414091,
+        "cpu_ns_per_op": 988185.1807407407,
+        "allocations_per_op": 47.0,
+        "allocated_bytes_per_op": 131815.0,
+        "capped": false
+      },
+      "ns_per_item": 197637.03614814815,
+      "nominal_cycles_per_item": 434801.479525926,
+      "extra": {
+        "constraints": 5,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "numeric_range_broad_rating_gte_4",
+      "variant": "indexed_candidates",
+      "work_items": 1,
+      "result_cardinality": 95901,
+      "bytes_touched_estimate": 1550800,
+      "sample": {
+        "ops": 2112,
+        "cpu_ns": 2000472833,
+        "wall_ns": 2000784826,
+        "cpu_ns_per_op": 947193.5762310605,
+        "allocations_per_op": 27.0,
+        "allocated_bytes_per_op": 82032.0,
+        "capped": false
+      },
+      "ns_per_item": 947193.5762310605,
+      "nominal_cycles_per_item": 2083825.8677083333,
+      "extra": {
+        "constraints": 1,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "numeric_range_narrow_review_count_p99",
+      "variant": "indexed_candidates",
+      "work_items": 1,
+      "result_cardinality": 1008,
+      "bytes_touched_estimate": 18144,
+      "sample": {
+        "ops": 33919,
+        "cpu_ns": 2001316189,
+        "wall_ns": 2001633553,
+        "cpu_ns_per_op": 59002.806362215866,
+        "allocations_per_op": 18.0,
+        "allocated_bytes_per_op": 6256.0,
+        "capped": false
+      },
+      "ns_per_item": 59002.806362215866,
+      "nominal_cycles_per_item": 129806.17399687492,
+      "extra": {
+        "constraints": 1,
+        "p99_review_count": 3958.0
+      }
+    },
+    {
+      "part": "c",
+      "name": "single_bitmap_color_white",
+      "variant": "borrowed_len",
+      "work_items": 1,
+      "result_cardinality": 4314,
+      "bytes_touched_estimate": 0,
+      "sample": {
+        "ops": 200278015,
+        "cpu_ns": 753171483,
+        "wall_ns": 753264591,
+        "cpu_ns_per_op": 3.760629857450904,
+        "allocations_per_op": 0.0,
+        "allocated_bytes_per_op": 0.0,
+        "capped": true
+      },
+      "ns_per_item": 3.760629857450904,
+      "nominal_cycles_per_item": 8.27338568639199,
+      "extra": {
+        "note": "borrow + stored cardinality, no clone"
+      }
+    },
+    {
+      "part": "c",
+      "name": "lexical_and:wood+bed",
+      "variant": "lexical_and_candidates",
+      "work_items": 2,
+      "result_cardinality": 3108,
+      "bytes_touched_estimate": 32768,
+      "sample": {
+        "ops": 142335,
+        "cpu_ns": 2000073304,
+        "wall_ns": 2000396629,
+        "cpu_ns_per_op": 14051.872722801842,
+        "allocations_per_op": 8.0,
+        "allocated_bytes_per_op": 39112.0,
+        "capped": false
+      },
+      "ns_per_item": 7025.936361400921,
+      "nominal_cycles_per_item": 15457.059995082027,
+      "extra": {
+        "reference_only": true
+      }
+    },
+    {
+      "part": "c",
+      "name": "lexical_and:outdoor+dining+table",
+      "variant": "lexical_and_candidates",
+      "work_items": 3,
+      "result_cardinality": 279,
+      "bytes_touched_estimate": 49152,
+      "sample": {
+        "ops": 182911,
+        "cpu_ns": 2000208929,
+        "wall_ns": 2000520786,
+        "cpu_ns_per_op": 10935.421757029375,
+        "allocations_per_op": 11.0,
+        "allocated_bytes_per_op": 50706.0,
+        "capped": false
+      },
+      "ns_per_item": 3645.140585676458,
+      "nominal_cycles_per_item": 8019.309288488209,
+      "extra": {
+        "reference_only": true
+      }
+    },
+    {
+      "part": "c",
+      "name": "same_variant_conjunction",
+      "variant": "indexed_candidates",
+      "work_items": 2,
+      "result_cardinality": 16122,
+      "bytes_touched_estimate": 163316,
+      "sample": {
+        "ops": 29119,
+        "cpu_ns": 2002198585,
+        "wall_ns": 2002649633,
+        "cpu_ns_per_op": 68759.18077543871,
+        "allocations_per_op": 30.0,
+        "allocated_bytes_per_op": 163857.0,
+        "capped": false
+      },
+      "ns_per_item": 34379.590387719356,
+      "nominal_cycles_per_item": 75635.09885298258,
+      "extra": {
+        "cross_variant_false_matches": 0,
+        "products": 128982,
+        "synthetic": true,
+        "trap_products": 16123,
+        "variants": 515928
+      }
+    }
+  ],
+  "correctness": [
+    {
+      "part": "b1",
+      "name": "representations_identical",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_low_cardinality_style:p0",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_low_cardinality_style:p0r",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_low_cardinality_style:p1",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_low_cardinality_style:p2",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_low_cardinality_style:p2b",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_medium_cardinality_primarymaterial:p0",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_medium_cardinality_primarymaterial:p0r",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_medium_cardinality_primarymaterial:p1",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_medium_cardinality_primarymaterial:p2",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_medium_cardinality_primarymaterial:p2b",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_high_cardinality_color:p0",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_high_cardinality_color:p0r",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_high_cardinality_color:p1",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_high_cardinality_color:p2",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_high_cardinality_color:p2b",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_disjunctive_multi_dim:p0",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_disjunctive_multi_dim:p0r",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_disjunctive_multi_dim:p1",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_disjunctive_multi_dim:p2",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "b1",
+      "name": "facet_disjunctive_multi_dim:p2b",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "exact_lookup",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "single_bitmap_color_white",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "single_bitmap_category_accent_chairs",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "conjunction_3way",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "conjunction_5way",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "numeric_range_broad_rating_gte_4",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "numeric_range_narrow_review_count_p99",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "lexical_and:wood+bed",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "lexical_and:outdoor+dining+table",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "part": "c",
+      "name": "same_variant_conjunction",
+      "ok": true,
+      "detail": "matches=16122 traps=16123 false_matches=0"
+    }
+  ],
+  "all_correct": true,
+  "total_wall_s": 139.006548265
+}

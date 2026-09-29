@@ -1,0 +1,85 @@
+=== 2026-09-29T07:51:03Z confirm run=1 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(7057.0) p50_ms=5.68 n=259
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1077.0) p50_ms=1.30 n=1311
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(12470.0) p50_ms=15.10 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2019.0) p50_ms=2.18 n=727
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(35947.0) p50_ms=36.81 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(19734.0) p50_ms=23.56 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(32836.0) p50_ms=39.41 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(24322.0) p50_ms=27.16 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(6564.0) p50_ms=4.78 n=281
+  numeric_range_sort Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8169.0) p50_ms=10.27 n=228
+  filter_depth_1 Some(("hybrid", "hybrid")) cpu_us=Some(396.0) p50_ms=0.60 n=2634
+  filter_depth_1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(387.0) p50_ms=0.59 n=2666
+  filter_depth_3 Some(("hybrid", "hybrid")) cpu_us=Some(543.0) p50_ms=0.78 n=2217
+  filter_depth_3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(506.0) p50_ms=0.70 n=2321
+  filter_depth_5 Some(("hybrid", "hybrid")) cpu_us=Some(530.0) p50_ms=0.76 n=2326
+  filter_depth_5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(513.0) p50_ms=0.72 n=2425
+E3B_MEASURE_OK label=i63_confirm run=1 status=ok cells=16
+arm_exit=0 run=1 arm=native
+=== 2026-09-29T07:53:15Z confirm run=1 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=1 status=Ok correctness=true
+arm_exit=0 run=1 arm=meilisearch
+=== 2026-09-29T08:06:37Z confirm run=1 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=1 status=Ok correctness=true
+arm_exit=0 run=1 arm=solr
+=== 2026-09-29T08:11:27Z equivalence run=1 ===
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0
+=== 2026-09-29T08:11:46Z confirm run=2 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=2 status=Ok correctness=true
+arm_exit=0 run=2 arm=solr
+=== 2026-09-29T08:16:17Z confirm run=2 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1192.0) p50_ms=1.51 n=1172
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(9873.0) p50_ms=9.20 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1973.0) p50_ms=2.35 n=729
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(14084.0) p50_ms=12.87 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(22550.0) p50_ms=24.50 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(37219.0) p50_ms=37.72 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(26226.0) p50_ms=28.20 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(42609.0) p50_ms=42.26 n=200
+  numeric_range_sort Some(("hybrid", "hybrid:p0r")) cpu_us=Some(7331.0) p50_ms=6.13 n=255
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(7473.0) p50_ms=5.89 n=251
+  filter_depth_1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(426.0) p50_ms=0.71 n=2432
+  filter_depth_1 Some(("hybrid", "hybrid")) cpu_us=Some(556.0) p50_ms=0.61 n=1885
+  filter_depth_3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(460.0) p50_ms=0.63 n=2503
+  filter_depth_3 Some(("hybrid", "hybrid")) cpu_us=Some(524.0) p50_ms=0.74 n=2260
+  filter_depth_5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(504.0) p50_ms=0.79 n=2314
+  filter_depth_5 Some(("hybrid", "hybrid")) cpu_us=Some(409.0) p50_ms=0.62 n=2777
+E3B_MEASURE_OK label=i63_confirm run=2 status=ok cells=16
+arm_exit=0 run=2 arm=native
+=== 2026-09-29T08:18:45Z confirm run=2 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=2 status=Ok correctness=true
+arm_exit=0 run=2 arm=meilisearch
+=== 2026-09-29T08:32:23Z equivalence run=2 ===
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0
+=== 2026-09-29T08:32:38Z confirm run=3 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=3 status=Ok correctness=true
+arm_exit=0 run=3 arm=meilisearch
+=== 2026-09-29T08:46:46Z confirm run=3 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=3 status=Ok correctness=true
+arm_exit=0 run=3 arm=solr
+=== 2026-09-29T08:51:32Z confirm run=3 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(8530.0) p50_ms=5.63 n=219
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1059.0) p50_ms=1.26 n=1308
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(12409.0) p50_ms=14.74 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2042.0) p50_ms=2.23 n=708
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(37942.0) p50_ms=36.48 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(23788.0) p50_ms=23.78 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(37394.0) p50_ms=39.37 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(25223.0) p50_ms=27.28 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(7371.0) p50_ms=5.79 n=253
+  numeric_range_sort Some(("hybrid", "hybrid:p0r")) cpu_us=Some(9969.0) p50_ms=11.45 n=200
+  filter_depth_1 Some(("hybrid", "hybrid")) cpu_us=Some(370.0) p50_ms=0.56 n=2774
+  filter_depth_1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(401.0) p50_ms=0.64 n=2571
+  filter_depth_3 Some(("hybrid", "hybrid")) cpu_us=Some(516.0) p50_ms=0.70 n=2387
+  filter_depth_3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(562.0) p50_ms=0.86 n=2103
+  filter_depth_5 Some(("hybrid", "hybrid")) cpu_us=Some(522.0) p50_ms=0.73 n=2415
+  filter_depth_5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(506.0) p50_ms=0.72 n=2450
+E3B_MEASURE_OK label=i63_confirm run=3 status=ok cells=16
+arm_exit=0 run=3 arm=native
+=== 2026-09-29T08:53:49Z equivalence run=3 ===
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0
+=== 2026-09-29T08:54:02Z phase confirm done ===

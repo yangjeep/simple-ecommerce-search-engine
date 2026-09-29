@@ -1,0 +1,102 @@
+{
+  "git_sha": [
+    "31a82e93fb21585f53c9d5ca690766bbec476cb8"
+  ],
+  "cells": [
+    {
+      "label": "FH1",
+      "cell": "facet_low_cardinality_style",
+      "revalidation_cpu_usec": [
+        10333.28,
+        11068.605,
+        8108.473684210527
+      ],
+      "headline_cpu_usec": [
+        7991.725738396624,
+        9065.64734299517,
+        8537.563636363637
+      ],
+      "ratio_of_medians": 1.2103312420405226,
+      "outputs_identical": true,
+      "paths_identical": true,
+      "verdict": "PASS"
+    },
+    {
+      "label": "FH2",
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "revalidation_cpu_usec": [
+        10253.28,
+        13997.29,
+        11724.015
+      ],
+      "headline_cpu_usec": [
+        11186.46,
+        11482.93,
+        11108.89
+      ],
+      "ratio_of_medians": 1.048054076088414,
+      "outputs_identical": true,
+      "paths_identical": true,
+      "verdict": "PASS"
+    },
+    {
+      "label": "FH3",
+      "cell": "facet_high_cardinality_color",
+      "revalidation_cpu_usec": [
+        38118.035,
+        37052.4,
+        28553.24
+      ],
+      "headline_cpu_usec": [
+        20663.9,
+        22867.86,
+        24629.82
+      ],
+      "ratio_of_medians": 1.6202827899068823,
+      "outputs_identical": true,
+      "paths_identical": true,
+      "verdict": "REGRESSION-SUSPECT"
+    },
+    {
+      "label": "FH4",
+      "cell": "facet_disjunctive_multi_dim",
+      "revalidation_cpu_usec": [
+        38463.535,
+        37570.345,
+        42096.59
+      ],
+      "headline_cpu_usec": [
+        25857.15,
+        23499.28,
+        33833.785
+      ],
+      "ratio_of_medians": 1.4875396167017634,
+      "outputs_identical": true,
+      "paths_identical": true,
+      "verdict": "REGRESSION-SUSPECT"
+    },
+    {
+      "label": "SH1",
+      "cell": "numeric_range_sort",
+      "revalidation_cpu_usec": [
+        7916.1416309012875,
+        10427.96,
+        8590.891625615763
+      ],
+      "headline_cpu_usec": [
+        7240.903846153846,
+        7831.653846153846,
+        8352.919282511211
+      ],
+      "ratio_of_medians": 1.09694475705598,
+      "outputs_identical": true,
+      "paths_identical": true,
+      "verdict": "PASS"
+    }
+  ],
+  "problems": [
+    "FH3: REGRESSION-SUSPECT ratio=1.620 outputs=True paths=True",
+    "FH4: REGRESSION-SUSPECT ratio=1.488 outputs=True paths=True"
+  ],
+  "overall": "FAIL"
+}

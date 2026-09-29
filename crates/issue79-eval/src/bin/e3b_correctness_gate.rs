@@ -1,7 +1,8 @@
 //! Issue #79 (Infra E3b) correctness gate (preregistration section 6).
 //!
 //! Usage: e3b_correctness_gate --catalog <jsonl> --out <json>
-//!          [--tau-f <x>] [--rho-s <x>]
+//!          [--tau-f <x>] [--rho-s <x>] [--cand-modes p0,p0r,p1,p2,p2b]
+//!          [--include-reference true]
 //!
 //! Loads the catalog, builds the index plus every optional E3b structure,
 //! and for every preregistered cell -- plus extra asc / offset probes --
@@ -23,9 +24,11 @@ use commerce_core::domain::CategoryId;
 use commerce_core::index::CatalogIndex;
 use comparator_eval::translate::StructuralNames;
 use issue61_eval::{load_dataset, Dataset};
-use issue79_eval::cells::{all_cells, Cell, Family, SORT_FIELDS};
+use issue79_eval::cells::{all_cells, reference_cells, Cell, Family, SORT_FIELDS};
 use issue79_eval::oracle::Oracle;
-use issue79_eval::plp::{execute, FacetMode, PlpContext, PlpRequest, SortMode, SortStructures};
+use issue79_eval::plp::{
+    execute, CandidateMode, FacetMode, PlpContext, PlpRequest, SortMode, SortStructures,
+};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -35,6 +38,8 @@ struct Check {
     case: String,
     facet_mode: FacetMode,
     sort_mode: SortMode,
+    /// Issue #63 B1 candidate representation (`p0` = #79 FINAL's).
+    cand_mode: CandidateMode,
     tau_f: Option<f64>,
     rho_s: Option<f64>,
     is_baseline: bool,
@@ -82,6 +87,7 @@ fn request_for(cell: &Cell, offset: usize, sort_override: Option<(&str, bool)>) 
         offset,
         facet_mode: FacetMode::Legacy,
         sort_mode: SortMode::Legacy,
+        cand_mode: CandidateMode::P0,
     }
 }
 
@@ -97,10 +103,19 @@ fn main() {
     let out = PathBuf::from(arg(&args, "--out").expect("--out"));
     let calibrated_tau = arg(&args, "--tau-f").map(|v| v.parse::<f64>().expect("tau"));
     let calibrated_rho = arg(&args, "--rho-s").map(|v| v.parse::<f64>().expect("rho"));
+    // Issue #63: `--cand-modes p0,p0r,p1,p2,p2b` adds the B1 candidate
+    // representations; the default `p0` reproduces #79's gate exactly.
+    let cand_modes: Vec<CandidateMode> = arg(&args, "--cand-modes")
+        .unwrap_or_else(|| "p0".to_owned())
+        .split(',')
+        .map(|m| CandidateMode::parse(m).expect("cand mode"))
+        .collect();
 
     let data = load_dataset(&catalog_path, Dataset::Wands).expect("load catalog");
     let index = CatalogIndex::build(&data.catalog);
-    let structures = SortStructures::build(&index, &SORT_FIELDS, &SORT_FIELDS);
+    let mut structures = SortStructures::build(&index, &SORT_FIELDS, &SORT_FIELDS);
+    // Issue #63: the P1 prebuilt bitmap (also the P2 top-K fallback).
+    structures.all_ordinals = Some(index.all_ordinals_bitmap());
     let category_id_by_leaf: HashMap<String, CategoryId> = data
         .catalog
         .products
@@ -120,7 +135,14 @@ fn main() {
     // Cases: every preregistered cell, plus probes that exercise asc,
     // offset and nulls-last on the sort paths.
     let mut cases: Vec<(String, PlpRequest)> = Vec::new();
-    for cell in all_cells() {
+    // Issue #63: `--include-reference true` adds #77's filter-depth cells.
+    let include_reference = arg(&args, "--include-reference").as_deref() == Some("true");
+    let extra = if include_reference {
+        reference_cells()
+    } else {
+        Vec::new()
+    };
+    for cell in all_cells().into_iter().chain(extra) {
         cases.push((cell.name.to_owned(), request_for(&cell, 0, None)));
         if cell.family == Family::Sort {
             let (field, descending) = cell.sort.expect("sort cell");
@@ -161,21 +183,36 @@ fn main() {
             .expect("oracle");
         // Filter result IDs are compared once per case, directly against the
         // index's candidate bitmap (every variant shares that retrieval).
-        let mut variants: Vec<(FacetMode, SortMode, Option<f64>, Option<f64>)> = Vec::new();
-        for facet in [FacetMode::Legacy, FacetMode::Ordinal, FacetMode::Bitmap] {
-            for sort in [SortMode::Legacy, SortMode::Topk, SortMode::Presorted] {
-                variants.push((facet, sort, None, None));
+        type Variant = (FacetMode, SortMode, CandidateMode, Option<f64>, Option<f64>);
+        let mut variants: Vec<Variant> = Vec::new();
+        for &cand in &cand_modes {
+            // Legacy facet/sort paths exist only over P0 (#77's code).
+            let facets: &[FacetMode] = if cand == CandidateMode::P0 {
+                &[FacetMode::Legacy, FacetMode::Ordinal, FacetMode::Bitmap]
+            } else {
+                &[FacetMode::Ordinal, FacetMode::Bitmap]
+            };
+            let sorts: &[SortMode] = if cand == CandidateMode::P0 {
+                &[SortMode::Legacy, SortMode::Topk, SortMode::Presorted]
+            } else {
+                &[SortMode::Topk, SortMode::Presorted]
+            };
+            for &facet in facets {
+                for &sort in sorts {
+                    variants.push((facet, sort, cand, None, None));
+                }
+            }
+            for tau in &taus {
+                for rho in &rhos {
+                    variants.push((FacetMode::Hybrid, SortMode::Hybrid, cand, *tau, *rho));
+                }
             }
         }
-        for tau in &taus {
-            for rho in &rhos {
-                variants.push((FacetMode::Hybrid, SortMode::Hybrid, *tau, *rho));
-            }
-        }
-        for (facet_mode, sort_mode, tau_f, rho_s) in variants {
+        for (facet_mode, sort_mode, cand_mode, tau_f, rho_s) in variants {
             let req = PlpRequest {
                 facet_mode,
                 sort_mode,
+                cand_mode,
                 ..base_req.clone()
             };
             let ctx = PlpContext {
@@ -192,6 +229,7 @@ fn main() {
                 case: case.clone(),
                 facet_mode,
                 sort_mode,
+                cand_mode,
                 tau_f,
                 rho_s,
                 is_baseline,
@@ -301,7 +339,7 @@ fn main() {
     );
     for c in report.checks.iter().filter(|c| !c.candidate_components_ok) {
         println!(
-            "  {} {} {:?}/{:?} tau={:?} rho={:?} :: {:?}",
+            "  {} {} {:?}/{:?}/{:?} tau={:?} rho={:?} :: {:?}",
             if c.is_baseline || c.baseline_component_divergence {
                 "BASELINE_DIVERGENCE"
             } else {
@@ -310,6 +348,7 @@ fn main() {
             c.case,
             c.facet_mode,
             c.sort_mode,
+            c.cand_mode,
             c.tau_f,
             c.rho_s,
             c.detail

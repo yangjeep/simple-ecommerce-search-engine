@@ -1,0 +1,7 @@
+=== 2026-09-29T05:58:01Z gate tier=100k ===
+E3B_GATE rows=128982 nan=0 candidate_checks=8556 candidate_failures=0 baseline_mismatches=66
+exit=0
+=== 2026-09-29T05:58:52Z gate tier=500k ===
+E3B_GATE rows=515928 nan=0 candidate_checks=8556 candidate_failures=0 baseline_mismatches=66
+exit=0
+=== 2026-09-29T06:02:39Z phase gate done ===

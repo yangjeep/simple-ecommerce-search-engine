@@ -13,10 +13,10 @@ use commerce_core::domain::{
     effective_attributes, AttributeValue, Catalog, CategoryId, Constraint, NumericOp, ProductId,
 };
 use commerce_core::index::sort::{
-    choose_facet_path, choose_sort_path, top_k_presorted, top_k_scan, Direction, FacetPath,
-    NumericSortColumn, PresenceBitmap, SortOutcome, SortPath,
+    choose_facet_path, choose_sort_path, top_k_presorted, top_k_presorted_all, top_k_scan,
+    Direction, FacetPath, NumericSortColumn, PresenceBitmap, SortOutcome, SortPath,
 };
-use commerce_core::index::CatalogIndex;
+use commerce_core::index::{CandidateSet, CatalogIndex};
 use commerce_core::ir::{ResolvedConstraint, StructuralConstraint};
 use roaring::RoaringBitmap;
 use serde::{Deserialize, Serialize};
@@ -48,6 +48,54 @@ pub enum SortMode {
     Presorted,
     /// S3: `choose_sort_path` with the calibrated `rho`.
     Hybrid,
+}
+
+/// Issue #63 (amendment 1, section 3 B1 and clarification C1): how a
+/// candidate set with no indexable constraint (match-all) is represented.
+/// Every non-match-all candidate set is the same explicit bitmap in every
+/// mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CandidateMode {
+    /// P0 (#79 FINAL, the default): `indexed_candidates`, i.e. per-element
+    /// `all_ordinals()` materialization.
+    #[default]
+    P0,
+    /// P0r: materialized with one `insert_range`.
+    P0r,
+    /// P1: borrow the prebuilt all-ordinals bitmap (server `--prebuilt-all`).
+    P1,
+    /// P2: logical match-all. Facets over it use the dense paths, chosen by
+    /// the frozen tau rule; unsorted paging reads `0..limit`; presorted sort
+    /// skips the membership test; candidate top-K borrows the P1 bitmap.
+    P2,
+    /// P2b: P2, except a hybrid facet over match-all always takes the
+    /// value-bitmap `len()` path.
+    P2b,
+}
+
+impl CandidateMode {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "p0" => Ok(Self::P0),
+            "p0r" => Ok(Self::P0r),
+            "p1" => Ok(Self::P1),
+            "p2" => Ok(Self::P2),
+            "p2b" => Ok(Self::P2b),
+            other => Err(format!("unknown cand_mode {other:?}")),
+        }
+    }
+
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::P0 => "p0",
+            Self::P0r => "p0r",
+            Self::P1 => "p1",
+            Self::P2 => "p2",
+            Self::P2b => "p2b",
+        }
+    }
 }
 
 impl FacetMode {
@@ -85,6 +133,7 @@ pub struct PlpRequest {
     pub offset: usize,
     pub facet_mode: FacetMode,
     pub sort_mode: SortMode,
+    pub cand_mode: CandidateMode,
 }
 
 pub fn percent_decode(value: &str) -> Result<String, String> {
@@ -112,7 +161,8 @@ pub fn percent_decode(value: &str) -> Result<String, String> {
 }
 
 /// Parses `/plp?...` exactly like #77's server, plus `facet_mode`/
-/// `sort_mode` (default `legacy`).
+/// `sort_mode` (default `legacy`) and Issue #63's `cand_mode` (default
+/// `p0`).
 pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
     let (path, query_string) = target.split_once('?').unwrap_or((target, ""));
     if path != "/plp" {
@@ -128,6 +178,7 @@ pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
         offset: 0,
         facet_mode: FacetMode::Legacy,
         sort_mode: SortMode::Legacy,
+        cand_mode: CandidateMode::P0,
     };
     for pair in query_string.split('&').filter(|p| !p.is_empty()) {
         let (name, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
@@ -169,6 +220,7 @@ pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
             }
             "facet_mode" => req.facet_mode = FacetMode::parse(&value)?,
             "sort_mode" => req.sort_mode = SortMode::parse(&value)?,
+            "cand_mode" => req.cand_mode = CandidateMode::parse(&value)?,
             _ => {}
         }
     }
@@ -181,6 +233,8 @@ pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
 pub struct SortStructures {
     pub columns: HashMap<String, NumericSortColumn>,
     pub presence: HashMap<String, PresenceBitmap>,
+    /// Issue #63 P1: the prebuilt all-ordinals bitmap (`--prebuilt-all`).
+    pub all_ordinals: Option<RoaringBitmap>,
 }
 
 impl SortStructures {
@@ -213,6 +267,14 @@ impl SortStructures {
                 .map(PresenceBitmap::owned_bytes)
                 .sum(),
         )
+    }
+
+    /// Issue #63: serialized size of the prebuilt P1 bitmap (0 if absent).
+    #[must_use]
+    pub fn all_ordinals_bytes(&self) -> usize {
+        self.all_ordinals
+            .as_ref()
+            .map_or(0, RoaringBitmap::serialized_size)
     }
 }
 
@@ -254,6 +316,13 @@ pub struct Diag {
     pub facet_diag: Vec<FacetDiag>,
     pub sort_path: String,
     pub ids_inspected: u64,
+    /// Issue #63: `cand_mode` and whether the base set was match-all. Both
+    /// are omitted for the default P0 path, so #79 FINAL's response is
+    /// byte-identical to #79's.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub cand_mode: String,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub base_match_all: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -327,6 +396,9 @@ fn micros(since: Instant) -> f64 {
 
 /// Executes one `/plp` request under `req.facet_mode` / `req.sort_mode`.
 pub fn execute(ctx: &PlpContext<'_>, req: &PlpRequest) -> Result<PlpResponse, String> {
+    if req.cand_mode != CandidateMode::P0 {
+        return execute_with_candidate_mode(ctx, req);
+    }
     let started = Instant::now();
     let base_constraints = build_constraints(ctx, req, None)?;
     let candidates = ctx.index.indexed_candidates(&base_constraints);
@@ -546,6 +618,220 @@ fn bounded_assembly(
             })?;
             diag.sort_path = "presorted".to_owned();
             top_k_presorted(sorted, presence, candidates, direction, limit)
+        }
+    };
+    diag.ids_inspected = outcome.inspected;
+    Ok(outcome
+        .hits
+        .into_iter()
+        .skip(req.offset)
+        .filter_map(|hit| ordinal_doc(ctx, hit.ordinal, hit.value))
+        .collect())
+}
+
+/// Issue #63: a candidate set as one of the B1 representations produces it.
+enum Candidates<'a> {
+    Owned(RoaringBitmap),
+    Borrowed(&'a RoaringBitmap),
+    All(u32),
+}
+
+impl Candidates<'_> {
+    fn len(&self) -> u64 {
+        match self {
+            Self::Owned(bitmap) => bitmap.len(),
+            Self::Borrowed(bitmap) => bitmap.len(),
+            Self::All(count) => u64::from(*count),
+        }
+    }
+
+    fn bitmap(&self) -> Option<&RoaringBitmap> {
+        match self {
+            Self::Owned(bitmap) => Some(bitmap),
+            Self::Borrowed(bitmap) => Some(bitmap),
+            Self::All(_) => None,
+        }
+    }
+
+    fn is_all(&self) -> bool {
+        matches!(self, Self::All(_))
+    }
+}
+
+fn prebuilt_all<'a>(ctx: &PlpContext<'a>) -> Result<&'a RoaringBitmap, String> {
+    ctx.structures.all_ordinals.as_ref().ok_or_else(|| {
+        "cand_mode requires the prebuilt all-ordinals bitmap (start with --prebuilt-all)".to_owned()
+    })
+}
+
+/// The candidate set for `constraints` under `mode` (never P0, which keeps
+/// #79's `indexed_candidates` call verbatim in [`execute`]).
+fn candidates_for<'a>(
+    ctx: &PlpContext<'a>,
+    constraints: &[ResolvedConstraint],
+    mode: CandidateMode,
+) -> Result<Candidates<'a>, String> {
+    Ok(match ctx.index.candidate_set(constraints) {
+        CandidateSet::Set(bitmap) => Candidates::Owned(bitmap),
+        CandidateSet::All { count } => match mode {
+            CandidateMode::P0 => Candidates::Owned(ctx.index.all_ordinals_bitmap()),
+            CandidateMode::P0r => Candidates::Owned(ctx.index.all_ordinals_bitmap_by_range()),
+            CandidateMode::P1 => Candidates::Borrowed(prebuilt_all(ctx)?),
+            CandidateMode::P2 | CandidateMode::P2b => Candidates::All(count),
+        },
+    })
+}
+
+/// [`execute`] for `cand_mode != p0`: the FINAL facet/sort algorithms over
+/// the B1 candidate representation. Legacy facet/sort modes are #77's code
+/// and only exist over P0, so they are rejected here.
+fn execute_with_candidate_mode(
+    ctx: &PlpContext<'_>,
+    req: &PlpRequest,
+) -> Result<PlpResponse, String> {
+    if req.facet_mode == FacetMode::Legacy || req.sort_mode == SortMode::Legacy {
+        return Err("cand_mode other than p0 requires non-legacy facet_mode and sort_mode".into());
+    }
+    let started = Instant::now();
+    let base_constraints = build_constraints(ctx, req, None)?;
+    let candidates = candidates_for(ctx, &base_constraints, req.cand_mode)?;
+    let num_found = candidates.len() as usize;
+    let mut diag = Diag {
+        num_candidates: candidates.len(),
+        candidates_us: micros(started),
+        cand_mode: req.cand_mode.as_str().to_owned(),
+        base_match_all: candidates.is_all(),
+        ..Diag::default()
+    };
+
+    let facets_started = Instant::now();
+    let mut facets = HashMap::new();
+    for facet_attr in &req.facets {
+        let has_own_filter = req.filters.iter().any(|(attr, _)| attr == facet_attr);
+        let own;
+        let facet_candidates = if has_own_filter {
+            let constraints = build_constraints(ctx, req, Some(facet_attr.as_str()))?;
+            own = candidates_for(ctx, &constraints, req.cand_mode)?;
+            &own
+        } else {
+            &candidates
+        };
+        let cardinality = ctx.index.enum_cardinality(facet_attr);
+        let ordinal_exact = ctx.index.attribute_is_single_valued_enum(facet_attr);
+        let path = match req.facet_mode {
+            FacetMode::Ordinal if ordinal_exact => FacetPath::OrdinalScan,
+            FacetMode::Ordinal | FacetMode::Bitmap => FacetPath::BitmapCount,
+            FacetMode::Hybrid
+                if facet_candidates.is_all() && req.cand_mode == CandidateMode::P2b =>
+            {
+                FacetPath::BitmapCount
+            }
+            FacetMode::Hybrid => {
+                let tau = ctx
+                    .tau_f
+                    .ok_or("facet_mode=hybrid requested but tau_f is not configured")?;
+                choose_facet_path(facet_candidates.len(), cardinality, tau, ordinal_exact)
+            }
+            FacetMode::Legacy => unreachable!("rejected above"),
+        };
+        let (counts, path_name) = match (facet_candidates.bitmap(), path) {
+            (Some(bitmap), FacetPath::OrdinalScan) => (
+                ctx.index.facet_counts_ordinal(bitmap, facet_attr),
+                "ordinal",
+            ),
+            (Some(bitmap), FacetPath::BitmapCount) => {
+                (ctx.index.facet_counts_bitmap(bitmap, facet_attr), "bitmap")
+            }
+            (None, FacetPath::OrdinalScan) => (
+                ctx.index.facet_counts_ordinal_all(facet_attr),
+                "ordinal_all",
+            ),
+            (None, FacetPath::BitmapCount) => {
+                (ctx.index.facet_counts_bitmap_all(facet_attr), "bitmap_all")
+            }
+        };
+        diag.facet_diag.push(FacetDiag {
+            field: facet_attr.clone(),
+            candidates: facet_candidates.len(),
+            cardinality,
+            path: path_name.to_owned(),
+        });
+        facets.insert(facet_attr.clone(), counts);
+    }
+    diag.facets_us = micros(facets_started);
+
+    let sort_started = Instant::now();
+    let docs = bounded_assembly_with(ctx, req, &candidates, &mut diag)?;
+    diag.sort_us = micros(sort_started);
+    diag.total_us = micros(started);
+
+    Ok(PlpResponse {
+        num_found,
+        docs,
+        facets,
+        backend_requests: 1,
+        diag,
+    })
+}
+
+/// [`bounded_assembly`] over a B1 candidate representation. A match-all
+/// set pages `0..limit` unsorted and walks the presorted order without a
+/// membership test; candidate top-K has no dense specialization, so it
+/// borrows the P1 bitmap.
+fn bounded_assembly_with(
+    ctx: &PlpContext<'_>,
+    req: &PlpRequest,
+    candidates: &Candidates<'_>,
+    diag: &mut Diag,
+) -> Result<Vec<PlpDoc>, String> {
+    let Candidates::All(count) = candidates else {
+        let bitmap = candidates.bitmap().expect("explicit candidate set");
+        return bounded_assembly(ctx, req, bitmap, diag);
+    };
+    let limit = req.offset + req.top_k;
+    let Some((field, descending)) = &req.sort else {
+        diag.sort_path = "bounded_unsorted_all".to_owned();
+        let docs: Vec<PlpDoc> = (0..*count)
+            .take(limit)
+            .filter_map(|ord| ordinal_doc(ctx, ord, None))
+            .skip(req.offset)
+            .collect();
+        diag.ids_inspected = (limit as u64).min(u64::from(*count));
+        return Ok(docs);
+    };
+    let direction = if *descending {
+        Direction::Descending
+    } else {
+        Direction::Ascending
+    };
+    let path = match req.sort_mode {
+        SortMode::Topk => SortPath::CandidateTopK,
+        SortMode::Presorted => SortPath::Presorted,
+        SortMode::Hybrid => {
+            let rho = ctx
+                .rho_s
+                .ok_or("sort_mode=hybrid requested but rho_s is not configured")?;
+            choose_sort_path(u64::from(*count), limit, ctx.index.ordinal_count(), rho)
+        }
+        SortMode::Legacy => unreachable!("rejected by the caller"),
+    };
+    let outcome: SortOutcome = match path {
+        SortPath::CandidateTopK => {
+            let bitmap = prebuilt_all(ctx)?;
+            return bounded_assembly(ctx, req, bitmap, diag);
+        }
+        SortPath::Presorted => {
+            let sorted = ctx
+                .index
+                .numeric_sorted(field)
+                .ok_or_else(|| format!("{field:?} is not a numeric attribute"))?;
+            let presence = ctx.structures.presence.get(field).ok_or_else(|| {
+                format!(
+                    "sort_mode requires a presence bitmap for {field:?} (start with --presence)"
+                )
+            })?;
+            diag.sort_path = "presorted_all".to_owned();
+            top_k_presorted_all(sorted, presence, *count, direction, limit)
         }
     };
     diag.ids_inspected = outcome.inspected;

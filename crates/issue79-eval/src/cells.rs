@@ -195,6 +195,34 @@ pub fn all_cells() -> Vec<Cell> {
     ]
 }
 
+/// Issue #63 (amendment 1, section 2): #77's unsorted filter-depth cells,
+/// measured as same-window structural references in #63's Part A. Kept
+/// out of [`all_cells`] so every #79 selection (and #79's gate) is
+/// unchanged. Values are #77's `I77_FILTER_DEPTH*` (`resource_envelope.env`).
+#[must_use]
+pub fn reference_cells() -> Vec<Cell> {
+    use Family::Facet;
+    use Role::Headline;
+    let depth1 = vec![("color", "white")];
+    let depth3 = DEPTH3.to_vec();
+    let mut depth5 = DEPTH3.to_vec();
+    depth5.push(("shape", "square"));
+    vec![
+        Cell {
+            filters: depth1,
+            ..cell("filter_depth_1", Headline, Facet)
+        },
+        Cell {
+            filters: depth3,
+            ..cell("filter_depth_3", Headline, Facet)
+        },
+        Cell {
+            filters: depth5,
+            ..cell("filter_depth_5", Headline, Facet)
+        },
+    ]
+}
+
 /// The sort fields E3b builds sort structures for.
 pub const SORT_FIELDS: [&str; 3] = ["average_rating", "review_count", "rating_count"];
 
@@ -219,6 +247,17 @@ pub fn urlencode(value: &str) -> String {
 /// binary receives the exact E3 request for E3 cells.
 #[must_use]
 pub fn query_string(cell: &Cell, modes: Option<(&str, &str)>) -> String {
+    query_string_with_cand(cell, modes, None)
+}
+
+/// [`query_string`] plus Issue #63's `cand_mode` parameter (omitted when
+/// `None`, so every #79 request string is unchanged).
+#[must_use]
+pub fn query_string_with_cand(
+    cell: &Cell,
+    modes: Option<(&str, &str)>,
+    cand_mode: Option<&str>,
+) -> String {
     let mut params: Vec<String> = Vec::new();
     if let Some(category) = cell.category {
         params.push(format!("category={}", urlencode(category)));
@@ -243,12 +282,34 @@ pub fn query_string(cell: &Cell, modes: Option<(&str, &str)>) -> String {
         params.push(format!("facet_mode={facet_mode}"));
         params.push(format!("sort_mode={sort_mode}"));
     }
+    if let Some(cand_mode) = cand_mode {
+        params.push(format!("cand_mode={cand_mode}"));
+    }
     format!("/plp?{}", params.join("&"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reference_cells_match_e3_native_requests_exactly() {
+        let cells = reference_cells();
+        let by_name = |name: &str| cells.iter().find(|c| c.name == name).unwrap();
+        // #77's `native_query_string` path part for the filter-depth cells.
+        assert_eq!(
+            query_string(by_name("filter_depth_1"), None),
+            "/plp?filter=color:white&topk=48"
+        );
+        assert_eq!(
+            query_string(by_name("filter_depth_5"), None),
+            "/plp?filter=color:white&filter=style:modern%20%26%20contemporary\
+             &filter=primarymaterial:metal&filter=shape:square&topk=48"
+        );
+        assert!(all_cells()
+            .iter()
+            .all(|c| !c.name.starts_with("filter_depth")));
+    }
 
     #[test]
     fn headline_cells_match_e3_native_requests_exactly() {

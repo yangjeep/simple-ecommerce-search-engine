@@ -260,6 +260,13 @@ struct MeasurementResult {
     /// (`I77_MEILI_LIKE_FOR_LIKE=1`); absent/false in #77's raw files.
     #[serde(default)]
     meili_like_for_like: bool,
+    /// Issue #63: `I63_EQUAL_WORK=1` (Solr `limit: -1`); absent/false in
+    /// #77/#79's raw files.
+    #[serde(default)]
+    i63_equal_work: bool,
+    /// Issue #63 post-review Solr sensitivity: `I63_SOLR_FACET_SORT`.
+    #[serde(default)]
+    i63_solr_facet_sort: Option<String>,
     cpus: String,
     cpuset: String,
     memory_limit: String,
@@ -332,6 +339,8 @@ fn base_result(config: &Config) -> MeasurementResult {
         container_name: config.engine.container_name().to_owned(),
         runtime: runtime_name().to_owned(),
         meili_like_for_like: config.engine == Engine::Meilisearch && meili_like_for_like(),
+        i63_equal_work: i63_equal_work(),
+        i63_solr_facet_sort: std::env::var("I63_SOLR_FACET_SORT").ok(),
         cpus: read_env_var(&config.repository_root, "I77_CPUS").unwrap_or_default(),
         cpuset: read_env_var(&config.repository_root, "I77_CPUSET").unwrap_or_default(),
         memory_limit,
@@ -1108,8 +1117,19 @@ fn solr_query_body(cell: &WorkloadCell) -> (String, serde_json::Value) {
                 filters.push(format!("{{!tag={attr}}}{attr}:\"{val}\""));
             }
             for field in facet_fields {
+                // Issue #63 equal work (`I63_EQUAL_WORK=1`): every bucket, as
+                // native returns; #77's default (top 200) is unchanged.
+                let limit = if i63_equal_work() { -1 } else { 200 };
                 let mut facet_def =
-                    serde_json::json!({"type": "terms", "field": field, "limit": 200});
+                    serde_json::json!({"type": "terms", "field": field, "limit": limit});
+                // Issue #63 post-review Solr sensitivity (not preregistered):
+                // `I63_SOLR_FACET_SORT=index` returns buckets in term order
+                // instead of Solr's default count order -- still every bucket.
+                if let Ok(sort) = std::env::var("I63_SOLR_FACET_SORT") {
+                    if sort == "index" {
+                        facet_def["sort"] = serde_json::json!("index asc");
+                    }
+                }
                 if active_filter.as_ref().is_some_and(|(a, _)| a == field) {
                     facet_def["domain"] = serde_json::json!({"excludeTags": [field]});
                 }
@@ -1149,6 +1169,43 @@ fn solr_query_body(cell: &WorkloadCell) -> (String, serde_json::Value) {
     )
 }
 
+/// Issue #63 (amendment 1, section 2): `I63_EQUAL_WORK=1` asks Solr for
+/// every facet bucket (`limit: -1`). Meilisearch's equal-work configuration
+/// is #79's existing `I77_MEILI_LIKE_FOR_LIKE=1`.
+fn i63_equal_work() -> bool {
+    std::env::var("I63_EQUAL_WORK").is_ok_and(|value| value == "1")
+}
+
+/// Issue #63: when `I63_DUMP_DIR` is set, one normalized response per cell
+/// (`num_found`, complete `{field: {value: count}}` facet maps, hit keys,
+/// backend requests) is written there before the timed batch, so the
+/// equal-work check can compare it against the oracle. Unset: no request
+/// is added and nothing is written.
+fn i63_dump(engine: &str, cell: &WorkloadCell, dump: &serde_json::Value) -> Result<(), String> {
+    let Ok(dir) = std::env::var("I63_DUMP_DIR") else {
+        return Ok(());
+    };
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = std::path::Path::new(&dir).join(format!("{engine}__{}.json", cell.name));
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(dump).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn i63_dump_enabled() -> bool {
+    std::env::var_os("I63_DUMP_DIR").is_some()
+}
+
+fn hit_keys(hits: Option<&serde_json::Value>) -> Vec<String> {
+    hits.and_then(|h| h.as_array())
+        .and_then(|a| a.first())
+        .and_then(|d| d.as_object())
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default()
+}
+
 fn run_solr_workload_cell(
     agent: &ureq::Agent,
     port: &str,
@@ -1157,6 +1214,42 @@ fn run_solr_workload_cell(
 ) -> Result<WorkloadCellResult, String> {
     let (url_template, body) = solr_query_body(cell);
     let url = url_template.replace("{PORT}", port);
+    if i63_dump_enabled() {
+        let parsed: serde_json::Value = retry_request(3, || {
+            agent
+                .post(&url)
+                .set("Connection", "close")
+                .send_json(body.clone())
+                .map_err(|error| error.to_string())?
+                .into_json()
+                .map_err(|error| error.to_string())
+        })?;
+        let mut facets = serde_json::Map::new();
+        if let Some(object) = parsed["facets"].as_object() {
+            for (field, value) in object.iter().filter(|(k, _)| *k != "count") {
+                let mut counts = serde_json::Map::new();
+                for bucket in value["buckets"].as_array().into_iter().flatten() {
+                    let key = match &bucket["val"] {
+                        serde_json::Value::String(s) => s.clone(),
+                        other => other.to_string(),
+                    };
+                    counts.insert(key, bucket["count"].clone());
+                }
+                facets.insert(field.clone(), serde_json::Value::Object(counts));
+            }
+        }
+        i63_dump(
+            "solr",
+            cell,
+            &serde_json::json!({
+                "num_found": parsed["response"]["numFound"],
+                "facets": facets,
+                "hit_keys": hit_keys(parsed["response"].get("docs")),
+                "backend_requests": 1,
+                "request": body,
+            }),
+        )?;
+    }
 
     for _ in 0..WARMUP_QUERY_COUNT {
         retry_request(3, || {
@@ -2105,6 +2198,43 @@ fn run_meili_workload_cell(
 ) -> Result<WorkloadCellResult, String> {
     let bodies = meili_bodies(cell);
     let url = format!("http://127.0.0.1:{port}/indexes/i77_wands/search");
+    if i63_dump_enabled() {
+        let mut facets = serde_json::Map::new();
+        let mut num_found = serde_json::Value::Null;
+        let mut keys = Vec::new();
+        for (body, kind) in &bodies {
+            let resp: serde_json::Value = retry_request(3, || {
+                agent
+                    .post(&url)
+                    .set("Connection", "close")
+                    .send_json(body.clone())
+                    .map_err(|error| error.to_string())?
+                    .into_json()
+                    .map_err(|error| error.to_string())
+            })?;
+            if *kind == "base" {
+                num_found = resp["estimatedTotalHits"].clone();
+                keys = hit_keys(resp.get("hits"));
+            }
+            if let Some(distribution) = resp["facetDistribution"].as_object() {
+                for (field, counts) in distribution {
+                    facets.insert(field.clone(), counts.clone());
+                }
+            }
+        }
+        let requests: Vec<&serde_json::Value> = bodies.iter().map(|(b, _)| b).collect();
+        i63_dump(
+            "meilisearch",
+            cell,
+            &serde_json::json!({
+                "num_found": num_found,
+                "facets": facets,
+                "hit_keys": keys,
+                "backend_requests": bodies.len(),
+                "request": requests,
+            }),
+        )?;
+    }
 
     for _ in 0..WARMUP_QUERY_COUNT {
         for (body, _kind) in &bodies {

@@ -7,6 +7,9 @@
 //!     [--modes none|<facet:sort,...>] [--facet-cell-modes <facet:sort,...>]
 //!     [--sort-cell-modes <facet:sort,...>] [--server-args "<args>"]
 //!
+//! Issue #63: a mode may carry a third component, `facet:sort:cand`, which
+//! adds `cand_mode=<cand>` (p0r|p1|p2|p2b) to the request.
+//!
 //! Launches the given native server binary inside #79's scope envelope
 //! (the frozen #77 values from `benchmarks/configs/issue77/resource_envelope.env`:
 //! CPU quota, CPU affinity, memory ceiling, swap 0), gates on #77's
@@ -21,7 +24,7 @@
 //! `--cells none` measures only load/build/RSS (memory-accounting launches).
 
 use issue61_eval::CgroupReader;
-use issue79_eval::cells::{all_cells, query_string, Cell, Family, Role};
+use issue79_eval::cells::{all_cells, query_string_with_cand, reference_cells, Cell, Family, Role};
 use issue79_eval::plp::Diag;
 use issue79_eval::{EXPERIMENT_ID, RAW_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -161,6 +164,9 @@ struct CellResult {
     family: String,
     facet_mode: Option<String>,
     sort_mode: Option<String>,
+    /// Issue #63 `cand_mode` (absent = p0, #79's path).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cand_mode: Option<String>,
     status: String,
     error: Option<String>,
     measured_queries: usize,
@@ -279,18 +285,31 @@ fn measure_cell(
     modes: Option<&(String, String)>,
     cgroup: Option<&CgroupReader>,
 ) -> CellResult {
+    // `facet:sort:cand` arrives as ("facet", "sort:cand").
+    let (sort_mode, cand_mode) = match modes.map(|m| m.1.as_str()) {
+        Some(sort) => match sort.split_once(':') {
+            Some((s, c)) => (Some(s), Some(c)),
+            None => (Some(sort), None),
+        },
+        None => (None, None),
+    };
     let mut result = CellResult {
         cell: cell.name.to_owned(),
         role: cell.role.as_str().to_owned(),
         family: cell.family.as_str().to_owned(),
         facet_mode: modes.map(|m| m.0.clone()),
-        sort_mode: modes.map(|m| m.1.clone()),
+        sort_mode: sort_mode.map(str::to_owned),
+        cand_mode: cand_mode.map(str::to_owned),
         status: "ok".to_owned(),
         ..CellResult::default()
     };
     let url = format!(
         "{base}{}",
-        query_string(cell, modes.map(|(f, s)| (f.as_str(), s.as_str())))
+        query_string_with_cand(
+            cell,
+            modes.zip(sort_mode).map(|((f, _), s)| (f.as_str(), s)),
+            cand_mode
+        )
     );
     for _ in 0..WARMUP {
         if let Err(error) = get(agent, &url) {
@@ -358,6 +377,12 @@ fn measure_cell(
         result.mean_sort_us = mean(2);
         result.mean_total_us = mean(3);
     }
+    if let Some(last) = &last {
+        if let Err(error) = i63_dump(cell, modes, last) {
+            result.status = "error".to_owned();
+            result.error = Some(error);
+        }
+    }
     if let Some(last) = last {
         result.num_found = last["num_found"].as_u64().unwrap_or(0);
         result.facet_fields = last["facets"].as_object().map_or(0, |m| m.len());
@@ -371,10 +396,50 @@ fn measure_cell(
     result
 }
 
+/// Issue #63: when `I63_DUMP_DIR` is set, the last measured response of each
+/// (cell, mode) is written there (`num_found`, facet maps, hit keys) for the
+/// equal-work check against the oracle. Written after the timed batch, so
+/// it never enters a measurement window.
+fn i63_dump(
+    cell: &Cell,
+    modes: Option<&(String, String)>,
+    last: &serde_json::Value,
+) -> Result<(), String> {
+    let Ok(dir) = std::env::var("I63_DUMP_DIR") else {
+        return Ok(());
+    };
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let mode = modes.map_or_else(
+        || "none".to_owned(),
+        |(f, s)| format!("{f}-{}", s.replace(':', "-")),
+    );
+    let keys: Vec<String> = last["docs"]
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|d| d.as_object())
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default();
+    let dump = serde_json::json!({
+        "num_found": last["num_found"],
+        "facets": canonical(&last["facets"]),
+        "hit_keys": keys,
+        "backend_requests": last["backend_requests"],
+        "mode": mode,
+    });
+    let path = Path::new(&dir).join(format!("native__{}__{mode}.json", cell.name));
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&dump).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
+}
+
 fn select_cells(spec: &str) -> Vec<Cell> {
     let cells = all_cells();
     match spec {
         "all" => cells,
+        // Issue #63: #77's filter-depth cells (never part of "all").
+        "reference" => reference_cells(),
         "none" => Vec::new(),
         "headline" => cells
             .into_iter()
@@ -388,6 +453,7 @@ fn select_cells(spec: &str) -> Vec<Cell> {
             let wanted: Vec<&str> = names.split(',').collect();
             cells
                 .into_iter()
+                .chain(reference_cells())
                 .filter(|c| wanted.contains(&c.name))
                 .collect()
         }

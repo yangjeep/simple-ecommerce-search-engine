@@ -721,6 +721,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "issue63-eval"
+version = "0.1.0"
+dependencies = [
+ "commerce-core",
+ "comparator-eval",
+ "issue61-eval",
+ "issue79-eval",
+ "libc",
+ "roaring",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "issue77-eval"
 version = "0.1.0"
 dependencies = [

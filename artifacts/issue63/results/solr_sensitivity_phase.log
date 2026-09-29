@@ -1,0 +1,46 @@
+=== 2026-09-29T09:29:05Z solr_sensitivity run=1 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=1 status=Ok correctness=true
+arm_exit=0 run=1 arm=solr
+=== 2026-09-29T09:33:51Z solr_sensitivity run=1 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(6543.0) p50_ms=6.40 n=279
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1432.0) p50_ms=1.45 n=952
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(12375.0) p50_ms=14.78 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1897.0) p50_ms=2.29 n=729
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(36230.0) p50_ms=36.10 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(24408.0) p50_ms=23.98 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(39225.0) p50_ms=40.51 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(29751.0) p50_ms=27.98 n=200
+E3B_MEASURE_OK label=i63_solr_sensitivity run=1 status=ok cells=8
+arm_exit=0 run=1 arm=native
+I63_EQUIVALENCE all_equivalent=true
+=== 2026-09-29T09:36:05Z solr_sensitivity run=2 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1280.0) p50_ms=1.60 n=1056
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(7736.0) p50_ms=7.95 n=238
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1970.0) p50_ms=2.34 n=717
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(11381.0) p50_ms=14.50 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(24865.0) p50_ms=24.14 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(37266.0) p50_ms=36.75 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(27401.0) p50_ms=27.63 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(38007.0) p50_ms=39.87 n=200
+E3B_MEASURE_OK label=i63_solr_sensitivity run=2 status=ok cells=8
+arm_exit=0 run=2 arm=native
+=== 2026-09-29T09:38:04Z solr_sensitivity run=2 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=2 status=Ok correctness=true
+arm_exit=0 run=2 arm=solr
+I63_EQUIVALENCE all_equivalent=true
+=== 2026-09-29T09:42:28Z solr_sensitivity run=3 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=3 status=Ok correctness=true
+arm_exit=0 run=3 arm=solr
+=== 2026-09-29T09:46:59Z solr_sensitivity run=3 arm=native ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(7910.0) p50_ms=6.03 n=234
+  facet_low_cardinality_style Some(("hybrid", "hybrid:p0r")) cpu_us=Some(881.0) p50_ms=1.32 n=1411
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(13913.0) p50_ms=15.31 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2098.0) p50_ms=2.40 n=683
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(32281.0) p50_ms=35.65 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(24287.0) p50_ms=24.07 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(39444.0) p50_ms=40.08 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid:p0r")) cpu_us=Some(25240.0) p50_ms=27.58 n=200
+E3B_MEASURE_OK label=i63_solr_sensitivity run=3 status=ok cells=8
+arm_exit=0 run=3 arm=native
+I63_EQUIVALENCE all_equivalent=true
+=== 2026-09-29T09:49:11Z phase solr_sensitivity done ===

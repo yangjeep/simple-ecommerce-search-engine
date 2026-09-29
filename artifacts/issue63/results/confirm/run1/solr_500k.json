@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I77-E3",
+  "engine": "solr",
+  "tier": "500k",
+  "run": 1,
+  "status": "ok",
+  "failure_reason": null,
+  "correctness_checks": [
+    {
+      "query_name": "full_positive_match",
+      "expected_product_ids": [
+        "B"
+      ],
+      "actual_product_ids": [
+        "B"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "cross_variant_leakage_negative",
+      "expected_product_ids": [
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "color_only",
+      "expected_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "available_only",
+      "expected_product_ids": [
+        "A",
+        "B"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B"
+      ],
+      "passed": true
+    }
+  ],
+  "correctness_all_passed": true,
+  "workload_cells": [
+    {
+      "name": "filter_depth_1",
+      "p50_ms": 8.88026,
+      "p95_ms": 15.272279999999999,
+      "p99_ms": 25.68027,
+      "mean_wall_ms": 9.722438124999998,
+      "mean_cpu_usec_per_query": 22713.355,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 17256,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_3",
+      "p50_ms": 7.062323,
+      "p95_ms": 9.71341,
+      "p99_ms": 12.027348,
+      "mean_wall_ms": 7.180616900000003,
+      "mean_cpu_usec_per_query": 15939.43,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 36,
+      "facet_field_count": 0
+    },
+    {
+      "name": "filter_depth_5",
+      "p50_ms": 5.6635230000000005,
+      "p95_ms": 8.087717,
+      "p99_ms": 9.929166,
+      "mean_wall_ms": 5.806465190000001,
+      "mean_cpu_usec_per_query": 11399.74,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 12,
+      "facet_field_count": 0
+    },
+    {
+      "name": "facet_low_cardinality_style",
+      "p50_ms": 42.247289,
+      "p95_ms": 53.313262,
+      "p99_ms": 65.800025,
+      "mean_wall_ms": 37.846794254999956,
+      "mean_cpu_usec_per_query": 48977.795,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_medium_cardinality_primarymaterial",
+      "p50_ms": 44.397902,
+      "p95_ms": 56.154566,
+      "p99_ms": 64.760283,
+      "mean_wall_ms": 45.203850955000014,
+      "mean_cpu_usec_per_query": 53738.05,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_high_cardinality_color",
+      "p50_ms": 104.014004,
+      "p95_ms": 125.722162,
+      "p99_ms": 143.6928,
+      "mean_wall_ms": 105.02790838999991,
+      "mean_cpu_usec_per_query": 93560.005,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_disjunctive_multi_dim",
+      "p50_ms": 112.463759,
+      "p95_ms": 130.45738200000002,
+      "p99_ms": 140.415746,
+      "mean_wall_ms": 113.48689894,
+      "mean_cpu_usec_per_query": 93352.935,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 16332,
+      "facet_field_count": 5
+    },
+    {
+      "name": "numeric_range_sort",
+      "p50_ms": 4.225616,
+      "p95_ms": 6.036306,
+      "p99_ms": 7.433778,
+      "mean_wall_ms": 4.336045020000001,
+      "mean_cpu_usec_per_query": 8148.66,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 383604,
+      "facet_field_count": 0
+    }
+  ],
+  "throughput": null,
+  "rss_before_load_bytes": 3877724160,
+  "rss_during_serving_bytes": 3892879360,
+  "peak_rss_during_serving_bytes": 3892879360,
+  "container_name": "i77-solr",
+  "runtime": "scope",
+  "meili_like_for_like": false,
+  "i63_equal_work": true,
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "jvm_configured_heap_bytes": 3221225472,
+  "git_sha": "79bf0e241cf0b22ae6ca70dbe12d89b79cc6699d",
+  "hostname": "athos-dev",
+  "timestamp_utc": "1790669198"
+}

@@ -1,0 +1,24 @@
+=== 2026-09-29T05:34:23Z revalidate gate ===
+E3B_GATE rows=515928 nan=0 candidate_checks=1680 candidate_failures=0 baseline_mismatches=60
+=== 2026-09-29T05:36:51Z revalidate FINAL run=1 ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(10333.0) p50_ms=9.72 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(10253.0) p50_ms=7.71 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(38118.0) p50_ms=37.84 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(38464.0) p50_ms=41.49 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(7916.0) p50_ms=6.71 n=233
+E3B_MEASURE_OK label=revalidate_final run=1 status=ok cells=5
+=== 2026-09-29T05:38:40Z revalidate FINAL run=2 ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(11069.0) p50_ms=13.77 n=200
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(13997.0) p50_ms=15.63 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(37052.0) p50_ms=38.42 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(37570.0) p50_ms=40.95 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(10428.0) p50_ms=12.10 n=200
+E3B_MEASURE_OK label=revalidate_final run=2 status=ok cells=5
+=== 2026-09-29T05:40:26Z revalidate FINAL run=3 ===
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(8108.0) p50_ms=6.48 n=228
+  facet_medium_cardinality_primarymaterial Some(("hybrid", "hybrid")) cpu_us=Some(11724.0) p50_ms=13.21 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(28553.0) p50_ms=35.80 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(42097.0) p50_ms=41.99 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(8591.0) p50_ms=8.91 n=203
+E3B_MEASURE_OK label=revalidate_final run=3 status=ok cells=5
+=== 2026-09-29T05:42:14Z phase revalidate done ===

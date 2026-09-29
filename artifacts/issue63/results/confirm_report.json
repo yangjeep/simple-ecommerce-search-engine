@@ -1,0 +1,1401 @@
+{
+  "n_plus": "p0r",
+  "status": [
+    [
+      1,
+      "native",
+      "ok",
+      true
+    ],
+    [
+      1,
+      "meilisearch",
+      "ok",
+      true
+    ],
+    [
+      1,
+      "solr",
+      "ok",
+      true
+    ],
+    [
+      2,
+      "native",
+      "ok",
+      true
+    ],
+    [
+      2,
+      "meilisearch",
+      "ok",
+      true
+    ],
+    [
+      2,
+      "solr",
+      "ok",
+      true
+    ],
+    [
+      3,
+      "native",
+      "ok",
+      true
+    ],
+    [
+      3,
+      "meilisearch",
+      "ok",
+      true
+    ],
+    [
+      3,
+      "solr",
+      "ok",
+      true
+    ]
+  ],
+  "cells": {
+    "FH1": {
+      "cell": "facet_low_cardinality_style",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 7056.891891891892,
+            "2": 9873.305,
+            "3": 8530.123287671233
+          },
+          "median": 8530.123287671233,
+          "min": 7056.891891891892,
+          "max": 9873.305,
+          "cv": 0.13552905302679008,
+          "p50": 5.675045,
+          "p95": 18.351026,
+          "p99": 20.634297999999998,
+          "wall": 8.95859710045662,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.789994835719219,
+          "class": "PARITY",
+          "r_by_run": [
+            0.5988971443440517,
+            0.9143900619530373,
+            0.825420981614689
+          ],
+          "robust": "median-only"
+        },
+        "native+": {
+          "runs": {
+            "1": 1076.7993897787949,
+            "2": 1191.6339590443686,
+            "3": 1058.823394495413
+          },
+          "median": 1076.7993897787949,
+          "min": 1058.823394495413,
+          "max": 1191.6339590443686,
+          "cv": 0.05304373206151729,
+          "p50": 1.298182,
+          "p95": 1.883854,
+          "p99": 2.5562660000000004,
+          "wall": 1.3584035903890161,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.09972493108749551,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.09138471857715362,
+            0.11036003138117613,
+            0.10245749283649574
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 11783.145,
+            "2": 10797.695,
+            "3": 10334.27
+          },
+          "median": 10797.695,
+          "min": 10334.27,
+          "max": 11783.145,
+          "cv": 0.05506553445375679,
+          "p50": 10.991035,
+          "p95": 14.642501000000001,
+          "p99": 22.206346,
+          "wall": 11.67736632,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 48977.795,
+            "2": 48072.2,
+            "3": 54681.635
+          },
+          "median": 48977.795,
+          "min": 48072.2,
+          "max": 54681.635,
+          "cv": 0.05784660209243809,
+          "p50": 42.247289,
+          "p95": 53.562046,
+          "p99": 65.800025,
+          "wall": 37.846794254999956,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FH2": {
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 12470.015,
+            "2": 14084.0,
+            "3": 12409.28
+          },
+          "median": 12470.015,
+          "min": 12409.28,
+          "max": 14084.0,
+          "cv": 0.05971402009561361,
+          "p50": 14.737403,
+          "p95": 19.069506,
+          "p99": 22.017136999999998,
+          "wall": 12.995193904999987,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.8882830478115816,
+          "class": "PARITY",
+          "r_by_run": [
+            0.8882830478115816,
+            1.007340122126758,
+            0.8839157531687654
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 2019.3287482806052,
+            "2": 1973.4170096021949,
+            "3": 2041.7302259887006
+          },
+          "median": 2019.3287482806052,
+          "min": 1973.4170096021949,
+          "max": 2041.7302259887006,
+          "cv": 0.014135754773352058,
+          "p50": 2.226581,
+          "p95": 3.440585,
+          "p99": 4.3445030000000004,
+          "wall": 2.3511154759284727,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.1438438923334288,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.1438438923334288,
+            0.14114613259441183,
+            0.14543289461372746
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 14038.335,
+            "2": 13981.375,
+            "3": 14038.985
+          },
+          "median": 14038.335,
+          "min": 13981.375,
+          "max": 14038.985,
+          "cv": 0.0019262874234351039,
+          "p50": 15.118638,
+          "p95": 18.489851,
+          "p99": 21.263976,
+          "wall": 15.586865679999995,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 53738.05,
+            "2": 47460.78,
+            "3": 50947.69
+          },
+          "median": 50947.69,
+          "min": 47460.78,
+          "max": 53738.05,
+          "cv": 0.05063418617222767,
+          "p50": 43.633761,
+          "p95": 59.71469,
+          "p99": 109.683606,
+          "wall": 44.785547939999994,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FH3": {
+      "cell": "facet_high_cardinality_color",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 35946.9,
+            "2": 37218.65,
+            "3": 37941.575
+          },
+          "median": 37218.65,
+          "min": 35946.9,
+          "max": 37941.575,
+          "cv": 0.022263198717268087,
+          "p50": 36.810389,
+          "p95": 50.10915,
+          "p99": 78.46409899999999,
+          "wall": 38.02741131000002,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.7015703342231147,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.6203693716471063,
+            0.7015703342231147,
+            0.7284507337002953
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 19733.67,
+            "2": 22549.54,
+            "3": 23788.31
+          },
+          "median": 22549.54,
+          "min": 19733.67,
+          "max": 23788.31,
+          "cv": 0.0770313089494024,
+          "p50": 23.778095,
+          "p95": 35.172637,
+          "p99": 47.291793999999996,
+          "wall": 23.394048230000003,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.4250580908866252,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.3405624534574984,
+            0.4250580908866252,
+            0.4567183063167535
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 57944.35,
+            "2": 53050.49,
+            "3": 52085.3
+          },
+          "median": 53050.49,
+          "min": 52085.3,
+          "max": 57944.35,
+          "cv": 0.0471841545197398,
+          "p50": 66.953599,
+          "p95": 81.65912,
+          "p99": 96.385677,
+          "wall": 66.00279473499998,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 93560.005,
+            "2": 80823.56,
+            "3": 96823.775
+          },
+          "median": 93560.005,
+          "min": 80823.56,
+          "max": 96823.775,
+          "cv": 0.07635974796778917,
+          "p50": 104.014004,
+          "p95": 136.96818,
+          "p99": 212.786399,
+          "wall": 105.02790838999991,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FH4": {
+      "cell": "facet_disjunctive_multi_dim",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 32835.505,
+            "2": 42608.93,
+            "3": 37394.22
+          },
+          "median": 37394.22,
+          "min": 32835.505,
+          "max": 42608.93,
+          "cv": 0.10615986582562431,
+          "p50": 39.409705,
+          "p95": 49.902342000000004,
+          "p99": 64.31404500000001,
+          "wall": 38.07845929,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.512956661151073,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.4504223115767453,
+            0.5716002647054602,
+            0.515655280254045
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 24322.385,
+            "2": 26226.285,
+            "3": 25223.465
+          },
+          "median": 25223.465,
+          "min": 24322.385,
+          "max": 26226.285,
+          "cv": 0.030788379772452374,
+          "p50": 27.282640999999998,
+          "p95": 33.983855,
+          "p99": 53.48089,
+          "wall": 25.94433331499999,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.346003858057768,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.333643258258387,
+            0.3518265173108276,
+            0.34782415339999323
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 72899.375,
+            "2": 74543.23,
+            "3": 72517.865
+          },
+          "median": 72899.375,
+          "min": 72517.865,
+          "max": 74543.23,
+          "cv": 0.01198519295097853,
+          "p50": 86.268203,
+          "p95": 102.610692,
+          "p99": 115.72694999999999,
+          "wall": 87.09998918000005,
+          "requests": 2.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 93352.935,
+            "2": 90235.065,
+            "3": 94853.01
+          },
+          "median": 93352.935,
+          "min": 90235.065,
+          "max": 94853.01,
+          "cv": 0.020723721663035776,
+          "p50": 114.95567399999999,
+          "p95": 137.465271,
+          "p99": 174.017939,
+          "wall": 113.48689894,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "SH1": {
+      "cell": "numeric_range_sort",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 6564.316725978648,
+            "2": 7472.557768924303,
+            "3": 7371.134387351779
+          },
+          "median": 7371.134387351779,
+          "min": 6564.316725978648,
+          "max": 7472.557768924303,
+          "cv": 0.05694479815419105,
+          "p50": 5.788785,
+          "p95": 13.431627,
+          "p99": 17.605164,
+          "wall": 7.790730166007904,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 1.1512513656084613,
+          "class": "PARITY",
+          "r_by_run": [
+            1.0252395625884718,
+            1.3859989258798735,
+            1.0153986772027495
+          ],
+          "robust": "median-only"
+        },
+        "native+": {
+          "runs": {
+            "1": 8169.070175438596,
+            "2": 7330.83137254902,
+            "3": 9969.14
+          },
+          "median": 8169.070175438596,
+          "min": 7330.83137254902,
+          "max": 9969.14,
+          "cv": 0.1296497602073578,
+          "p50": 10.273101,
+          "p95": 14.159815,
+          "p99": 19.034249,
+          "wall": 8.623420526315792,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 1.2758759644055055,
+          "class": "FACET DISADVANTAGE",
+          "r_by_run": [
+            1.2758759644055055,
+            1.3597117241988292,
+            1.3732827319250345
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 6402.715,
+            "2": 5391.46,
+            "3": 7259.35
+          },
+          "median": 6402.715,
+          "min": 5391.46,
+          "max": 7259.35,
+          "cv": 0.12020346978810023,
+          "p50": 7.023565,
+          "p95": 9.625698,
+          "p99": 11.660584,
+          "wall": 7.0513341149999995,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 8148.66,
+            "2": 10268.605,
+            "3": 9824.035
+          },
+          "median": 9824.035,
+          "min": 8148.66,
+          "max": 10268.605,
+          "cv": 0.09696344462875837,
+          "p50": 4.795659,
+          "p95": 6.568982999999999,
+          "p99": 8.408047999999999,
+          "wall": 4.948999810000001,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FD1": {
+      "cell": "filter_depth_1",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 396.2391799544419,
+            "2": 555.6344827586207,
+            "3": 369.8713049747657
+          },
+          "median": 396.2391799544419,
+          "min": 369.8713049747657,
+          "max": 555.6344827586207,
+          "cv": 0.18626222354365934,
+          "p50": 0.604309,
+          "p95": 0.904281,
+          "p99": 1.237932,
+          "wall": 0.6586020504935466,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.06898230348071001,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.06910652286672007,
+            0.09673184392923846,
+            0.05531389669074391
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 387.4384846211553,
+            "2": 426.35074013157896,
+            "3": 400.87981330221703
+          },
+          "median": 400.87981330221703,
+          "min": 387.4384846211553,
+          "max": 426.35074013157896,
+          "cv": 0.03985509799967454,
+          "p50": 0.63871,
+          "p95": 0.9725400000000001,
+          "p99": 1.134186,
+          "wall": 0.6744240221703615,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.06979020334052632,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.06757162807574374,
+            0.07422450285800469,
+            0.05995118918434715
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 5733.745,
+            "2": 5744.07,
+            "3": 6686.77
+          },
+          "median": 5744.07,
+          "min": 5733.745,
+          "max": 6686.77,
+          "cv": 0.07379962974103234,
+          "p50": 6.245566,
+          "p95": 7.702872999999999,
+          "p99": 8.601202,
+          "wall": 6.393918074999999,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 22713.355,
+            "2": 22229.53,
+            "3": 21517.35
+          },
+          "median": 22229.53,
+          "min": 21517.35,
+          "max": 22713.355,
+          "cv": 0.022173769937846206,
+          "p50": 9.001641,
+          "p95": 13.075354,
+          "p99": 18.536959,
+          "wall": 9.216431855000003,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FD3": {
+      "cell": "filter_depth_3",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 543.234100135318,
+            "2": 524.3960176991151,
+            "3": 516.2496857980728
+          },
+          "median": 524.3960176991151,
+          "min": 516.2496857980728,
+          "max": 543.234100135318,
+          "cv": 0.021404859043335216,
+          "p50": 0.736157,
+          "p95": 1.134672,
+          "p99": 1.380493,
+          "wall": 0.8024528752212374,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.09773169384235614,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.10124254755423237,
+            0.09216527970092019,
+            0.10093894012544255
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 505.6303317535545,
+            "2": 460.35437475029966,
+            "3": 561.7446504992868
+          },
+          "median": 505.6303317535545,
+          "min": 460.35437475029966,
+          "max": 561.7446504992868,
+          "cv": 0.08143686689912216,
+          "p50": 0.699451,
+          "p95": 1.19821,
+          "p99": 1.883497,
+          "wall": 0.7767139409737178,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.09423433266554866,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.09423433266554866,
+            0.08090963370882821,
+            0.10983427438774981
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 5365.67,
+            "2": 5689.735,
+            "3": 5114.475
+          },
+          "median": 5365.67,
+          "min": 5114.475,
+          "max": 5689.735,
+          "cv": 0.043687920079987334,
+          "p50": 5.610647,
+          "p95": 7.496274,
+          "p99": 8.319512,
+          "wall": 5.954388170000005,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 15939.43,
+            "2": 14338.135,
+            "3": 12859.07
+          },
+          "median": 14338.135,
+          "min": 12859.07,
+          "max": 15939.43,
+          "cv": 0.08748120970873396,
+          "p50": 6.394826,
+          "p95": 9.384907,
+          "p99": 10.336534,
+          "wall": 6.5023596349999995,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    },
+    "FD5": {
+      "cell": "filter_depth_5",
+      "fastest": "meilisearch",
+      "arms": {
+        "native": {
+          "runs": {
+            "1": 529.7949269131557,
+            "2": 408.88656823910696,
+            "3": 522.1412008281574
+          },
+          "median": 522.1412008281574,
+          "min": 408.88656823910696,
+          "max": 529.7949269131557,
+          "cv": 0.11352737597393389,
+          "p50": 0.730989,
+          "p95": 1.156843,
+          "p99": 1.4563899999999999,
+          "wall": 0.7893005490683234,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.14392301947897346,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.15545625789705272,
+            0.11270550845639016,
+            0.14011834405266096
+          ],
+          "robust": "robust"
+        },
+        "native+": {
+          "runs": {
+            "1": 513.2424742268041,
+            "2": 503.8020743301642,
+            "3": 505.9334693877551
+          },
+          "median": 505.9334693877551,
+          "min": 503.8020743301642,
+          "max": 513.2424742268041,
+          "cv": 0.007963268602091024,
+          "p50": 0.71864,
+          "p95": 1.081845,
+          "p99": 1.4780959999999999,
+          "wall": 0.783497866804124,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "r": 0.13945551979860502,
+          "class": "MATERIAL FACET ADVANTAGE",
+          "r_by_run": [
+            0.15059931755481343,
+            0.13886802198785095,
+            0.13576894491182045
+          ],
+          "robust": "robust"
+        },
+        "meilisearch": {
+          "runs": {
+            "1": 3408.0,
+            "2": 3627.92,
+            "3": 3726.43
+          },
+          "median": 3627.92,
+          "min": 3408.0,
+          "max": 3726.43,
+          "cv": 0.03710461077908084,
+          "p50": 3.762369,
+          "p95": 4.932473,
+          "p99": 6.725141,
+          "wall": 4.17322485,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        },
+        "solr": {
+          "runs": {
+            "1": 11399.74,
+            "2": 13893.8,
+            "3": 10512.755
+          },
+          "median": 11399.74,
+          "min": 10512.755,
+          "max": 13893.8,
+          "cv": 0.11992339490167628,
+          "p50": 5.6635230000000005,
+          "p95": 8.621019,
+          "p99": 10.188013,
+          "wall": 5.806465190000001,
+          "requests": 1.0,
+          "equivalent_all_runs": true,
+          "equivalence_by_run": {
+            "1": true,
+            "2": true,
+            "3": true
+          }
+        }
+      },
+      "not_equivalent": []
+    }
+  },
+  "ambient": [
+    {
+      "run": 1,
+      "arm": "native",
+      "when": "before",
+      "utc": "2026-09-29T07:51:03Z",
+      "loadavg": "1.23 1.11 1.14 2/475 424918",
+      "pressure": {
+        "cpu": "some avg10=2.23 avg60=1.22 avg300=0.37 total=2813782859\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090002\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918653",
+        "io": "some avg10=0.00 avg60=0.00 avg300=0.00 total=581491533\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=499076523"
+      },
+      "meminfo": {
+        "MemFree": "11478440 kB",
+        "MemAvailable": "23269420 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2968764 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 738964571,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 747027654
+      }
+    },
+    {
+      "run": 1,
+      "arm": "native",
+      "when": "after",
+      "utc": "2026-09-29T07:53:14Z",
+      "loadavg": "1.42 1.18 1.16 2/465 425597",
+      "pressure": {
+        "cpu": "some avg10=0.96 avg60=1.06 avg300=0.62 total=2815840082\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.00 avg300=0.00 total=581529864\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=499102732"
+      },
+      "meminfo": {
+        "MemFree": "11653304 kB",
+        "MemAvailable": "23445404 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2968884 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 772072498,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 840879939
+      }
+    },
+    {
+      "run": 1,
+      "arm": "meilisearch",
+      "when": "before",
+      "utc": "2026-09-29T07:53:15Z",
+      "loadavg": "1.42 1.18 1.16 1/465 425600",
+      "pressure": {
+        "cpu": "some avg10=0.96 avg60=1.06 avg300=0.62 total=2815842106\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.00 avg300=0.00 total=581529884\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=499102745"
+      },
+      "meminfo": {
+        "MemFree": "11653304 kB",
+        "MemAvailable": "23445404 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2968884 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 633218706,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 633319146
+      }
+    },
+    {
+      "run": 1,
+      "arm": "meilisearch",
+      "when": "after",
+      "utc": "2026-09-29T08:06:36Z",
+      "loadavg": "1.21 1.24 1.18 3/449 426555",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.09 avg300=0.11 total=2819026899\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.10 avg60=3.98 avg300=5.97 total=619851993\nfull avg10=0.10 avg60=3.81 avg300=5.76 total=536156254"
+      },
+      "meminfo": {
+        "MemFree": "5180116 kB",
+        "MemAvailable": "20540908 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2972728 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 635930500,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 644659766
+      }
+    },
+    {
+      "run": 1,
+      "arm": "solr",
+      "when": "before",
+      "utc": "2026-09-29T08:06:37Z",
+      "loadavg": "1.21 1.24 1.18 1/447 426566",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.09 avg300=0.11 total=2819045952\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.10 avg60=3.98 avg300=5.97 total=619853266\nfull avg10=0.10 avg60=3.81 avg300=5.76 total=536156571"
+      },
+      "meminfo": {
+        "MemFree": "5162708 kB",
+        "MemAvailable": "20523508 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2972828 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 755699553,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 756766855
+      }
+    },
+    {
+      "run": 1,
+      "arm": "solr",
+      "when": "after",
+      "utc": "2026-09-29T08:11:27Z",
+      "loadavg": "1.45 1.56 1.36 3/397 427389",
+      "pressure": {
+        "cpu": "some avg10=0.76 avg60=0.89 avg300=1.62 total=2830468354\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.24 avg300=2.44 total=621554766\nfull avg10=0.00 avg60=0.22 avg300=2.32 total=537587190"
+      },
+      "meminfo": {
+        "MemFree": "6402156 kB",
+        "MemAvailable": "22128952 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973396 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 793873061,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 862696523
+      }
+    },
+    {
+      "run": 2,
+      "arm": "solr",
+      "when": "before",
+      "utc": "2026-09-29T08:11:46Z",
+      "loadavg": "2.00 1.68 1.40 3/404 427607",
+      "pressure": {
+        "cpu": "some avg10=3.75 avg60=2.01 avg300=1.84 total=2831457956\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.39 avg60=0.29 avg300=2.30 total=621661652\nfull avg10=0.36 avg60=0.25 avg300=2.19 total=537686623"
+      },
+      "meminfo": {
+        "MemFree": "6192732 kB",
+        "MemAvailable": "21916648 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973400 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 846337077,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 881178304
+      }
+    },
+    {
+      "run": 2,
+      "arm": "solr",
+      "when": "after",
+      "utc": "2026-09-29T08:16:16Z",
+      "loadavg": "1.29 1.74 1.53 2/401 428386",
+      "pressure": {
+        "cpu": "some avg10=1.19 avg60=0.96 avg300=2.24 total=2842170726\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.22 avg300=1.13 total=622986930\nfull avg10=0.00 avg60=0.19 avg300=1.04 total=538765859"
+      },
+      "meminfo": {
+        "MemFree": "6539348 kB",
+        "MemAvailable": "22255472 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973408 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 821522831,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 834432636
+      }
+    },
+    {
+      "run": 2,
+      "arm": "native",
+      "when": "before",
+      "utc": "2026-09-29T08:16:17Z",
+      "loadavg": "1.35 1.74 1.53 1/402 428390",
+      "pressure": {
+        "cpu": "some avg10=1.19 avg60=0.96 avg300=2.24 total=2842175342\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.22 avg300=1.13 total=622987099\nfull avg10=0.00 avg60=0.19 avg300=1.04 total=538765991"
+      },
+      "meminfo": {
+        "MemFree": "6540784 kB",
+        "MemAvailable": "22256908 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973408 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 686376366,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 686837540
+      }
+    },
+    {
+      "run": 2,
+      "arm": "native",
+      "when": "after",
+      "utc": "2026-09-29T08:18:44Z",
+      "loadavg": "1.30 1.55 1.49 3/406 428712",
+      "pressure": {
+        "cpu": "some avg10=1.90 avg60=0.56 avg300=1.50 total=2843159689\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.01 avg300=0.67 total=623002828\nfull avg10=0.00 avg60=0.01 avg300=0.61 total=538778598"
+      },
+      "meminfo": {
+        "MemFree": "4859308 kB",
+        "MemAvailable": "20576492 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973408 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 807220536,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 826819886
+      }
+    },
+    {
+      "run": 2,
+      "arm": "meilisearch",
+      "when": "before",
+      "utc": "2026-09-29T08:18:45Z",
+      "loadavg": "1.30 1.55 1.49 1/405 428717",
+      "pressure": {
+        "cpu": "some avg10=1.90 avg60=0.56 avg300=1.50 total=2843168324\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.01 avg300=0.67 total=623003238\nfull avg10=0.00 avg60=0.01 avg300=0.61 total=538778895"
+      },
+      "meminfo": {
+        "MemFree": "4861320 kB",
+        "MemAvailable": "20578504 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973408 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 785790789,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 787890289
+      }
+    },
+    {
+      "run": 2,
+      "arm": "meilisearch",
+      "when": "after",
+      "utc": "2026-09-29T08:32:23Z",
+      "loadavg": "1.34 1.28 1.32 1/392 429738",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.04 avg300=0.12 total=2846070818\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.23 avg60=11.44 avg300=8.49 total=665631888\nfull avg10=0.22 avg60=11.23 avg300=8.29 total=580343507"
+      },
+      "meminfo": {
+        "MemFree": "7718260 kB",
+        "MemAvailable": "23434892 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973428 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 787421363,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 787730801
+      }
+    },
+    {
+      "run": 3,
+      "arm": "meilisearch",
+      "when": "before",
+      "utc": "2026-09-29T08:32:38Z",
+      "loadavg": "1.33 1.28 1.32 1/394 429754",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.03 avg300=0.12 total=2846078614\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.05 avg60=9.06 avg300=8.09 total=665631996\nfull avg10=0.05 avg60=8.89 avg300=7.90 total=580343572"
+      },
+      "meminfo": {
+        "MemFree": "7355020 kB",
+        "MemAvailable": "23071728 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973428 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 636198455,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 636332963
+      }
+    },
+    {
+      "run": 3,
+      "arm": "meilisearch",
+      "when": "after",
+      "utc": "2026-09-29T08:46:45Z",
+      "loadavg": "1.15 1.22 1.25 1/396 430498",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.05 avg300=0.01 total=2848345393\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.08 avg60=4.48 avg300=10.44 total=737752420\nfull avg10=0.08 avg60=4.35 avg300=10.16 total=650666196"
+      },
+      "meminfo": {
+        "MemFree": "7237860 kB",
+        "MemAvailable": "22958768 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973484 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 629234424,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 629384141
+      }
+    },
+    {
+      "run": 3,
+      "arm": "solr",
+      "when": "before",
+      "utc": "2026-09-29T08:46:46Z",
+      "loadavg": "1.15 1.22 1.25 1/396 430501",
+      "pressure": {
+        "cpu": "some avg10=0.00 avg60=0.05 avg300=0.01 total=2848346083\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.08 avg60=4.48 avg300=10.44 total=737752428\nfull avg10=0.08 avg60=4.35 avg300=10.16 total=650666196"
+      },
+      "meminfo": {
+        "MemFree": "7237860 kB",
+        "MemAvailable": "22958772 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973484 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 744143381,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 744291480
+      }
+    },
+    {
+      "run": 3,
+      "arm": "solr",
+      "when": "after",
+      "utc": "2026-09-29T08:51:31Z",
+      "loadavg": "1.54 1.66 1.46 2/390 431071",
+      "pressure": {
+        "cpu": "some avg10=0.55 avg60=0.81 avg300=1.66 total=2860254168\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.45 avg300=4.32 total=739953464\nfull avg10=0.00 avg60=0.40 avg300=4.15 total=652541497"
+      },
+      "meminfo": {
+        "MemFree": "4213456 kB",
+        "MemAvailable": "19968292 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973488 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 727130787,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 727327090
+      }
+    },
+    {
+      "run": 3,
+      "arm": "native",
+      "when": "before",
+      "utc": "2026-09-29T08:51:32Z",
+      "loadavg": "1.54 1.66 1.46 1/390 431074",
+      "pressure": {
+        "cpu": "some avg10=0.55 avg60=0.81 avg300=1.66 total=2860254622\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=9090003\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=7918654",
+        "io": "some avg10=0.00 avg60=0.45 avg300=4.32 total=739953464\nfull avg10=0.00 avg60=0.40 avg300=4.15 total=652541497"
+      },
+      "meminfo": {
+        "MemFree": "4218868 kB",
+        "MemAvailable": "19973704 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973488 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 742681987,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 742859482
+      }
+    },
+    {
+      "run": 3,
+      "arm": "native",
+      "when": "after",
+      "utc": "2026-09-29T08:53:49Z",
+      "loadavg": "1.22 1.46 1.41 1/391 431178",
+      "pressure": {
+        "cpu": "some avg10=0.70 avg60=0.27 avg300=1.06 total=2860622547\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "memory": "some avg10=0.00 avg60=0.04 avg300=0.00 total=9198980\nfull avg10=0.00 avg60=0.04 avg300=0.00 total=8025044",
+        "io": "some avg10=0.00 avg60=0.05 avg300=2.69 total=740038260\nfull avg10=0.00 avg60=0.05 avg300=2.59 total=652623337"
+      },
+      "meminfo": {
+        "MemFree": "4527708 kB",
+        "MemAvailable": "19749660 kB",
+        "SwapTotal": "4194300 kB",
+        "SwapFree": "2973024 kB"
+      },
+      "host_probe": {
+        "checksum": 10017568554278860119,
+        "cpu_ns": 743925847,
+        "iterations": 200000000,
+        "probe": "xorshift_table_64k",
+        "wall_ns": 744095623
+      }
+    }
+  ]
+}

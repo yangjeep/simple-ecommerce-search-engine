@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I79-E3b",
+  "label": "drift_final",
+  "run": 2,
+  "status": "ok",
+  "failure_reason": null,
+  "server_binary": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/target/release/e3b_native_plp_server",
+  "server_binary_sha256": "ab24b45b2f57adc37fc9e80dcf6ba6230810a76028332c4eae918f8d43d90cca",
+  "server_args": [
+    "--sort-columns",
+    "average_rating,review_count,rating_count",
+    "--presence",
+    "average_rating,review_count,rating_count",
+    "--tau-f",
+    "919.4972390657695",
+    "--rho-s",
+    "0.0833779131971903"
+  ],
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl",
+  "runtime": "scope",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "launch_to_ready_ms": 78696.162301,
+  "server_ready": {
+    "docs": 515928,
+    "e3b_ready": true,
+    "index_approx_bytes": 116915570,
+    "index_build_ms": 70247.88464799999,
+    "load_ms": 8048.937533,
+    "ordinal_facet_approx_bytes": 29361380,
+    "presence_build_ms": 51.466822,
+    "presence_bytes": 196824,
+    "presence_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "rho_s": 0.0833779131971903,
+    "sort_columns_build_ms": 9.626712,
+    "sort_columns_bytes": 12382272,
+    "sort_columns_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "tau_f": 919.4972390657696
+  },
+  "fixture_correctness_all_passed": true,
+  "rss_after_load_bytes": 4410556416,
+  "peak_after_load_bytes": 4410556416,
+  "rss_after_serving_bytes": 4410814464,
+  "peak_after_serving_bytes": 4411052032,
+  "cells": [
+    {
+      "cell": "facet_low_cardinality_style",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 238,
+      "p50_ms": 5.829143999999999,
+      "p95_ms": 15.565782,
+      "p99_ms": 22.716432,
+      "mean_wall_ms": 8.238178785714284,
+      "cpu_usec_per_query": 7780.73949579832,
+      "qps_per_core": 128.52248819537147,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 12116186524420406364,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 6970.442050420169,
+      "mean_facets_us": 435.57863445378166,
+      "mean_sort_us": 85.24363445378154,
+      "mean_total_us": 7492.3949789916005,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 4467.651,
+        "facets_us": 282.654,
+        "sort_us": 52.466,
+        "total_us": 4803.497,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410478592
+    },
+    {
+      "cell": "facet_high_cardinality_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 36.842597,
+      "p95_ms": 44.859229,
+      "p99_ms": 50.944612,
+      "mean_wall_ms": 36.09919319999999,
+      "cpu_usec_per_query": 35186.625,
+      "qps_per_core": 28.419889659778395,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 10111158894877981563,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 12447.349664999998,
+      "mean_facets_us": 21214.241405,
+      "mean_sort_us": 155.67544000000004,
+      "mean_total_us": 33819.59522500001,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 12030.576,
+        "facets_us": 23162.217,
+        "sort_us": 147.503,
+        "total_us": 35342.840000000004,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410691584
+    },
+    {
+      "cell": "facet_disjunctive_multi_dim",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 41.086791,
+      "p95_ms": 53.318268,
+      "p99_ms": 58.550489,
+      "mean_wall_ms": 41.359112085000014,
+      "cpu_usec_per_query": 40572.38,
+      "qps_per_core": 24.647309327182683,
+      "num_found": 16332,
+      "facet_fields": 5,
+      "facets_fingerprint": 870794717644741364,
+      "docs_fingerprint": 6734084721642553604,
+      "mean_candidates_us": 34.07807499999999,
+      "mean_facets_us": 38641.94834999999,
+      "mean_sort_us": 141.60874000000004,
+      "mean_total_us": 38819.468564999996,
+      "diag": {
+        "num_candidates": 16332,
+        "candidates_us": 45.787,
+        "facets_us": 47820.109,
+        "sort_us": 161.405,
+        "total_us": 48029.882000000005,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "style",
+            "candidates": 16332,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 16332,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 16332,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 16332,
+            "cardinality": 94,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410814464
+    }
+  ],
+  "git_sha": "31a82e93fb21585f53c9d5ca690766bbec476cb8",
+  "hostname": "athos-dev",
+  "timestamp_utc": 1790661023
+}

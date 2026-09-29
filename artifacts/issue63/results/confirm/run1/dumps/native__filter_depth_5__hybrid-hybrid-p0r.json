@@ -1,0 +1,10 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_keys": [
+    "id",
+    "sort_value"
+  ],
+  "mode": "hybrid-hybrid-p0r",
+  "num_found": 12
+}

@@ -1,0 +1,6 @@
+E3B_GATE rows=128982 nan=0 candidate_checks=8556 candidate_failures=0 baseline_mismatches=66
+
+real	0m51.526s
+user	0m48.328s
+sys	0m1.089s
+exit=0

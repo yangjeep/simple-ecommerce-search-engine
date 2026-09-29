@@ -1,0 +1,17 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 383604,
+  "request": {
+    "fields": "id",
+    "filter": [
+      "average_rating:[4 TO *]"
+    ],
+    "limit": 48,
+    "query": "*:*",
+    "sort": "average_rating desc"
+  }
+}

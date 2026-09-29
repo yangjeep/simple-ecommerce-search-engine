@@ -9,6 +9,8 @@
 //!   --sort-columns <f1,f2|none>   S1 dense value columns
 //!   --presence <f1,f2|none>       S2 presence bitmaps
 //!   --tau-f <x> / --rho-s <x>     F3/S3 constants (after calibration only)
+//!   --prebuilt-all true           Issue #63 P1 prebuilt all-ordinals bitmap
+//!                                 (required by `cand_mode=p1|p2|p2b`)
 
 use commerce_core::domain::CategoryId;
 use commerce_core::index::CatalogIndex;
@@ -212,6 +214,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     let presence_refs: Vec<&str> = presence.iter().map(String::as_str).collect();
     structures.presence = SortStructures::build(&index, &[], &presence_refs).presence;
     let presence_build_ms = presence_started.elapsed().as_secs_f64() * 1e3;
+    let prebuilt_started = Instant::now();
+    if arg(&args, "--prebuilt-all").as_deref() == Some("true") {
+        structures.all_ordinals = Some(index.all_ordinals_bitmap());
+    }
+    let prebuilt_all_build_ms = prebuilt_started.elapsed().as_secs_f64() * 1e3;
     let (columns_bytes, presence_bytes) = structures.owned_bytes();
 
     let category_id_by_leaf: HashMap<String, CategoryId> = data
@@ -249,6 +256,9 @@ fn run() -> Result<(), Box<dyn Error>> {
             "sort_columns_bytes": columns_bytes,
             "presence_fields": presence,
             "presence_bytes": presence_bytes,
+            "prebuilt_all": structures.all_ordinals.is_some(),
+            "prebuilt_all_bytes": structures.all_ordinals_bytes(),
+            "prebuilt_all_build_ms": prebuilt_all_build_ms,
             "tau_f": tau_f,
             "rho_s": rho_s,
         })

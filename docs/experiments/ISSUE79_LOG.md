@@ -88,3 +88,41 @@ The **fastest same-host competitor is Meilisearch on every cell.** On `numeric_r
   - **Like-for-like Meilisearch sensitivity** (`run_e3b.sh meili_lfl`, 10:44–11:28 UTC; 100k pre-check confirmed all 2,825 color values with exact counts): facets 9.6 / 14.3 / 48.6 / 47.9 ms, sort 6.0 ms.
   - **Interleaved fidelity A/B** (`run_e3b.sh fidelity`, 11:28–12:05 UTC): N0′/N0 per-pair 0.80–1.15x with identical outputs, so the new server adds no overhead. Across time, however, FINAL was 1.07–1.43x its headline-phase value, i.e. host drift of up to about 40% between sequential phases.
 - **Effect on conclusions:** the preregistered verdicts (sort PARITY, facets PARTIAL) are kept. The like-for-like sensitivity (facets FH3/FH4 about 0.52–0.54x, sort 1.31x) is reported separately as not preregistered. Given host drift, the competitive position is recorded as **unresolved**. A confirmation run with interleaved native/competitor launches and equalized facet work is recommended before #64.
+
+## 2026-09-29 — post-integration revalidation on final `main` (Issue #63 pre-check)
+
+This runs after the stale-PR cleanup (#71, #80 and #81 merged; #53 and #59 closed), on final integrated `main` at `31a82e9`. Its scope is proportionate: the 500k correctness gate plus FINAL only (hybrid:hybrid, frozen τ_F/ρ_S, no recalibration) on FH1–FH4 and SH1, 3 clean launches. No competitor or other variant was re-measured.
+
+- **Provenance.** Binaries were built from a clean detached checkout of `31a82e9`. `e3b_native_plp_server` has sha256 `ab24b45b…`, identical to the build from the byte-identical salvage-branch tree. The run used `run_e3b.sh revalidate` and `revalidate_compare.py`, whose scripts are the only uncommitted files at that checkout. Every raw file records `git_sha = 31a82e9`. Raw data: `artifacts/issue79/results/revalidate/main-31a82e9/`.
+- **Pass rule, declared in `revalidate_compare.py` before the run:**
+  - the gate has 0 candidate failures;
+  - all runs are `ok` and #77's fixture passes;
+  - facet/doc fingerprints and planner paths are identical to the headline FINAL;
+  - the CPU median ratio against the headline FINAL lies within [0.60, 1.45], #79 §11b's host-drift envelope. Outside it the cell is flagged REGRESSION-SUSPECT.
+- **Gate:** `E3B_GATE rows=515928 candidate_checks=1680 candidate_failures=0 baseline_mismatches=60`, identical to `gate_500k_calibrated.json`.
+
+| cell | revalidation CPU µs (runs) | median | headline FINAL median | ratio | outputs identical | paths identical | flag |
+|---|---|---|---|---|---|---|---|
+| FH1 | 10,333 / 11,069 / 8,108 | 10,333 | 8,538 | 1.210 | yes | yes | PASS |
+| FH2 | 10,253 / 13,997 / 11,724 | 11,724 | 11,186 | 1.048 | yes | yes | PASS |
+| FH3 | 38,118 / 37,052 / 28,553 | 37,052 | 22,868 | **1.620** | yes | yes | **REGRESSION-SUSPECT** |
+| FH4 | 38,464 / 37,570 / 42,097 | 38,464 | 25,857 | **1.488** | yes | yes | **REGRESSION-SUSPECT** |
+| SH1 | 7,916 / 10,428 / 8,591 | 8,591 | 7,832 | 1.097 | yes | yes | PASS |
+
+**Overall: correctness and output identity PASS. CPU FAILS the declared band on FH3/FH4.** The flag is kept. The band is not widened after the fact. Investigation:
+
+1. **No code change.** `git diff 4d78435 31a82e9` (the headline commit against final main) touches none of `commerce-core`, `issue79-eval/src/{plp,cells,oracle}.rs`, `e3b_native_plp_server` or `issue61-eval`. The only changes are `Cargo.lock` (the new `issue57-eval` entry), the gate (`--cand-modes` is absent here: this is the pre-#63 gate) and `i77_measure`.
+2. **Same level in #79's own later window.** #79's fidelity window (§11b, 11:28–12:05 UTC on 2026-09-28) measured this identical code with #79's own build: FINAL FH3 31,252 / 36,064 / 32,805 and FH4 35,031 / 37,775 / 36,720. Against those medians the revalidation is 1.13x (FH3) and 1.05x (FH4).
+3. **Interleaved control** (`drift_check/`, 05:43–05:52 UTC), in pairs of the frozen, checksummed N0 binary followed by FINAL:
+
+   | pair | N0 FH1 / FH3 / FH4 | FINAL FH1 / FH3 / FH4 |
+   |---|---|---|
+   | 1 | 147,734 / 173,381 / 61,442 | 9,562 / 27,656 / 35,311 |
+   | 2 | 143,728 / 169,398 / 60,510 | 7,781 / 35,187 / 40,572 |
+
+   N0 is **not** inflated: it sits at or below #79's N0-phase medians (170,669 / 188,889 / 57,773). A uniform slowdown of the host is therefore not the explanation.
+   - FINAL FH3 ranges from 27.7 to 38.1 ms across five launches within 20 minutes, a per-launch spread about as wide as the headline-to-now gap.
+   - The inflated FINAL phases are both memory-scan-heavy: full-catalog `all_ordinals()` construction (candidates phase 10–13 ms, headline 8.7 ms) and dense counting (facets phase 17.6–22.9 ms, headline 12.3 ms). N0 is dominated by per-candidate hash lookups instead.
+   - The host is a KVM guest: THP is `madvise` (`AnonHugePages: 0`) and there is no cpufreq control. Per-launch memory placement and neighbour load are not observable from inside it.
+
+**Reading.** Integration did not regress #79's code or semantics: the gate, outputs, planner paths and source are identical. #79's headline FINAL FH3/FH4 (22.9 / 25.9 ms) came from a favourable window. The level measured since then, in #79's fidelity window and here, is about 33–38 ms. The mechanism is not identified. It is per-launch, and it hits the match-all and dense-counting phases, which are exactly #63's B1/B2 targets. #79's preregistered FH3/FH4 ratios (2.863 / 1.280) used the favourable-window FINAL against an earlier-window competitor, and they carry this uncertainty on top of §11b's. This strengthens the reason for #63's same-window Latin-square design. It does not change any #79 verdict. #63 proceeds, and its Part A reports per-launch spread (CV, min, max) for every arm.

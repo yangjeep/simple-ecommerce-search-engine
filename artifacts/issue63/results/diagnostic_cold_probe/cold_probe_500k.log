@@ -1,0 +1,5 @@
+FH3 FINAL (p0) pipeline: hot 12677.9 µs, cold 13278.6 µs, cold/hot 1.05x
+FH3 N+ (p0r) pipeline: hot 9206.7 µs, cold 8988.2 µs, cold/hot 0.98x
+P0 all_ordinals construction: hot 4224.1 µs, cold 4778.7 µs, cold/hot 1.13x
+color facet_counts_ordinal over full: hot 10155.5 µs, cold 9181.8 µs, cold/hot 0.90x
+FD1 candidates (color=white clone): hot 4.4 µs, cold 37.4 µs, cold/hot 8.51x

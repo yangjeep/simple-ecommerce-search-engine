@@ -1,0 +1,96 @@
+{
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_3x.jsonl",
+  "dump_dir": "/tmp/claude-1000/-home-yangjeep-orca-workspaces-simple-ecommerce-search-engine-resource-experiments/29ceefbb-7995-49b4-993c-d39d75eccc3b/scratchpad/smoke/negctl/dumps",
+  "verdicts": [
+    {
+      "engine": "meilisearch",
+      "cell": "facet_high_cardinality_color",
+      "equivalent": false,
+      "num_found_expected": 128982,
+      "num_found_returned": 128982,
+      "facets_exact": false,
+      "hits_id_only": false,
+      "hit_keys": [
+        "average_rating",
+        "category_depth_1",
+        "category_depth_2",
+        "category_depth_3",
+        "category_depth_4",
+        "category_depth_5",
+        "category_depth_6",
+        "category_leaf",
+        "color",
+        "description",
+        "id",
+        "material",
+        "primarymaterial",
+        "product_class",
+        "rating_count",
+        "review_count",
+        "shape",
+        "style",
+        "title"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 100,
+          "count_mismatches": 0,
+          "missing_values": 2725,
+          "extra_values": 0,
+          "examples": [
+            "aqua/gray: 3 vs missing",
+            "aqua/green: 6 vs missing",
+            "aqua/pink: 3 vs missing",
+            "aqua/white: 3 vs missing",
+            "arabescato carrara: 12 vs missing"
+          ]
+        }
+      }
+    },
+    {
+      "engine": "meilisearch",
+      "cell": "facet_low_cardinality_style",
+      "equivalent": false,
+      "num_found_expected": 128982,
+      "num_found_returned": 128982,
+      "facets_exact": true,
+      "hits_id_only": false,
+      "hit_keys": [
+        "average_rating",
+        "category_depth_1",
+        "category_depth_2",
+        "category_depth_3",
+        "category_depth_4",
+        "category_depth_5",
+        "category_depth_6",
+        "category_leaf",
+        "color",
+        "description",
+        "id",
+        "material",
+        "primarymaterial",
+        "product_class",
+        "rating_count",
+        "review_count",
+        "shape",
+        "style",
+        "title"
+      ],
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    }
+  ],
+  "unreadable": [],
+  "all_equivalent": false
+}
