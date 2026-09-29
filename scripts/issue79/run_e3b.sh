@@ -155,6 +155,29 @@ case "$phase" in
         --server-args "$ALL_STRUCTS --tau-f $E3B_TAU_F --rho-s $E3B_RHO_S"
     done
     ;;
+  revalidate)
+    # Post-integration revalidation on the final integrated main (Issue #63
+    # pre-check, recorded in ISSUE79_LOG.md): the 500k correctness gate with
+    # the frozen constants, then FINAL only (hybrid:hybrid, frozen tau/rho,
+    # no recalibration) on FH1-FH4 + SH1, 3 clean launches. No competitor
+    # and no other variant is re-measured.
+    : "${E3B_TAU_F:?}" "${E3B_RHO_S:?}"
+    REVAL="$OUT/revalidate/${E3B_REVAL_TAG:?set E3B_REVAL_TAG (e.g. main-<sha>)}"
+    mkdir -p "$REVAL"
+    CELLS=facet_low_cardinality_style,facet_medium_cardinality_primarymaterial,facet_high_cardinality_color,facet_disjunctive_multi_dim,numeric_range_sort
+    log "revalidate gate"
+    { time "$REPO_ROOT/target/release/e3b_correctness_gate" --catalog "$CATALOG" \
+        --out "$REVAL/gate_500k.json" --tau-f "$E3B_TAU_F" --rho-s "$E3B_RHO_S"; } \
+      > "$REVAL/gate_500k.log" 2>&1 || { cat "$REVAL/gate_500k.log"; exit 1; }
+    grep E3B_GATE "$REVAL/gate_500k.log"
+    for run in $RUNS; do
+      log "revalidate FINAL run=$run"
+      taskset -c "$I77_DRIVER_CPU" "$DRIVER" --repository-root "$REPO_ROOT" \
+        --server-binary "$NEW_BINARY" --catalog "$CATALOG" --label revalidate_final --run "$run" \
+        --out "$REVAL/final_500k_run${run}.json" --cells "$CELLS" --modes hybrid:hybrid \
+        --server-args "$ALL_STRUCTS --tau-f $E3B_TAU_F --rho-s $E3B_RHO_S"
+    done
+    ;;
   *)
     echo "unknown phase $phase" >&2
     exit 2
