@@ -1,0 +1,48 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "style": {
+      "american traditional": 24,
+      "asian inspired": 36,
+      "beachy": 36,
+      "bohemian": 84,
+      "children's": 12,
+      "coastal": 2064,
+      "cottage / country": 360,
+      "cottage americana": 24,
+      "country/cottage": 120,
+      "eclectic": 1344,
+      "farmhouse / country": 2496,
+      "french country": 24,
+      "glam": 756,
+      "global inspired": 84,
+      "industrial": 600,
+      "mid-century modern": 36,
+      "mission shaker": 48,
+      "modern": 108,
+      "modern & contemporary": 11484,
+      "modern farmhouse": 60,
+      "modern rustic": 36,
+      "nautical": 24,
+      "no style": 72,
+      "ornate glam": 48,
+      "ornate traditional": 48,
+      "posh & luxe": 84,
+      "rustic": 1272,
+      "scandinavian": 24,
+      "sleek & chic modern": 60,
+      "traditional": 4560,
+      "transitional": 12,
+      "tropical": 60,
+      "urban rustic": 12,
+      "utilitarian": 12
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id",
+    "sort_value"
+  ],
+  "mode": "hybrid-hybrid-p0r",
+  "num_found": 55344
+}

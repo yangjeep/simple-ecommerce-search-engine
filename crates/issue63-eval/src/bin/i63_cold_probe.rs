@@ -85,6 +85,7 @@ fn main() {
     let request = |cand_mode| PlpRequest {
         category: None,
         filters: Vec::new(),
+        any_filters: Vec::new(),
         ranges: Vec::new(),
         facets: fh3.facets.iter().map(|f| (*f).to_owned()).collect(),
         sort: None,

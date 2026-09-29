@@ -495,6 +495,15 @@ enum WorkloadKind {
         range: (String, String, f64),
         sort: (String, bool),
     },
+    /// Issue #64 (amendment 1): scope + single-select `filters`, multi-select
+    /// `any_filters` (OR within an attribute), and facets; a facet with its
+    /// own active selection is self-excluded. Measured on native, Solr and
+    /// Meilisearch only.
+    Plp64 {
+        filters: Vec<(String, String)>,
+        any_filters: Vec<(String, Vec<String>)>,
+        facets: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -517,7 +526,41 @@ fn selected_cells<'a>(config: &Config, all: &'a [WorkloadCell]) -> Vec<&'a Workl
     }
 }
 
+/// Issue #64: `I64_CELLS=1` appends the 44 facet-economics cells (shared
+/// definition `issue77_eval::i64cells`) after #77's 20, so #77's own matrix
+/// and indices are unchanged when it is unset.
 fn workload_matrix(repository_root: &Path) -> Vec<WorkloadCell> {
+    let mut cells = workload_matrix_i77(repository_root);
+    if std::env::var("I64_CELLS").is_ok_and(|v| v == "1") {
+        cells.extend(issue77_eval::i64cells::cells().into_iter().map(|c| {
+            WorkloadCell {
+                name: c.name,
+                kind: WorkloadKind::Plp64 {
+                    filters: c
+                        .filters
+                        .iter()
+                        .map(|(a, v)| ((*a).to_owned(), (*v).to_owned()))
+                        .collect(),
+                    any_filters: c
+                        .any_filters
+                        .iter()
+                        .map(|(a, vs)| {
+                            (
+                                (*a).to_owned(),
+                                vs.iter().map(|v| (*v).to_owned()).collect(),
+                            )
+                        })
+                        .collect(),
+                    facets: c.facets.iter().map(|f| (*f).to_owned()).collect(),
+                },
+                top_k: issue77_eval::i64cells::TOP_K,
+            }
+        }));
+    }
+    cells
+}
+
+fn workload_matrix_i77(repository_root: &Path) -> Vec<WorkloadCell> {
     let narrow = read_env_var(repository_root, "I77_CATEGORY_NARROW").unwrap_or_default();
     let medium = read_env_var(repository_root, "I77_CATEGORY_MEDIUM").unwrap_or_default();
     let broad = read_env_var(repository_root, "I77_CATEGORY_BROAD").unwrap_or_default();
@@ -653,6 +696,22 @@ fn native_query_string(port: &str, cell: &WorkloadCell) -> String {
                 params.push(format!("filter={attr}:{}", urlencode(val)));
             }
             params.push(format!("facets={}", facet_fields.join(",")));
+        }
+        WorkloadKind::Plp64 {
+            filters,
+            any_filters,
+            facets,
+        } => {
+            for (attr, val) in filters {
+                params.push(format!("filter={attr}:{}", urlencode(val)));
+            }
+            for (attr, vals) in any_filters {
+                let encoded: Vec<String> = vals.iter().map(|v| urlencode(v)).collect();
+                params.push(format!("anyfilter={attr}:{}", encoded.join("|")));
+            }
+            if !facets.is_empty() {
+                params.push(format!("facets={}", facets.join(",")));
+            }
         }
         WorkloadKind::NumericRangeSort { range, sort } => {
             params.push(format!("range={}:{}:{}", range.0, range.1, range.2));
@@ -1098,6 +1157,14 @@ fn solr_correctness(
 /// base retrieval + every requested facet, matching native's
 /// backend_requests=1.
 fn solr_query_body(cell: &WorkloadCell) -> (String, serde_json::Value) {
+    if let WorkloadKind::Plp64 {
+        filters,
+        any_filters,
+        facets,
+    } = &cell.kind
+    {
+        return solr_i64_body(cell, filters, any_filters, facets);
+    }
     let mut filters: Vec<String> = Vec::new();
     let mut facet_json = serde_json::Map::new();
     let mut sort: Option<String> = None;
@@ -1147,6 +1214,7 @@ fn solr_query_body(cell: &WorkloadCell) -> (String, serde_json::Value) {
             filters.push(format!("{}:{}", range.0, op));
             sort = Some(format!("{} {}", s.0, if s.1 { "desc" } else { "asc" }));
         }
+        WorkloadKind::Plp64 { .. } => unreachable!("handled above"),
     }
     if let Some(c) = &category {
         filters.insert(0, format!("category_leaf:\"{c}\""));
@@ -1245,6 +1313,7 @@ fn run_solr_workload_cell(
                 "num_found": parsed["response"]["numFound"],
                 "facets": facets,
                 "hit_keys": hit_keys(parsed["response"].get("docs")),
+                "hit_count": parsed["response"]["docs"].as_array().map_or(0, Vec::len),
                 "backend_requests": 1,
                 "request": body,
             }),
@@ -1495,6 +1564,9 @@ fn es_query_body(cell: &WorkloadCell) -> serde_json::Value {
                     }),
                 );
             }
+        }
+        WorkloadKind::Plp64 { .. } => {
+            panic!("Issue #64 cells are measured on native, Solr and Meilisearch only")
         }
         WorkloadKind::NumericRangeSort { range, sort: s } => {
             let op = range.1.as_str();
@@ -1780,6 +1852,9 @@ fn typesense_urls(cell: &WorkloadCell, port: &str) -> Vec<(String, &'static str)
             if let Some(f) = af {
                 filters.push(f.clone());
             }
+        }
+        WorkloadKind::Plp64 { .. } => {
+            panic!("Issue #64 cells are measured on native, Solr and Meilisearch only")
         }
         WorkloadKind::NumericRangeSort { range, sort: s } => {
             let op = match range.1.as_str() {
@@ -2100,6 +2175,14 @@ fn meili_like_for_like() -> bool {
 }
 
 fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
+    if let WorkloadKind::Plp64 {
+        filters,
+        any_filters,
+        facets,
+    } = &cell.kind
+    {
+        return meili_i64_bodies(cell, filters, any_filters, facets);
+    }
     let mut filters: Vec<(String, String)> = Vec::new();
     let mut facet_fields: Vec<String> = Vec::new();
     let mut active_filter: Option<(String, String)> = None;
@@ -2118,6 +2201,7 @@ fn meili_bodies(cell: &WorkloadCell) -> Vec<(serde_json::Value, &'static str)> {
                 filters.push(f.clone());
             }
         }
+        WorkloadKind::Plp64 { .. } => unreachable!("handled above"),
         WorkloadKind::NumericRangeSort { range, sort: s } => {
             let op = match range.1.as_str() {
                 "gte" => ">=",
@@ -2202,6 +2286,7 @@ fn run_meili_workload_cell(
         let mut facets = serde_json::Map::new();
         let mut num_found = serde_json::Value::Null;
         let mut keys = Vec::new();
+        let mut hit_count = 0usize;
         for (body, kind) in &bodies {
             let resp: serde_json::Value = retry_request(3, || {
                 agent
@@ -2215,6 +2300,7 @@ fn run_meili_workload_cell(
             if *kind == "base" {
                 num_found = resp["estimatedTotalHits"].clone();
                 keys = hit_keys(resp.get("hits"));
+                hit_count = resp["hits"].as_array().map_or(0, Vec::len);
             }
             if let Some(distribution) = resp["facetDistribution"].as_object() {
                 for (field, counts) in distribution {
@@ -2230,6 +2316,7 @@ fn run_meili_workload_cell(
                 "num_found": num_found,
                 "facets": facets,
                 "hit_keys": keys,
+                "hit_count": hit_count,
                 "backend_requests": bodies.len(),
                 "request": requests,
             }),
@@ -2480,6 +2567,9 @@ fn vespa_yqls(cell: &WorkloadCell) -> Vec<(String, &'static str)> {
             if let Some(f) = af {
                 filters.push(f.clone());
             }
+        }
+        WorkloadKind::Plp64 { .. } => {
+            panic!("Issue #64 cells are measured on native, Solr and Meilisearch only")
         }
         WorkloadKind::NumericRangeSort { range, sort: s } => {
             let op = match range.1.as_str() {
@@ -2745,6 +2835,120 @@ fn run_vespa(
     result
 }
 
+/// Issue #64: a Solr phrase-query term, with `\` and `"` escaped.
+fn solr_quote(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
+/// Issue #64 (amendment 1) Solr body. Scope and single-select filters are
+/// plain `fq`s. A filter on a faceted attribute is tagged and that facet
+/// excludes its own tag (Solr's disjunctive idiom); multi-select is an
+/// OR of phrase terms inside one tagged `fq`. One request, as native.
+fn solr_i64_body(
+    cell: &WorkloadCell,
+    filters: &[(String, String)],
+    any_filters: &[(String, Vec<String>)],
+    facets: &[String],
+) -> (String, serde_json::Value) {
+    let faceted = |attr: &str| facets.iter().any(|f| f == attr);
+    let mut fq: Vec<String> = Vec::new();
+    for (attr, val) in filters {
+        let clause = format!("{attr}:{}", solr_quote(val));
+        fq.push(if faceted(attr) {
+            format!("{{!tag={attr}}}{clause}")
+        } else {
+            clause
+        });
+    }
+    for (attr, vals) in any_filters {
+        let ors: Vec<String> = vals.iter().map(|v| solr_quote(v)).collect();
+        let clause = format!("{attr}:({})", ors.join(" OR "));
+        fq.push(if faceted(attr) {
+            format!("{{!tag={attr}}}{clause}")
+        } else {
+            clause
+        });
+    }
+    let limit = if i63_equal_work() { -1 } else { 200 };
+    let mut facet_json = serde_json::Map::new();
+    for field in facets {
+        let mut def = serde_json::json!({"type": "terms", "field": field, "limit": limit});
+        let own =
+            filters.iter().any(|(a, _)| a == field) || any_filters.iter().any(|(a, _)| a == field);
+        if own {
+            def["domain"] = serde_json::json!({"excludeTags": [field]});
+        }
+        facet_json.insert(field.clone(), def);
+    }
+    let mut body = serde_json::json!({
+        "query": "*:*",
+        "filter": fq,
+        "limit": cell.top_k,
+        "fields": "id",
+    });
+    if !facet_json.is_empty() {
+        body["facet"] = serde_json::Value::Object(facet_json);
+    }
+    (
+        "http://127.0.0.1:{PORT}/solr/i77_wands/select".to_owned(),
+        body,
+    )
+}
+
+/// Issue #64: a Meilisearch filter string literal, with `\` and `"` escaped.
+fn meili_quote(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
+/// Issue #64 (amendment 1) Meilisearch bodies. The base request carries
+/// every filter and every facet without an own selection; each faceted
+/// attribute with its own selection gets one extra `limit: 0` request whose
+/// filter omits that attribute (Meilisearch has no exclude-tag idiom).
+fn meili_i64_bodies(
+    cell: &WorkloadCell,
+    filters: &[(String, String)],
+    any_filters: &[(String, Vec<String>)],
+    facets: &[String],
+) -> Vec<(serde_json::Value, &'static str)> {
+    let render = |exclude: Option<&str>| -> String {
+        let mut parts: Vec<String> = Vec::new();
+        for (attr, val) in filters {
+            if Some(attr.as_str()) != exclude {
+                parts.push(format!("{attr} = {}", meili_quote(val)));
+            }
+        }
+        for (attr, vals) in any_filters {
+            if Some(attr.as_str()) != exclude {
+                let quoted: Vec<String> = vals.iter().map(|v| meili_quote(v)).collect();
+                parts.push(format!("{attr} IN [{}]", quoted.join(", ")));
+            }
+        }
+        parts.join(" AND ")
+    };
+    let own = |attr: &str| {
+        filters.iter().any(|(a, _)| a == attr) || any_filters.iter().any(|(a, _)| a == attr)
+    };
+    let mut base = serde_json::json!({
+        "filter": render(None),
+        "limit": cell.top_k,
+    });
+    if meili_like_for_like() {
+        base["attributesToRetrieve"] = serde_json::json!(["id"]);
+    }
+    let combined: Vec<&String> = facets.iter().filter(|f| !own(f)).collect();
+    if !combined.is_empty() {
+        base["facets"] = serde_json::json!(combined);
+    }
+    let mut bodies = vec![(base, "base")];
+    for field in facets.iter().filter(|f| own(f)) {
+        bodies.push((
+            serde_json::json!({"filter": render(Some(field)), "facets": [field], "limit": 0}),
+            "facet",
+        ));
+    }
+    bodies
+}
+
 fn run(config: &Config) -> MeasurementResult {
     let mut result = base_result(config);
     let catalog_path = match catalog_path_for_tier(&config.repository_root, &config.tier) {
@@ -2828,4 +3032,89 @@ fn main() {
         "MEASURE_OK engine={} tier={} run={} status={:?} correctness={}",
         config.engine, config.tier, config.run, result.status, result.correctness_all_passed
     );
+}
+
+#[cfg(test)]
+mod i64_builder_tests {
+    use super::*;
+
+    fn cell() -> WorkloadCell {
+        WorkloadCell {
+            name: "t",
+            kind: WorkloadKind::Plp64 {
+                filters: vec![
+                    (
+                        "category_depth_3".into(),
+                        "Rugs / Area Rugs / 4' x 6' Area Rugs".into(),
+                    ),
+                    ("color".into(), "black".into()),
+                ],
+                any_filters: vec![(
+                    "style".into(),
+                    vec!["modern & contemporary".into(), "say \"hi\"".into()],
+                )],
+                facets: vec!["style".into(), "material".into(), "color".into()],
+            },
+            top_k: 48,
+        }
+    }
+
+    #[test]
+    fn solr_i64_tags_only_faceted_selections_and_escapes() {
+        let (_, body) = solr_query_body(&cell());
+        let fq: Vec<String> = body["filter"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            fq[0],
+            "category_depth_3:\"Rugs / Area Rugs / 4' x 6' Area Rugs\""
+        );
+        assert_eq!(fq[1], "{!tag=color}color:\"black\"");
+        assert_eq!(
+            fq[2],
+            "{!tag=style}style:(\"modern & contemporary\" OR \"say \\\"hi\\\"\")"
+        );
+        assert_eq!(body["facet"]["style"]["domain"]["excludeTags"][0], "style");
+        assert_eq!(body["facet"]["color"]["domain"]["excludeTags"][0], "color");
+        assert!(body["facet"]["material"].get("domain").is_none());
+        assert_eq!(body["fields"], "id");
+    }
+
+    #[test]
+    fn meili_i64_one_extra_request_per_self_excluded_facet() {
+        let bodies = meili_bodies(&cell());
+        assert_eq!(bodies.len(), 3);
+        let base = &bodies[0].0;
+        assert_eq!(base["facets"], serde_json::json!(["material"]));
+        let f = base["filter"].as_str().unwrap();
+        assert!(f.starts_with("category_depth_3 = \"Rugs / Area Rugs / 4' x 6' Area Rugs\" AND color = \"black\" AND style IN ["), "{f}");
+        let style = bodies
+            .iter()
+            .find(|(b, _)| b["facets"] == serde_json::json!(["style"]))
+            .unwrap();
+        assert!(!style.0["filter"].as_str().unwrap().contains("style IN"));
+        assert!(style.0["filter"]
+            .as_str()
+            .unwrap()
+            .contains("color = \"black\""));
+        assert_eq!(style.0["limit"], 0);
+        let color = bodies
+            .iter()
+            .find(|(b, _)| b["facets"] == serde_json::json!(["color"]))
+            .unwrap();
+        assert!(!color.0["filter"].as_str().unwrap().contains("color ="));
+    }
+
+    #[test]
+    fn native_i64_query_string_carries_anyfilter() {
+        let q = native_query_string("1", &cell());
+        assert!(
+            q.contains("anyfilter=style:modern%20%26%20contemporary|say%20%22hi%22"),
+            "{q}"
+        );
+        assert!(q.contains("facets=style,material,color"), "{q}");
+    }
 }

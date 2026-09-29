@@ -1,0 +1,178 @@
+=== 2026-09-29T10:57:15Z confirm run=1 arm=native ===
+  i64_s0_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(402.0) p50_ms=0.61 n=2689
+  i64_s0_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1078.0) p50_ms=1.39 n=1241
+  i64_s0_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(25274.0) p50_ms=25.54 n=200
+  i64_s0_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(27117.0) p50_ms=27.73 n=200
+  i64_s0_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(36743.0) p50_ms=37.08 n=200
+  i64_s0_k11 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(60303.0) p50_ms=60.73 n=200
+  i64_s0_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(21927.0) p50_ms=22.50 n=200
+  i64_s1_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(453.0) p50_ms=0.68 n=2346
+  i64_s1_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1192.0) p50_ms=1.54 n=1120
+  i64_s1_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(12760.0) p50_ms=13.83 n=200
+  i64_s1_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(13248.0) p50_ms=13.31 n=200
+  i64_s1_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(30685.0) p50_ms=30.37 n=200
+  i64_s1_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(29263.0) p50_ms=35.42 n=200
+  i64_s1_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8439.0) p50_ms=8.77 n=200
+  i64_s2_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(406.0) p50_ms=0.60 n=2601
+  i64_s2_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2873.0) p50_ms=3.23 n=576
+  i64_s2_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(9694.0) p50_ms=10.30 n=200
+  i64_s2_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(14864.0) p50_ms=14.64 n=200
+  i64_s2_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(20728.0) p50_ms=20.97 n=200
+  i64_s2_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(22244.0) p50_ms=23.36 n=200
+  i64_s2_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(4783.0) p50_ms=5.16 n=292
+  i64_s2_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(7753.0) p50_ms=7.89 n=220
+  i64_s2_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8475.0) p50_ms=8.77 n=202
+  i64_s3_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(402.0) p50_ms=0.63 n=2611
+  i64_s3_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(814.0) p50_ms=0.98 n=1649
+  i64_s3_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2619.0) p50_ms=2.99 n=549
+  i64_s3_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(4471.0) p50_ms=4.76 n=350
+  i64_s3_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6216.0) p50_ms=6.59 n=266
+  i64_s3_k9 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6690.0) p50_ms=6.90 n=250
+  i64_s3_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1733.0) p50_ms=2.08 n=723
+  i64_s3_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1151.0) p50_ms=1.46 n=1199
+  i64_s3_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1547.0) p50_ms=1.78 n=934
+  i64_s4_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(393.0) p50_ms=0.66 n=2526
+  i64_s4_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(604.0) p50_ms=0.84 n=1972
+  i64_s4_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1184.0) p50_ms=1.50 n=1111
+  i64_s4_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1602.0) p50_ms=1.92 n=881
+  i64_s4_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2934.0) p50_ms=3.29 n=529
+  i64_s4_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(725.0) p50_ms=0.96 n=1627
+  i64_s5_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(370.0) p50_ms=0.58 n=2669
+  i64_s5_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(468.0) p50_ms=0.68 n=2320
+  i64_s5_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(643.0) p50_ms=0.87 n=1849
+  i64_s5_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(726.0) p50_ms=0.97 n=1708
+  i64_s5_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(887.0) p50_ms=1.20 n=1415
+  i64_s5_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(472.0) p50_ms=0.68 n=2258
+E3B_MEASURE_OK label=i64_confirm run=1 status=ok cells=44
+arm_exit=0 run=1 arm=native
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=1 arm=native
+=== 2026-09-29T11:01:56Z confirm run=1 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=1 status=Ok correctness=true
+arm_exit=0 run=1 arm=meilisearch
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=1 arm=meilisearch
+=== 2026-09-29T11:23:11Z confirm run=1 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=1 status=Ok correctness=true
+arm_exit=0 run=1 arm=solr
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=1 arm=solr
+=== 2026-09-29T11:35:35Z confirm run=2 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=2 status=Ok correctness=true
+arm_exit=0 run=2 arm=solr
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=2 arm=solr
+=== 2026-09-29T11:48:02Z confirm run=2 arm=native ===
+  i64_s0_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(438.0) p50_ms=0.63 n=2508
+  i64_s0_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1208.0) p50_ms=1.40 n=1076
+  i64_s0_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(25781.0) p50_ms=25.36 n=200
+  i64_s0_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(28723.0) p50_ms=27.75 n=200
+  i64_s0_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(37155.0) p50_ms=36.41 n=200
+  i64_s0_k11 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(52819.0) p50_ms=58.75 n=200
+  i64_s0_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(22916.0) p50_ms=22.57 n=200
+  i64_s1_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(420.0) p50_ms=0.62 n=2588
+  i64_s1_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1152.0) p50_ms=1.43 n=1160
+  i64_s1_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(12283.0) p50_ms=13.67 n=200
+  i64_s1_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(16030.0) p50_ms=16.17 n=200
+  i64_s1_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(28324.0) p50_ms=29.57 n=200
+  i64_s1_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(31733.0) p50_ms=35.46 n=200
+  i64_s1_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(10245.0) p50_ms=8.95 n=200
+  i64_s2_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(408.0) p50_ms=0.61 n=2517
+  i64_s2_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2752.0) p50_ms=3.08 n=598
+  i64_s2_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(9570.0) p50_ms=9.82 n=200
+  i64_s2_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(15962.0) p50_ms=14.53 n=200
+  i64_s2_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(17049.0) p50_ms=19.41 n=200
+  i64_s2_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(23905.0) p50_ms=23.18 n=200
+  i64_s2_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(4638.0) p50_ms=5.18 n=304
+  i64_s2_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6865.0) p50_ms=7.21 n=248
+  i64_s2_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(7421.0) p50_ms=8.11 n=225
+  i64_s3_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(465.0) p50_ms=0.55 n=2265
+  i64_s3_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1052.0) p50_ms=1.19 n=1237
+  i64_s3_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2670.0) p50_ms=3.02 n=531
+  i64_s3_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(4286.0) p50_ms=4.58 n=355
+  i64_s3_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(5516.0) p50_ms=5.96 n=295
+  i64_s3_k9 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8495.0) p50_ms=7.16 n=200
+  i64_s3_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1650.0) p50_ms=2.04 n=741
+  i64_s3_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1096.0) p50_ms=1.43 n=1222
+  i64_s3_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1259.0) p50_ms=1.59 n=1081
+  i64_s4_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(349.0) p50_ms=0.54 n=2918
+  i64_s4_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(846.0) p50_ms=0.88 n=1428
+  i64_s4_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1139.0) p50_ms=1.47 n=1125
+  i64_s4_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1341.0) p50_ms=1.70 n=1008
+  i64_s4_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1858.0) p50_ms=2.19 n=783
+  i64_s4_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(733.0) p50_ms=0.99 n=1591
+  i64_s5_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(550.0) p50_ms=0.68 n=1860
+  i64_s5_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(457.0) p50_ms=0.65 n=2306
+  i64_s5_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(502.0) p50_ms=0.70 n=2321
+  i64_s5_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(699.0) p50_ms=0.99 n=1708
+  i64_s5_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(814.0) p50_ms=1.08 n=1546
+  i64_s5_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(666.0) p50_ms=0.77 n=1575
+E3B_MEASURE_OK label=i64_confirm run=2 status=ok cells=44
+arm_exit=0 run=2 arm=native
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=2 arm=native
+=== 2026-09-29T11:52:29Z confirm run=2 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=2 status=Ok correctness=true
+arm_exit=0 run=2 arm=meilisearch
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=2 arm=meilisearch
+=== 2026-09-29T12:14:09Z confirm run=3 arm=meilisearch ===
+MEASURE_OK engine=meilisearch tier=500k run=3 status=Ok correctness=true
+arm_exit=0 run=3 arm=meilisearch
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=3 arm=meilisearch
+=== 2026-09-29T12:34:14Z confirm run=3 arm=solr ===
+MEASURE_OK engine=solr tier=500k run=3 status=Ok correctness=true
+arm_exit=0 run=3 arm=solr
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=3 arm=solr
+=== 2026-09-29T12:45:56Z confirm run=3 arm=native ===
+  i64_s0_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(600.0) p50_ms=0.74 n=1829
+  i64_s0_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1053.0) p50_ms=1.37 n=1252
+  i64_s0_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(24564.0) p50_ms=25.07 n=200
+  i64_s0_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(27197.0) p50_ms=27.68 n=200
+  i64_s0_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(36801.0) p50_ms=35.86 n=200
+  i64_s0_k11 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(59871.0) p50_ms=59.86 n=200
+  i64_s0_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(18574.0) p50_ms=22.02 n=200
+  i64_s1_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(422.0) p50_ms=0.58 n=2643
+  i64_s1_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1537.0) p50_ms=1.43 n=884
+  i64_s1_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(13509.0) p50_ms=13.99 n=200
+  i64_s1_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(12910.0) p50_ms=14.85 n=200
+  i64_s1_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(28666.0) p50_ms=29.72 n=200
+  i64_s1_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(34950.0) p50_ms=35.83 n=200
+  i64_s1_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8231.0) p50_ms=8.61 n=200
+  i64_s2_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(403.0) p50_ms=0.59 n=2664
+  i64_s2_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2543.0) p50_ms=3.02 n=638
+  i64_s2_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(9634.0) p50_ms=9.86 n=200
+  i64_s2_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(13730.0) p50_ms=14.16 n=200
+  i64_s2_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(18247.0) p50_ms=19.78 n=200
+  i64_s2_k10 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(22639.0) p50_ms=22.99 n=200
+  i64_s2_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(4719.0) p50_ms=5.09 n=301
+  i64_s2_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6746.0) p50_ms=7.12 n=250
+  i64_s2_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(8426.0) p50_ms=8.34 n=200
+  i64_s3_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(356.0) p50_ms=0.55 n=2866
+  i64_s3_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(796.0) p50_ms=1.06 n=1650
+  i64_s3_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(2538.0) p50_ms=2.86 n=554
+  i64_s3_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(3797.0) p50_ms=4.26 n=404
+  i64_s3_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6372.0) p50_ms=6.54 n=259
+  i64_s3_k9 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(6349.0) p50_ms=6.64 n=262
+  i64_s3_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1662.0) p50_ms=1.99 n=747
+  i64_s3_k5_style1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1222.0) p50_ms=1.50 n=1123
+  i64_s3_k5_style2 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1293.0) p50_ms=1.57 n=1100
+  i64_s4_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(380.0) p50_ms=0.66 n=2573
+  i64_s4_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(595.0) p50_ms=0.79 n=2048
+  i64_s4_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1149.0) p50_ms=1.46 n=1122
+  i64_s4_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1479.0) p50_ms=1.77 n=947
+  i64_s4_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(1954.0) p50_ms=2.28 n=749
+  i64_s4_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(819.0) p50_ms=1.16 n=1442
+  i64_s5_k0 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(351.0) p50_ms=0.55 n=2881
+  i64_s5_k1 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(416.0) p50_ms=0.64 n=2445
+  i64_s5_k3 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(509.0) p50_ms=0.70 n=2227
+  i64_s5_k5 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(604.0) p50_ms=0.82 n=1976
+  i64_s5_k8 Some(("hybrid", "hybrid:p0r")) cpu_us=Some(845.0) p50_ms=1.12 n=1486
+  i64_s5_color Some(("hybrid", "hybrid:p0r")) cpu_us=Some(444.0) p50_ms=0.69 n=2386
+E3B_MEASURE_OK label=i64_confirm run=3 status=ok cells=44
+arm_exit=0 run=3 arm=native
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0 run=3 arm=native
+=== 2026-09-29T12:50:21Z phase confirm done ===

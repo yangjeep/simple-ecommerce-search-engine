@@ -1,0 +1,17 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 14472,
+  "request": {
+    "fields": "id",
+    "filter": [
+      "category_depth_2:\"Home Improvement / Flooring, Walls & Ceiling\""
+    ],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

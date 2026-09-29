@@ -1,0 +1,2138 @@
+{
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl",
+  "dump_dir": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/artifacts/issue64/results/confirm/run3/dumps_native",
+  "verdicts": [
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_color",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k0",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k11",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_1": {
+          "expected_values": 55,
+          "returned_values": 55,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_2": {
+          "expected_values": 138,
+          "returned_values": 138,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 458,
+          "returned_values": 458,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 806,
+          "returned_values": 806,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 492,
+          "returned_values": 492,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 71,
+          "returned_values": 71,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 162,
+          "returned_values": 162,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 94,
+          "returned_values": 94,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k1",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k3",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k5",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 162,
+          "returned_values": 162,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 94,
+          "returned_values": 94,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s0_k8",
+      "equivalent": true,
+      "num_found_expected": 515928,
+      "num_found_returned": 515928,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_1": {
+          "expected_values": 55,
+          "returned_values": 55,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_2": {
+          "expected_values": 138,
+          "returned_values": 138,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 458,
+          "returned_values": 458,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 2825,
+          "returned_values": 2825,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 162,
+          "returned_values": 162,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 244,
+          "returned_values": 244,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 94,
+          "returned_values": 94,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 65,
+          "returned_values": 65,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_color",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 834,
+          "returned_values": 834,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k0",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k10",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_2": {
+          "expected_values": 8,
+          "returned_values": 8,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 51,
+          "returned_values": 51,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 126,
+          "returned_values": 126,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 101,
+          "returned_values": 101,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 6,
+          "returned_values": 6,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 834,
+          "returned_values": 834,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 29,
+          "returned_values": 29,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 25,
+          "returned_values": 25,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 48,
+          "returned_values": 48,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k1",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 48,
+          "returned_values": 48,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k3",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 834,
+          "returned_values": 834,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 48,
+          "returned_values": 48,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k5",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 834,
+          "returned_values": 834,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 29,
+          "returned_values": 29,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 25,
+          "returned_values": 25,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 48,
+          "returned_values": 48,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s1_k8",
+      "equivalent": true,
+      "num_found_expected": 192468,
+      "num_found_returned": 192468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_2": {
+          "expected_values": 8,
+          "returned_values": 8,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 51,
+          "returned_values": 51,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 126,
+          "returned_values": 126,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 834,
+          "returned_values": 834,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 29,
+          "returned_values": 29,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 25,
+          "returned_values": 25,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 48,
+          "returned_values": 48,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_color",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 951,
+          "returned_values": 951,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k0",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k10",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_2": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 36,
+          "returned_values": 36,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 114,
+          "returned_values": 114,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 2,
+          "returned_values": 2,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 951,
+          "returned_values": 951,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 47,
+          "returned_values": 47,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 57,
+          "returned_values": 57,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 31,
+          "returned_values": 31,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k1",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k3",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 951,
+          "returned_values": 951,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 57,
+          "returned_values": 57,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k5",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 951,
+          "returned_values": 951,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 47,
+          "returned_values": 47,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 57,
+          "returned_values": 57,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 31,
+          "returned_values": 31,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k5_style1",
+      "equivalent": true,
+      "num_found_expected": 11484,
+      "num_found_returned": 11484,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 339,
+          "returned_values": 339,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 24,
+          "returned_values": 24,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 15,
+          "returned_values": 15,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k5_style2",
+      "equivalent": true,
+      "num_found_expected": 16044,
+      "num_found_returned": 16044,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 445,
+          "returned_values": 445,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 32,
+          "returned_values": 32,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 20,
+          "returned_values": 20,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 23,
+          "returned_values": 23,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s2_k8",
+      "equivalent": true,
+      "num_found_expected": 55344,
+      "num_found_returned": 55344,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_2": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_3": {
+          "expected_values": 36,
+          "returned_values": 36,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 114,
+          "returned_values": 114,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 951,
+          "returned_values": 951,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 47,
+          "returned_values": 47,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 57,
+          "returned_values": 57,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 31,
+          "returned_values": 31,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 34,
+          "returned_values": 34,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_color",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 381,
+          "returned_values": 381,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k0",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k1",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k3",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 381,
+          "returned_values": 381,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k5",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 381,
+          "returned_values": 381,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 26,
+          "returned_values": 26,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 9,
+          "returned_values": 9,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k5_style1",
+      "equivalent": true,
+      "num_found_expected": 240,
+      "num_found_returned": 240,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 7,
+          "returned_values": 7,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 1,
+          "returned_values": 1,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k5_style2",
+      "equivalent": true,
+      "num_found_expected": 468,
+      "num_found_returned": 468,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 1,
+          "returned_values": 1,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 8,
+          "returned_values": 8,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 2,
+          "returned_values": 2,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k8",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_3": {
+          "expected_values": 4,
+          "returned_values": 4,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 19,
+          "returned_values": 19,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 381,
+          "returned_values": 381,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 26,
+          "returned_values": 26,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 9,
+          "returned_values": 9,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s3_k9",
+      "equivalent": true,
+      "num_found_expected": 14472,
+      "num_found_returned": 14472,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_3": {
+          "expected_values": 4,
+          "returned_values": 4,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_4": {
+          "expected_values": 19,
+          "returned_values": 19,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 18,
+          "returned_values": 18,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 381,
+          "returned_values": 381,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 26,
+          "returned_values": 26,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 12,
+          "returned_values": 12,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 9,
+          "returned_values": 9,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_color",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 97,
+          "returned_values": 97,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_k0",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_k1",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_k3",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 97,
+          "returned_values": 97,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_k5",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 97,
+          "returned_values": 97,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s4_k8",
+      "equivalent": true,
+      "num_found_expected": 3024,
+      "num_found_returned": 3024,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_4": {
+          "expected_values": 6,
+          "returned_values": 6,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 97,
+          "returned_values": 97,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 10,
+          "returned_values": 10,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_color",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_k0",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {}
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_k1",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "style": {
+          "expected_values": 7,
+          "returned_values": 7,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_k3",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 7,
+          "returned_values": 7,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_k5",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "color": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 8,
+          "returned_values": 8,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 7,
+          "returned_values": 7,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    },
+    {
+      "engine": "native:hybrid-hybrid-p0r",
+      "cell": "i64_s5_k8",
+      "equivalent": true,
+      "num_found_expected": 600,
+      "num_found_returned": 600,
+      "facets_exact": true,
+      "hits_id_only": true,
+      "hit_keys": [
+        "id",
+        "sort_value"
+      ],
+      "hit_count": 48,
+      "hit_count_ok": true,
+      "backend_requests": 1,
+      "fields": {
+        "category_depth_4": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_5": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "category_depth_6": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "color": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "material": {
+          "expected_values": 8,
+          "returned_values": 8,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "primarymaterial": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "shape": {
+          "expected_values": 0,
+          "returned_values": 0,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        },
+        "style": {
+          "expected_values": 7,
+          "returned_values": 7,
+          "count_mismatches": 0,
+          "missing_values": 0,
+          "extra_values": 0,
+          "examples": []
+        }
+      }
+    }
+  ],
+  "unreadable": [],
+  "all_equivalent": true
+}

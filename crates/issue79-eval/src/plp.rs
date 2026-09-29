@@ -126,6 +126,9 @@ impl SortMode {
 pub struct PlpRequest {
     pub category: Option<String>,
     pub filters: Vec<(String, String)>,
+    /// Issue #64 multi-select: `(attribute, values)`, OR within the
+    /// attribute, AND with everything else; self-excluded like `filters`.
+    pub any_filters: Vec<(String, Vec<String>)>,
     pub ranges: Vec<(String, String, f64)>,
     pub facets: Vec<String>,
     pub sort: Option<(String, bool)>, // (attribute, descending)
@@ -171,6 +174,7 @@ pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
     let mut req = PlpRequest {
         category: None,
         filters: Vec::new(),
+        any_filters: Vec::new(),
         ranges: Vec::new(),
         facets: Vec::new(),
         sort: None,
@@ -190,6 +194,16 @@ pub fn parse_plp_request(target: &str) -> Result<PlpRequest, String> {
                     .split_once(':')
                     .ok_or_else(|| format!("malformed filter {value:?}, want attr:value"))?;
                 req.filters.push((attr.to_owned(), val.to_owned()));
+            }
+            "anyfilter" => {
+                let (attr, vals) = value
+                    .split_once(':')
+                    .ok_or_else(|| format!("malformed anyfilter {value:?}, want attr:v1|v2"))?;
+                let values: Vec<String> = vals.split('|').map(str::to_owned).collect();
+                if attr.is_empty() || values.iter().any(String::is_empty) {
+                    return Err(format!("malformed anyfilter {value:?}, want attr:v1|v2"));
+                }
+                req.any_filters.push((attr.to_owned(), values));
             }
             "range" => {
                 let mut parts = value.splitn(3, ':');
@@ -401,7 +415,8 @@ pub fn execute(ctx: &PlpContext<'_>, req: &PlpRequest) -> Result<PlpResponse, St
     }
     let started = Instant::now();
     let base_constraints = build_constraints(ctx, req, None)?;
-    let candidates = ctx.index.indexed_candidates(&base_constraints);
+    let mut candidates = ctx.index.indexed_candidates(&base_constraints);
+    apply_any_filters(ctx, req, None, &mut candidates);
     let num_found = candidates.len() as usize;
     let mut diag = Diag {
         num_candidates: candidates.len(),
@@ -445,9 +460,15 @@ fn compute_facets(
             // #77 verbatim: recompute candidates for every facet.
             let constraints_without_this_facet =
                 build_constraints(ctx, req, Some(facet_attr.as_str()))?;
-            let candidates_without_this_facet = ctx
+            let mut candidates_without_this_facet = ctx
                 .index
                 .indexed_candidates(&constraints_without_this_facet);
+            apply_any_filters(
+                ctx,
+                req,
+                Some(facet_attr.as_str()),
+                &mut candidates_without_this_facet,
+            );
             let counts = ctx
                 .index
                 .facet_counts(facet_attr, &candidates_without_this_facet);
@@ -462,11 +483,13 @@ fn compute_facets(
         }
         // Disjunctive self-exclusion only changes the candidate set when this
         // facet has its own active filter; otherwise it is the base set.
-        let has_own_filter = req.filters.iter().any(|(attr, _)| attr == facet_attr);
+        let has_own_filter = has_own_filter(req, facet_attr);
         let own;
         let facet_candidates = if has_own_filter {
             let constraints = build_constraints(ctx, req, Some(facet_attr.as_str()))?;
-            own = ctx.index.indexed_candidates(&constraints);
+            let mut bitmap = ctx.index.indexed_candidates(&constraints);
+            apply_any_filters(ctx, req, Some(facet_attr.as_str()), &mut bitmap);
+            own = bitmap;
             &own
         } else {
             candidates
@@ -694,7 +717,12 @@ fn execute_with_candidate_mode(
     }
     let started = Instant::now();
     let base_constraints = build_constraints(ctx, req, None)?;
-    let candidates = candidates_for(ctx, &base_constraints, req.cand_mode)?;
+    let candidates = restrict_any(
+        ctx,
+        req,
+        None,
+        candidates_for(ctx, &base_constraints, req.cand_mode)?,
+    );
     let num_found = candidates.len() as usize;
     let mut diag = Diag {
         num_candidates: candidates.len(),
@@ -707,11 +735,16 @@ fn execute_with_candidate_mode(
     let facets_started = Instant::now();
     let mut facets = HashMap::new();
     for facet_attr in &req.facets {
-        let has_own_filter = req.filters.iter().any(|(attr, _)| attr == facet_attr);
+        let has_own_filter = has_own_filter(req, facet_attr);
         let own;
         let facet_candidates = if has_own_filter {
             let constraints = build_constraints(ctx, req, Some(facet_attr.as_str()))?;
-            own = candidates_for(ctx, &constraints, req.cand_mode)?;
+            own = restrict_any(
+                ctx,
+                req,
+                Some(facet_attr.as_str()),
+                candidates_for(ctx, &constraints, req.cand_mode)?,
+            );
             &own
         } else {
             &candidates
@@ -841,4 +874,58 @@ fn bounded_assembly_with(
         .skip(req.offset)
         .filter_map(|hit| ordinal_doc(ctx, hit.ordinal, hit.value))
         .collect())
+}
+
+/// Issue #64: whether `facet_attr` has its own active selection (single- or
+/// multi-select), i.e. whether disjunctive self-exclusion applies.
+fn has_own_filter(req: &PlpRequest, facet_attr: &str) -> bool {
+    req.filters.iter().any(|(attr, _)| attr == facet_attr)
+        || req.any_filters.iter().any(|(attr, _)| attr == facet_attr)
+}
+
+/// Issue #64 multi-select: intersects `bitmap` with, for every
+/// `any_filters` entry except `exclude`, the union of that attribute's value
+/// bitmaps (an unknown value contributes nothing).
+fn apply_any_filters(
+    ctx: &PlpContext<'_>,
+    req: &PlpRequest,
+    exclude: Option<&str>,
+    bitmap: &mut RoaringBitmap,
+) {
+    for (attr, values) in &req.any_filters {
+        if Some(attr.as_str()) == exclude {
+            continue;
+        }
+        let mut union = RoaringBitmap::new();
+        for value in values {
+            if let Some(b) = ctx.index.enum_value_bitmap(attr, value) {
+                union |= b;
+            }
+        }
+        *bitmap &= union;
+    }
+}
+
+/// [`apply_any_filters`] over a B1 candidate representation: a set
+/// restricted by a multi-select is explicit, never match-all.
+fn restrict_any<'a>(
+    ctx: &PlpContext<'a>,
+    req: &PlpRequest,
+    exclude: Option<&str>,
+    candidates: Candidates<'a>,
+) -> Candidates<'a> {
+    if !req
+        .any_filters
+        .iter()
+        .any(|(attr, _)| Some(attr.as_str()) != exclude)
+    {
+        return candidates;
+    }
+    let mut bitmap = match candidates {
+        Candidates::Owned(b) => b,
+        Candidates::Borrowed(b) => b.clone(),
+        Candidates::All(_) => ctx.index.all_ordinals_bitmap_by_range(),
+    };
+    apply_any_filters(ctx, req, exclude, &mut bitmap);
+    Candidates::Owned(bitmap)
 }

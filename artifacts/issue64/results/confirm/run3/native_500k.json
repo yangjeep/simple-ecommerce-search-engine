@@ -1,0 +1,2737 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I79-E3b",
+  "label": "i64_confirm",
+  "run": 3,
+  "status": "ok",
+  "failure_reason": null,
+  "server_binary": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/target/release/e3b_native_plp_server",
+  "server_binary_sha256": "c74e6ba5324e9262074e59d605cd991a5db13764217865294f96c545e75c27f3",
+  "server_args": [
+    "--sort-columns",
+    "average_rating,review_count,rating_count",
+    "--presence",
+    "average_rating,review_count,rating_count",
+    "--tau-f",
+    "919.4972390657695",
+    "--rho-s",
+    "0.0833779131971903"
+  ],
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl",
+  "runtime": "scope",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "launch_to_ready_ms": 74964.983179,
+  "server_ready": {
+    "docs": 515928,
+    "e3b_ready": true,
+    "index_approx_bytes": 116915570,
+    "index_build_ms": 66452.15692,
+    "load_ms": 7953.995196,
+    "ordinal_facet_approx_bytes": 29361380,
+    "prebuilt_all": false,
+    "prebuilt_all_build_ms": 0.000392,
+    "prebuilt_all_bytes": 0,
+    "presence_build_ms": 48.421028,
+    "presence_bytes": 196824,
+    "presence_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "rho_s": 0.0833779131971903,
+    "sort_columns_build_ms": 9.802343,
+    "sort_columns_bytes": 12382272,
+    "sort_columns_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "tau_f": 919.4972390657696
+  },
+  "fixture_correctness_all_passed": true,
+  "rss_after_load_bytes": 4410286080,
+  "peak_after_load_bytes": 4410286080,
+  "rss_after_serving_bytes": 4410871808,
+  "peak_after_serving_bytes": 4411236352,
+  "cells": [
+    {
+      "cell": "i64_s0_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1829,
+      "p50_ms": 0.7432129999999999,
+      "p95_ms": 2.838822,
+      "p99_ms": 4.792389,
+      "mean_wall_ms": 0.9618271733187533,
+      "cpu_usec_per_query": 599.9524330235101,
+      "qps_per_core": 1666.7988076328268,
+      "num_found": 515928,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 74.66973646801526,
+      "mean_facets_us": 0.3998660470202247,
+      "mean_sort_us": 116.029018589393,
+      "mean_total_us": 192.43764461454336,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 45.927,
+        "facets_us": 0.266,
+        "sort_us": 54.121,
+        "total_us": 101.0,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410703872
+    },
+    {
+      "cell": "i64_s0_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1252,
+      "p50_ms": 1.37317,
+      "p95_ms": 1.839329,
+      "p99_ms": 2.118423,
+      "mean_wall_ms": 1.416779496805112,
+      "cpu_usec_per_query": 1053.0718849840255,
+      "qps_per_core": 949.6027899512002,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 12116186524420406364,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 56.86244968051119,
+      "mean_facets_us": 549.9236765175716,
+      "mean_sort_us": 97.52955511182114,
+      "mean_total_us": 705.4051773162937,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 48.577,
+        "facets_us": 451.766,
+        "sort_us": 76.45700000000001,
+        "total_us": 577.6229999999999,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410609664
+    },
+    {
+      "cell": "i64_s0_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 25.067967,
+      "p95_ms": 28.403304000000002,
+      "p99_ms": 35.799148,
+      "mean_wall_ms": 25.27673259,
+      "cpu_usec_per_query": 24563.985,
+      "qps_per_core": 40.71000694716268,
+      "num_found": 515928,
+      "facet_fields": 3,
+      "facets_fingerprint": 1782040589472563329,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 72.22099499999996,
+      "mean_facets_us": 22636.71375500001,
+      "mean_sort_us": 167.44185000000002,
+      "mean_total_us": 22878.189634999995,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 84.947,
+        "facets_us": 24638.634,
+        "sort_us": 156.95499999999998,
+        "total_us": 24882.491,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 515928,
+            "cardinality": 244,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410564608
+    },
+    {
+      "cell": "i64_s0_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 27.677213,
+      "p95_ms": 34.733166000000004,
+      "p99_ms": 37.261717,
+      "mean_wall_ms": 27.95213202500002,
+      "cpu_usec_per_query": 27196.64,
+      "qps_per_core": 36.7692479659252,
+      "num_found": 515928,
+      "facet_fields": 5,
+      "facets_fingerprint": 9990009799728494124,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 71.34452500000006,
+      "mean_facets_us": 25059.050225000025,
+      "mean_sort_us": 165.038555,
+      "mean_total_us": 25297.218910000003,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 62.445,
+        "facets_us": 25991.077,
+        "sort_us": 156.253,
+        "total_us": 26211.71,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 515928,
+            "cardinality": 244,
+            "path": "bitmap"
+          },
+          {
+            "field": "shape",
+            "candidates": 515928,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 515928,
+            "cardinality": 162,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410695680
+    },
+    {
+      "cell": "i64_s0_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 35.861609,
+      "p95_ms": 50.901168,
+      "p99_ms": 98.244677,
+      "mean_wall_ms": 37.81568257000002,
+      "cpu_usec_per_query": 36800.585,
+      "qps_per_core": 27.173481073738365,
+      "num_found": 515928,
+      "facet_fields": 8,
+      "facets_fingerprint": 4933389543644937164,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 73.75981,
+      "mean_facets_us": 34046.44181999998,
+      "mean_sort_us": 175.557105,
+      "mean_total_us": 34297.970805000004,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 60.891,
+        "facets_us": 32132.375999999997,
+        "sort_us": 154.063,
+        "total_us": 32348.963,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 515928,
+            "cardinality": 244,
+            "path": "bitmap"
+          },
+          {
+            "field": "shape",
+            "candidates": 515928,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 515928,
+            "cardinality": 162,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_1",
+            "candidates": 515928,
+            "cardinality": 55,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 515928,
+            "cardinality": 138,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 515928,
+            "cardinality": 458,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410388480
+    },
+    {
+      "cell": "i64_s0_k11",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 59.855951,
+      "p95_ms": 92.81697299999999,
+      "p99_ms": 144.33880299999998,
+      "mean_wall_ms": 61.705727334999985,
+      "cpu_usec_per_query": 59870.885,
+      "qps_per_core": 16.702609289974585,
+      "num_found": 515928,
+      "facet_fields": 11,
+      "facets_fingerprint": 7185218583521733249,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 67.72879000000002,
+      "mean_facets_us": 56126.265615000026,
+      "mean_sort_us": 166.03164500000003,
+      "mean_total_us": 56362.07684500004,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 61.899,
+        "facets_us": 56681.874,
+        "sort_us": 227.824,
+        "total_us": 56973.311,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 515928,
+            "cardinality": 244,
+            "path": "bitmap"
+          },
+          {
+            "field": "shape",
+            "candidates": 515928,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 515928,
+            "cardinality": 162,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_1",
+            "candidates": 515928,
+            "cardinality": 55,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 515928,
+            "cardinality": 138,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 515928,
+            "cardinality": 458,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 515928,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 515928,
+            "cardinality": 492,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 515928,
+            "cardinality": 71,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410527744
+    },
+    {
+      "cell": "i64_s0_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 22.015012,
+      "p95_ms": 24.419027,
+      "p99_ms": 27.820985,
+      "mean_wall_ms": 19.260834154999994,
+      "cpu_usec_per_query": 18574.12,
+      "qps_per_core": 53.83835142660864,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 10111158894877981563,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 63.358160000000034,
+      "mean_facets_us": 17080.107950000012,
+      "mean_sort_us": 155.27387999999993,
+      "mean_total_us": 17300.908815000006,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 39.163,
+        "facets_us": 8241.75,
+        "sort_us": 136.03199999999998,
+        "total_us": 8418.791,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410728448
+    },
+    {
+      "cell": "i64_s1_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2643,
+      "p50_ms": 0.581486,
+      "p95_ms": 0.97255,
+      "p99_ms": 1.161795,
+      "mean_wall_ms": 0.6604951543700326,
+      "cpu_usec_per_query": 422.15853197124477,
+      "qps_per_core": 2368.7783717897587,
+      "num_found": 192468,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 29.02528490351877,
+      "mean_facets_us": 0.4007177449867543,
+      "mean_sort_us": 86.32470752932267,
+      "mean_total_us": 116.73941657207688,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 29.679,
+        "facets_us": 0.311,
+        "sort_us": 96.149,
+        "total_us": 127.236,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410748928
+    },
+    {
+      "cell": "i64_s1_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 884,
+      "p50_ms": 1.4262249999999999,
+      "p95_ms": 5.609312,
+      "p99_ms": 8.343205,
+      "mean_wall_ms": 2.0276192997737557,
+      "cpu_usec_per_query": 1537.1764705882354,
+      "qps_per_core": 650.5433950711771,
+      "num_found": 192468,
+      "facet_fields": 1,
+      "facets_fingerprint": 9588608105848694948,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 45.111238687782816,
+      "mean_facets_us": 779.0125927601805,
+      "mean_sort_us": 150.98125678733058,
+      "mean_total_us": 976.8602975113108,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 38.761,
+        "facets_us": 717.5219999999999,
+        "sort_us": 174.476,
+        "total_us": 932.448,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 192468,
+            "cardinality": 65,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410589184
+    },
+    {
+      "cell": "i64_s1_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 13.993583000000001,
+      "p95_ms": 20.436794000000003,
+      "p99_ms": 33.002384,
+      "mean_wall_ms": 14.140851455000002,
+      "cpu_usec_per_query": 13508.905,
+      "qps_per_core": 74.02524482924412,
+      "num_found": 192468,
+      "facet_fields": 3,
+      "facets_fingerprint": 16456793726709891992,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 57.43162,
+      "mean_facets_us": 12398.848084999996,
+      "mean_sort_us": 181.73967499999998,
+      "mean_total_us": 12640.174875,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 51.731,
+        "facets_us": 12181.441,
+        "sort_us": 159.355,
+        "total_us": 12394.021,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 192468,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 192468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 192468,
+            "cardinality": 244,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410601472
+    },
+    {
+      "cell": "i64_s1_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 14.849919,
+      "p95_ms": 18.508327,
+      "p99_ms": 22.668656,
+      "mean_wall_ms": 13.508860325000002,
+      "cpu_usec_per_query": 12910.48,
+      "qps_per_core": 77.45645398157156,
+      "num_found": 192468,
+      "facet_fields": 5,
+      "facets_fingerprint": 11389175975493533575,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 40.897859999999994,
+      "mean_facets_us": 11959.329065000004,
+      "mean_sort_us": 154.11122499999993,
+      "mean_total_us": 12155.832845000004,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 40.562999999999995,
+        "facets_us": 14393.012,
+        "sort_us": 145.47799999999998,
+        "total_us": 14580.447,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 192468,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 192468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 192468,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 192468,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 192468,
+            "cardinality": 162,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410695680
+    },
+    {
+      "cell": "i64_s1_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 29.721808999999997,
+      "p95_ms": 51.396529,
+      "p99_ms": 70.382876,
+      "mean_wall_ms": 29.319800864999998,
+      "cpu_usec_per_query": 28666.435,
+      "qps_per_core": 34.88400284165087,
+      "num_found": 192468,
+      "facet_fields": 8,
+      "facets_fingerprint": 10527194603372845894,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 51.40718000000001,
+      "mean_facets_us": 27370.802045000015,
+      "mean_sort_us": 188.3963599999999,
+      "mean_total_us": 27612.75313499999,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 61.16700000000001,
+        "facets_us": 27796.333,
+        "sort_us": 171.022,
+        "total_us": 28030.597,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 192468,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 192468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 192468,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 192468,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 192468,
+            "cardinality": 162,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 192468,
+            "cardinality": 138,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 192468,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 192468,
+            "cardinality": 806,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410953728
+    },
+    {
+      "cell": "i64_s1_k10",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 35.833387,
+      "p95_ms": 45.124137000000005,
+      "p99_ms": 47.217476,
+      "mean_wall_ms": 35.69114315499999,
+      "cpu_usec_per_query": 34950.4,
+      "qps_per_core": 28.61197582860282,
+      "num_found": 192468,
+      "facet_fields": 10,
+      "facets_fingerprint": 3338161656190285208,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 47.861225,
+      "mean_facets_us": 33593.52365,
+      "mean_sort_us": 177.15229499999998,
+      "mean_total_us": 33820.370235,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 39.652,
+        "facets_us": 34959.973,
+        "sort_us": 219.069,
+        "total_us": 35220.257,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 192468,
+            "cardinality": 65,
+            "path": "bitmap"
+          },
+          {
+            "field": "color",
+            "candidates": 192468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 192468,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 192468,
+            "cardinality": 94,
+            "path": "bitmap"
+          },
+          {
+            "field": "material",
+            "candidates": 192468,
+            "cardinality": 162,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 192468,
+            "cardinality": 138,
+            "path": "bitmap"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 192468,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 192468,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 192468,
+            "cardinality": 492,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 192468,
+            "cardinality": 71,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410818560
+    },
+    {
+      "cell": "i64_s1_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 8.60698,
+      "p95_ms": 9.916451,
+      "p99_ms": 12.028041,
+      "mean_wall_ms": 8.752513,
+      "cpu_usec_per_query": 8231.33,
+      "qps_per_core": 121.48705008789588,
+      "num_found": 192468,
+      "facet_fields": 1,
+      "facets_fingerprint": 6843204391704771724,
+      "docs_fingerprint": 15996690391336408758,
+      "mean_candidates_us": 46.559255,
+      "mean_facets_us": 7286.978235,
+      "mean_sort_us": 168.78414500000002,
+      "mean_total_us": 7504.733425000004,
+      "diag": {
+        "num_candidates": 192468,
+        "candidates_us": 38.845,
+        "facets_us": 7165.3589999999995,
+        "sort_us": 224.09,
+        "total_us": 7429.937999999999,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 192468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410941440
+    },
+    {
+      "cell": "i64_s2_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2664,
+      "p50_ms": 0.592176,
+      "p95_ms": 0.899687,
+      "p99_ms": 1.157215,
+      "mean_wall_ms": 0.6509443978978986,
+      "cpu_usec_per_query": 403.1524024024024,
+      "qps_per_core": 2480.4515464647047,
+      "num_found": 55344,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 27.34344369369368,
+      "mean_facets_us": 0.3167222222222186,
+      "mean_sort_us": 80.49782695195191,
+      "mean_total_us": 109.09350863363387,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 16.529999999999998,
+        "facets_us": 0.145,
+        "sort_us": 55.759,
+        "total_us": 72.914,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410720256
+    },
+    {
+      "cell": "i64_s2_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 638,
+      "p50_ms": 3.0202660000000003,
+      "p95_ms": 4.171976,
+      "p99_ms": 7.236329,
+      "mean_wall_ms": 2.957035119122257,
+      "cpu_usec_per_query": 2543.1003134796238,
+      "qps_per_core": 393.2208236928489,
+      "num_found": 55344,
+      "facet_fields": 1,
+      "facets_fingerprint": 2184104486658630042,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 36.28595611285269,
+      "mean_facets_us": 2024.8918244514084,
+      "mean_sort_us": 123.06743260188098,
+      "mean_total_us": 2185.512797805644,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 38.7,
+        "facets_us": 2217.944,
+        "sort_us": 108.477,
+        "total_us": 2366.3999999999996,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410572800
+    },
+    {
+      "cell": "i64_s2_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 9.860452,
+      "p95_ms": 13.031462000000001,
+      "p99_ms": 16.308018,
+      "mean_wall_ms": 10.18203532,
+      "cpu_usec_per_query": 9633.515,
+      "qps_per_core": 103.80427081911432,
+      "num_found": 55344,
+      "facet_fields": 3,
+      "facets_fingerprint": 2247862714420343452,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 52.00119999999998,
+      "mean_facets_us": 8483.374495000004,
+      "mean_sort_us": 184.25802499999995,
+      "mean_total_us": 8721.404215000002,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 58.626,
+        "facets_us": 9122.036,
+        "sort_us": 231.815,
+        "total_us": 9415.298,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 55344,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 55344,
+            "cardinality": 244,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410957824
+    },
+    {
+      "cell": "i64_s2_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 14.159238,
+      "p95_ms": 15.548262,
+      "p99_ms": 16.984816,
+      "mean_wall_ms": 14.292598919999994,
+      "cpu_usec_per_query": 13730.085,
+      "qps_per_core": 72.83276104991339,
+      "num_found": 55344,
+      "facet_fields": 5,
+      "facets_fingerprint": 16061329813443064611,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 53.24078,
+      "mean_facets_us": 12493.299930000005,
+      "mean_sort_us": 180.40711499999995,
+      "mean_total_us": 12728.838400000006,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 41.532,
+        "facets_us": 12446.107,
+        "sort_us": 190.277,
+        "total_us": 12679.606,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 55344,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 55344,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 55344,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 55344,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410777600
+    },
+    {
+      "cell": "i64_s2_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 19.776911000000002,
+      "p95_ms": 25.578257999999998,
+      "p99_ms": 34.005520999999995,
+      "mean_wall_ms": 18.951038775,
+      "cpu_usec_per_query": 18247.105,
+      "qps_per_core": 54.80321398928762,
+      "num_found": 55344,
+      "facet_fields": 8,
+      "facets_fingerprint": 13028376325363762379,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 48.46088500000003,
+      "mean_facets_us": 16958.32493000001,
+      "mean_sort_us": 172.82657499999993,
+      "mean_total_us": 17181.32111,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 81.46499999999999,
+        "facets_us": 17795.981,
+        "sort_us": 205.932,
+        "total_us": 18085.328,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 55344,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 55344,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 55344,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 55344,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 55344,
+            "cardinality": 138,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 55344,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 55344,
+            "cardinality": 806,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410753024
+    },
+    {
+      "cell": "i64_s2_k10",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 22.987902000000002,
+      "p95_ms": 30.593449000000003,
+      "p99_ms": 34.982952,
+      "mean_wall_ms": 23.424006170000002,
+      "cpu_usec_per_query": 22639.425,
+      "qps_per_core": 44.17073313478589,
+      "num_found": 55344,
+      "facet_fields": 10,
+      "facets_fingerprint": 9879762067381210009,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 50.39805499999997,
+      "mean_facets_us": 21225.853365000003,
+      "mean_sort_us": 185.91722,
+      "mean_total_us": 21464.01281,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 48.328,
+        "facets_us": 20825.557,
+        "sort_us": 174.831,
+        "total_us": 21050.9,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 55344,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 55344,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 55344,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 55344,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_2",
+            "candidates": 55344,
+            "cardinality": 138,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 55344,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 55344,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 55344,
+            "cardinality": 492,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 55344,
+            "cardinality": 71,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410642432
+    },
+    {
+      "cell": "i64_s2_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 301,
+      "p50_ms": 5.094335,
+      "p95_ms": 6.694284,
+      "p99_ms": 6.898696999999999,
+      "mean_wall_ms": 5.202420940199331,
+      "cpu_usec_per_query": 4719.119601328904,
+      "qps_per_core": 211.9039321907417,
+      "num_found": 55344,
+      "facet_fields": 1,
+      "facets_fingerprint": 14421981046880398116,
+      "docs_fingerprint": 11198475471466633,
+      "mean_candidates_us": 46.459644518272455,
+      "mean_facets_us": 3733.532943521594,
+      "mean_sort_us": 151.76829235880408,
+      "mean_total_us": 3933.366727574753,
+      "diag": {
+        "num_candidates": 55344,
+        "candidates_us": 41.061,
+        "facets_us": 3826.604,
+        "sort_us": 167.34900000000002,
+        "total_us": 4036.441,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 55344,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410421248
+    },
+    {
+      "cell": "i64_s2_k5_style1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 250,
+      "p50_ms": 7.119222,
+      "p95_ms": 8.340810000000001,
+      "p99_ms": 10.036992999999999,
+      "mean_wall_ms": 7.258572604000001,
+      "cpu_usec_per_query": 6746.14,
+      "qps_per_core": 148.2329154153338,
+      "num_found": 11484,
+      "facet_fields": 5,
+      "facets_fingerprint": 18295030342270238192,
+      "docs_fingerprint": 12647597002011341586,
+      "mean_candidates_us": 461.2729199999999,
+      "mean_facets_us": 5489.832772000002,
+      "mean_sort_us": 160.27718400000003,
+      "mean_total_us": 6113.550727999998,
+      "diag": {
+        "num_candidates": 11484,
+        "candidates_us": 434.49,
+        "facets_us": 5668.394,
+        "sort_us": 160.46699999999998,
+        "total_us": 6265.251,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 11484,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 11484,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 11484,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 11484,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410597376
+    },
+    {
+      "cell": "i64_s2_k5_style2",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 8.344032,
+      "p95_ms": 11.437472000000001,
+      "p99_ms": 19.031488,
+      "mean_wall_ms": 9.01093926,
+      "cpu_usec_per_query": 8426.105,
+      "qps_per_core": 118.67879643085388,
+      "num_found": 16044,
+      "facet_fields": 5,
+      "facets_fingerprint": 7214673397501640971,
+      "docs_fingerprint": 3920807052072756940,
+      "mean_candidates_us": 580.7792600000002,
+      "mean_facets_us": 6892.115884999996,
+      "mean_sort_us": 175.99648000000008,
+      "mean_total_us": 7650.8841600000005,
+      "diag": {
+        "num_candidates": 16044,
+        "candidates_us": 579.2860000000001,
+        "facets_us": 6376.585,
+        "sort_us": 153.617,
+        "total_us": 7112.039,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 55344,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 16044,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 16044,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 16044,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 16044,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410724352
+    },
+    {
+      "cell": "i64_s3_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2866,
+      "p50_ms": 0.553723,
+      "p95_ms": 0.862404,
+      "p99_ms": 1.0357770000000002,
+      "mean_wall_ms": 0.6008172759944168,
+      "cpu_usec_per_query": 355.82937892533147,
+      "qps_per_core": 2810.3356811632007,
+      "num_found": 14472,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 16.608320655966512,
+      "mean_facets_us": 0.31810642009769263,
+      "mean_sort_us": 53.599774249825636,
+      "mean_total_us": 71.40874459176547,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 12.419,
+        "facets_us": 0.251,
+        "sort_us": 38.275,
+        "total_us": 51.661,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410736640
+    },
+    {
+      "cell": "i64_s3_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1650,
+      "p50_ms": 1.0636269999999999,
+      "p95_ms": 1.3697080000000001,
+      "p99_ms": 1.636679,
+      "mean_wall_ms": 1.0881598339393925,
+      "cpu_usec_per_query": 796.3139393939394,
+      "qps_per_core": 1255.7861297280347,
+      "num_found": 14472,
+      "facet_fields": 1,
+      "facets_fingerprint": 10764437558567251567,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 19.38989090909091,
+      "mean_facets_us": 370.1023769696964,
+      "mean_sort_us": 68.86163151515144,
+      "mean_total_us": 459.44823818181817,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 13.788,
+        "facets_us": 306.262,
+        "sort_us": 77.47,
+        "total_us": 398.371,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410650624
+    },
+    {
+      "cell": "i64_s3_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 554,
+      "p50_ms": 2.8551349999999998,
+      "p95_ms": 4.095729,
+      "p99_ms": 4.926765,
+      "mean_wall_ms": 2.9880990487364647,
+      "cpu_usec_per_query": 2537.900722021661,
+      "qps_per_core": 394.026445291135,
+      "num_found": 14472,
+      "facet_fields": 3,
+      "facets_fingerprint": 15428540593547771338,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 25.786189530685938,
+      "mean_facets_us": 1861.813250902526,
+      "mean_sort_us": 104.86201444043313,
+      "mean_total_us": 1993.9173140794232,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 26.953,
+        "facets_us": 2108.48,
+        "sort_us": 130.143,
+        "total_us": 2266.8190000000004,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 14472,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 14472,
+            "cardinality": 244,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410679296
+    },
+    {
+      "cell": "i64_s3_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 404,
+      "p50_ms": 4.259133,
+      "p95_ms": 5.4800320000000005,
+      "p99_ms": 6.071115,
+      "mean_wall_ms": 4.244078759900988,
+      "cpu_usec_per_query": 3796.6658415841584,
+      "qps_per_core": 263.38899490368374,
+      "num_found": 14472,
+      "facet_fields": 5,
+      "facets_fingerprint": 16193543013750932221,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 28.5763094059406,
+      "mean_facets_us": 3030.25827227723,
+      "mean_sort_us": 126.14599752475239,
+      "mean_total_us": 3186.77816831683,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 25.48,
+        "facets_us": 2950.7819999999997,
+        "sort_us": 118.947,
+        "total_us": 3096.5879999999997,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 14472,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 14472,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 14472,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 14472,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410802176
+    },
+    {
+      "cell": "i64_s3_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 259,
+      "p50_ms": 6.54266,
+      "p95_ms": 8.553756,
+      "p99_ms": 9.040645999999999,
+      "mean_wall_ms": 6.88523745945945,
+      "cpu_usec_per_query": 6372.343629343629,
+      "qps_per_core": 156.9281347909675,
+      "num_found": 14472,
+      "facet_fields": 8,
+      "facets_fingerprint": 2321585014483299147,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 35.33817760617761,
+      "mean_facets_us": 5425.041424710423,
+      "mean_sort_us": 168.53907722007725,
+      "mean_total_us": 5630.705420849417,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 32.580999999999996,
+        "facets_us": 5879.781,
+        "sort_us": 174.696,
+        "total_us": 6088.936,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 14472,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 14472,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 14472,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 14472,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 14472,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 14472,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 14472,
+            "cardinality": 492,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410626048
+    },
+    {
+      "cell": "i64_s3_k9",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 262,
+      "p50_ms": 6.635021,
+      "p95_ms": 8.800464,
+      "p99_ms": 9.391082,
+      "mean_wall_ms": 6.836226774809157,
+      "cpu_usec_per_query": 6349.06106870229,
+      "qps_per_core": 157.50360394696818,
+      "num_found": 14472,
+      "facet_fields": 9,
+      "facets_fingerprint": 15687618410906632408,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 31.897748091603056,
+      "mean_facets_us": 5451.568209923663,
+      "mean_sort_us": 151.6830992366414,
+      "mean_total_us": 5638.388732824421,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 28.797,
+        "facets_us": 5256.446,
+        "sort_us": 161.334,
+        "total_us": 5448.804,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 14472,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 14472,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 14472,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 14472,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_3",
+            "candidates": 14472,
+            "cardinality": 458,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 14472,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 14472,
+            "cardinality": 492,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 14472,
+            "cardinality": 71,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410724352
+    },
+    {
+      "cell": "i64_s3_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 747,
+      "p50_ms": 1.994597,
+      "p95_ms": 2.585009,
+      "p99_ms": 3.957487,
+      "mean_wall_ms": 2.0858617255689422,
+      "cpu_usec_per_query": 1661.6144578313254,
+      "qps_per_core": 601.8243253041751,
+      "num_found": 14472,
+      "facet_fields": 1,
+      "facets_fingerprint": 16257022693315483398,
+      "docs_fingerprint": 6123208105567069628,
+      "mean_candidates_us": 23.89805622489962,
+      "mean_facets_us": 1001.8178647925018,
+      "mean_sort_us": 91.43947389558232,
+      "mean_total_us": 1118.4621352074987,
+      "diag": {
+        "num_candidates": 14472,
+        "candidates_us": 25.639,
+        "facets_us": 949.667,
+        "sort_us": 73.62100000000001,
+        "total_us": 1050.3000000000002,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 14472,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410753024
+    },
+    {
+      "cell": "i64_s3_k5_style1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1123,
+      "p50_ms": 1.498452,
+      "p95_ms": 2.256324,
+      "p99_ms": 2.6166370000000003,
+      "mean_wall_ms": 1.6159803891362428,
+      "cpu_usec_per_query": 1221.5752448797864,
+      "qps_per_core": 818.6151480979042,
+      "num_found": 240,
+      "facet_fields": 5,
+      "facets_fingerprint": 3236912372194637383,
+      "docs_fingerprint": 10355996014052204313,
+      "mean_candidates_us": 118.1281798753339,
+      "mean_facets_us": 597.4483784505788,
+      "mean_sort_us": 102.32709795191457,
+      "mean_total_us": 819.3447925200355,
+      "diag": {
+        "num_candidates": 240,
+        "candidates_us": 97.005,
+        "facets_us": 533.8059999999999,
+        "sort_us": 80.447,
+        "total_us": 713.017,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 240,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 240,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 240,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 240,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410830848
+    },
+    {
+      "cell": "i64_s3_k5_style2",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1100,
+      "p50_ms": 1.573296,
+      "p95_ms": 2.231252,
+      "p99_ms": 2.553875,
+      "mean_wall_ms": 1.6570890036363628,
+      "cpu_usec_per_query": 1292.7890909090909,
+      "qps_per_core": 773.5213787245054,
+      "num_found": 468,
+      "facet_fields": 5,
+      "facets_fingerprint": 15922518910567445112,
+      "docs_fingerprint": 147301849223272487,
+      "mean_candidates_us": 194.10441909090895,
+      "mean_facets_us": 624.8334345454534,
+      "mean_sort_us": 96.73750090909083,
+      "mean_total_us": 917.0906027272723,
+      "diag": {
+        "num_candidates": 468,
+        "candidates_us": 171.534,
+        "facets_us": 607.3059999999999,
+        "sort_us": 90.229,
+        "total_us": 870.8779999999999,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 14472,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 468,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 468,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 468,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 468,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410605568
+    },
+    {
+      "cell": "i64_s4_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2573,
+      "p50_ms": 0.657639,
+      "p95_ms": 0.932302,
+      "p99_ms": 1.108802,
+      "mean_wall_ms": 0.6651157854644395,
+      "cpu_usec_per_query": 380.3474543334629,
+      "qps_per_core": 2629.1749520249655,
+      "num_found": 3024,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 9.092484259619104,
+      "mean_facets_us": 0.3204667703070314,
+      "mean_sort_us": 65.75570967741946,
+      "mean_total_us": 76.11459930042751,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 6.0440000000000005,
+        "facets_us": 0.28099999999999997,
+        "sort_us": 43.757,
+        "total_us": 50.803,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410654720
+    },
+    {
+      "cell": "i64_s4_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2048,
+      "p50_ms": 0.792943,
+      "p95_ms": 1.194216,
+      "p99_ms": 1.421014,
+      "mean_wall_ms": 0.8617333002929698,
+      "cpu_usec_per_query": 595.38916015625,
+      "qps_per_core": 1679.5737425544776,
+      "num_found": 3024,
+      "facet_fields": 1,
+      "facets_fingerprint": 578828920400137559,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 9.43501269531252,
+      "mean_facets_us": 189.49736816406244,
+      "mean_sort_us": 74.63399511718755,
+      "mean_total_us": 274.5523945312501,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 26.16,
+        "facets_us": 150.511,
+        "sort_us": 54.330000000000005,
+        "total_us": 231.899,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 3024,
+            "cardinality": 65,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410765312
+    },
+    {
+      "cell": "i64_s4_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1122,
+      "p50_ms": 1.457543,
+      "p95_ms": 1.949896,
+      "p99_ms": 2.7739879999999997,
+      "mean_wall_ms": 1.534083829768269,
+      "cpu_usec_per_query": 1149.439393939394,
+      "qps_per_core": 869.9893228583103,
+      "num_found": 3024,
+      "facet_fields": 3,
+      "facets_fingerprint": 1604480192036660650,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 12.35185650623885,
+      "mean_facets_us": 646.3010900178241,
+      "mean_sort_us": 90.35220499108738,
+      "mean_total_us": 750.3121755793221,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 10.268,
+        "facets_us": 623.96,
+        "sort_us": 85.85900000000001,
+        "total_us": 721.397,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 3024,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 3024,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 3024,
+            "cardinality": 244,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410753024
+    },
+    {
+      "cell": "i64_s4_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 947,
+      "p50_ms": 1.7725790000000001,
+      "p95_ms": 2.398219,
+      "p99_ms": 2.890898,
+      "mean_wall_ms": 1.8524315142555432,
+      "cpu_usec_per_query": 1478.8511087645195,
+      "qps_per_core": 676.2005952278946,
+      "num_found": 3024,
+      "facet_fields": 5,
+      "facets_fingerprint": 9123747261172353536,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 14.157417106652606,
+      "mean_facets_us": 913.1729968321016,
+      "mean_sort_us": 95.78395142555442,
+      "mean_total_us": 1024.453359028511,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 11.772,
+        "facets_us": 830.594,
+        "sort_us": 78.347,
+        "total_us": 921.856,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 3024,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 3024,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 3024,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 3024,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 3024,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410810368
+    },
+    {
+      "cell": "i64_s4_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 749,
+      "p50_ms": 2.281553,
+      "p95_ms": 3.082979,
+      "p99_ms": 4.100565,
+      "mean_wall_ms": 2.3737749359145517,
+      "cpu_usec_per_query": 1953.9078771695595,
+      "qps_per_core": 511.7948556759006,
+      "num_found": 3024,
+      "facet_fields": 8,
+      "facets_fingerprint": 3049976628542673542,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 13.915983978638174,
+      "mean_facets_us": 1385.318365821094,
+      "mean_sort_us": 108.70131508678254,
+      "mean_total_us": 1509.2901148197611,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 9.724,
+        "facets_us": 1168.2,
+        "sort_us": 88.581,
+        "total_us": 1267.862,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 3024,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 3024,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 3024,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 3024,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 3024,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 3024,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 3024,
+            "cardinality": 492,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 3024,
+            "cardinality": 71,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410925056
+    },
+    {
+      "cell": "i64_s4_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1442,
+      "p50_ms": 1.15718,
+      "p95_ms": 1.54467,
+      "p99_ms": 1.872672,
+      "mean_wall_ms": 1.1515273460471585,
+      "cpu_usec_per_query": 818.9868238557559,
+      "qps_per_core": 1221.0208648926018,
+      "num_found": 3024,
+      "facet_fields": 1,
+      "facets_fingerprint": 18286734856252727677,
+      "docs_fingerprint": 15646229101484106515,
+      "mean_candidates_us": 12.06279472954231,
+      "mean_facets_us": 306.44515464632445,
+      "mean_sort_us": 91.67231414701804,
+      "mean_total_us": 411.44112552011154,
+      "diag": {
+        "num_candidates": 3024,
+        "candidates_us": 14.854,
+        "facets_us": 326.308,
+        "sort_us": 131.446,
+        "total_us": 474.191,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 3024,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410814464
+    },
+    {
+      "cell": "i64_s5_k0",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2881,
+      "p50_ms": 0.548655,
+      "p95_ms": 0.826701,
+      "p99_ms": 0.956524,
+      "mean_wall_ms": 0.5943319940992702,
+      "cpu_usec_per_query": 350.9743144741409,
+      "qps_per_core": 2849.2113489794365,
+      "num_found": 600,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 7.6582211037834185,
+      "mean_facets_us": 0.3276494272821901,
+      "mean_sort_us": 56.74901353696622,
+      "mean_total_us": 65.5925293300937,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 5.027,
+        "facets_us": 0.245,
+        "sort_us": 40.879,
+        "total_us": 46.848000000000006,
+        "facet_diag": [],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410503168
+    },
+    {
+      "cell": "i64_s5_k1",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2445,
+      "p50_ms": 0.6447080000000001,
+      "p95_ms": 0.9763000000000001,
+      "p99_ms": 1.186908,
+      "mean_wall_ms": 0.6990697750511244,
+      "cpu_usec_per_query": 415.6867075664622,
+      "qps_per_core": 2405.657871174807,
+      "num_found": 600,
+      "facet_fields": 1,
+      "facets_fingerprint": 6818815085170588553,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 7.266346012269948,
+      "mean_facets_us": 49.69380531697342,
+      "mean_sort_us": 63.26046339468289,
+      "mean_total_us": 121.15922535787325,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 9.473,
+        "facets_us": 67.844,
+        "sort_us": 119.547,
+        "total_us": 198.031,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 600,
+            "cardinality": 65,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410757120
+    },
+    {
+      "cell": "i64_s5_k3",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2227,
+      "p50_ms": 0.704437,
+      "p95_ms": 1.090545,
+      "p99_ms": 1.347712,
+      "mean_wall_ms": 0.7759258545127972,
+      "cpu_usec_per_query": 508.66726537943424,
+      "qps_per_core": 1965.921670336034,
+      "num_found": 600,
+      "facet_fields": 3,
+      "facets_fingerprint": 15865154572975991371,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 8.065295913785382,
+      "mean_facets_us": 124.90364975303099,
+      "mean_sort_us": 68.63107992815455,
+      "mean_total_us": 202.5240444544228,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 5.225,
+        "facets_us": 115.425,
+        "sort_us": 43.647,
+        "total_us": 164.872,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 600,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 600,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 600,
+            "cardinality": 244,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410535936
+    },
+    {
+      "cell": "i64_s5_k5",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1976,
+      "p50_ms": 0.821881,
+      "p95_ms": 1.274448,
+      "p99_ms": 1.496959,
+      "mean_wall_ms": 0.8744374387651812,
+      "cpu_usec_per_query": 603.9058704453441,
+      "qps_per_core": 1655.887198550596,
+      "num_found": 600,
+      "facet_fields": 5,
+      "facets_fingerprint": 15230643118469974188,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 8.548974696356277,
+      "mean_facets_us": 202.63832591093143,
+      "mean_sort_us": 71.14792914979763,
+      "mean_total_us": 283.3231892712555,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 10.454,
+        "facets_us": 216.598,
+        "sort_us": 76.027,
+        "total_us": 304.267,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 600,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 600,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 600,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 600,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 600,
+            "cardinality": 162,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410863616
+    },
+    {
+      "cell": "i64_s5_k8",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 1486,
+      "p50_ms": 1.119016,
+      "p95_ms": 1.568886,
+      "p99_ms": 2.6223650000000003,
+      "mean_wall_ms": 1.1778386870794084,
+      "cpu_usec_per_query": 844.7180349932705,
+      "qps_per_core": 1183.8269796239956,
+      "num_found": 600,
+      "facet_fields": 8,
+      "facets_fingerprint": 13941668554219296526,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 10.44748250336474,
+      "mean_facets_us": 360.97181628532985,
+      "mean_sort_us": 91.09213391655446,
+      "mean_total_us": 463.67321399730724,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 10.56,
+        "facets_us": 353.522,
+        "sort_us": 81.38499999999999,
+        "total_us": 446.638,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 600,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "color",
+            "candidates": 600,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 600,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 600,
+            "cardinality": 94,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 600,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_4",
+            "candidates": 600,
+            "cardinality": 806,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_5",
+            "candidates": 600,
+            "cardinality": 492,
+            "path": "ordinal"
+          },
+          {
+            "field": "category_depth_6",
+            "candidates": 600,
+            "cardinality": 71,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4411047936
+    },
+    {
+      "cell": "i64_s5_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "cand_mode": "p0r",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 2386,
+      "p50_ms": 0.690419,
+      "p95_ms": 0.982223,
+      "p99_ms": 1.16168,
+      "mean_wall_ms": 0.7209867816429171,
+      "cpu_usec_per_query": 444.2845766974015,
+      "qps_per_core": 2250.8096216922954,
+      "num_found": 600,
+      "facet_fields": 1,
+      "facets_fingerprint": 11841330120084989026,
+      "docs_fingerprint": 15927577239501272861,
+      "mean_candidates_us": 8.407738474434213,
+      "mean_facets_us": 42.19785247275777,
+      "mean_sort_us": 68.73282229673087,
+      "mean_total_us": 120.33985624476101,
+      "diag": {
+        "num_candidates": 600,
+        "candidates_us": 8.049,
+        "facets_us": 35.592,
+        "sort_us": 57.574,
+        "total_us": 102.103,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 600,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48,
+        "cand_mode": "p0r"
+      },
+      "memory_current_after_bytes": 4410871808
+    }
+  ],
+  "git_sha": "f1e2fcca8fc93d5f3840f69194b88de61ce936ba",
+  "hostname": "athos-dev",
+  "timestamp_utc": 1790685956
+}

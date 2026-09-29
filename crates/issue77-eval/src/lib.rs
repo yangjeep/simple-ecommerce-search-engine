@@ -14,6 +14,7 @@
 //!   trusted. Never used for headline performance numbers.
 
 pub mod fixture;
+pub mod i64cells;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;

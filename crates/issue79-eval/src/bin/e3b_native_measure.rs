@@ -24,7 +24,9 @@
 //! `--cells none` measures only load/build/RSS (memory-accounting launches).
 
 use issue61_eval::CgroupReader;
-use issue79_eval::cells::{all_cells, query_string_with_cand, reference_cells, Cell, Family, Role};
+use issue79_eval::cells::{
+    all_cells, i64_cells, query_string_with_cand, reference_cells, Cell, Family, Role,
+};
 use issue79_eval::plp::Diag;
 use issue79_eval::{EXPERIMENT_ID, RAW_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -423,6 +425,7 @@ fn i63_dump(
         "num_found": last["num_found"],
         "facets": canonical(&last["facets"]),
         "hit_keys": keys,
+        "hit_count": last["docs"].as_array().map_or(0, Vec::len),
         "backend_requests": last["backend_requests"],
         "mode": mode,
     });
@@ -440,6 +443,8 @@ fn select_cells(spec: &str) -> Vec<Cell> {
         "all" => cells,
         // Issue #63: #77's filter-depth cells (never part of "all").
         "reference" => reference_cells(),
+        // Issue #64: the 44 facet-economics cells.
+        "i64" => i64_cells(),
         "none" => Vec::new(),
         "headline" => cells
             .into_iter()
@@ -454,6 +459,7 @@ fn select_cells(spec: &str) -> Vec<Cell> {
             cells
                 .into_iter()
                 .chain(reference_cells())
+                .chain(i64_cells())
                 .filter(|c| wanted.contains(&c.name))
                 .collect()
         }

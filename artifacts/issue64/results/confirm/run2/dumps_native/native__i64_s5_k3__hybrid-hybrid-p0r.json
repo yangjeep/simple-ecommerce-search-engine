@@ -1,0 +1,23 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "color": {},
+    "primarymaterial": {},
+    "style": {
+      "bohemian": 36,
+      "eclectic": 60,
+      "farmhouse / country": 24,
+      "glam": 12,
+      "global inspired": 24,
+      "modern & contemporary": 192,
+      "traditional": 84
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id",
+    "sort_value"
+  ],
+  "mode": "hybrid-hybrid-p0r",
+  "num_found": 600
+}

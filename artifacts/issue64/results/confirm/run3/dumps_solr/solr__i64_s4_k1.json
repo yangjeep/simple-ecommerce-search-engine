@@ -1,0 +1,37 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "style": {
+      "eclectic": 12,
+      "farmhouse / country": 24,
+      "glam": 60,
+      "industrial": 204,
+      "modern & contemporary": 648,
+      "modern farmhouse": 24,
+      "rustic": 168,
+      "tiffany": 12,
+      "traditional": 216,
+      "utilitarian": 12
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 3024,
+  "request": {
+    "facet": {
+      "style": {
+        "field": "style",
+        "limit": -1,
+        "type": "terms"
+      }
+    },
+    "fields": "id",
+    "filter": [
+      "category_depth_3:\"Furniture / Living Room Furniture / Bookcases\""
+    ],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 3024,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "filter": "category_depth_3 = \"Furniture / Living Room Furniture / Bookcases\"",
+      "limit": 48
+    }
+  ]
+}
