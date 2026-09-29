@@ -1,0 +1,374 @@
+{
+  "configuration": "automotive",
+  "run_index": 1,
+  "descriptors": [
+    {
+      "key": "amperage_output",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "amperage",
+        "amp output",
+        "alternator amps",
+        "output amps"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.75,
+      "evidence": "numeric_parseable_fraction=1.0, 72 distinct near-sequential values (101-105+) over 150 rows, uniqueness 0.48 -> continuous numeric spec",
+      "abstain": false
+    },
+    {
+      "key": "bulb_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "bulb type",
+        "bulb size",
+        "headlight bulb",
+        "H11",
+        "H7",
+        "9005"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "only 4 distinct values, samples are standardized alphanumeric bulb codes (9005, H11, H4, H7), numeric_parseable_fraction=0.26 shows codes aren't pure numbers",
+      "abstain": false
+    },
+    {
+      "key": "cold_cranking_amps",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "CCA",
+        "cold cranking amps",
+        "cranking amps",
+        "battery amps"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction=1.0, high uniqueness 0.87 with 131 distinct near-sequential values (401-410+) -> continuous numeric rating suited to range filters",
+      "abstain": false
+    },
+    {
+      "key": "filter_type",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "filter shape",
+        "filter style",
+        "panel filter",
+        "cylindrical filter"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "only 2 distinct non-numeric values (Cylindrical, Panel), low uniqueness 0.013 -> closed categorical set",
+      "abstain": false
+    },
+    {
+      "key": "group_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "battery group size",
+        "BCI group size",
+        "group size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "candidate_physical_primitive_note": null,
+      "confidence": 0.7,
+      "evidence": "only 3 distinct values, mixed numeric/alpha codes ('24F','35','65'), numeric_parseable_fraction=0.66 shows not all values are pure numbers -> standardized fitment code, not continuous number",
+      "abstain": false
+    },
+    {
+      "key": "heat_range",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "spark plug heat range",
+        "heat range"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.55,
+      "evidence": "numeric_parseable_fraction=1.0, only 5 distinct single-digit sequential values (4-8) -> small ordinal numeric domain, low cardinality makes bitmap_enum also plausible",
+      "abstain": false
+    },
+    {
+      "key": "lumens",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "lumens",
+        "brightness",
+        "light output"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.9,
+      "evidence": "numeric_parseable_fraction=1.0, very high uniqueness 0.94 with 141 distinct near-sequential values (1004-1041+) -> continuous numeric spec",
+      "abstain": false
+    },
+    {
+      "key": "material",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "material",
+        "made of",
+        "aluminum",
+        "copper"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "only 2 distinct non-numeric values (Aluminum, Copper-Brass), uniqueness 0.013 -> closed categorical set",
+      "abstain": false
+    },
+    {
+      "key": "material_grade",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "pad material",
+        "ceramic",
+        "semi-metallic",
+        "organic pads"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.85,
+      "evidence": "only 3 distinct non-numeric values (Ceramic, Organic, Semi-Metallic), uniqueness 0.02 -> closed categorical set commonly used as a shopper filter term",
+      "abstain": false
+    },
+    {
+      "key": "micron_rating",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "micron rating",
+        "microns",
+        "filtration rating"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.8,
+      "evidence": "numeric_parseable_fraction=1.0, 31 distinct sequential small integers (10-14+), uniqueness 0.21 -> numeric spec supporting range queries",
+      "abstain": false
+    },
+    {
+      "key": "oem_or_aftermarket",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "OEM",
+        "aftermarket",
+        "genuine part",
+        "OEM or aftermarket"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "exactly 2 distinct non-numeric values (Aftermarket, OEM) across 1500 occurrences, very low uniqueness 0.0013 -> closed binary category label; kept as enum rather than boolean since future categories (e.g. remanufactured) plausible",
+      "abstain": false
+    },
+    {
+      "key": "part_number",
+      "semantic_role": "identifier",
+      "value_type": "string",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "part number",
+        "part no",
+        "SKU",
+        "model number"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "identifier_dictionary",
+      "confidence": 0.95,
+      "evidence": "uniqueness_ratio=0.998 (1497 distinct of 1500), variant_scoped=true, structured alphanumeric codes with hyphenated segments -> per-variant SKU identifier",
+      "abstain": false
+    },
+    {
+      "key": "position",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "front",
+        "rear",
+        "front or rear",
+        "fitment position"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.8,
+      "evidence": "only 2 distinct non-numeric values (Front, Rear), uniqueness 0.0067; variant_scoped flag given as false so treated as product-level even though occurrence count (300) is double the 150-product baseline",
+      "abstain": false
+    },
+    {
+      "key": "size",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "size",
+        "diameter",
+        "inches"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.6,
+      "evidence": "numeric_parseable_fraction=1.0, 13 distinct sequential integers (16-20+), uniqueness 0.087 -> numeric spec, though field name alone is too generic to confirm exact unit/domain",
+      "abstain": false
+    },
+    {
+      "key": "thread_size",
+      "semantic_role": "enum",
+      "value_type": "string",
+      "scope": "product",
+      "supported_operators": [
+        "eq",
+        "exact_lookup"
+      ],
+      "aliases": [
+        "thread size",
+        "thread diameter",
+        "plug thread size"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "bitmap_enum",
+      "confidence": 0.75,
+      "evidence": "only 3 distinct values with unit suffix ('10mm','12mm','14mm'), numeric_parseable_fraction=0 (unit suffix blocks pure numeric parse) -> discrete standardized fitment sizes, not a continuous numeric field",
+      "abstain": false
+    },
+    {
+      "key": "voltage",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "product",
+      "supported_operators": [
+        "eq"
+      ],
+      "aliases": [
+        "voltage",
+        "volts",
+        "12V"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "ignore",
+      "candidate_physical_primitive": "none",
+      "confidence": 0.9,
+      "evidence": "distinct_values=1, uniqueness_ratio=0.0067 -> constant value ('12') across all 150 occurrences, no discriminative power for retrieval/filtering in this catalog slice",
+      "abstain": false
+    },
+    {
+      "key": "warranty_months",
+      "semantic_role": "numeric",
+      "value_type": "number",
+      "scope": "variant",
+      "supported_operators": [
+        "eq",
+        "range"
+      ],
+      "aliases": [
+        "warranty",
+        "warranty length",
+        "warranty period",
+        "months of warranty"
+      ],
+      "relationship_semantics": null,
+      "retrieval_significance": "retrieval_significant",
+      "candidate_physical_primitive": "numeric_range",
+      "confidence": 0.85,
+      "evidence": "numeric_parseable_fraction=1.0, 4 distinct values (12,24,36,60) forming a clear ordinal duration scale, variant_scoped=true over 1500 occurrences",
+      "abstain": false
+    }
+  ]
+}

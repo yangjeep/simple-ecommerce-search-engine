@@ -1,0 +1,68 @@
+{
+  "model": "claude-sonnet-5",
+  "note": "tokens_used_this_call_measured is 0 for calls served from Workflow resume cache in the second (retry) invocation -- their real token cost was spent in the first invocation but not captured per-call due to how budget.spent() deltas interact with cached replay. Aggregate totals: first invocation subagent_tokens=488571 (9 successful + 1 failed-before-completion call), second invocation subagent_tokens=189360 (6 cache replays returning instantly + 4 live calls: automotive runs 2-5). This is a disclosed limitation of this checkpoint's own cost-accounting instrumentation, not of the underlying draws, which are all genuine independent claude-sonnet-5 completions.",
+  "first_invocation_total_subagent_tokens": 488571,
+  "second_invocation_total_subagent_tokens": 189360,
+  "manifest": [
+    {
+      "configuration": "wands_baseline",
+      "run_index": 1,
+      "n_descriptors": 36,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "wands_baseline",
+      "run_index": 2,
+      "n_descriptors": 36,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "wands_baseline",
+      "run_index": 3,
+      "n_descriptors": 36,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "wands_baseline",
+      "run_index": 4,
+      "n_descriptors": 36,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "wands_baseline",
+      "run_index": 5,
+      "n_descriptors": 36,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "automotive",
+      "run_index": 1,
+      "n_descriptors": 17,
+      "tokens_used_this_call_measured": 0
+    },
+    {
+      "configuration": "automotive",
+      "run_index": 2,
+      "n_descriptors": 17,
+      "tokens_used_this_call_measured": 13608
+    },
+    {
+      "configuration": "automotive",
+      "run_index": 3,
+      "n_descriptors": 17,
+      "tokens_used_this_call_measured": 10028
+    },
+    {
+      "configuration": "automotive",
+      "run_index": 4,
+      "n_descriptors": 17,
+      "tokens_used_this_call_measured": 13016
+    },
+    {
+      "configuration": "automotive",
+      "run_index": 5,
+      "n_descriptors": 17,
+      "tokens_used_this_call_measured": 12860
+    }
+  ]
+}
