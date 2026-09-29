@@ -345,29 +345,42 @@ adversarial review, protocol, capability matrix, and Havenask log, the
 `issue57-eval` crate, the `comparator-eval` Elasticsearch/OpenSearch/
 Havenask backends, the indexing/footprint scripts, and every raw run
 artifact under `docs/research/artifacts/issue57_*` were cherry-picked
-commit-by-commit onto fresh `main`. The only edits were mechanical
-conflict resolution: `comparator-eval`'s re-exports now list both
-`main`'s newer Solr/outcome items and #57's backends, and #57's
-workspace member sits alongside #62/#77/#79's. PR #59 was closed as
-superseded by the salvage PR. No measurement was rerun, and no number
-above changed.
+commit-by-commit onto fresh `main` (PR #81). The only edits were
+mechanical conflict resolution: `comparator-eval`'s re-exports now list
+both `main`'s newer Solr/outcome items and #57's backends, and #57's
+workspace member sits alongside #62/#77/#79's. PR #59 is closed as
+superseded once the salvage PR merges. No measurement was rerun, and no
+number above changed.
 
 **How later evidence qualifies this verdict (context, not a revision):**
 
 - The ~10,000×–50,000× structural-query ratios compare a sub-microsecond
   in-process native call with each external engine's full single-threaded
   HTTP round trip. Revision 1 already disclosed this. Issue #61 then named
-  it confound C1 (process-boundary/HTTP asymmetry) and replaced it with a
-  uniform cgroup-CPU contract plus a published per-engine transport floor.
-  #77 (E3) and #79 (E3b) measured PLP filter/facet/sort cells in CPU/query
-  under that contract, with #79 correcting #77's unequal Meilisearch
-  facet work. Those two decisions
+  it confound C1 (process-boundary/HTTP asymmetry). #61's Revision 2
+  (`docs/experiments/ISSUE61_PROTOCOL.md` §R2.1) put native behind a
+  minimal HTTP endpoint with the same response contract. Both arms are
+  now driven by the same external client, the primary metric is raw
+  server-side container CPU at that shared boundary, and no floor is
+  subtracted. #77 (E3) and #79 (E3b) measured PLP filter/facet/sort cells
+  under that boundary rule. Their decisions
   (`ISSUE77_PLP_FACETING_DECISION.md`, `ISSUE79_FACET_SORT_RECOVERY_DECISION.md`)
-  are the current evidence for native CPU efficiency. #57's ratios describe
-  the latency of an embedded deployment shape, not a CPU-efficiency margin,
-  and must not be cited as one.
+  are the current evidence for native CPU efficiency, and #79 records
+  native's facet position against mature engines as *unresolved*. #79's
+  preregistered baseline corrected only #77's request counts. Its
+  equalized-facet-work comparison (no 100-value cap, ID-only hits) is a
+  post-review sensitivity, not preregistered, and Issue #63 is where it is
+  being confirmed. #57's ratios describe the latency of an embedded
+  deployment shape, not a CPU-efficiency margin, and must not be cited as
+  one.
 - #57's Revision 2 relevance-parity finding and its 313/313
   correctness-gated cross-engine matches are not affected by that
   measurement-contract change.
 - The deferred full 1.2M-product ESCI run and the Havenask re-deployment
-  remain open, as listed above.
+  remain open, as listed above. So does Revision 2's own caveat that
+  Havenask, always queried last in Revision 1, was not re-timed under the
+  randomized order.
+- **Stale pointer.** Revision 2's closing line names "Issue #47/PR #53's
+  cleanup" as the next stage-gate step. That step is complete: #47 closed
+  REVISE, #53 was closed, and its salvageable content landed via #71. The
+  line is left unedited as historical text.
