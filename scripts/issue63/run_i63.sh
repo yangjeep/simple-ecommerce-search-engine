@@ -102,7 +102,8 @@ case "$phase" in
     FINAL_MODE="hybrid:hybrid"
     NPLUS_MODE="hybrid:hybrid:$NPLUS"
     SERVER_ARGS="$ALL_STRUCTS --tau-f $TAU_F --rho-s $RHO_S"
-    [[ "$NPLUS" != none ]] && SERVER_ARGS="$SERVER_ARGS --prebuilt-all true"
+    # Only P1/P2/P2b read the prebuilt all-ordinals bitmap; P0r and FINAL do not.
+    case "$NPLUS" in p1|p2|p2b) SERVER_ARGS="$SERVER_ARGS --prebuilt-all true" ;; esac
     # Balanced Latin square (amendment section 2); N/N+ order alternates.
     declare -A ORDER=([1]="native meilisearch solr" [2]="solr native meilisearch" [3]="meilisearch solr native")
     AMBIENT="$OUT/confirm/ambient.jsonl"

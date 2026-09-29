@@ -95,3 +95,23 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
 
 - Native Part A records its server's full sha256 in every raw file.
 - No binary is rebuilt while a #63 phase runs. The release build is not touched until #63's measurements are complete.
+
+## 2026-09-29 — B/C microbenchmarks (3 runs) and the frozen N⁺
+
+- **Runs:** `run_i63.sh micro`, 06:08–07:49 UTC, `i63_primitives` pinned to CPU 0 inside the scope envelope. Each run did 500k (842 points, ≈31 min) and then 100k (35 points). All 6 processes exited 0, and every correctness check passed: 230 per 500k run and 31 per 100k run. Raw data: `artifacts/issue63/results/micro/`; tables: `micro_report.md`.
+- **§3.4 adoption** (`analyze_i63.py adopt` → `adoption.json` / `adoption.md`), applied mechanically:
+
+| cand | correctness (gate candidate checks / failures) | best FH reduction | worst cell ratio (cell) | passes |
+|---|---|---|---|---|
+| P0r | 3312 / 0 | 95.7% | 1.044 (sh2) | **yes** |
+| P1 | 3312 / 0 | 95.2% | 1.10004 (sc2) | no (criterion 3) |
+| P2 | 3312 / 0 | 99.4% | 1.185 (numeric_range_sort) | no (criterion 3) |
+| P2b | 3312 / 0 | 99.2% | 1.203 (fc6) | no (criterion 3) |
+
+  **N⁺ = P0r**: the only candidate that passes all three criteria. It is frozen here and posted to #63 before Part A.
+- **Disclosed: criterion 3 is noise-limited on this host.** The "regressions" that fail P1, P2 and P2b are on cells whose execution path is identical, or nearly identical, in every mode.
+  - `numeric_range_sort` has a range constraint, so it never takes a match-all path. Yet its P0 alone reads 4,849 / 4,009 / 3,932 µs across the three runs, and its P2 reads 3,976 / 5,054 / 4,752 µs.
+  - P1 misses the 1.10 limit by 0.00004 on a 22 µs cell.
+  - A run-to-run spread of about ±20% for the same in-process work is larger than criterion 3's 10% band. With 3-run medians, the criterion therefore rejects candidates on noise.
+  - This is recorded, not corrected. The rule is applied as preregistered, and P2/P2b's much larger FH3/FH4 in-process reductions are reported as characterization, not as an adopted arm.
+- **Driver fix before Part A** (committed before the phase started): `--prebuilt-all` is now passed only when N⁺ ∈ {P1, P2, P2b}. P0r and FINAL do not read the prebuilt bitmap, so the Part A native launch builds no unused structure.

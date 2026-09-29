@@ -1,0 +1,489 @@
+{
+  "rule": "amendment 1 section 3.4 + clarification C1",
+  "thresholds": {
+    "min_fh_reduction": 0.25,
+    "max_regression_ratio": 1.1,
+    "tie": 0.05
+  },
+  "runs": [
+    1,
+    2,
+    3
+  ],
+  "git_sha": [
+    "b6bcf6fabd8c44ef4f31577801910d8683f51c8b"
+  ],
+  "candidates": [
+    {
+      "cand": "p0r",
+      "cells": {
+        "facet_disjunctive_multi_dim": {
+          "p0_ns": 14823913.415,
+          "cand_ns": 10486838.17,
+          "ratio": 0.7074271062180243
+        },
+        "facet_high_cardinality_color": {
+          "p0_ns": 13359664.165,
+          "cand_ns": 9169633.593607306,
+          "ratio": 0.6863670733303427
+        },
+        "facet_low_cardinality_style": {
+          "p0_ns": 4883004.256097561,
+          "cand_ns": 207945.05767432193,
+          "ratio": 0.042585475409867686
+        },
+        "facet_medium_cardinality_primarymaterial": {
+          "p0_ns": 5408117.664864865,
+          "cand_ns": 535104.9414281894,
+          "ratio": 0.09894476684644403
+        },
+        "fc1_full_material": {
+          "p0_ns": 5169919.682170543,
+          "cand_ns": 369618.71391609684,
+          "ratio": 0.07149409210181691
+        },
+        "fc2_full_shape": {
+          "p0_ns": 5693066.6789772725,
+          "cand_ns": 262401.4486692015,
+          "ratio": 0.04609140617273439
+        },
+        "fc3_style_modern_x_color": {
+          "p0_ns": 1713962.966580977,
+          "cand_ns": 1660943.6605809128,
+          "ratio": 0.9690662476180408
+        },
+        "fc4_color_white_x_style": {
+          "p0_ns": 253465.2866371121,
+          "cand_ns": 240380.5734358112,
+          "ratio": 0.9483767052486586
+        },
+        "fc5_color_white_x_primarymaterial": {
+          "p0_ns": 302936.2017557136,
+          "cand_ns": 253796.13249651325,
+          "ratio": 0.8377873988833243
+        },
+        "fc6_depth3_x_shape": {
+          "p0_ns": 59533.513676002265,
+          "cand_ns": 58535.589875640086,
+          "ratio": 0.9832376129218048
+        },
+        "fc7_pergolas_x_color": {
+          "p0_ns": 16987.725838364797,
+          "cand_ns": 16627.412403693514,
+          "ratio": 0.9787897780962795
+        },
+        "numeric_range_sort": {
+          "p0_ns": 4009310.276553106,
+          "cand_ns": 4063926.37525355,
+          "ratio": 1.0136223177886343
+        },
+        "sc1_full_rating_count_desc": {
+          "p0_ns": 4469166.841870824,
+          "cand_ns": 29915.378743701312,
+          "ratio": 0.0066937261020173795
+        },
+        "sc2_style_modern_average_rating_asc": {
+          "p0_ns": 21564.865634327954,
+          "cand_ns": 22404.178160597676,
+          "ratio": 1.038920368923313
+        },
+        "sc3_accent_chairs_review_count_desc": {
+          "p0_ns": 160055.99320163162,
+          "cand_ns": 153732.73091999078,
+          "ratio": 0.9604934363583932
+        },
+        "sc4_color_black_rating_count_asc": {
+          "p0_ns": 103540.76757903451,
+          "cand_ns": 107993.46640038863,
+          "ratio": 1.043004305699736
+        },
+        "sc5_pergolas_average_rating_desc": {
+          "p0_ns": 19068.986605653274,
+          "cand_ns": 18180.630223151387,
+          "ratio": 0.9534135504485319
+        },
+        "sc6_depth5_review_count_desc": {
+          "p0_ns": 61908.591138339674,
+          "cand_ns": 62343.480947188036,
+          "ratio": 1.0070247085396689
+        },
+        "sh2_color_white_review_count_desc": {
+          "p0_ns": 78279.26190755743,
+          "cand_ns": 81734.380121737,
+          "ratio": 1.044138359636807
+        },
+        "sh3_depth3_review_count_desc": {
+          "p0_ns": 63861.138570562136,
+          "cand_ns": 58700.14554417677,
+          "ratio": 0.9191841369899344
+        }
+      },
+      "gate_checks": 3312,
+      "gate_failures": 0,
+      "micro_failures": 0,
+      "criterion1_correct": true,
+      "best_fh_reduction": 0.9574145245901323,
+      "criterion2_fh_reduction_ge_25pct": true,
+      "worst_ratio": 1.044138359636807,
+      "worst_cell": "sh2_color_white_review_count_desc",
+      "criterion3_no_regression_gt_10pct": true,
+      "fh3_fh4_reduction_ns": 8527105.816392692,
+      "persistent_bytes": 0,
+      "passes": true
+    },
+    {
+      "cand": "p1",
+      "cells": {
+        "facet_disjunctive_multi_dim": {
+          "p0_ns": 14823913.415,
+          "cand_ns": 10806338.755,
+          "ratio": 0.7289801587794825
+        },
+        "facet_high_cardinality_color": {
+          "p0_ns": 13359664.165,
+          "cand_ns": 9151066.607305937,
+          "ratio": 0.6849772939113352
+        },
+        "facet_low_cardinality_style": {
+          "p0_ns": 4883004.256097561,
+          "cand_ns": 233087.36455784691,
+          "ratio": 0.04773441765216228
+        },
+        "facet_medium_cardinality_primarymaterial": {
+          "p0_ns": 5408117.664864865,
+          "cand_ns": 492998.3486080315,
+          "ratio": 0.09115895384653216
+        },
+        "fc1_full_material": {
+          "p0_ns": 5169919.682170543,
+          "cand_ns": 360124.04644464445,
+          "ratio": 0.06965757082969802
+        },
+        "fc2_full_shape": {
+          "p0_ns": 5693066.6789772725,
+          "cand_ns": 265938.90588860825,
+          "ratio": 0.046712768510271986
+        },
+        "fc3_style_modern_x_color": {
+          "p0_ns": 1713962.966580977,
+          "cand_ns": 1676983.2984073763,
+          "ratio": 0.9784244648836445
+        },
+        "fc4_color_white_x_style": {
+          "p0_ns": 253465.2866371121,
+          "cand_ns": 236994.13566946844,
+          "ratio": 0.9350161468413404
+        },
+        "fc5_color_white_x_primarymaterial": {
+          "p0_ns": 302936.2017557136,
+          "cand_ns": 268813.1835638512,
+          "ratio": 0.8873590611023141
+        },
+        "fc6_depth3_x_shape": {
+          "p0_ns": 59533.513676002265,
+          "cand_ns": 56890.529047118034,
+          "ratio": 0.9556050959251611
+        },
+        "fc7_pergolas_x_color": {
+          "p0_ns": 16987.725838364797,
+          "cand_ns": 16834.796364095444,
+          "ratio": 0.9909976487892229
+        },
+        "numeric_range_sort": {
+          "p0_ns": 4009310.276553106,
+          "cand_ns": 4217264.873684211,
+          "ratio": 1.0518679231056889
+        },
+        "sc1_full_rating_count_desc": {
+          "p0_ns": 4469166.841870824,
+          "cand_ns": 12609.666045022965,
+          "ratio": 0.0028214802649310965
+        },
+        "sc2_style_modern_average_rating_asc": {
+          "p0_ns": 21564.865634327954,
+          "cand_ns": 23722.236322035304,
+          "ratio": 1.1000409983669523
+        },
+        "sc3_accent_chairs_review_count_desc": {
+          "p0_ns": 160055.99320163162,
+          "cand_ns": 151883.81783681214,
+          "ratio": 0.9489417721801612
+        },
+        "sc4_color_black_rating_count_asc": {
+          "p0_ns": 103540.76757903451,
+          "cand_ns": 107800.64577832857,
+          "ratio": 1.04114203804837
+        },
+        "sc5_pergolas_average_rating_desc": {
+          "p0_ns": 19068.986605653274,
+          "cand_ns": 18420.6840074765,
+          "ratio": 0.9660022521603442
+        },
+        "sc6_depth5_review_count_desc": {
+          "p0_ns": 61908.591138339674,
+          "cand_ns": 63212.4933518618,
+          "ratio": 1.0210617329444382
+        },
+        "sh2_color_white_review_count_desc": {
+          "p0_ns": 78279.26190755743,
+          "cand_ns": 79302.39703727176,
+          "ratio": 1.0130703216251908
+        },
+        "sh3_depth3_review_count_desc": {
+          "p0_ns": 63861.138570562136,
+          "cand_ns": 57914.894123093836,
+          "ratio": 0.9068879042784664
+        }
+      },
+      "gate_checks": 3312,
+      "gate_failures": 0,
+      "micro_failures": 0,
+      "criterion1_correct": true,
+      "best_fh_reduction": 0.9522655823478378,
+      "criterion2_fh_reduction_ge_25pct": true,
+      "worst_ratio": 1.1000409983669523,
+      "worst_cell": "sc2_style_modern_average_rating_asc",
+      "criterion3_no_regression_gt_10pct": false,
+      "fh3_fh4_reduction_ns": 8226172.217694061,
+      "persistent_bytes": 65608,
+      "passes": false
+    },
+    {
+      "cand": "p2",
+      "cells": {
+        "facet_disjunctive_multi_dim": {
+          "p0_ns": 14823913.415,
+          "cand_ns": 5975329.9313432835,
+          "ratio": 0.40308721213232235
+        },
+        "facet_high_cardinality_color": {
+          "p0_ns": 13359664.165,
+          "cand_ns": 4799615.376498801,
+          "ratio": 0.3592616788281969
+        },
+        "facet_low_cardinality_style": {
+          "p0_ns": 4883004.256097561,
+          "cand_ns": 30174.22870759996,
+          "ratio": 0.006179439362544166
+        },
+        "facet_medium_cardinality_primarymaterial": {
+          "p0_ns": 5408117.664864865,
+          "cand_ns": 156571.0423483366,
+          "ratio": 0.02895111609082361
+        },
+        "fc1_full_material": {
+          "p0_ns": 5169919.682170543,
+          "cand_ns": 96902.53623819898,
+          "ratio": 0.01874352837093116
+        },
+        "fc2_full_shape": {
+          "p0_ns": 5693066.6789772725,
+          "cand_ns": 43849.04948390349,
+          "ratio": 0.007702184421240737
+        },
+        "fc3_style_modern_x_color": {
+          "p0_ns": 1713962.966580977,
+          "cand_ns": 1644505.4511092852,
+          "ratio": 0.9594754864451674
+        },
+        "fc4_color_white_x_style": {
+          "p0_ns": 253465.2866371121,
+          "cand_ns": 242282.044579043,
+          "ratio": 0.955878604891248
+        },
+        "fc5_color_white_x_primarymaterial": {
+          "p0_ns": 302936.2017557136,
+          "cand_ns": 264318.4289108911,
+          "ratio": 0.8725217632590386
+        },
+        "fc6_depth3_x_shape": {
+          "p0_ns": 59533.513676002265,
+          "cand_ns": 55466.15026481435,
+          "ratio": 0.9316794329774718
+        },
+        "fc7_pergolas_x_color": {
+          "p0_ns": 16987.725838364797,
+          "cand_ns": 17868.591880284646,
+          "ratio": 1.0518530879472117
+        },
+        "numeric_range_sort": {
+          "p0_ns": 4009310.276553106,
+          "cand_ns": 4751459.681710213,
+          "ratio": 1.1851065031053545
+        },
+        "sc1_full_rating_count_desc": {
+          "p0_ns": 4469166.841870824,
+          "cand_ns": 13199.642720932228,
+          "ratio": 0.002953490703740827
+        },
+        "sc2_style_modern_average_rating_asc": {
+          "p0_ns": 21564.865634327954,
+          "cand_ns": 22937.874310738156,
+          "ratio": 1.0636687795645052
+        },
+        "sc3_accent_chairs_review_count_desc": {
+          "p0_ns": 160055.99320163162,
+          "cand_ns": 151674.00204685013,
+          "ratio": 0.9476308822486752
+        },
+        "sc4_color_black_rating_count_asc": {
+          "p0_ns": 103540.76757903451,
+          "cand_ns": 101717.93037684992,
+          "ratio": 0.9823949807906033
+        },
+        "sc5_pergolas_average_rating_desc": {
+          "p0_ns": 19068.986605653274,
+          "cand_ns": 19205.50306648367,
+          "ratio": 1.0071590831570423
+        },
+        "sc6_depth5_review_count_desc": {
+          "p0_ns": 61908.591138339674,
+          "cand_ns": 67302.2434823561,
+          "ratio": 1.0871228410280551
+        },
+        "sh2_color_white_review_count_desc": {
+          "p0_ns": 78279.26190755743,
+          "cand_ns": 92436.53670254539,
+          "ratio": 1.1808560077087435
+        },
+        "sh3_depth3_review_count_desc": {
+          "p0_ns": 63861.138570562136,
+          "cand_ns": 63007.94064833192,
+          "ratio": 0.9866397946963082
+        }
+      },
+      "gate_checks": 3312,
+      "gate_failures": 0,
+      "micro_failures": 0,
+      "criterion1_correct": true,
+      "best_fh_reduction": 0.9938205606374558,
+      "criterion2_fh_reduction_ge_25pct": true,
+      "worst_ratio": 1.1851065031053545,
+      "worst_cell": "numeric_range_sort",
+      "criterion3_no_regression_gt_10pct": false,
+      "fh3_fh4_reduction_ns": 17408632.272157915,
+      "persistent_bytes": 65608,
+      "passes": false
+    },
+    {
+      "cand": "p2b",
+      "cells": {
+        "facet_disjunctive_multi_dim": {
+          "p0_ns": 14823913.415,
+          "cand_ns": 5673344.954674221,
+          "ratio": 0.382715737460628
+        },
+        "facet_high_cardinality_color": {
+          "p0_ns": 13359664.165,
+          "cand_ns": 3161058.9478672985,
+          "ratio": 0.2366121564753644
+        },
+        "facet_low_cardinality_style": {
+          "p0_ns": 4883004.256097561,
+          "cand_ns": 36799.149414511296,
+          "ratio": 0.007536169842276718
+        },
+        "facet_medium_cardinality_primarymaterial": {
+          "p0_ns": 5408117.664864865,
+          "cand_ns": 176505.54397882664,
+          "ratio": 0.032637149358923395
+        },
+        "fc1_full_material": {
+          "p0_ns": 5169919.682170543,
+          "cand_ns": 98062.62723662924,
+          "ratio": 0.018967920831500916
+        },
+        "fc2_full_shape": {
+          "p0_ns": 5693066.6789772725,
+          "cand_ns": 46462.79092660955,
+          "ratio": 0.008161293999626285
+        },
+        "fc3_style_modern_x_color": {
+          "p0_ns": 1713962.966580977,
+          "cand_ns": 1968523.873031496,
+          "ratio": 1.148521824224895
+        },
+        "fc4_color_white_x_style": {
+          "p0_ns": 253465.2866371121,
+          "cand_ns": 258711.31299288946,
+          "ratio": 1.020697218247831
+        },
+        "fc5_color_white_x_primarymaterial": {
+          "p0_ns": 302936.2017557136,
+          "cand_ns": 296634.5199466113,
+          "ratio": 0.9791979902943923
+        },
+        "fc6_depth3_x_shape": {
+          "p0_ns": 59533.513676002265,
+          "cand_ns": 71616.58460712367,
+          "ratio": 1.2029625027153747
+        },
+        "fc7_pergolas_x_color": {
+          "p0_ns": 16987.725838364797,
+          "cand_ns": 16373.9715639035,
+          "ratio": 0.9638707217021831
+        },
+        "numeric_range_sort": {
+          "p0_ns": 4009310.276553106,
+          "cand_ns": 4461331.122494432,
+          "ratio": 1.1127427948355093
+        },
+        "sc1_full_rating_count_desc": {
+          "p0_ns": 4469166.841870824,
+          "cand_ns": 12491.506991325636,
+          "ratio": 0.002795041544275086
+        },
+        "sc2_style_modern_average_rating_asc": {
+          "p0_ns": 21564.865634327954,
+          "cand_ns": 23022.56167803845,
+          "ratio": 1.0675958787978752
+        },
+        "sc3_accent_chairs_review_count_desc": {
+          "p0_ns": 160055.99320163162,
+          "cand_ns": 165959.01824968893,
+          "ratio": 1.036880999767506
+        },
+        "sc4_color_black_rating_count_asc": {
+          "p0_ns": 103540.76757903451,
+          "cand_ns": 103084.78141907559,
+          "ratio": 0.9955960712807073
+        },
+        "sc5_pergolas_average_rating_desc": {
+          "p0_ns": 19068.986605653274,
+          "cand_ns": 18538.83178410239,
+          "ratio": 0.97219805999582
+        },
+        "sc6_depth5_review_count_desc": {
+          "p0_ns": 61908.591138339674,
+          "cand_ns": 60921.50223655783,
+          "ratio": 0.9840557040043746
+        },
+        "sh2_color_white_review_count_desc": {
+          "p0_ns": 78279.26190755743,
+          "cand_ns": 79288.28365899093,
+          "ratio": 1.0128900263855973
+        },
+        "sh3_depth3_review_count_desc": {
+          "p0_ns": 63861.138570562136,
+          "cand_ns": 62886.81243122583,
+          "ratio": 0.9847430509204006
+        }
+      },
+      "gate_checks": 3312,
+      "gate_failures": 0,
+      "micro_failures": 0,
+      "criterion1_correct": true,
+      "best_fh_reduction": 0.9924638301577233,
+      "criterion2_fh_reduction_ge_25pct": true,
+      "worst_ratio": 1.2029625027153747,
+      "worst_cell": "fc6_depth3_x_shape",
+      "criterion3_no_regression_gt_10pct": false,
+      "fh3_fh4_reduction_ns": 19349173.67745848,
+      "persistent_bytes": 65608,
+      "passes": false
+    }
+  ],
+  "n_plus": "p0r",
+  "note": "1 candidate(s) passed; largest FH3+FH4 reduction p0r; within-5% tie set ['p0r']; chosen p0r (smallest persistent memory 0 B, then larger reduction)",
+  "facet_loop_candidates": "none implemented as a server mode this round; u32 counters are characterized in B2 only"
+}
