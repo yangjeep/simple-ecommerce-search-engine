@@ -75,3 +75,23 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
   - They were seen after amendment 1 and C1 were posted, and before N⁺ was frozen and before Part A.
   - No rule, threshold, cell or configuration depends on them: the §3.4 adoption rule is native-only and mechanical, and the Part A classification is fixed.
   - They are not reported as results.
+
+## 2026-09-29 — binary provenance for every #63 measurement
+
+- Every #63 binary was built once, from commit `b66af57`.
+- Every later commit on the branch touches only `docs/`, `scripts/` and `artifacts/`: `git diff --stat b66af57 HEAD -- crates Cargo.toml Cargo.lock` is empty.
+- Raw files record `git rev-parse HEAD` at the time they are written, so they can name a later docs/scripts commit. The Rust source is `b66af57`'s regardless.
+- sha256 prefixes:
+
+| binary | sha256 prefix |
+|---|---|
+| `i63_primitives` | `4d9dfc318bdf9123` |
+| `i63_facet_equivalence` | `c7342392e79020b4` |
+| `i63_host_probe` | `559dd17759f1b828` |
+| `e3b_native_plp_server` | `4628bb7de505e1c1` |
+| `e3b_native_measure` | `75db0278de85f26d` |
+| `e3b_correctness_gate` | `396ad70b1fc06be4` |
+| `i77_measure` | `5d7e7aec64881269` |
+
+- Native Part A records its server's full sha256 in every raw file.
+- No binary is rebuilt while a #63 phase runs. The release build is not touched until #63's measurements are complete.
