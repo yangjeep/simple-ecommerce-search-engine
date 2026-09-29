@@ -1,0 +1,20 @@
+=== 2026-09-29T05:43:04Z N0 pair=1
+  facet_low_cardinality_style None cpu_us=Some(147734.0) p50_ms=140.57 n=200
+  facet_high_cardinality_color None cpu_us=Some(173381.0) p50_ms=158.20 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(61442.0) p50_ms=50.12 n=200
+E3B_MEASURE_OK label=drift_n0 run=1 status=ok cells=3
+=== 2026-09-29T05:45:54Z FINAL pair=1
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(9562.0) p50_ms=10.85 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(27656.0) p50_ms=36.09 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(35311.0) p50_ms=40.37 n=200
+E3B_MEASURE_OK label=drift_final run=1 status=ok cells=3
+=== 2026-09-29T05:47:33Z N0 pair=2
+  facet_low_cardinality_style None cpu_us=Some(143728.0) p50_ms=135.02 n=200
+  facet_high_cardinality_color None cpu_us=Some(169398.0) p50_ms=154.74 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(60510.0) p50_ms=50.28 n=200
+E3B_MEASURE_OK label=drift_n0 run=2 status=ok cells=3
+=== 2026-09-29T05:50:23Z FINAL pair=2
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(7781.0) p50_ms=5.83 n=238
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(35187.0) p50_ms=36.84 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(40572.0) p50_ms=41.09 n=200
+E3B_MEASURE_OK label=drift_final run=2 status=ok cells=3

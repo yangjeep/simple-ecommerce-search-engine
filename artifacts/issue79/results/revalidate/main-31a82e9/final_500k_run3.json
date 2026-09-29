@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I79-E3b",
+  "label": "revalidate_final",
+  "run": 3,
+  "status": "ok",
+  "failure_reason": null,
+  "server_binary": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/target/release/e3b_native_plp_server",
+  "server_binary_sha256": "ab24b45b2f57adc37fc9e80dcf6ba6230810a76028332c4eae918f8d43d90cca",
+  "server_args": [
+    "--sort-columns",
+    "average_rating,review_count,rating_count",
+    "--presence",
+    "average_rating,review_count,rating_count",
+    "--tau-f",
+    "919.4972390657695",
+    "--rho-s",
+    "0.0833779131971903"
+  ],
+  "catalog": "/home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl",
+  "runtime": "scope",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "launch_to_ready_ms": 80952.814053,
+  "server_ready": {
+    "docs": 515928,
+    "e3b_ready": true,
+    "index_approx_bytes": 116915570,
+    "index_build_ms": 71918.027761,
+    "load_ms": 8813.321633,
+    "ordinal_facet_approx_bytes": 29361380,
+    "presence_build_ms": 51.259837000000005,
+    "presence_bytes": 196824,
+    "presence_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "rho_s": 0.0833779131971903,
+    "sort_columns_build_ms": 8.647221,
+    "sort_columns_bytes": 12382272,
+    "sort_columns_fields": [
+      "average_rating",
+      "review_count",
+      "rating_count"
+    ],
+    "tau_f": 919.4972390657696
+  },
+  "fixture_correctness_all_passed": true,
+  "rss_after_load_bytes": 4410277888,
+  "peak_after_load_bytes": 4410351616,
+  "rss_after_serving_bytes": 4410720256,
+  "peak_after_serving_bytes": 4411084800,
+  "cells": [
+    {
+      "cell": "facet_low_cardinality_style",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 228,
+      "p50_ms": 6.483016999999999,
+      "p95_ms": 15.219533,
+      "p99_ms": 18.646116,
+      "mean_wall_ms": 8.598854662280704,
+      "cpu_usec_per_query": 8108.473684210527,
+      "qps_per_core": 123.32777276533321,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 12116186524420406364,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 7352.234692982453,
+      "mean_facets_us": 423.154451754386,
+      "mean_sort_us": 80.26509210526316,
+      "mean_total_us": 7856.672802631585,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 5549.334000000001,
+        "facets_us": 436.483,
+        "sort_us": 87.293,
+        "total_us": 6074.225,
+        "facet_diag": [
+          {
+            "field": "style",
+            "candidates": 515928,
+            "cardinality": 65,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410507264
+    },
+    {
+      "cell": "facet_medium_cardinality_primarymaterial",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 13.211054,
+      "p95_ms": 19.662889,
+      "p99_ms": 23.105476,
+      "mean_wall_ms": 12.219732099999998,
+      "cpu_usec_per_query": 11724.015,
+      "qps_per_core": 85.29501199034631,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 2927854480405961370,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 9726.240094999997,
+      "mean_facets_us": 1459.8158150000008,
+      "mean_sort_us": 116.58239999999995,
+      "mean_total_us": 11304.589425000004,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 5533.202,
+        "facets_us": 1058.338,
+        "sort_us": 88.354,
+        "total_us": 6681.206,
+        "facet_diag": [
+          {
+            "field": "primarymaterial",
+            "candidates": 515928,
+            "cardinality": 244,
+            "path": "bitmap"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410724352
+    },
+    {
+      "cell": "facet_high_cardinality_color",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 35.797005999999996,
+      "p95_ms": 45.828702,
+      "p99_ms": 55.135812,
+      "mean_wall_ms": 30.496280314999993,
+      "cpu_usec_per_query": 28553.24,
+      "qps_per_core": 35.02229519311994,
+      "num_found": 515928,
+      "facet_fields": 1,
+      "facets_fingerprint": 10111158894877981563,
+      "docs_fingerprint": 16801307094651084903,
+      "mean_candidates_us": 10180.7569,
+      "mean_facets_us": 17568.076659999988,
+      "mean_sort_us": 144.14523499999999,
+      "mean_total_us": 27894.96088,
+      "diag": {
+        "num_candidates": 515928,
+        "candidates_us": 12328.147,
+        "facets_us": 23203.763,
+        "sort_us": 124.155,
+        "total_us": 35658.504,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410728448
+    },
+    {
+      "cell": "facet_disjunctive_multi_dim",
+      "role": "headline",
+      "family": "facet",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 200,
+      "p50_ms": 41.991821,
+      "p95_ms": 52.401115,
+      "p99_ms": 58.125864,
+      "mean_wall_ms": 43.01047246,
+      "cpu_usec_per_query": 42096.59,
+      "qps_per_core": 23.754893211065315,
+      "num_found": 16332,
+      "facet_fields": 5,
+      "facets_fingerprint": 870794717644741364,
+      "docs_fingerprint": 6734084721642553604,
+      "mean_candidates_us": 36.457605000000015,
+      "mean_facets_us": 40233.952670000006,
+      "mean_sort_us": 146.57731500000008,
+      "mean_total_us": 40418.914205000015,
+      "diag": {
+        "num_candidates": 16332,
+        "candidates_us": 34.681000000000004,
+        "facets_us": 38632.832,
+        "sort_us": 130.167,
+        "total_us": 38799.75,
+        "facet_diag": [
+          {
+            "field": "color",
+            "candidates": 515928,
+            "cardinality": 2825,
+            "path": "ordinal"
+          },
+          {
+            "field": "style",
+            "candidates": 16332,
+            "cardinality": 65,
+            "path": "ordinal"
+          },
+          {
+            "field": "primarymaterial",
+            "candidates": 16332,
+            "cardinality": 244,
+            "path": "ordinal"
+          },
+          {
+            "field": "material",
+            "candidates": 16332,
+            "cardinality": 162,
+            "path": "ordinal"
+          },
+          {
+            "field": "shape",
+            "candidates": 16332,
+            "cardinality": 94,
+            "path": "ordinal"
+          }
+        ],
+        "sort_path": "bounded_unsorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410757120
+    },
+    {
+      "cell": "numeric_range_sort",
+      "role": "headline",
+      "family": "sort",
+      "facet_mode": "hybrid",
+      "sort_mode": "hybrid",
+      "status": "ok",
+      "error": null,
+      "measured_queries": 203,
+      "p50_ms": 8.91175,
+      "p95_ms": 16.71355,
+      "p99_ms": 19.223682999999998,
+      "mean_wall_ms": 9.776246438423646,
+      "cpu_usec_per_query": 8590.891625615763,
+      "qps_per_core": 116.4023530477634,
+      "num_found": 383604,
+      "facet_fields": 0,
+      "facets_fingerprint": 645223143103797797,
+      "docs_fingerprint": 3735945894530604932,
+      "mean_candidates_us": 8254.187394088669,
+      "mean_facets_us": 0.9346206896551721,
+      "mean_sort_us": 144.54554187192113,
+      "mean_total_us": 8401.259891625616,
+      "diag": {
+        "num_candidates": 383604,
+        "candidates_us": 9255.539,
+        "facets_us": 0.878,
+        "sort_us": 134.664,
+        "total_us": 9392.484,
+        "facet_diag": [],
+        "sort_path": "presorted",
+        "ids_inspected": 48
+      },
+      "memory_current_after_bytes": 4410720256
+    }
+  ],
+  "git_sha": "31a82e93fb21585f53c9d5ca690766bbec476cb8",
+  "hostname": "athos-dev",
+  "timestamp_utc": 1790660426
+}
