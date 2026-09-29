@@ -223,6 +223,16 @@ fn plp_request(cell: &Cell, cand_mode: CandidateMode) -> PlpRequest {
             .iter()
             .map(|(a, v)| ((*a).to_owned(), (*v).to_owned()))
             .collect(),
+        any_filters: cell
+            .any_filters
+            .iter()
+            .map(|(a, vs)| {
+                (
+                    (*a).to_owned(),
+                    vs.iter().map(|v| (*v).to_owned()).collect(),
+                )
+            })
+            .collect(),
         ranges: cell
             .ranges
             .iter()

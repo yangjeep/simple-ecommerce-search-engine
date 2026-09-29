@@ -100,6 +100,19 @@ impl Oracle {
                 return false;
             }
         }
+        for (attr, values) in &req.any_filters {
+            if Some(attr.as_str()) == exclude {
+                continue;
+            }
+            let ok = match row.attrs.get(attr) {
+                Some(AttributeValue::Enum(v)) => values.contains(v),
+                Some(AttributeValue::MultiEnum(vs)) => vs.iter().any(|v| values.contains(v)),
+                _ => false,
+            };
+            if !ok {
+                return false;
+            }
+        }
         for (attr, op, bound) in &req.ranges {
             let Some(AttributeValue::Numeric(v)) = row.attrs.get(attr) else {
                 return false;

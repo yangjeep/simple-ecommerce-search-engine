@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 /// Keys a hit may carry and still be "IDs only": the identifier, plus
 /// native's sort key (null on unsorted cells).
 pub const ID_ONLY_KEYS: [&str; 2] = ["id", "sort_value"];
+/// Hits per request in every #63/#64 cell.
+pub const TOP_K: u64 = 48;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct FieldDiff {
@@ -37,6 +39,12 @@ pub struct Verdict {
     pub facets_exact: bool,
     pub hits_id_only: bool,
     pub hit_keys: Vec<String>,
+    /// Issue #64: returned hit count, when the dump records it; it must be
+    /// `min(top_k, num_found)`.
+    #[serde(default)]
+    pub hit_count: Option<u64>,
+    #[serde(default)]
+    pub hit_count_ok: bool,
     pub backend_requests: Option<u64>,
     pub fields: BTreeMap<String, FieldDiff>,
 }
@@ -157,15 +165,19 @@ pub fn compare(
         }
     };
     let num_found_ok = num_found_returned == Some(expected_num_found);
+    let hit_count = dump["hit_count"].as_u64();
+    let hit_count_ok = hit_count.is_none_or(|h| h == expected_num_found.min(TOP_K));
     Verdict {
         engine: engine.to_owned(),
         cell: cell.to_owned(),
-        equivalent: num_found_ok && facets_exact && hits_id_only,
+        equivalent: num_found_ok && facets_exact && hits_id_only && hit_count_ok,
         num_found_expected: expected_num_found,
         num_found_returned,
         facets_exact,
         hits_id_only,
         hit_keys,
+        hit_count,
+        hit_count_ok,
         backend_requests: dump["backend_requests"].as_u64(),
         fields,
     }
@@ -231,6 +243,13 @@ mod tests {
                 "{dump}"
             );
         }
+        // Issue #64: a recorded hit count must be min(48, num_found).
+        let short = json!({"num_found": 4, "facets": {"color": {"white": 1, "black": 3}},
+                           "hit_keys": ["id"], "hit_count": 3});
+        assert!(!compare("e", "c", &short, 4, &expected()).equivalent);
+        let full = json!({"num_found": 4, "facets": {"color": {"white": 1, "black": 3}},
+                          "hit_keys": ["id"], "hit_count": 4});
+        assert!(compare("e", "c", &full, 4, &expected()).equivalent);
         // Native's sort key is allowed alongside the id.
         let native = base(ok_facets, json!(["id", "sort_value"]), 4);
         assert!(compare("native", "c", &native, 4, &expected()).equivalent);

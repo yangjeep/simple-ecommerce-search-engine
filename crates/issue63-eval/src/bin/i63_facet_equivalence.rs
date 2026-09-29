@@ -15,7 +15,7 @@ use commerce_core::domain::CategoryId;
 use comparator_eval::translate::StructuralNames;
 use issue61_eval::{load_dataset, Dataset};
 use issue63_eval::equivalence::{compare, Verdict};
-use issue79_eval::cells::{all_cells, reference_cells, Cell};
+use issue79_eval::cells::{all_cells, i64_cells, reference_cells, Cell};
 use issue79_eval::oracle::Oracle;
 use issue79_eval::plp::{CandidateMode, FacetMode, PlpRequest, SortMode};
 use serde::Serialize;
@@ -40,6 +40,16 @@ fn request(cell: &Cell) -> PlpRequest {
             .filters
             .iter()
             .map(|(a, v)| ((*a).to_owned(), (*v).to_owned()))
+            .collect(),
+        any_filters: cell
+            .any_filters
+            .iter()
+            .map(|(a, vs)| {
+                (
+                    (*a).to_owned(),
+                    vs.iter().map(|v| (*v).to_owned()).collect(),
+                )
+            })
             .collect(),
         ranges: cell
             .ranges
@@ -73,7 +83,11 @@ fn main() {
         })
         .collect();
     let oracle = Oracle::new(&data.catalog);
-    let cells: Vec<Cell> = all_cells().into_iter().chain(reference_cells()).collect();
+    let cells: Vec<Cell> = all_cells()
+        .into_iter()
+        .chain(reference_cells())
+        .chain(i64_cells())
+        .collect();
     let mut expected_cache = HashMap::new();
 
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dump_dir)

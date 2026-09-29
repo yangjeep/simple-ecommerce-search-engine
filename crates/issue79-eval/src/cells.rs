@@ -48,6 +48,8 @@ pub struct Cell {
     pub family: Family,
     pub category: Option<&'static str>,
     pub filters: Vec<(&'static str, &'static str)>,
+    /// Issue #64 multi-select filters (OR within the attribute).
+    pub any_filters: Vec<(&'static str, Vec<&'static str>)>,
     pub ranges: Vec<(&'static str, &'static str, f64)>,
     pub facets: Vec<&'static str>,
     /// `(field, descending)`.
@@ -75,6 +77,7 @@ fn cell(name: &'static str, role: Role, family: Family) -> Cell {
         family,
         category: None,
         filters: Vec::new(),
+        any_filters: Vec::new(),
         ranges: Vec::new(),
         facets: Vec::new(),
         sort: None,
@@ -223,6 +226,23 @@ pub fn reference_cells() -> Vec<Cell> {
     ]
 }
 
+/// Issue #64 (amendment 1): the 44 facet-economics cells, mapped from the
+/// single shared definition in `issue77_eval::i64cells`. Kept out of
+/// [`all_cells`] and [`reference_cells`].
+#[must_use]
+pub fn i64_cells() -> Vec<Cell> {
+    issue77_eval::i64cells::cells()
+        .into_iter()
+        .map(|c| Cell {
+            filters: c.filters,
+            any_filters: c.any_filters,
+            facets: c.facets,
+            top_k: issue77_eval::i64cells::TOP_K,
+            ..cell(c.name, Role::Headline, Family::Facet)
+        })
+        .collect()
+}
+
 /// The sort fields E3b builds sort structures for.
 pub const SORT_FIELDS: [&str; 3] = ["average_rating", "review_count", "rating_count"];
 
@@ -264,6 +284,10 @@ pub fn query_string_with_cand(
     }
     for (attr, value) in &cell.filters {
         params.push(format!("filter={attr}:{}", urlencode(value)));
+    }
+    for (attr, values) in &cell.any_filters {
+        let encoded: Vec<String> = values.iter().map(|v| urlencode(v)).collect();
+        params.push(format!("anyfilter={attr}:{}", encoded.join("|")));
     }
     if !cell.facets.is_empty() {
         params.push(format!("facets={}", cell.facets.join(",")));

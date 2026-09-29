@@ -2,7 +2,7 @@
 //!
 //! Usage: e3b_correctness_gate --catalog <jsonl> --out <json>
 //!          [--tau-f <x>] [--rho-s <x>] [--cand-modes p0,p0r,p1,p2,p2b]
-//!          [--include-reference true]
+//!          [--include-reference true] [--include-i64 true]
 //!
 //! Loads the catalog, builds the index plus every optional E3b structure,
 //! and for every preregistered cell -- plus extra asc / offset probes --
@@ -24,7 +24,7 @@ use commerce_core::domain::CategoryId;
 use commerce_core::index::CatalogIndex;
 use comparator_eval::translate::StructuralNames;
 use issue61_eval::{load_dataset, Dataset};
-use issue79_eval::cells::{all_cells, reference_cells, Cell, Family, SORT_FIELDS};
+use issue79_eval::cells::{all_cells, i64_cells, reference_cells, Cell, Family, SORT_FIELDS};
 use issue79_eval::oracle::Oracle;
 use issue79_eval::plp::{
     execute, CandidateMode, FacetMode, PlpContext, PlpRequest, SortMode, SortStructures,
@@ -75,6 +75,16 @@ fn request_for(cell: &Cell, offset: usize, sort_override: Option<(&str, bool)>) 
             .filters
             .iter()
             .map(|(a, v)| ((*a).to_owned(), (*v).to_owned()))
+            .collect(),
+        any_filters: cell
+            .any_filters
+            .iter()
+            .map(|(a, vs)| {
+                (
+                    (*a).to_owned(),
+                    vs.iter().map(|v| (*v).to_owned()).collect(),
+                )
+            })
             .collect(),
         ranges: cell
             .ranges
@@ -137,11 +147,15 @@ fn main() {
     let mut cases: Vec<(String, PlpRequest)> = Vec::new();
     // Issue #63: `--include-reference true` adds #77's filter-depth cells.
     let include_reference = arg(&args, "--include-reference").as_deref() == Some("true");
-    let extra = if include_reference {
+    let mut extra = if include_reference {
         reference_cells()
     } else {
         Vec::new()
     };
+    // Issue #64: `--include-i64 true` adds the 44 facet-economics cells.
+    if arg(&args, "--include-i64").as_deref() == Some("true") {
+        extra.extend(i64_cells());
+    }
     for cell in all_cells().into_iter().chain(extra) {
         cases.push((cell.name.to_owned(), request_for(&cell, 0, None)));
         if cell.family == Family::Sort {
