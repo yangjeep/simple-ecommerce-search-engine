@@ -1,0 +1,48 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "color": {},
+    "material": {
+      "cotton": 12,
+      "faux fur": 12,
+      "microfiber": 24,
+      "nylon": 12,
+      "polyester": 120,
+      "polypropylene": 216,
+      "rag": 12,
+      "wool": 168
+    },
+    "primarymaterial": {},
+    "shape": {},
+    "style": {
+      "bohemian": 36,
+      "eclectic": 60,
+      "farmhouse / country": 24,
+      "glam": 12,
+      "global inspired": 24,
+      "modern & contemporary": 192,
+      "traditional": 84
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 600,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "facets": [
+        "style",
+        "color",
+        "primarymaterial",
+        "shape",
+        "material"
+      ],
+      "filter": "category_depth_3 = \"Rugs / Area Rugs / 4' x 6' Area Rugs\"",
+      "limit": 48
+    }
+  ]
+}

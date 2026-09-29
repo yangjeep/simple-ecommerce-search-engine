@@ -1,0 +1,17 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 55344,
+  "request": {
+    "fields": "id",
+    "filter": [
+      "category_depth_1:\"Décor & Pillows\""
+    ],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 515928,
+  "request": {
+    "fields": "id",
+    "filter": [],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

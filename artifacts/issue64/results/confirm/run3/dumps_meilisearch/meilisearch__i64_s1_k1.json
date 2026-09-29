@@ -1,0 +1,72 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "style": {
+      "american traditional": 48,
+      "apothecary": 12,
+      "asian inspired": 24,
+      "beachy": 36,
+      "bohemian": 168,
+      "bold & eclectic modern": 36,
+      "classic": 12,
+      "coastal": 2124,
+      "contemporary": 24,
+      "convertible chair": 12,
+      "cottage / country": 12,
+      "cottage americana": 36,
+      "cottage country": 12,
+      "cottage number country": 12,
+      "country - english and french country": 12,
+      "country/cottage": 72,
+      "decorative": 12,
+      "eclectic": 1020,
+      "electric geometric": 12,
+      "farmhouse / country": 4020,
+      "french country": 72,
+      "garage": 24,
+      "glam": 3372,
+      "global": 12,
+      "global inspired": 84,
+      "industrial": 3204,
+      "mid-century modern": 924,
+      "mission shaker": 12,
+      "modern": 24,
+      "modern & contemporary": 40116,
+      "modern farmhouse": 492,
+      "modern rustic": 120,
+      "natural modern": 24,
+      "nautical": 12,
+      "no style": 84,
+      "ornate traditional": 192,
+      "posh & luxe": 60,
+      "rustic": 5436,
+      "scandinavian": 84,
+      "sleek & chic modern": 132,
+      "tiffany": 12,
+      "top grade": 24,
+      "traditional": 22500,
+      "transitional": 84,
+      "tropical": 60,
+      "urban": 12,
+      "urban rustic": 12,
+      "utilitarian": 12
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 192468,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "facets": [
+        "style"
+      ],
+      "filter": "category_depth_1 = \"Furniture\"",
+      "limit": 48
+    }
+  ]
+}

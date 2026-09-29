@@ -1,0 +1,58 @@
+{
+  "backend_requests": 2,
+  "facets": {
+    "color": {},
+    "material": {
+      "bamboo": 12,
+      "engineered wood": 36,
+      "foam": 12,
+      "plant fiber": 12,
+      "pvc": 48,
+      "solid wood": 36,
+      "vinyl": 84
+    },
+    "primarymaterial": {
+      "vinyl": 36
+    },
+    "shape": {},
+    "style": {
+      "basic": 12,
+      "beachy": 12,
+      "coastal": 84,
+      "eclectic": 36,
+      "farmhouse / country": 36,
+      "industrial": 24,
+      "modern & contemporary": 240,
+      "rustic": 228,
+      "traditional": 84,
+      "vintage": 36
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 240,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "facets": [
+        "color",
+        "primarymaterial",
+        "shape",
+        "material"
+      ],
+      "filter": "category_depth_2 = \"Home Improvement / Flooring, Walls & Ceiling\" AND style = \"modern & contemporary\"",
+      "limit": 48
+    },
+    {
+      "facets": [
+        "style"
+      ],
+      "filter": "category_depth_2 = \"Home Improvement / Flooring, Walls & Ceiling\"",
+      "limit": 0
+    }
+  ]
+}

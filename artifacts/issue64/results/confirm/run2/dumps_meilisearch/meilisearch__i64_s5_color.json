@@ -1,0 +1,23 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "color": {}
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 600,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "facets": [
+        "color"
+      ],
+      "filter": "category_depth_3 = \"Rugs / Area Rugs / 4' x 6' Area Rugs\"",
+      "limit": 48
+    }
+  ]
+}

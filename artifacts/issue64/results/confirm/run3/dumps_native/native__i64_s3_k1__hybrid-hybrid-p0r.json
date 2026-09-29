@@ -1,0 +1,24 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "style": {
+      "basic": 12,
+      "beachy": 12,
+      "coastal": 84,
+      "eclectic": 36,
+      "farmhouse / country": 36,
+      "industrial": 24,
+      "modern & contemporary": 240,
+      "rustic": 228,
+      "traditional": 84,
+      "vintage": 36
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id",
+    "sort_value"
+  ],
+  "mode": "hybrid-hybrid-p0r",
+  "num_found": 14472
+}

@@ -1,0 +1,24 @@
+{
+  "backend_requests": 1,
+  "facets": {
+    "style": {
+      "eclectic": 12,
+      "farmhouse / country": 24,
+      "glam": 60,
+      "industrial": 204,
+      "modern & contemporary": 648,
+      "modern farmhouse": 24,
+      "rustic": 168,
+      "tiffany": 12,
+      "traditional": 216,
+      "utilitarian": 12
+    }
+  },
+  "hit_count": 48,
+  "hit_keys": [
+    "id",
+    "sort_value"
+  ],
+  "mode": "hybrid-hybrid-p0r",
+  "num_found": 3024
+}
