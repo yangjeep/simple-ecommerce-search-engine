@@ -442,8 +442,12 @@ PRIMITIVES = [
     ("single bitmap filter: color=white (borrowed)", ("single_bitmap_color_white", "borrowed_len"), None, ""),
     ("single bitmap filter: category Accent Chairs", ("single_bitmap_category_accent_chairs", "indexed_candidates"), None, ""),
     ("3-way bitmap conjunction", ("conjunction_3way", "indexed_candidates"), "FD3", ""),
-    ("5-way conjunction (4 enums + rating range)", ("conjunction_5way", "indexed_candidates"), "FD5",
-     "service cell FD5 = #77 filter_depth_5 = the 4 enum filters only"),
+    # FD5 (#77 filter_depth_5) is the 4 enum filters only, while ~99% of this
+    # primitive's in-process cost is its range term, so FD5 is not its
+    # service cell (adversarial review finding 13); FD5 is reported for the
+    # enum part in the decision instead.
+    ("5-way conjunction (4 enums + rating range)", ("conjunction_5way", "indexed_candidates"), None,
+     "no matching service cell: FD5 = the 4 enum filters only (r 0.144)"),
     ("numeric range, broad (rating >= 4)", ("numeric_range_broad_rating_gte_4", "indexed_candidates"), "SH1",
      "service cell SH1 = range + bounded sort"),
     ("numeric range, narrow (review_count >= p99)", ("numeric_range_narrow_review_count_p99", "indexed_candidates"), None, ""),

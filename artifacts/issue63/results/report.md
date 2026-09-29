@@ -11,7 +11,7 @@ Native per-request service floor = 396 µs CPU/query (FD1, Part A native FINAL m
 | single bitmap filter: color=white (borrowed) | 8 ns | 0.00 | 0 | 0 | 17,256 | 2.14x | — | KEEP-provisional |
 | single bitmap filter: category Accent Chairs | 2,423 ns | 9.00 | 26,728 | 52,944 | 13,236 | 6.62x | — | KEEP-provisional |
 | 3-way bitmap conjunction | 42.0 µs | 33.00 | 166,408 | 165,656 | 36 | 4.28x | 0.098 (FD3) | KEEP |
-| 5-way conjunction (4 enums + rating range) | 4,329.8 µs | 150.00 | 526,931 | 6,335,528 | 12 | 4.38x | 0.144 (FD5) | KEEP |
+| 5-way conjunction (4 enums + rating range) | 4,329.8 µs | 150.00 | 526,931 | 6,335,528 | 12 | 4.38x | — | REFINE |
 | numeric range, broad (rating >= 4) | 3,875.6 µs | 106.00 | 328,000 | 6,203,200 | 383,604 | 4.12x | 1.151 (SH1) | REFINE |
 | numeric range, narrow (review_count >= p99) | 276.0 µs | 69.00 | 22,848 | 72,576 | 4,032 | 4.67x | — | REFINE |
 | same-variant conjunction (synthetic, 100k-derived) [100k] | 55.7 µs | 30.00 | 163,857 | 163,316 | 16,122 | — | — | REFINE |
@@ -19,7 +19,7 @@ Native per-request service floor = 396 µs CPU/query (FD1, Part A native FINAL m
 | lexical residual: outdoor+dining+table | 49.9 µs | 34.00 | 201,816 | 196,238 | 1,116 | 4.45x | — | DELEGATE (reference; #57) |
 
 - exact lookup (per lookup): per-op / 1000
-- 5-way conjunction (4 enums + rating range): service cell FD5 = #77 filter_depth_5 = the 4 enum filters only
+- 5-way conjunction (4 enums + rating range): no matching service cell: FD5 = the 4 enum filters only (r 0.144)
 - numeric range, broad (rating >= 4): service cell SH1 = range + bounded sort
 - same-variant conjunction (synthetic, 100k-derived): 100k tier only
 - lexical residual: wood+bed: reference only

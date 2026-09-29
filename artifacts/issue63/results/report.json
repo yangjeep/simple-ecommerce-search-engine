@@ -80,10 +80,10 @@
       "bytes_touched": 6335528.0,
       "result": 12,
       "scaling": "4.38x",
-      "r": 0.14392301947897346,
-      "service_cell": "FD5",
-      "class": "KEEP",
-      "note": "service cell FD5 = #77 filter_depth_5 = the 4 enum filters only",
+      "r": null,
+      "service_cell": null,
+      "class": "REFINE",
+      "note": "no matching service cell: FD5 = the 4 enum filters only (r 0.144)",
       "tier": "500k"
     },
     {

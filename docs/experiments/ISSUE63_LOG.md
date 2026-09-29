@@ -135,7 +135,12 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
 - **Secondary cells:**
   - SH1: FINAL 1.151 (PARITY, median-only); N⁺ 1.276. N⁺ runs FINAL's identical path here and differs only by within-launch order: 7,331 against 7,473 when measured first.
   - filter_depth_1/3/5: 0.069 / 0.098 / 0.144 (FINAL) and 0.070 / 0.094 / 0.139 (N⁺).
-- **Ambient:** the fixed-work host probe read 629–846 ms across arms (±15%). Load average stayed at 1.1–2.0 and no pressure stalls were recorded.
+- **Ambient:**
+  - The fixed-work host probe read 629–846 ms across arms (±15%). It is too noisy to resolve drift within an arm: it moved 772 → 633 ms across one arm boundary.
+  - Load average stayed at 1.1–2.0.
+  - CPU PSI "some" accrued 10.7–11.9 s per Solr arm, 2.3–3.2 s per Meilisearch arm and 0.4–2.1 s per native arm. Solr's higher figure is most likely its multi-threaded JVM indexing under the 3-CPU quota before measurement.
+  - Memory PSI rose 109 ms, during the run-3 native arm only. (An earlier draft of this entry said "no pressure stalls"; corrected after the adversarial review.)
+- **Deviation:** the equivalence comparison ran after each run's three arms, not before timing. See decision §2.1.
 - **#64 gate** (preregistered): no FH cell is in FACET DISADVANTAGE and FH4 ≤ 1.25, for both N and N⁺. **#64 continues after amendment.**
 
 ## 2026-09-29 — residual attribution and a post-hoc diagnostic
@@ -155,3 +160,22 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
 | FD1 clone | 8.51 |
 
   Cache-cold execution therefore does not explain the gap for large operations. The mechanism is not identified; candidates are vCPU migration within the 3-CPU cpuset, KVM steal time, and allocator or page-fault state. The binary was built from the commit that adds it, after all preregistered phases had finished.
+
+## 2026-09-29 — adversarial review and post-review Solr sensitivity
+
+- **Review:** a fresh read-only agent recomputed everything and found no arithmetic error. It raised 15 findings, whose dispositions are in the decision's §7 table. These text corrections were made in the decision, ADR 0015, the architecture note, the decisions index and this log:
+  - scope: full-catalog shape;
+  - drift direction;
+  - the position effect in criterion 3;
+  - equivalence timing and coverage;
+  - FH4's inferred construction share;
+  - latency statements;
+  - provenance;
+  - PSI;
+  - the bitmap-path split;
+  - the 5-way conjunction reclassified as REFINE, with `analyze_i63.py` mapping updated.
+- **Solr facet-sort sensitivity** (`run_i63.sh solr_sensitivity`, 09:29–09:49 UTC; not preregistered).
+  - Equal-work Solr with `sort:"index asc"`, interleaved with native in 3 alternating pairs. All runs `ok` and EQUIVALENT.
+  - Solr index-sorted: FH1–FH4 = 61,539 / 55,245 / 84,031 / 93,781 µs, against 48,978 / 50,948 / 93,560 / 93,353 count-sorted in Part A. It stays far behind Meilisearch at equal work, so the verdict, which is against Meilisearch, is unaffected.
+  - Other Solr facet methods remain untested.
+  - The `i77_measure` binary was rebuilt for this flag (sha256 prefix `1e78527a1b567b54`). The native binaries are unchanged.

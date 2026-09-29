@@ -1,0 +1,14 @@
+EQUIVALENT native:hybrid-hybrid-p0r facet_disjunctive_multi_dim: num_found Some(16332)/16332 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid facet_disjunctive_multi_dim: num_found Some(16332)/16332 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid-p0r facet_high_cardinality_color: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid facet_high_cardinality_color: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid-p0r facet_low_cardinality_style: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid facet_low_cardinality_style: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid-p0r facet_medium_cardinality_primarymaterial: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT native:hybrid-hybrid facet_medium_cardinality_primarymaterial: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT solr facet_disjunctive_multi_dim: num_found Some(16332)/16332 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT solr facet_high_cardinality_color: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT solr facet_low_cardinality_style: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+EQUIVALENT solr facet_medium_cardinality_primarymaterial: num_found Some(515928)/515928 facets_exact=true id_only=true requests=Some(1)
+I63_EQUIVALENCE all_equivalent=true
+equivalence_exit=0
