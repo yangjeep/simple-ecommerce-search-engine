@@ -1,0 +1,20 @@
+[package]
+name = "issue65-eval"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Issue #65 (Infra E5, amended): mixed-workload total-serving-system capacity. Experiment code only."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+comparator-eval = { path = "../comparator-eval" }
+issue61-eval = { path = "../issue61-eval" }
+issue63-eval = { path = "../issue63-eval" }
+issue77-eval = { path = "../issue77-eval" }
+issue79-eval = { path = "../issue79-eval" }
+libc = "0.2"
+roaring = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
