@@ -453,11 +453,18 @@ PRIMITIVES = [
 ]
 
 
+def pipe_ns_factory(m500):
+    def pipe_ns(cell, cand):
+        return m500[("b1", "pipeline", f"{cell}:{cand}")][0]
+    return pipe_ns
+
+
 def report():
     confirm_report = json.loads((RESULTS / "confirm_report.json").read_text())
     cells = confirm_report["cells"]
     m500 = micro_medians("500k")
     m100 = micro_medians("100k")
+    pipe_ns = pipe_ns_factory(m500)
     lines = ["# Issue #63 report tables", ""]
 
     # Native service floor: the lightest Part A native FINAL cell.
@@ -503,49 +510,73 @@ def report():
     notes = [f"- {r['primitive']}: {r['note']}" for r in rows if r["note"]]
     lines += ["", *notes, ""]
 
-    # Residual attribution for FH3/FH4.
-    def pipe(cell, cand="p0"):
-        v = m500.get(("b1", "pipeline", f"{cell}:{cand}"))
-        return v[0] / 1e3 if v else None
+    # Residual attribution for FH3/FH4. Primary source: the Part A native
+    # server's own phase timers (same process, same window as the service
+    # CPU). B2's decomposition only splits the facet-counting share.
+    def server_phases(cell, cand):
+        rows = []
+        for run_dir in sorted((RESULTS / "confirm").glob("run*")):
+            d = json.loads((run_dir / "native_500k.json").read_text())
+            for c in d["cells"]:
+                if c["cell"] == cell and (c.get("cand_mode") or "p0") == cand:
+                    rows.append(c)
+        rows.sort(key=lambda c: c["cpu_usec_per_query"])
+        return rows[len(rows) // 2]  # the median-CPU run
 
     def b2(name, variant):
         v = m500.get(("b2", name, variant))
-        return v[0] / 1e3 if v else None
+        return v[0] if v else None
 
-    construct = m500[("b1", "construct", "p0")][0] / 1e3
-    lines += ["## Residual attribution (µs; service = Part A native FINAL median CPU/query; components from 500k microbenchmarks)", ""]
+    lines += ["## Residual attribution (Part A native FINAL, median-CPU run; server phase timers)", ""]
     attribution = {}
+    split_ref = {"iteration": m500[("b2", "full", "d1_iterate")][0]}
+    split_ref["gather"] = b2("full|color", "d2_iterate_gather") - split_ref["iteration"]
+    split_ref["counting"] = b2("full|color", "d3_count_u64") - b2("full|color", "d2_iterate_gather")
+    split_ref["materialization"] = b2("full|color", "ordinal") - b2("full|color", "d3_count_u64")
+    split_total = sum(split_ref.values())
     for label, cell in (("FH3", "facet_high_cardinality_color"), ("FH4", "facet_disjunctive_multi_dim")):
-        service = cells[label]["arms"]["native"]["median"]
-        in_process = pipe(cell)
+        final = server_phases(cell, "p0")
+        plus = server_phases(cell, "p0r")
+        service = final["cpu_usec_per_query"]
         parts = {}
         if label == "FH3":
-            color = "full|color"
-            parts["match-all construction (P0)"] = construct
-            d1 = m500[("b2", "full", "d1_iterate")][0] / 1e3
-            d2, d3, ordinal = b2(color, "d2_iterate_gather"), b2(color, "d3_count_u64"), b2(color, "ordinal")
-            parts["facet counting: bitmap iteration"] = d1
-            parts["facet counting: column gather"] = d2 - d1
-            parts["facet counting: counter increments"] = d3 - d2
-            parts["facet counting: output materialization"] = ordinal - d3
+            parts["match-all construction (P0 all_ordinals)"] = final["mean_candidates_us"]
+            facets = final["mean_facets_us"]
         else:
-            black = "real:facet_disjunctive_multi_dim"
-            parts["match-all construction (P0, color self-exclusion)"] = construct
-            parts["color facet over full catalog (ordinal)"] = b2("full|color", "ordinal")
-            parts["4 facets over the color=black set (ordinal)"] = sum(
-                b2(f"{black}|{a}", "ordinal") or 0 for a in ("style", "primarymaterial", "material", "shape"))
-        modelled = sum(parts.values())
-        parts["other in-process (candidates for the base filter, assembly, maps)"] = in_process - modelled
-        parts["outside the in-process pipeline (HTTP, JSON, kernel, launch-state)"] = service - in_process
-        attribution[label] = {"service_us": service, "in_process_us": in_process, "parts": parts}
-        lines += [f"### {label}: service {service:,.0f} µs; in-process pipeline {in_process:,.0f} µs", "",
+            # The base set (color=black) is explicit; the self-excluded color
+            # facet needs a second match-all. Its in-server cost is FINAL's
+            # facets phase minus N+'s (P0r removes only that construction).
+            construction = final["mean_facets_us"] - plus["mean_facets_us"]
+            parts["base candidates (color=black)"] = final["mean_candidates_us"]
+            parts["match-all construction (P0, color self-exclusion)"] = construction
+            facets = final["mean_facets_us"] - construction
+        for k, v in split_ref.items():
+            parts[f"facet counting: {k} (B2 share {100 * v / split_total:.0f}%)"] = facets * v / split_total
+        parts["output assembly (bounded, 48 ids)"] = final["mean_sort_us"]
+        parts["HTTP parse, JSON serialization, kernel, other"] = service - final["mean_total_us"]
+        attribution[label] = {"service_us": service, "server_total_us": final["mean_total_us"],
+                              "run_phases": {k: final[k] for k in ("mean_candidates_us", "mean_facets_us", "mean_sort_us", "mean_total_us")},
+                              "parts": parts}
+        lines += [f"### {label}: service {service:,.0f} µs CPU/query (server-timed total {final['mean_total_us']:,.0f} µs)", "",
                   "| component | µs | % of service |", "|---|---|---|"]
         for k, v in parts.items():
             lines.append(f"| {k} | {v:,.0f} | {100 * v / service:.1f}% |")
         lines.append("")
-    lines += ["Components are separate microbenchmark medians (a model), not a profile of one request; "
-              "'other in-process' absorbs their interaction and noise. Service CPU and microbenchmarks "
-              "come from different processes and windows.", ""]
+    gaps = []
+    fh3 = server_phases("facet_high_cardinality_color", "p0")
+    gaps.append(("FH3 match-all construction", fh3["mean_candidates_us"], m500[("b1", "construct", "p0")][0] / 1e3))
+    gaps.append(("FH3 color counting (facets phase vs B2 ordinal full|color)", fh3["mean_facets_us"], b2("full|color", "ordinal") / 1e3))
+    fh3p = server_phases("facet_high_cardinality_color", "p0r")
+    gaps.append(("FH3 N+ whole request (server total vs B1 pipeline p0r)", fh3p["mean_total_us"], pipe_ns("facet_high_cardinality_color", "p0r") / 1e3))
+    fd1 = server_phases("filter_depth_1", "p0")
+    gaps.append(("FD1 candidates (color=white clone)", fd1["mean_candidates_us"], m500[("c", "single_bitmap_color_white", "indexed_candidates")][0] / 1e3))
+    lines += ["### In-server vs hot-loop microbenchmark (same code)", "",
+              "| phase | in server (µs) | microbenchmark (µs) | ratio |", "|---|---|---|---|"]
+    for name, srv, mic in gaps:
+        lines.append(f"| {name} | {srv:,.1f} | {mic:,.1f} | {srv / mic:.2f}x |")
+    lines += ["", "Server phase timers are wall-clock inside one request; for these CPU-bound single-threaded "
+              "requests they agree with the cgroup CPU/query to within ~5% (HTTP/JSON/other row). The B2 split is a "
+              "proportional model from the hot-loop microbenchmark, applied to the in-server facets phase.", ""]
     (RESULTS / "report.json").write_text(json.dumps({"floor_us": floor, "floor_cell": floor_label,
                                                       "primitives": rows, "attribution": attribution}, indent=2) + "\n")
     (RESULTS / "report.md").write_text("\n".join(lines) + "\n")

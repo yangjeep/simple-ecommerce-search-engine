@@ -115,3 +115,43 @@ All of it is additive. #79 FINAL's request, response and outputs are unchanged. 
   - A run-to-run spread of about ±20% for the same in-process work is larger than criterion 3's 10% band. With 3-run medians, the criterion therefore rejects candidates on noise.
   - This is recorded, not corrected. The rule is applied as preregistered, and P2/P2b's much larger FH3/FH4 in-process reductions are reported as characterization, not as an adopted arm.
 - **Driver fix before Part A** (committed before the phase started): `--prebuilt-all` is now passed only when N⁺ ∈ {P1, P2, P2b}. P0r and FINAL do not read the prebuilt bitmap, so the Part A native launch builds no unused structure.
+
+## 2026-09-29 — Part A: same-window equal-work confirmation (07:51–08:54 UTC)
+
+- **Run:** `I63_NPLUS=p0r run_i63.sh confirm`. The Latin square ran exactly as preregistered: run1 N,N⁺ → M → S; run2 S → N⁺,N → M; run3 M → S → N,N⁺.
+  - All 9 arms exited 0, with `status=ok` and #77's cross-variant fixture passing.
+  - **Equal-work verification: EQUIVALENT for every (engine, cell) in every run**, i.e. 3 runs × {native, native+, Meilisearch, Solr} × 8 cells.
+  - Raw data: `artifacts/issue63/results/confirm/run{1,2,3}/`, which holds the raw engine JSON, the dumps and `equivalence.json`. The ambient record is `confirm/ambient.jsonl`; the report is `confirm_report.{json,md}`.
+- **Headline** (CPU/query µs; median ÷ Meilisearch, the fastest equivalent competitor on every cell):
+
+| cell | FINAL | r | N⁺ (P0r) | r |
+|---|---|---|---|---|
+| FH1 | 8,530 | 0.790, PARITY (median-only) | 1,077 | 0.100, MATERIAL |
+| FH2 | 12,470 | 0.888, PARITY | 2,019 | 0.144, MATERIAL |
+| FH3 | 37,219 | 0.702, MATERIAL | 22,550 | 0.425, MATERIAL |
+| FH4 | 37,394 | 0.513, MATERIAL | 25,223 | 0.346, MATERIAL |
+
+  Meilisearch cost 10,798 / 14,038 / 53,050 / 72,899 µs; Solr cost 48,978 / 50,948 / 93,560 / 93,353 µs.
+- **Secondary cells:**
+  - SH1: FINAL 1.151 (PARITY, median-only); N⁺ 1.276. N⁺ runs FINAL's identical path here and differs only by within-launch order: 7,331 against 7,473 when measured first.
+  - filter_depth_1/3/5: 0.069 / 0.098 / 0.144 (FINAL) and 0.070 / 0.094 / 0.139 (N⁺).
+- **Ambient:** the fixed-work host probe read 629–846 ms across arms (±15%). Load average stayed at 1.1–2.0 and no pressure stalls were recorded.
+- **#64 gate** (preregistered): no FH cell is in FACET DISADVANTAGE and FH4 ≤ 1.25, for both N and N⁺. **#64 continues after amendment.**
+
+## 2026-09-29 — residual attribution and a post-hoc diagnostic
+
+- `analyze_i63.py report` attributes FINAL's FH3/FH4 service CPU using the Part A server's own phase timers (median-CPU run).
+  - FH3: match-all construction 36%, facet counting 59% (split by B2 proportions), assembly 0.5%, HTTP/JSON/other 4.3%.
+  - FH4: second match-all 32%, counting 62%, other 4.5%.
+- **Finding:** identical code runs 2.3–6.4x slower inside the long-lived server than in the hot-loop microbenchmark.
+- **Post-hoc diagnostic, not preregistered and not used by any rule:** `i63_cold_probe` evicts 64 MiB between operations (`artifacts/issue63/results/diagnostic_cold_probe/`). Measured cold/hot:
+
+| operation | cold / hot |
+|---|---|
+| FH3 FINAL | 1.05 |
+| FH3 N⁺ | 0.98 |
+| P0 construction | 1.13 |
+| color ordinal counting | 0.90 |
+| FD1 clone | 8.51 |
+
+  Cache-cold execution therefore does not explain the gap for large operations. The mechanism is not identified; candidates are vCPU migration within the 3-CPU cpuset, KVM steal time, and allocator or page-fault state. The binary was built from the commit that adds it, after all preregistered phases had finished.

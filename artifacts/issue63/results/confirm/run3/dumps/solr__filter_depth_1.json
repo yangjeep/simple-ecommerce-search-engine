@@ -1,0 +1,16 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 17256,
+  "request": {
+    "fields": "id",
+    "filter": [
+      "color:\"white\""
+    ],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "floor_us": 396.2391799544419,
+  "floor_cell": "FD1",
+  "primitives": [
+    {
+      "primitive": "exact lookup (per lookup)",
+      "cpu_ns_per_op": 229.46156187636197,
+      "allocs": 0.0,
+      "alloc_bytes": 0.0,
+      "bytes_touched": 256.0,
+      "result": 1000,
+      "scaling": "1.16x",
+      "r": null,
+      "service_cell": null,
+      "class": "KEEP-provisional",
+      "note": "per-op / 1000",
+      "tier": "500k"
+    },
+    {
+      "primitive": "single bitmap filter: color=white",
+      "cpu_ns_per_op": 2908.7966638307776,
+      "allocs": 11.0,
+      "alloc_bytes": 34778.0,
+      "bytes_touched": 69024.0,
+      "result": 17256,
+      "scaling": "5.40x",
+      "r": 0.06898230348071001,
+      "service_cell": "FD1",
+      "class": "KEEP",
+      "note": "",
+      "tier": "500k"
+    },
+    {
+      "primitive": "single bitmap filter: color=white (borrowed)",
+      "cpu_ns_per_op": 7.709217850017512,
+      "allocs": 0.0,
+      "alloc_bytes": 0.0,
+      "bytes_touched": 0.0,
+      "result": 17256,
+      "scaling": "2.14x",
+      "r": null,
+      "service_cell": null,
+      "class": "KEEP-provisional",
+      "note": "",
+      "tier": "500k"
+    },
+    {
+      "primitive": "single bitmap filter: category Accent Chairs",
+      "cpu_ns_per_op": 2423.1012042065495,
+      "allocs": 9.0,
+      "alloc_bytes": 26728.0,
+      "bytes_touched": 52944.0,
+      "result": 13236,
+      "scaling": "6.62x",
+      "r": null,
+      "service_cell": null,
+      "class": "KEEP-provisional",
+      "note": "",
+      "tier": "500k"
+    },
+    {
+      "primitive": "3-way bitmap conjunction",
+      "cpu_ns_per_op": 42017.95033077812,
+      "allocs": 33.0,
+      "alloc_bytes": 166408.0,
+      "bytes_touched": 165656.0,
+      "result": 36,
+      "scaling": "4.28x",
+      "r": 0.09773169384235614,
+      "service_cell": "FD3",
+      "class": "KEEP",
+      "note": "",
+      "tier": "500k"
+    },
+    {
+      "primitive": "5-way conjunction (4 enums + rating range)",
+      "cpu_ns_per_op": 4329845.5670995675,
+      "allocs": 150.0,
+      "alloc_bytes": 526931.0,
+      "bytes_touched": 6335528.0,
+      "result": 12,
+      "scaling": "4.38x",
+      "r": 0.14392301947897346,
+      "service_cell": "FD5",
+      "class": "KEEP",
+      "note": "service cell FD5 = #77 filter_depth_5 = the 4 enum filters only",
+      "tier": "500k"
+    },
+    {
+      "primitive": "numeric range, broad (rating >= 4)",
+      "cpu_ns_per_op": 3875616.164410058,
+      "allocs": 106.0,
+      "alloc_bytes": 328000.0,
+      "bytes_touched": 6203200.0,
+      "result": 383604,
+      "scaling": "4.12x",
+      "r": 1.1512513656084613,
+      "service_cell": "SH1",
+      "class": "REFINE",
+      "note": "service cell SH1 = range + bounded sort",
+      "tier": "500k"
+    },
+    {
+      "primitive": "numeric range, narrow (review_count >= p99)",
+      "cpu_ns_per_op": 275986.0053815372,
+      "allocs": 69.0,
+      "alloc_bytes": 22848.0,
+      "bytes_touched": 72576.0,
+      "result": 4032,
+      "scaling": "4.67x",
+      "r": null,
+      "service_cell": null,
+      "class": "REFINE",
+      "note": "",
+      "tier": "500k"
+    },
+    {
+      "primitive": "same-variant conjunction (synthetic, 100k-derived)",
+      "cpu_ns_per_op": 55652.039146995856,
+      "allocs": 30.0,
+      "alloc_bytes": 163857.0,
+      "bytes_touched": 163316.0,
+      "result": 16122,
+      "scaling": "\u2014",
+      "r": null,
+      "service_cell": null,
+      "class": "REFINE",
+      "note": "100k tier only",
+      "tier": "100k"
+    },
+    {
+      "primitive": "lexical residual: wood+bed",
+      "cpu_ns_per_op": 110512.40174479598,
+      "allocs": 26.0,
+      "alloc_bytes": 156448.0,
+      "bytes_touched": 131072.0,
+      "result": 12432,
+      "scaling": "7.86x",
+      "r": null,
+      "service_cell": null,
+      "class": "DELEGATE (reference; #57)",
+      "note": "reference only",
+      "tier": "500k"
+    },
+    {
+      "primitive": "lexical residual: outdoor+dining+table",
+      "cpu_ns_per_op": 49925.964281257024,
+      "allocs": 34.0,
+      "alloc_bytes": 201816.0,
+      "bytes_touched": 196238.0,
+      "result": 1116,
+      "scaling": "4.45x",
+      "r": null,
+      "service_cell": null,
+      "class": "DELEGATE (reference; #57)",
+      "note": "reference only",
+      "tier": "500k"
+    }
+  ],
+  "attribution": {
+    "FH3": {
+      "service_us": 37218.65,
+      "server_total_us": 35635.962704999976,
+      "run_phases": {
+        "mean_candidates_us": 13388.371350000003,
+        "mean_facets_us": 22073.444350000005,
+        "mean_sort_us": 172.20038499999998,
+        "mean_total_us": 35635.962704999976
+      },
+      "parts": {
+        "match-all construction (P0 all_ordinals)": 13388.371350000003,
+        "facet counting: iteration (B2 share 53%)": 11644.334612108265,
+        "facet counting: gather (B2 share 2%)": 443.5621066240472,
+        "facet counting: counting (B2 share 27%)": 5999.176494922706,
+        "facet counting: materialization (B2 share 18%)": 3986.371136344985,
+        "output assembly (bounded, 48 ids)": 172.20038499999998,
+        "HTTP parse, JSON serialization, kernel, other": 1582.6872950000252
+      }
+    },
+    "FH4": {
+      "service_us": 37394.22,
+      "server_total_us": 35712.05410000001,
+      "run_phases": {
+        "mean_candidates_us": 33.277025,
+        "mean_facets_us": 35523.750705,
+        "mean_sort_us": 153.86454000000003,
+        "mean_total_us": 35712.05410000001
+      },
+      "parts": {
+        "base candidates (color=black)": 33.277025,
+        "match-all construction (P0, color self-exclusion)": 12130.078420000002,
+        "facet counting: iteration (B2 share 53%)": 12340.79029866235,
+        "facet counting: gather (B2 share 2%)": 470.09186223386945,
+        "facet counting: counting (B2 share 27%)": 6357.991379904274,
+        "facet counting: materialization (B2 share 18%)": 4224.798744199502,
+        "output assembly (bounded, 48 ids)": 153.86454000000003,
+        "HTTP parse, JSON serialization, kernel, other": 1682.1658999999927
+      }
+    }
+  }
+}

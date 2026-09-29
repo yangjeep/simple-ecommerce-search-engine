@@ -1,0 +1,17 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 36,
+  "request": [
+    {
+      "attributesToRetrieve": [
+        "id"
+      ],
+      "filter": "color = 'white' AND style = 'modern & contemporary' AND primarymaterial = 'metal'",
+      "limit": 48
+    }
+  ]
+}

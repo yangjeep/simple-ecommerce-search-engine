@@ -1,0 +1,19 @@
+{
+  "backend_requests": 1,
+  "facets": {},
+  "hit_keys": [
+    "id"
+  ],
+  "num_found": 12,
+  "request": {
+    "fields": "id",
+    "filter": [
+      "color:\"white\"",
+      "style:\"modern & contemporary\"",
+      "primarymaterial:\"metal\"",
+      "shape:\"square\""
+    ],
+    "limit": 48,
+    "query": "*:*"
+  }
+}

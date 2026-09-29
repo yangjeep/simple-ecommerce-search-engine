@@ -1,0 +1,38 @@
+{
+  "catalog": "dataset_cache/wands_scale/catalog_12x.jsonl",
+  "diagnostic": "post-hoc cold-cache probe, not preregistered",
+  "evict_bytes": 67108864,
+  "ops": 200,
+  "rows": [
+    {
+      "cold_over_hot": 1.047383158047204,
+      "cold_us": 13278.599390000001,
+      "hot_us": 12677.881335,
+      "op": "FH3 FINAL (p0) pipeline"
+    },
+    {
+      "cold_over_hot": 0.9762684013294471,
+      "cold_us": 8988.22615,
+      "hot_us": 9206.716245,
+      "op": "FH3 N+ (p0r) pipeline"
+    },
+    {
+      "cold_over_hot": 1.1312852498611679,
+      "cold_us": 4778.6619900000005,
+      "hot_us": 4224.099969999999,
+      "op": "P0 all_ordinals construction"
+    },
+    {
+      "cold_over_hot": 0.9041197575180276,
+      "cold_us": 9181.811795,
+      "hot_us": 10155.5261,
+      "op": "color facet_counts_ordinal over full"
+    },
+    {
+      "cold_over_hot": 8.511241591439925,
+      "cold_us": 37.369585,
+      "hot_us": 4.3906149999999995,
+      "op": "FD1 candidates (color=white clone)"
+    }
+  ]
+}
