@@ -85,3 +85,24 @@ Append-only.
 
   At S4, Solr's marginal cost per facet is below native's.
 - **RSS**, median over runs: native 4.41 GB, Meilisearch 5.55 GB, Solr 3.85 GB (3 GiB JVM heap). E2's memory REFINE stands.
+
+## 2026-09-29 — adversarial review and corrections
+
+- **Review:** a fresh read-only reviewer recomputed everything from raw data and could not falsify the preregistered KEEP. Its 10 dispositioned findings are in the decision's §7.
+- **Corrections to the decision:**
+  - The floor is measured under `Connection: close`, not under #61 R2.1's persistent connection.
+  - Post-review floor-neutral sensitivity: with the competitors given native's own k=0 floor, all 27 R cells on S1–S4 stay MATERIAL (0.17–0.57), while S5 is unclassifiable because Solr's facet-only CPU is ≤ 0 there.
+  - Facet emptiness was measured from the native run-1 dumps. S0–S3 facets are essentially all non-empty; on S4/S5 most are empty; in-scope color cardinality is 2,825 / 834 / 951 / 381 / 97 / 0.
+  - The S4 slope observation is retracted as a breakpoint: no class changes.
+  - "Cores per unit throughput" is rewritten as CPU per query on a single connection.
+  - Host-probe spread: 615–920 ms.
+  - Disclosed: Solr's k=0 carry-over under fixed cell order, untried Solr facet methods (`dvhash`), and the non-independence of the gate's multi-select recomputation.
+- **First gate run, from its console output** (its raw JSON was overwritten by the rerun, as disclosed):
+
+  ```
+  E3B_GATE rows=515928 nan=0 candidate_checks=9984 candidate_failures=312 baseline_mismatches=192
+  ```
+
+  All 312 failures are on `i64_s2_k5_style2` and `i64_s3_k5_style2`: 154 + 154 with only `candidates_ok = false`, plus 2 + 2 whose docs also diverged, all on legacy-sort (`sorted_rating_count_asc`) probes.
+- **Harness:** `run_i64.sh` now logs each measurement's own exit status in `arm_exit`. As first run, the competitor arms logged `e3b_scope_stop`'s status. Their success is confirmed by `MEASURE_OK … status=Ok` and by raw `status=ok`.
+- **Smoke:** the 100k equivalence output is archived under `artifacts/issue64/results/smoke_100k_not_evidence/`.

@@ -11,10 +11,12 @@
 | scopes | S0 full catalog (reference, not in R); S1 Furniture 192k; S2 Décor & Pillows 55k; S3 Flooring, Walls & Ceiling 14k; S4 Bookcases 3k; S5 4'×6' Area Rugs 600 |
 | facet groups | k ∈ {1, 3, 5, 8, K_max ≤ 11}, plus a color-only cell per scope and, on S2/S3, single-select and multi-select disjunctive cells |
 | total-CPU class | MATERIAL everywhere, including S0 (0.10–0.40) |
-| **facet-only CPU** (cell − same-scope k=0) | native is 0.12–0.53 of the cheapest competitor's facet-only CPU on S0–S4. At S5 the competitors' facet-only CPU is within noise, so there the advantage is the per-request floor |
+| **facet-only CPU** (cell − same-scope k=0) | native is 0.11–0.53 of the cheapest competitor's facet-only CPU on S0–S4. At S5 *Solr's* facet-only CPU is within noise, so S5's advantage is the per-request floor |
+| **floor-neutral sensitivity** (post-review; the competitors given native's own k=0 floor) | **S1–S4: all 27 R cells stay MATERIAL (0.17–0.57).** S5 (5 cells) is unclassifiable, because Solr's facet-only CPU is ≤ 0 there |
 | **per-request floor** (k=0) | native 370–438 µs; Meilisearch 5,977–6,587 µs; Solr 5,508–20,134 µs |
-| **incremental CPU per added facet** | native below both competitors on S0–S3 and S5. **At S4 (3k docs), Solr's marginal cost per facet (138 µs) is below native's (188 µs)**, which is the one breakpoint |
-| economics | cores per 1,000 QPS (= CPU ms/query) at S3, k=5: native **4.3**, fastest competitor 18.6. At S1, k=10: 31.7 against 69.3 |
+| **incremental CPU per added facet** | native below both competitors on S0–S3 and S5. At S4 the k≥1 least-squares slope for Solr (138 µs/facet) is below native's (188). That is fragile: including k=0 it is 525 against 198, per-run native slopes are 142–327 and Solr's 102–297, and S4's added facets are mostly empty. **No class changes anywhere, so there is no preregistered breakpoint.** |
+| economics | CPU-ms per query, which on a single connection equals the cores needed per 1,000 QPS, **not** a measured capacity (#65 measures that): S3 k=5, native **4.3** against the fastest competitor's 18.6; S1 k=10, 31.7 against 69.3 |
+| facet emptiness (post-review) | Facets are non-empty on S0–S3, except one each on S2 k=10, S3 k=9 and S3's disjunctive cells. On S4/S5 most facets are empty (S4 k=8: 3 of 8 non-empty; S5 k=8: 2 of 8; S5 color: 0). In-scope color cardinality is 2,825 / 834 / 951 / 381 / 97 / 0 for S0–S5. |
 | memory (not gated) | RSS native 4.41 GB, Meilisearch 5.55 GB, Solr 3.85 GB (3 GiB JVM heap). **E2's memory REFINE (#62) stands.** Native uses more memory than Solr on this catalog. |
 
 ## 1. What was frozen
@@ -55,8 +57,13 @@ The class is r against the fastest equal-work competitor under #60's bar. Every 
 
 ## 3. What the advantage is made of
 
-- **The per-request floor is part of it, and at small scopes it is all of it.** With no facet (k=0), native costs 0.4 ms and the competitors 5.5–20 ms. That floor is the full request at the shared HTTP boundary (#61 R2.1's contract): request parsing, retrieval of 48 IDs plus `num_found`, and serialization. At S5 (600 docs) every engine's facet work is small, so the class comes from the floor. Solr's facet-only CPU there is indistinguishable from zero (−1.4 to +0.7 ms).
-- **Facet work itself is cheaper natively on S0–S4.** Facet-only CPU is 0.12–0.53 of the cheapest competitor's. For example, at S2 k=10 it is 22.2 ms against 55.7 ms (Meilisearch), and at S1 k=10, 31.3 ms against 63.2 ms (Meilisearch).
+- **The per-request floor is part of it, and at the smallest scope it is all of it.** With no facet (k=0), native costs 0.4 ms and the competitors 5.5–20 ms.
+  - That floor is the full request at a shared HTTP boundary: parsing, retrieval of 48 IDs plus `num_found`, and serialization.
+  - **Correction (review finding 3):** every #77/#79/#63/#64 harness sends `Connection: close`, so each floor includes a new TCP connection. #61 R2.1 specifies a persistent connection, and this measurement does **not** follow that rule. Keep-alive was not measured.
+  - Solr's k=0 floors are also partly carry-over from the preceding heavy cell (finding 4): cell order is fixed and warmups number 20. Its CPU/wall ratio on k=0 cells is 1.5–2.3, against Meilisearch's ~0.9.
+  - At S5 (600 docs) every engine's facet work is small, and the class comes from the floor. Solr's facet-only CPU there is indistinguishable from zero (−1.4 to +0.7 ms).
+  - With the floor removed (the floor-neutral row above), S1–S4 remain MATERIAL and S5 is unclassifiable.
+- **Facet work itself is cheaper natively on S0–S4.** Facet-only CPU is 0.11–0.53 of the cheapest competitor's. For example, at S2 k=10 it is 22.2 ms against 55.7 ms (Meilisearch), and at S1 k=10, 31.3 ms against 63.2 ms (Meilisearch).
 - **Marginal cost per added facet.**
 
 | scope | native µs/facet | Meilisearch µs/facet | Solr µs/facet |
@@ -68,26 +75,66 @@ The class is r against the fastest equal-work competitor under #60's bar. Every 
 | S4 | 188 | 1,766 | **138** |
 | S5 | 59 | 2,395 | 188 |
 
-  At S4 Solr's *marginal* facet cost is below native's, but native still wins S4's total CPU through the floor (0.38 against 5.5 ms). This is the **breakpoint for planner use**: for small explicit candidate sets, the native facet loop's advantage over Solr's per-facet counting disappears. Native keeps the request.
+  At S4, Solr's k≥1 slope sits below native's, but that is fragile and computed over mostly empty facets (see the table above). It is **not** a class change, and it is not reported as a planner breakpoint. On sparse small sets, per-facet marginal costs are too small and too noisy to separate the engines.
 - **Meilisearch's disjunctive cost.** It issues one extra request per self-excluded facet (2 backend requests on the disjunctive cells), which is inherent to its API. Its multi-select cost is included.
-- **Cardinality.** Color-only cells (V = 2825) are 0.07–0.39. The high-cardinality facet is not a weak region once the candidate set is explicit. #63's full-catalog color cost came from match-all.
+- **Cardinality.** The color-only cells are 0.07–0.39, but inside a scope color has at most 951 values (2,825 only on S0), and S5 has none. So #64 shows that *scoped* high-cardinality facets are not a weak region, not that V = 2825 is cheap. #63's full-catalog color cost came from match-all.
 
 ## 4. Consequence and implications
 
-- **Facet-heavy PLP economics: KEEP.** On WANDS-shaped catalogs, for category-scoped facet requests with 1–10 facet groups, single- or multi-select self-exclusion, and candidate sets from 600 to 192k, native needs **2.2x to 15x fewer CPU-cores per unit of query throughput** than the fastest mature engine. The work is equal and checked exactly, and it was measured in one counterbalanced window.
-- **Not claimed.** A memory or total-cost advantage: RSS is higher than Solr's, and E2's REFINE stands. Throughput under concurrency: the single-connection confound is out of scope. Any dataset other than WANDS.
+- **Facet-heavy PLP economics: KEEP (preregistered).** The request shape is WANDS-shaped, category-scoped facet requests with 1–10 facet groups and single- or multi-select self-exclusion, over candidate sets from 600 to 192k.
+  - Native uses **0.07–0.46x the CPU per query** of the fastest mature engine, single connection. The work is equal and checked exactly, and it was measured in one counterbalanced window.
+  - **The facet-economics part is S1–S4 (192k → 3k docs).** It holds even with the per-request floor removed (0.17–0.57), and on S1–S3 over non-empty facets.
+  - At 600 docs and on sparse facets, the advantage is the per-request floor under `Connection: close`.
+- **Not claimed:**
+  - a memory or total-cost advantage (RSS is higher than Solr's, and E2's REFINE stands);
+  - capacity or throughput under concurrency (the single-connection confound is out of scope; #65);
+  - a keep-alive floor;
+  - large-V facets inside a scope;
+  - any dataset other than WANDS.
 - **Product gap.** Multi-select needs an IR constraint (`EnumAny` or equivalent) before production serving can offer it. That is an ADR-level change for a future issue, and was not made here.
 - **Next in #60's queue:** #65, realistic mixed workload and max sustainable QPS/core. #64 does not run it.
 
 ## 5. Limitations
 
-- **One host and one dataset**: a KVM guest (±15% host-probe drift between arms) and WANDS replicated 12x. The Latin square spreads drift across arms. The classes carry a wide margin: the worst R cell is 0.458 against the 0.75 bar.
+- **One host and one dataset**: a KVM guest and WANDS replicated 12x. #64's own host probe spread 615–920 ms across arms, a 1.50x spread (−13% / +30% around the median). The Latin square spreads drift across arms, and the classes carry a wide margin: the worst R cell is 0.458 and the worst per-run ratio 0.494, against the 0.75 bar.
 - **Single-connection serving.** Per-request floors are single-connection floors. Under concurrency, JVM and Meilisearch floors may amortize differently.
 - **Scope selection** depends on catalog composition. S1 has low attribute coverage (0.19, disclosed), so its facets are sparse.
-- **Competitor configuration.** The configurations are the ones #63 checked: Meilisearch's documented facet cap, and Solr `limit:-1` with count sort, where index sort did not help (#63 §7). Other Solr facet methods remain untried.
+- **Competitor configuration.** The configurations are the ones #63 checked: Meilisearch's documented facet cap, and Solr `limit:-1` with count sort, where index sort did not help (#63 §7).
+  - Other Solr facet methods remain untried. Among them, `method:dvhash` is designed for small result sets over high-cardinality fields, which is exactly this experiment's scoped case. To change any class, Solr would need facet work 3–9x cheaper on S3–S4.
+  - Meilisearch's multi-search API would save one floor on the disjunctive cells. That moves r by at most 0.02.
+- **Cell order is fixed within each arm, not rotated.** That is the source of Solr's k=0 carry-over.
+- **Equality checks.** Hit IDs are not compared, only hit count and keys. That is sufficient for the unsorted cells, whose order is engine-defined.
 - **k=0 subtraction.** The facet-only figures subtract two medians taken from separate batches, so they are noisy at small scopes. S5's negative Solr values illustrate that.
 
 ## 6. Correctness incident, and review
 
 - **Gate bug.** The first gate run reported 312 candidate failures, all on the multi-select cells, all with `candidates_ok = false` while `num_found` and facets were correct. The gate recomputes base retrieval itself, and that recomputation ignored `any_filters`. After the gate was fixed, it reported 0 failures. The executor was never wrong: its `num_found` and facets had matched the oracle.
-- **Adversarial review:** see §7, added after the independent review.
+- **Gate independence (review finding 9).** The gate's fixed candidate recomputation reuses the executor's union logic (`enum_value_bitmap`), so `candidates_ok` is not independent for multi-select. `num_found` and every facet map are still compared with the independent oracle, which a masked bug would have to satisfy too.
+- **First gate run's raw JSON not preserved (finding 10).** The rerun overwrote `gate/gate_500k.json`. The first run's summary is recorded in the log from the console output: `candidate_checks=9984 candidate_failures=312 baseline_mismatches=192`, all 312 on `*_k5_style2`, with 308 showing `candidates_ok = false` alone and 4 also showing a legacy-sort docs divergence.
+
+## 7. Adversarial review
+
+A fresh, read-only reviewer recomputed everything from raw data and **could not falsify the preregistered KEEP**. It reproduced:
+
+- all 32 cells, classes, robust flags and floors;
+- the slopes, cores per 1k QPS and fastest-engine counts;
+- the equal-work flags in every arm;
+- that the dumped bodies are the timed bodies;
+- self-exclusion semantics;
+- the Latin square as executed;
+- per-arm equivalence before the next arm, including hit count;
+- the frozen τ/ρ.
+
+Its dispositioned findings:
+
+| # | finding | disposition |
+|---|---|---|
+| 1 | Facet-only low end is 0.11 once color cells are included | Corrected |
+| 3 | The floor is measured under `Connection: close`, not #61 R2.1's persistent connection; S5's class depends on the floor | Citation corrected. Floor-neutral sensitivity added: S1–S4 hold, S5 unclassifiable |
+| 4 | Solr's k=0 floor is partly carry-over from the preceding cell under a fixed cell order | Disclosed (§3, §5) |
+| 5 | Many S4/S5 facets are empty; scoped color ≤ 951 values; the 15x end is floor-driven | Measured and disclosed. Cardinality and headline claims narrowed |
+| 6 | The S4 "breakpoint" is fragile and not a class change | Retracted as a breakpoint |
+| 7 | "Cores per unit throughput" implies capacity; the S5 noise statement was Solr-only; host-probe spread | Corrected |
+| 8 | Solr `dvhash` untried; Meilisearch multi-search | Disclosed (§5) |
+| 9 | The gate's multi-select recomputation is not independent | Disclosed (§6) |
+| 10 | First gate raw output overwritten; smoke outputs not archived; the competitor `arm_exit` logged `e3b_scope_stop`'s status; fixed cell order; missing §7 | Disclosed. The smoke equivalence is archived. `run_i64.sh` now captures the measurement's own exit status for future runs; as run, success is confirmed by `MEASURE_OK` and raw `status=ok`. This §7 added |

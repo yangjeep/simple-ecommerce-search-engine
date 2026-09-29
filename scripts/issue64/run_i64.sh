@@ -91,6 +91,7 @@ case "$phase" in
               --catalog "$CATALOG_500K" --label i64_confirm --run "$run" \
               --out "$RUN_DIR/native_500k.json" --cells "$CELLS" --modes "$NATIVE_MODE" \
               --server-args "$ALL_STRUCTS --tau-f $TAU_F --rho-s $RHO_S"
+            rc=$?
             ;;
           meilisearch)
             e3b_scope_stop "$I77_MEILISEARCH_CONTAINER"
@@ -98,6 +99,7 @@ case "$phase" in
               "$BIN/i77_measure" --engine meilisearch --tier 500k --run "$run" \
               --repository-root "$REPO_ROOT" --out "$RUN_DIR/meilisearch_500k.json" \
               --cells "$CELLS" --skip-throughput true
+            rc=$?
             e3b_scope_stop "$I77_MEILISEARCH_CONTAINER"
             ;;
           solr)
@@ -106,10 +108,13 @@ case "$phase" in
               "$BIN/i77_measure" --engine solr --tier 500k --run "$run" \
               --repository-root "$REPO_ROOT" --out "$RUN_DIR/solr_500k.json" \
               --cells "$CELLS" --skip-throughput true
+            rc=$?
             e3b_scope_stop "$I77_SOLR_CONTAINER"
             ;;
         esac
-        echo "arm_exit=$? run=$run arm=$arm"
+        # The measurement's own exit status (review finding 10: as first run,
+        # this logged e3b_scope_stop's status for competitor arms).
+        echo "arm_exit=$rc run=$run arm=$arm"
         ambient "$run" "$arm" after "$AMBIENT"
         # Equal-work verification of this arm before the next arm starts.
         "$BIN/i63_facet_equivalence" --catalog "$CATALOG_500K" --dump-dir "$DUMPS" \
