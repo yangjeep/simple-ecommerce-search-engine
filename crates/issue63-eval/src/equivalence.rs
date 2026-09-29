@@ -44,7 +44,9 @@ pub struct Verdict {
 /// Parses a `{field: {value: count}}` object into maps; counts must be
 /// non-negative integers (a string or float count is a mismatch, not
 /// coerced).
-fn parse_facets(value: &serde_json::Value) -> Result<BTreeMap<String, BTreeMap<String, u64>>, String> {
+fn parse_facets(
+    value: &serde_json::Value,
+) -> Result<BTreeMap<String, BTreeMap<String, u64>>, String> {
     let mut out = BTreeMap::new();
     let Some(object) = value.as_object() else {
         return if value.is_null() {
@@ -82,7 +84,11 @@ pub fn compare(
     let num_found_returned = dump["num_found"].as_u64();
     let hit_keys: Vec<String> = dump["hit_keys"]
         .as_array()
-        .map(|a| a.iter().filter_map(|k| k.as_str().map(str::to_owned)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|k| k.as_str().map(str::to_owned))
+                .collect()
+        })
         .unwrap_or_default();
     let hits_id_only = hit_keys.iter().any(|k| k == "id")
         && hit_keys.iter().all(|k| ID_ONLY_KEYS.contains(&k.as_str()));
@@ -102,7 +108,11 @@ pub fn compare(
             let mut exact = true;
             let empty = BTreeMap::new();
             let mut names: Vec<&String> = expected_facets.keys().collect();
-            names.extend(returned.keys().filter(|k| !expected_facets.contains_key(*k)));
+            names.extend(
+                returned
+                    .keys()
+                    .filter(|k| !expected_facets.contains_key(*k)),
+            );
             names.sort();
             names.dedup();
             for field in names {
@@ -138,7 +148,9 @@ pub fn compare(
                         }
                     }
                 }
-                exact &= diff.count_mismatches == 0 && diff.missing_values == 0 && diff.extra_values == 0;
+                exact &= diff.count_mismatches == 0
+                    && diff.missing_values == 0
+                    && diff.extra_values == 0;
                 fields.insert(field.clone(), diff);
             }
             exact
@@ -190,21 +202,34 @@ mod tests {
 
     #[test]
     fn wrong_counts_extra_values_documents_and_num_found_all_fail() {
-        let base = |facets: serde_json::Value, keys: serde_json::Value, n: u64| {
-            json!({"num_found": n, "facets": facets, "hit_keys": keys})
-        };
+        let base = |facets: serde_json::Value, keys: serde_json::Value, n: u64| json!({"num_found": n, "facets": facets, "hit_keys": keys});
         let ok_facets = json!({"color": {"white": 1, "black": 3}});
         let cases = [
             base(json!({"color": {"white": 1, "black": 2}}), json!(["id"]), 4),
-            base(json!({"color": {"white": 1, "black": 3, "red": 1}}), json!(["id"]), 4),
+            base(
+                json!({"color": {"white": 1, "black": 3, "red": 1}}),
+                json!(["id"]),
+                4,
+            ),
             base(ok_facets.clone(), json!(["id", "title"]), 4),
             base(ok_facets.clone(), json!([]), 4),
             base(ok_facets.clone(), json!(["id"]), 5),
-            base(json!({"color": {"white": "1", "black": 3}}), json!(["id"]), 4),
-            base(json!({"color": {"white": 1, "black": 3}, "style": {"x": 1}}), json!(["id"]), 4),
+            base(
+                json!({"color": {"white": "1", "black": 3}}),
+                json!(["id"]),
+                4,
+            ),
+            base(
+                json!({"color": {"white": 1, "black": 3}, "style": {"x": 1}}),
+                json!(["id"]),
+                4,
+            ),
         ];
         for dump in cases {
-            assert!(!compare("e", "c", &dump, 4, &expected()).equivalent, "{dump}");
+            assert!(
+                !compare("e", "c", &dump, 4, &expected()).equivalent,
+                "{dump}"
+            );
         }
         // Native's sort key is allowed alongside the id.
         let native = base(ok_facets, json!(["id", "sort_value"]), 4);

@@ -1175,8 +1175,11 @@ fn i63_dump(engine: &str, cell: &WorkloadCell, dump: &serde_json::Value) -> Resu
     };
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = std::path::Path::new(&dir).join(format!("{engine}__{}.json", cell.name));
-    std::fs::write(&path, serde_json::to_string_pretty(dump).map_err(|e| e.to_string())?)
-        .map_err(|e| format!("{}: {e}", path.display()))
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(dump).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
 }
 
 fn i63_dump_enabled() -> bool {

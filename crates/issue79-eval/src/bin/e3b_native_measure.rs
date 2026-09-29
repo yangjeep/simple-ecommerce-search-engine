@@ -24,9 +24,7 @@
 //! `--cells none` measures only load/build/RSS (memory-accounting launches).
 
 use issue61_eval::CgroupReader;
-use issue79_eval::cells::{
-    all_cells, query_string_with_cand, reference_cells, Cell, Family, Role,
-};
+use issue79_eval::cells::{all_cells, query_string_with_cand, reference_cells, Cell, Family, Role};
 use issue79_eval::plp::Diag;
 use issue79_eval::{EXPERIMENT_ID, RAW_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -429,8 +427,11 @@ fn i63_dump(
         "mode": mode,
     });
     let path = Path::new(&dir).join(format!("native__{}__{mode}.json", cell.name));
-    std::fs::write(&path, serde_json::to_string_pretty(&dump).map_err(|e| e.to_string())?)
-        .map_err(|e| format!("{}: {e}", path.display()))
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&dump).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
 }
 
 fn select_cells(spec: &str) -> Vec<Cell> {

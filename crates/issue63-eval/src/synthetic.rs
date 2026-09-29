@@ -73,9 +73,7 @@ pub fn expand(catalog: &Catalog) -> Catalog {
 /// the size on another but on no single variant.
 #[must_use]
 pub fn oracle(catalog: &Catalog) -> (Vec<VariantId>, usize) {
-    let is = |v: &Variant, attr: &str, want: &str| {
-        matches!(v.attributes.get(attr), Some(AttributeValue::Enum(x)) if x == want)
-    };
+    let is = |v: &Variant, attr: &str, want: &str| matches!(v.attributes.get(attr), Some(AttributeValue::Enum(x)) if x == want);
     let mut matches = Vec::new();
     let mut traps = 0;
     for product in &catalog.products {
@@ -129,8 +127,8 @@ mod tests {
         assert!(!matches.is_empty(), "the query must have real matches");
         assert!(traps > 0, "the fixture must contain cross-variant traps");
         let index = CatalogIndex::build(&catalog);
-        let constraints = [("variant_color", QUERY_COLOR), ("variant_size", QUERY_SIZE)]
-            .map(|(a, v)| {
+        let constraints =
+            [("variant_color", QUERY_COLOR), ("variant_size", QUERY_SIZE)].map(|(a, v)| {
                 ResolvedConstraint::Attribute(commerce_core::domain::Constraint::Enum {
                     attribute: a.to_owned(),
                     value: v.to_owned(),

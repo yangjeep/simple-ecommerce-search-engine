@@ -85,7 +85,10 @@ fn main() {
     let mut verdicts = Vec::new();
     let mut unreadable = Vec::new();
     for path in files {
-        let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+        let stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default();
         let mut parts = stem.split("__");
         let (Some(engine), Some(cell_name)) = (parts.next(), parts.next()) else {
             unreadable.push(format!("{}: bad file name", path.display()));
@@ -111,7 +114,11 @@ fn main() {
         };
         let expected = expected_cache.entry(cell.name).or_insert_with(|| {
             oracle
-                .expected(&request(cell), &category_id_by_leaf, &data.source_id_by_product)
+                .expected(
+                    &request(cell),
+                    &category_id_by_leaf,
+                    &data.source_id_by_product,
+                )
                 .expect("oracle")
         });
         verdicts.push(compare(
