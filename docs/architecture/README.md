@@ -67,7 +67,18 @@ Numeric constraints use typed numeric structures rather than lexical token match
 
 The code contains both scan-style and ordinal/dictionary counting families. Phase 6D is important because it changed the interpretation of earlier facet results: the old crossover was primarily a property of the naive scan algorithm, not a fundamental limit of commerce-native faceting. The ordinal method beat Solr across every tested WANDS scale-ladder checkpoint for the color case, while typed-ID facets still showed a small-candidate crossover because ordinal counting has a fixed dictionary-reset cost.
 
-There is not yet a universal cost-based runtime chooser that selects every physical implementation optimally from measured cardinality.
+Issue #79 (E3b, ADR 0014) added a third counting method, `facet_counts_bitmap`: per-value `intersection_len`, with no intermediate bitmap and no per-value key allocation. It also added a small deterministic per-facet rule, `index::sort::choose_facet_path`: bitmap counting iff `|C_f| >= tau * V_f`, with `tau` calibrated on held-out-separated WANDS cells, and ordinal otherwise. The rule never routes a `MultiEnum` attribute to the ordinal column. On 516k WANDS docs, against the preregistered (as-run) baseline, it reaches parity with Meilisearch for low/medium-cardinality full-catalog facets. It stays 2.9x slower for high-cardinality (color, V = 2825) full-catalog counting and 1.28x slower on the disjunctive 5-facet cell. A post-review like-for-like sensitivity (Meilisearch's 100-value facet cap removed) and host drift leave the competitive position **unresolved**; see `ISSUE79_FACET_SORT_RECOVERY_DECISION.md` §11.
+
+There is still no universal cost-based runtime chooser that selects every physical implementation optimally from measured cardinality. The #79 rules cover only facet counting and single-field numeric sort.
+
+### Numeric sort
+
+`index::sort` (Issue #79, ADR 0014) provides bounded single-numeric-field sort with one defined order: present values first, value asc/desc, ties by variant ordinal ascending, NaN treated as missing. There are two physical strategies:
+
+- `top_k_scan` reads an optional dense `NumericSortColumn` (8 B/variant/field) with a bounded heap;
+- `top_k_presorted` walks the index's pre-existing value-sorted `numeric_index` and membership-tests the candidate bitmap, with a missing-value tail from an optional `PresenceBitmap`.
+
+`choose_sort_path` picks presorted iff `|C|^2 >= rho * k * N`. This is not a general sort-expression engine, and neither structure is built by `CatalogIndex::build`: callers opt in, so their memory is accounted separately.
 
 ### Identifier dictionary
 

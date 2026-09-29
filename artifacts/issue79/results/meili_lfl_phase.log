@@ -1,0 +1,7 @@
+=== 2026-09-28T10:44:43Z meilisearch like-for-like run=1 ===
+MEASURE_OK engine=meilisearch tier=500k run=1 status=Ok correctness=true
+=== 2026-09-28T10:58:31Z meilisearch like-for-like run=2 ===
+MEASURE_OK engine=meilisearch tier=500k run=2 status=Ok correctness=true
+=== 2026-09-28T11:12:28Z meilisearch like-for-like run=3 ===
+MEASURE_OK engine=meilisearch tier=500k run=3 status=Ok correctness=true
+=== 2026-09-28T11:28:55Z phase meili_lfl done ===

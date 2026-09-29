@@ -1,0 +1,11 @@
+{
+  "catalog": "dataset_cache/wands_scale/catalog_3x.jsonl",
+  "config": "I77_MEILI_LIKE_FOR_LIKE=1 (maxValuesPerFacet=3000, attributesToRetrieve=[id])",
+  "color_values_returned": 2825,
+  "color_values_expected": 2825,
+  "color_counts_exact": true,
+  "style_counts_exact": true,
+  "hit_keys": [
+    "id"
+  ]
+}

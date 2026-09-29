@@ -8,6 +8,7 @@
 
 mod identifier;
 mod rank;
+pub mod sort;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -58,6 +59,12 @@ pub struct CatalogIndex {
     enum_dictionary: HashMap<String, Vec<String>>,
     enum_value_ordinal: HashMap<String, HashMap<String, u32>>,
     enum_columns: HashMap<String, Vec<u32>>,
+    // Issue #79 (E3b): attributes that carried at least one `MultiEnum`
+    // value at build time. `enum_columns` deliberately holds only
+    // single-valued `Enum` values, so an ordinal-scan facet over such an
+    // attribute would silently under-count; `attribute_is_single_valued_enum`
+    // lets a facet planner refuse that path instead.
+    multi_enum_attributes: BTreeSet<String>,
 
     brand_bitmaps: HashMap<BrandId, RoaringBitmap>,
     product_type_bitmaps: HashMap<ProductTypeId, RoaringBitmap>,
@@ -251,6 +258,9 @@ impl CatalogIndex {
                         .push((value_ord, ord));
                 }
                 AttributeValue::MultiEnum(vs) => {
+                    if !self.multi_enum_attributes.contains(name) {
+                        self.multi_enum_attributes.insert(name.clone());
+                    }
                     for v in vs {
                         let _ = self.index_enum_value(name, v, ord);
                     }
@@ -677,6 +687,68 @@ impl CatalogIndex {
             }
         }
         result
+    }
+
+    /// Issue #79 (E3b) facet strategy B: value-bitmap intersection counting.
+    /// Same semantics as [`Self::facet_counts`] (every `Enum` *and*
+    /// `MultiEnum` value of `attribute`, zero counts omitted), but for each
+    /// dictionary value it takes `candidates.intersection_len(value_bitmap)`
+    /// -- a popcount over the container-level intersection that never
+    /// materializes an intermediate bitmap -- and reuses one key buffer
+    /// instead of allocating a fresh `(String, String)` per value. Cost is
+    /// `O(V)` lookups plus the per-container intersection work, independent
+    /// of result assembly. Values are visited in dictionary order, but the
+    /// returned map is value-ordered, identical to `facet_counts`.
+    pub fn facet_counts_bitmap(
+        &self,
+        candidates: &RoaringBitmap,
+        attribute: &str,
+    ) -> BTreeMap<String, u64> {
+        let mut counts = BTreeMap::new();
+        let Some(dictionary) = self.enum_dictionary.get(attribute) else {
+            return counts;
+        };
+        let mut key = (attribute.to_owned(), String::new());
+        for value in dictionary {
+            key.1.clear();
+            key.1.push_str(value);
+            if let Some(bm) = self.enum_bitmaps.get(&key) {
+                let count = candidates.intersection_len(bm);
+                if count > 0 {
+                    counts.insert(value.clone(), count);
+                }
+            }
+        }
+        counts
+    }
+
+    /// Issue #79 (E3b): the attribute's value-dictionary size (every
+    /// distinct `Enum`/`MultiEnum` value seen at build time) -- the facet
+    /// cardinality `V` an ordinal-vs-bitmap facet planner keys on. `0` for
+    /// an attribute with no enum values.
+    pub fn enum_cardinality(&self, attribute: &str) -> usize {
+        self.enum_dictionary.get(attribute).map_or(0, Vec::len)
+    }
+
+    /// Issue #79 (E3b): `true` iff `facet_counts_ordinal` is exact for
+    /// `attribute` -- it has a dense ordinal column and never carried a
+    /// `MultiEnum` value (which `enum_columns` excludes by design).
+    pub fn attribute_is_single_valued_enum(&self, attribute: &str) -> bool {
+        self.enum_columns.contains_key(attribute) && !self.multi_enum_attributes.contains(attribute)
+    }
+
+    /// Issue #79 (E3b): the value-ascending `(value, ordinal)` list this
+    /// index already keeps for every `Numeric` attribute (built for range
+    /// filters). It was produced by a *stable* sort of ordinal-ordered
+    /// input, so equal values appear in ascending-ordinal order -- the
+    /// invariant `sort::top_k_presorted` relies on for its tie-break.
+    pub fn numeric_sorted(&self, attribute: &str) -> Option<&[(f64, Ordinal)]> {
+        self.numeric_index.get(attribute).map(Vec::as_slice)
+    }
+
+    /// Number of variant ordinals in this index (`N`).
+    pub fn ordinal_count(&self) -> usize {
+        self.ordinals.len()
     }
 
     /// The scan-based sibling of [`Self::brand_facet_counts`], for the

@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "experiment_id": "I77-E3",
+  "engine": "solr",
+  "tier": "500k",
+  "run": 2,
+  "status": "ok",
+  "failure_reason": null,
+  "correctness_checks": [
+    {
+      "query_name": "full_positive_match",
+      "expected_product_ids": [
+        "B"
+      ],
+      "actual_product_ids": [
+        "B"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "cross_variant_leakage_negative",
+      "expected_product_ids": [
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "color_only",
+      "expected_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B",
+        "C"
+      ],
+      "passed": true
+    },
+    {
+      "query_name": "available_only",
+      "expected_product_ids": [
+        "A",
+        "B"
+      ],
+      "actual_product_ids": [
+        "A",
+        "B"
+      ],
+      "passed": true
+    }
+  ],
+  "correctness_all_passed": true,
+  "workload_cells": [
+    {
+      "name": "facet_low_cardinality_style",
+      "p50_ms": 28.692575,
+      "p95_ms": 41.773228,
+      "p99_ms": 65.88833600000001,
+      "mean_wall_ms": 31.012985660000012,
+      "mean_cpu_usec_per_query": 47120.095,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_medium_cardinality_primarymaterial",
+      "p50_ms": 27.192823,
+      "p95_ms": 48.573209,
+      "p99_ms": 67.41083,
+      "mean_wall_ms": 30.667135310000003,
+      "mean_cpu_usec_per_query": 39229.34,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_high_cardinality_color",
+      "p50_ms": 33.820507,
+      "p95_ms": 60.050082999999994,
+      "p99_ms": 78.795276,
+      "mean_wall_ms": 38.63492026000001,
+      "mean_cpu_usec_per_query": 44729.38,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 515928,
+      "facet_field_count": 1
+    },
+    {
+      "name": "facet_disjunctive_multi_dim",
+      "p50_ms": 37.774375,
+      "p95_ms": 48.552374,
+      "p99_ms": 58.911669,
+      "mean_wall_ms": 39.266768279999994,
+      "mean_cpu_usec_per_query": 44729.72,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 16332,
+      "facet_field_count": 5
+    },
+    {
+      "name": "numeric_range_sort",
+      "p50_ms": 5.398537,
+      "p95_ms": 9.652343,
+      "p99_ms": 12.878805999999999,
+      "mean_wall_ms": 5.976444945000002,
+      "mean_cpu_usec_per_query": 10983.865,
+      "mean_backend_requests": 1.0,
+      "sample_num_found": 383604,
+      "facet_field_count": 0
+    }
+  ],
+  "throughput": null,
+  "rss_before_load_bytes": 3828150272,
+  "rss_during_serving_bytes": 3832606720,
+  "peak_rss_during_serving_bytes": 3832606720,
+  "container_name": "i77-solr",
+  "runtime": "scope",
+  "cpus": "3",
+  "cpuset": "0-2",
+  "memory_limit": "6g",
+  "jvm_configured_heap_bytes": 3221225472,
+  "git_sha": "6c80fef01aa72b5a763e3e6b217a71c5acafc9f0",
+  "hostname": "athos-dev",
+  "timestamp_utc": "1790579428"
+}

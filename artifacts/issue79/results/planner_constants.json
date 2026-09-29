@@ -1,0 +1,10 @@
+{
+  "fixed_before_headline_phase": true,
+  "source": "scripts/issue79/analyze_e3b.py calibration over artifacts/issue79/results/calibration/*.json (calibration cells only, run medians)",
+  "tau_f": 919.4972390657695,
+  "tau_f_rule": "facet path = bitmap iff |C_f| >= tau_f * V_f, else ordinal (MultiEnum/absent -> bitmap)",
+  "rho_s": 0.0833779131971903,
+  "rho_s_rule": "sort path = presorted iff |C|^2 >= rho_s * (offset+top_k) * N, else candidate top-K",
+  "facet_final": "hybrid",
+  "sort_final": "hybrid"
+}

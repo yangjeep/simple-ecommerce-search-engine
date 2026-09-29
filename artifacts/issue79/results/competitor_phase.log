@@ -1,0 +1,19 @@
+=== 2026-09-28T05:51:02Z competitor engine=meilisearch run=1 ===
+MEASURE_OK engine=meilisearch tier=500k run=1 status=Ok correctness=true
+=== 2026-09-28T06:08:27Z competitor engine=meilisearch run=2 ===
+MEASURE_OK engine=meilisearch tier=500k run=2 status=Ok correctness=true
+=== 2026-09-28T06:25:07Z competitor engine=meilisearch run=3 ===
+MEASURE_OK engine=meilisearch tier=500k run=3 status=Ok correctness=true
+=== 2026-09-28T06:41:27Z competitor engine=typesense run=1 ===
+MEASURE_OK engine=typesense tier=500k run=1 status=Ok correctness=true
+=== 2026-09-28T06:48:59Z competitor engine=typesense run=2 ===
+MEASURE_OK engine=typesense tier=500k run=2 status=Ok correctness=true
+=== 2026-09-28T06:56:15Z competitor engine=typesense run=3 ===
+MEASURE_OK engine=typesense tier=500k run=3 status=Ok correctness=true
+=== 2026-09-28T07:05:17Z competitor engine=solr run=1 ===
+MEASURE_OK engine=solr tier=500k run=1 status=Ok correctness=true
+=== 2026-09-28T07:10:28Z competitor engine=solr run=2 ===
+MEASURE_OK engine=solr tier=500k run=2 status=Ok correctness=true
+=== 2026-09-28T07:15:29Z competitor engine=solr run=3 ===
+MEASURE_OK engine=solr tier=500k run=3 status=Ok correctness=true
+scripts/issue79/run_e3b.sh: line 134: unexpected EOF while looking for matching `"'

@@ -1,0 +1,31 @@
+=== 2026-09-28T09:43:35Z memory config=base run=1 ===
+E3B_MEASURE_OK label=mem_base run=1 status=ok cells=0
+=== 2026-09-28T09:45:07Z memory config=facet_only run=1 ===
+E3B_MEASURE_OK label=mem_facet_only run=1 status=ok cells=0
+=== 2026-09-28T09:46:45Z memory config=sort_columns_only run=1 ===
+E3B_MEASURE_OK label=mem_sort_columns_only run=1 status=ok cells=0
+=== 2026-09-28T09:48:20Z memory config=presence_only run=1 ===
+E3B_MEASURE_OK label=mem_presence_only run=1 status=ok cells=0
+=== 2026-09-28T09:50:03Z memory config=combined run=1 ===
+E3B_MEASURE_OK label=mem_combined run=1 status=ok cells=0
+=== 2026-09-28T09:51:43Z memory config=base run=2 ===
+E3B_MEASURE_OK label=mem_base run=2 status=ok cells=0
+=== 2026-09-28T09:53:23Z memory config=facet_only run=2 ===
+E3B_MEASURE_OK label=mem_facet_only run=2 status=ok cells=0
+=== 2026-09-28T09:54:57Z memory config=sort_columns_only run=2 ===
+E3B_MEASURE_OK label=mem_sort_columns_only run=2 status=ok cells=0
+=== 2026-09-28T09:56:32Z memory config=presence_only run=2 ===
+E3B_MEASURE_OK label=mem_presence_only run=2 status=ok cells=0
+=== 2026-09-28T09:58:19Z memory config=combined run=2 ===
+E3B_MEASURE_OK label=mem_combined run=2 status=ok cells=0
+=== 2026-09-28T09:59:56Z memory config=base run=3 ===
+E3B_MEASURE_OK label=mem_base run=3 status=ok cells=0
+=== 2026-09-28T10:01:35Z memory config=facet_only run=3 ===
+E3B_MEASURE_OK label=mem_facet_only run=3 status=ok cells=0
+=== 2026-09-28T10:02:55Z memory config=sort_columns_only run=3 ===
+E3B_MEASURE_OK label=mem_sort_columns_only run=3 status=ok cells=0
+=== 2026-09-28T10:04:19Z memory config=presence_only run=3 ===
+E3B_MEASURE_OK label=mem_presence_only run=3 status=ok cells=0
+=== 2026-09-28T10:05:45Z memory config=combined run=3 ===
+E3B_MEASURE_OK label=mem_combined run=3 status=ok cells=0
+=== 2026-09-28T10:07:19Z phase memory done ===

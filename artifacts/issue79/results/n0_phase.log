@@ -1,0 +1,68 @@
+/home/yangjeep/.cache/e3b-engines/n0/i77_native_plp_server_9482f5d: OK
+=== 2026-09-28T07:30:09Z n0 run=1 ===
+  facet_low_cardinality_style None cpu_us=Some(195345.0) p50_ms=197.21 n=200
+  facet_medium_cardinality_primarymaterial None cpu_us=Some(193136.0) p50_ms=194.95 n=200
+  facet_high_cardinality_color None cpu_us=Some(214704.0) p50_ms=223.48 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(66572.0) p50_ms=67.76 n=200
+  fc1_full_material None cpu_us=Some(184240.0) p50_ms=176.02 n=200
+  fc2_full_shape None cpu_us=Some(190789.0) p50_ms=180.70 n=200
+  fc3_style_modern_x_color None cpu_us=Some(62261.0) p50_ms=62.93 n=200
+  fc4_color_white_x_style None cpu_us=Some(14977.0) p50_ms=14.80 n=200
+  fc5_color_white_x_primarymaterial None cpu_us=Some(21312.0) p50_ms=22.86 n=200
+  fc6_depth3_x_shape None cpu_us=Some(1654.0) p50_ms=1.96 n=903
+  fc7_pergolas_x_color None cpu_us=Some(15713.0) p50_ms=16.48 n=200
+  numeric_range_sort None cpu_us=Some(893435.0) p50_ms=870.78 n=200
+  sh2_color_white_review_count_desc None cpu_us=Some(54662.0) p50_ms=59.83 n=200
+  sh3_depth3_review_count_desc None cpu_us=Some(592.0) p50_ms=0.76 n=2049
+  sc1_full_rating_count_desc None cpu_us=Some(1168256.0) p50_ms=1144.36 n=200
+  sc2_style_modern_average_rating_asc None cpu_us=Some(239625.0) p50_ms=215.03 n=200
+  sc3_accent_chairs_review_count_desc None cpu_us=Some(35233.0) p50_ms=32.79 n=200
+  sc4_color_black_rating_count_asc None cpu_us=Some(45760.0) p50_ms=41.78 n=200
+  sc5_pergolas_average_rating_desc None cpu_us=Some(797.0) p50_ms=1.00 n=1820
+  sc6_depth5_review_count_desc None cpu_us=Some(377.0) p50_ms=0.53 n=3359
+E3B_MEASURE_OK label=n0 run=1 status=ok cells=20
+=== 2026-09-28T07:45:31Z n0 run=2 ===
+  facet_low_cardinality_style None cpu_us=Some(170669.0) p50_ms=164.84 n=200
+  facet_medium_cardinality_primarymaterial None cpu_us=Some(174457.0) p50_ms=169.97 n=200
+  facet_high_cardinality_color None cpu_us=Some(188889.0) p50_ms=181.96 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(57773.0) p50_ms=48.75 n=200
+  fc1_full_material None cpu_us=Some(135359.0) p50_ms=126.62 n=200
+  fc2_full_shape None cpu_us=Some(135818.0) p50_ms=127.97 n=200
+  fc3_style_modern_x_color None cpu_us=Some(48782.0) p50_ms=44.73 n=200
+  fc4_color_white_x_style None cpu_us=Some(12176.0) p50_ms=10.64 n=200
+  fc5_color_white_x_primarymaterial None cpu_us=Some(15819.0) p50_ms=15.43 n=200
+  fc6_depth3_x_shape None cpu_us=Some(1830.0) p50_ms=1.99 n=886
+  fc7_pergolas_x_color None cpu_us=Some(13913.0) p50_ms=12.83 n=200
+  numeric_range_sort None cpu_us=Some(632345.0) p50_ms=608.91 n=200
+  sh2_color_white_review_count_desc None cpu_us=Some(39214.0) p50_ms=38.40 n=200
+  sh3_depth3_review_count_desc None cpu_us=Some(612.0) p50_ms=0.82 n=2099
+  sc1_full_rating_count_desc None cpu_us=Some(821730.0) p50_ms=792.75 n=200
+  sc2_style_modern_average_rating_asc None cpu_us=Some(188079.0) p50_ms=176.79 n=200
+  sc3_accent_chairs_review_count_desc None cpu_us=Some(29941.0) p50_ms=26.46 n=200
+  sc4_color_black_rating_count_asc None cpu_us=Some(40248.0) p50_ms=37.18 n=200
+  sc5_pergolas_average_rating_desc None cpu_us=Some(826.0) p50_ms=1.01 n=1674
+  sc6_depth5_review_count_desc None cpu_us=Some(529.0) p50_ms=0.70 n=2443
+E3B_MEASURE_OK label=n0 run=2 status=ok cells=20
+=== 2026-09-28T07:57:29Z n0 run=3 ===
+  facet_low_cardinality_style None cpu_us=Some(133879.0) p50_ms=127.44 n=200
+  facet_medium_cardinality_primarymaterial None cpu_us=Some(139758.0) p50_ms=130.05 n=200
+  facet_high_cardinality_color None cpu_us=Some(150073.0) p50_ms=140.94 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(54654.0) p50_ms=48.85 n=200
+  fc1_full_material None cpu_us=Some(135304.0) p50_ms=126.43 n=200
+  fc2_full_shape None cpu_us=Some(137689.0) p50_ms=131.32 n=200
+  fc3_style_modern_x_color None cpu_us=Some(48793.0) p50_ms=43.71 n=200
+  fc4_color_white_x_style None cpu_us=Some(14355.0) p50_ms=12.74 n=200
+  fc5_color_white_x_primarymaterial None cpu_us=Some(16353.0) p50_ms=15.89 n=200
+  fc6_depth3_x_shape None cpu_us=Some(1791.0) p50_ms=2.01 n=902
+  fc7_pergolas_x_color None cpu_us=Some(12795.0) p50_ms=12.20 n=200
+  numeric_range_sort None cpu_us=Some(666125.0) p50_ms=635.68 n=200
+  sh2_color_white_review_count_desc None cpu_us=Some(43474.0) p50_ms=39.29 n=200
+  sh3_depth3_review_count_desc None cpu_us=Some(607.0) p50_ms=0.80 n=2092
+  sc1_full_rating_count_desc None cpu_us=Some(880685.0) p50_ms=846.25 n=200
+  sc2_style_modern_average_rating_asc None cpu_us=Some(192021.0) p50_ms=181.46 n=200
+  sc3_accent_chairs_review_count_desc None cpu_us=Some(30513.0) p50_ms=26.59 n=200
+  sc4_color_black_rating_count_asc None cpu_us=Some(41044.0) p50_ms=37.60 n=200
+  sc5_pergolas_average_rating_desc None cpu_us=Some(811.0) p50_ms=0.99 n=1689
+  sc6_depth5_review_count_desc None cpu_us=Some(565.0) p50_ms=0.75 n=2340
+E3B_MEASURE_OK label=n0 run=3 status=ok cells=20
+=== 2026-09-28T08:08:53Z phase n0 done ===

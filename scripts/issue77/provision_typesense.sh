@@ -32,21 +32,37 @@ if [[ ! -f "$CATALOG" ]]; then
   exit 2
 fi
 
-echo "==> removing any existing container/volume from a previous run"
-docker rm -f "$I77_TYPESENSE_CONTAINER" >/dev/null 2>&1 || true
-docker volume rm "$DATA_VOLUME" >/dev/null 2>&1 || true
+if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+  # Issue #79: Docker-free equivalent envelope (scripts/issue79/scope_runtime.sh).
+  # shellcheck source=../issue79/scope_runtime.sh
+  source "$REPO_ROOT/scripts/issue79/scope_runtime.sh"
+  TS_DATA_DIR="$E3B_DATA_ROOT/typesense"
+  echo "==> removing any existing scope/data dir from a previous run"
+  e3b_scope_stop "$I77_TYPESENSE_CONTAINER"
+  rm -rf "$TS_DATA_DIR"
+  mkdir -p "$TS_DATA_DIR"
+  echo "==> starting scope $I77_TYPESENSE_CONTAINER"
+  e3b_scope_start "$I77_TYPESENSE_CONTAINER" "$E3B_DATA_ROOT/typesense.log" \
+    "$E3B_ENGINE_ROOT/typesense-server" --data-dir "$TS_DATA_DIR" \
+    --api-key="$I77_TYPESENSE_API_KEY" --enable-cors \
+    --api-address 127.0.0.1 --api-port "$I77_TYPESENSE_PORT"
+else
+  echo "==> removing any existing container/volume from a previous run"
+  docker rm -f "$I77_TYPESENSE_CONTAINER" >/dev/null 2>&1 || true
+  docker volume rm "$DATA_VOLUME" >/dev/null 2>&1 || true
 
-echo "==> starting fresh container $I77_TYPESENSE_CONTAINER"
-docker run -d \
-  --name "$I77_TYPESENSE_CONTAINER" \
-  --cpus="$I77_CPUS" \
-  --cpuset-cpus="$I77_CPUSET" \
-  --memory="$I77_MEMORY" \
-  --memory-swap="$I77_MEMORY_SWAP" \
-  -p "${I77_TYPESENSE_PORT}:8108" \
-  -v "${DATA_VOLUME}:/data" \
-  "$I77_TYPESENSE_IMAGE" \
-  --data-dir /data --api-key="$I77_TYPESENSE_API_KEY" --enable-cors >/dev/null
+  echo "==> starting fresh container $I77_TYPESENSE_CONTAINER"
+  docker run -d \
+    --name "$I77_TYPESENSE_CONTAINER" \
+    --cpus="$I77_CPUS" \
+    --cpuset-cpus="$I77_CPUSET" \
+    --memory="$I77_MEMORY" \
+    --memory-swap="$I77_MEMORY_SWAP" \
+    -p "${I77_TYPESENSE_PORT}:8108" \
+    -v "${DATA_VOLUME}:/data" \
+    "$I77_TYPESENSE_IMAGE" \
+    --data-dir /data --api-key="$I77_TYPESENSE_API_KEY" --enable-cors >/dev/null
+fi
 
 echo "==> waiting for typesense to report healthy (timeout ${I77_READINESS_TIMEOUT_SECONDS}s)"
 READY=0
@@ -59,7 +75,11 @@ for ((i = 0; i < I77_READINESS_TIMEOUT_SECONDS; i += 2)); do
 done
 if [[ "$READY" -ne 1 ]]; then
   echo "FATAL: typesense did not become ready" >&2
-  docker logs "$I77_TYPESENSE_CONTAINER" >&2
+  if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+    cat "$E3B_DATA_ROOT/typesense.log" >&2
+  else
+    docker logs "$I77_TYPESENSE_CONTAINER" >&2
+  fi
   exit 3
 fi
 echo "  typesense healthy"
@@ -219,7 +239,11 @@ fi
 echo "  doc count OK: $ACTUAL_DOCS"
 
 echo "==> measuring on-disk index size"
-DU_OUTPUT=$(docker exec "$I77_TYPESENSE_CONTAINER" du -sb /data)
+if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+  DU_OUTPUT=$(du -sb "$TS_DATA_DIR")
+else
+  DU_OUTPUT=$(docker exec "$I77_TYPESENSE_CONTAINER" du -sb /data)
+fi
 INDEX_BYTES=$(echo "$DU_OUTPUT" | awk '{print $1}')
 if ! [[ "$INDEX_BYTES" =~ ^[0-9]+$ ]]; then
   echo "FATAL: could not parse index size from 'du -sb /data' output: $DU_OUTPUT" >&2

@@ -1,0 +1,50 @@
+/home/yangjeep/.cache/e3b-engines/n0/i77_native_plp_server_9482f5d: OK
+=== 2026-09-28T11:28:55Z fidelity A (N0 binary) run=1 ===
+  facet_low_cardinality_style None cpu_us=Some(202022.0) p50_ms=195.92 n=200
+  facet_high_cardinality_color None cpu_us=Some(226301.0) p50_ms=237.22 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(70438.0) p50_ms=67.92 n=200
+  numeric_range_sort None cpu_us=Some(877220.0) p50_ms=839.61 n=200
+E3B_MEASURE_OK label=fidelity_n0 run=1 status=ok cells=4
+=== 2026-09-28T11:35:59Z fidelity B (new server) run=1 ===
+  facet_low_cardinality_style Some(("legacy", "legacy")) cpu_us=Some(180916.0) p50_ms=171.33 n=200
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(8607.0) p50_ms=7.84 n=219
+  facet_high_cardinality_color Some(("legacy", "legacy")) cpu_us=Some(203163.0) p50_ms=193.21 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(31252.0) p50_ms=35.55 n=200
+  facet_disjunctive_multi_dim Some(("legacy", "legacy")) cpu_us=Some(67860.0) p50_ms=58.56 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(35031.0) p50_ms=39.21 n=200
+  numeric_range_sort Some(("legacy", "legacy")) cpu_us=Some(700400.0) p50_ms=669.39 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(10450.0) p50_ms=12.34 n=200
+E3B_MEASURE_OK label=fidelity_new run=1 status=ok cells=8
+=== 2026-09-28T11:42:16Z fidelity A (N0 binary) run=2 ===
+  facet_low_cardinality_style None cpu_us=Some(163921.0) p50_ms=153.40 n=200
+  facet_high_cardinality_color None cpu_us=Some(186478.0) p50_ms=175.02 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(77513.0) p50_ms=67.70 n=200
+  numeric_range_sort None cpu_us=Some(850205.0) p50_ms=834.25 n=200
+E3B_MEASURE_OK label=fidelity_n0 run=2 status=ok cells=4
+=== 2026-09-28T11:48:30Z fidelity B (new server) run=2 ===
+  facet_low_cardinality_style Some(("legacy", "legacy")) cpu_us=Some(150380.0) p50_ms=139.80 n=200
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(10867.0) p50_ms=11.50 n=200
+  facet_high_cardinality_color Some(("legacy", "legacy")) cpu_us=Some(168714.0) p50_ms=152.64 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(36064.0) p50_ms=36.55 n=200
+  facet_disjunctive_multi_dim Some(("legacy", "legacy")) cpu_us=Some(71793.0) p50_ms=60.21 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(37775.0) p50_ms=39.95 n=200
+  numeric_range_sort Some(("legacy", "legacy")) cpu_us=Some(693103.0) p50_ms=662.63 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(8391.0) p50_ms=7.54 n=223
+E3B_MEASURE_OK label=fidelity_new run=2 status=ok cells=8
+=== 2026-09-28T11:54:27Z fidelity A (N0 binary) run=3 ===
+  facet_low_cardinality_style None cpu_us=Some(144052.0) p50_ms=133.51 n=200
+  facet_high_cardinality_color None cpu_us=Some(169117.0) p50_ms=150.72 n=200
+  facet_disjunctive_multi_dim None cpu_us=Some(65329.0) p50_ms=49.83 n=200
+  numeric_range_sort None cpu_us=Some(686796.0) p50_ms=658.48 n=200
+E3B_MEASURE_OK label=fidelity_n0 run=3 status=ok cells=4
+=== 2026-09-28T11:59:42Z fidelity B (new server) run=3 ===
+  facet_low_cardinality_style Some(("legacy", "legacy")) cpu_us=Some(160712.0) p50_ms=149.80 n=200
+  facet_low_cardinality_style Some(("hybrid", "hybrid")) cpu_us=Some(12429.0) p50_ms=11.90 n=200
+  facet_high_cardinality_color Some(("legacy", "legacy")) cpu_us=Some(191278.0) p50_ms=176.04 n=200
+  facet_high_cardinality_color Some(("hybrid", "hybrid")) cpu_us=Some(32805.0) p50_ms=37.29 n=200
+  facet_disjunctive_multi_dim Some(("legacy", "legacy")) cpu_us=Some(75262.0) p50_ms=62.97 n=200
+  facet_disjunctive_multi_dim Some(("hybrid", "hybrid")) cpu_us=Some(36720.0) p50_ms=39.58 n=200
+  numeric_range_sort Some(("legacy", "legacy")) cpu_us=Some(731310.0) p50_ms=688.36 n=200
+  numeric_range_sort Some(("hybrid", "hybrid")) cpu_us=Some(6841.0) p50_ms=7.06 n=275
+E3B_MEASURE_OK label=fidelity_new run=3 status=ok cells=8
+=== 2026-09-28T12:05:43Z phase fidelity done ===

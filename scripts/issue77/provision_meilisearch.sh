@@ -32,22 +32,38 @@ if [[ ! -f "$CATALOG" ]]; then
   exit 2
 fi
 
-echo "==> removing any previous container/volume"
-docker rm -f "$I77_MEILISEARCH_CONTAINER" >/dev/null 2>&1 || true
-docker volume rm "$VOLUME" >/dev/null 2>&1 || true
+if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+  # Issue #79: Docker-free equivalent envelope (scripts/issue79/scope_runtime.sh).
+  # shellcheck source=../issue79/scope_runtime.sh
+  source "$REPO_ROOT/scripts/issue79/scope_runtime.sh"
+  MEILI_DATA_DIR="$E3B_DATA_ROOT/meilisearch"
+  echo "==> removing any previous scope/data dir"
+  e3b_scope_stop "$I77_MEILISEARCH_CONTAINER"
+  rm -rf "$MEILI_DATA_DIR"
+  mkdir -p "$MEILI_DATA_DIR"
+  echo "==> starting scope $I77_MEILISEARCH_CONTAINER"
+  e3b_scope_start "$I77_MEILISEARCH_CONTAINER" "$E3B_DATA_ROOT/meilisearch.log" \
+    env MEILI_NO_ANALYTICS=true MEILI_ENV=development \
+    "$E3B_ENGINE_ROOT/meilisearch" --db-path "$MEILI_DATA_DIR" \
+    --http-addr "127.0.0.1:${I77_MEILISEARCH_PORT}"
+else
+  echo "==> removing any previous container/volume"
+  docker rm -f "$I77_MEILISEARCH_CONTAINER" >/dev/null 2>&1 || true
+  docker volume rm "$VOLUME" >/dev/null 2>&1 || true
 
-echo "==> starting container $I77_MEILISEARCH_CONTAINER"
-docker run -d \
-  --name "$I77_MEILISEARCH_CONTAINER" \
-  --cpus="$I77_CPUS" \
-  --cpuset-cpus="$I77_CPUSET" \
-  --memory="$I77_MEMORY" \
-  --memory-swap="$I77_MEMORY_SWAP" \
-  -p "${I77_MEILISEARCH_PORT}:7700" \
-  -v "${VOLUME}:/meili_data" \
-  -e MEILI_NO_ANALYTICS=true \
-  -e MEILI_ENV=development \
-  "$I77_MEILISEARCH_IMAGE" >/dev/null
+  echo "==> starting container $I77_MEILISEARCH_CONTAINER"
+  docker run -d \
+    --name "$I77_MEILISEARCH_CONTAINER" \
+    --cpus="$I77_CPUS" \
+    --cpuset-cpus="$I77_CPUSET" \
+    --memory="$I77_MEMORY" \
+    --memory-swap="$I77_MEMORY_SWAP" \
+    -p "${I77_MEILISEARCH_PORT}:7700" \
+    -v "${VOLUME}:/meili_data" \
+    -e MEILI_NO_ANALYTICS=true \
+    -e MEILI_ENV=development \
+    "$I77_MEILISEARCH_IMAGE" >/dev/null
+fi
 
 echo "==> waiting for meilisearch to become ready (timeout ${I77_READINESS_TIMEOUT_SECONDS}s)"
 READY=0
@@ -65,7 +81,11 @@ except Exception:
 done
 if [[ "$READY" -ne 1 ]]; then
   echo "FATAL: meilisearch did not become ready" >&2
-  docker logs "$I77_MEILISEARCH_CONTAINER" >&2
+  if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+    cat "$E3B_DATA_ROOT/meilisearch.log" >&2
+  else
+    docker logs "$I77_MEILISEARCH_CONTAINER" >&2
+  fi
   exit 3
 fi
 echo "  ready"
@@ -123,7 +143,23 @@ PAGINATION_RESP="$(curl -sf -X PATCH -H 'Content-Type: application/json' \
   "$BASE/indexes/$INDEX_UID/settings/pagination")"
 PAGINATION_TASK_UID="$(echo "$PAGINATION_RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskUid"])')"
 
+# Issue #79 like-for-like sensitivity (opt-in, I77_MEILI_LIKE_FOR_LIKE=1):
+# Meilisearch's default faceting.maxValuesPerFacet=100 truncates the facet
+# distribution (WANDS color has 2,825 values); native/Solr/Typesense count
+# every value. Raised above every WANDS facet's cardinality.
+FACETING_TASK_UID=""
+if [[ "${I77_MEILI_LIKE_FOR_LIKE:-0}" == "1" ]]; then
+  FACETING_RESP="$(curl -sf -X PATCH -H 'Content-Type: application/json' \
+    --data-binary '{"maxValuesPerFacet": 3000}' \
+    "$BASE/indexes/$INDEX_UID/settings/faceting")"
+  FACETING_TASK_UID="$(echo "$FACETING_RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskUid"])')"
+fi
+
 python3 "$POLL_HELPER" "$BASE" "$CREATE_TASK_UID"
+if [[ -n "$FACETING_TASK_UID" ]]; then
+  python3 "$POLL_HELPER" "$BASE" "$FACETING_TASK_UID"
+  echo "  like-for-like: faceting.maxValuesPerFacet=3000"
+fi
 python3 "$POLL_HELPER" "$BASE" "$FILTER_TASK_UID"
 python3 "$POLL_HELPER" "$BASE" "$SORT_TASK_UID"
 python3 "$POLL_HELPER" "$BASE" "$PAGINATION_TASK_UID"
@@ -230,6 +266,10 @@ if [[ "$NUM_DOCS" != "$EXPECTED_DOCS" ]]; then
 fi
 
 echo "==> measuring on-disk index size"
-INDEX_BYTES="$(docker exec "$I77_MEILISEARCH_CONTAINER" du -sb /meili_data | cut -f1)"
+if [[ "${I77_RUNTIME:-docker}" == "scope" ]]; then
+  INDEX_BYTES="$(du -sb "$MEILI_DATA_DIR" | cut -f1)"
+else
+  INDEX_BYTES="$(docker exec "$I77_MEILISEARCH_CONTAINER" du -sb /meili_data | cut -f1)"
+fi
 
 echo "PROVISION_OK container=$I77_MEILISEARCH_CONTAINER docs=$NUM_DOCS index_bytes=$INDEX_BYTES"
