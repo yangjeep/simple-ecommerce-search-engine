@@ -181,9 +181,11 @@ case "$phase" in
     [[ -f "$POOLS" ]] || POOLS="$POOLS_BASE"
     launch h1 3 "$OUT/calibrate/launch" || exit 1
     ambient calibrate before "$AMBIENT"
-    search h1 primary "$OUT/calibrate/native_noop" --noop /noop
-    search b0 primary "$OUT/calibrate/solr_health" --noop /solr/admin/info/health
-    search h1 primary "$OUT/calibrate/router_to_solr_health" --noop /solr/admin/info/health
+    # Diagnostic only: shorter points (5 s warm-up + 20 s window).
+    CAL=(--warmup 5 --duration 20)
+    search h1 primary "$OUT/calibrate/native_noop" --noop /noop "${CAL[@]}"
+    search b0 primary "$OUT/calibrate/solr_health" --noop /solr/admin/info/health "${CAL[@]}"
+    search h1 primary "$OUT/calibrate/router_to_solr_health" --noop /solr/admin/info/health "${CAL[@]}"
     ambient calibrate after "$AMBIENT"
     ;;
   validate)

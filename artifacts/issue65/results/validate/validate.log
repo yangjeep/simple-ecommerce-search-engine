@@ -1,0 +1,6 @@
+SOLR: F recorded=480 not_equivalent=0
+NATIVE: checked=298 failures=0 fixture_ok=true
+CONCURRENCY: requests=894 threads=32 mismatches=0
+ROUTER: F checked=480 failures=0
+I65_VALIDATE excluded=0 fatal=[]
+validate_exit=0
