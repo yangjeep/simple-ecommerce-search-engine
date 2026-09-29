@@ -1,0 +1,59 @@
+{
+    "columns": [
+        {"name": "id", "type": "INT64"},
+        {"name": "sku", "type": "STRING"},
+        {"name": "product_name", "type": "TEXT", "analyzer": "simple_analyzer"},
+        {"name": "category_top", "type": "STRING"},
+        {"name": "material", "type": "STRING"},
+        {"name": "price_cents", "type": "INT64"},
+        {"name": "color", "type": "STRING"},
+        {"name": "size", "type": "STRING"}
+    ],
+    "indexes": [
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "PRIMARY_KEY64"
+        },
+        {
+            "name": "id",
+            "index_config": {"index_fields": [{"field_name": "id"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "sku",
+            "index_config": {"index_fields": [{"field_name": "sku"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "category_top",
+            "index_config": {"index_fields": [{"field_name": "category_top"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "material",
+            "index_config": {"index_fields": [{"field_name": "material"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "price_cents",
+            "index_config": {"index_fields": [{"field_name": "price_cents"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "color",
+            "index_config": {"index_fields": [{"field_name": "color"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "size",
+            "index_config": {"index_fields": [{"field_name": "size"}]},
+            "index_type": "ATTRIBUTE"
+        },
+        {
+            "name": "product_name",
+            "index_config": {"index_fields": [{"field_name": "product_name"}]},
+            "index_type": "TEXT"
+        }
+    ]
+}

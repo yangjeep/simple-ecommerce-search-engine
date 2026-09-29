@@ -1,0 +1,52 @@
+loading + ingesting real ESCI beauty slice...
+2093 real products ingested
+building commerce_core structural index...
+=== HAVENASK UNAVAILABLE this session -- 4-way native/Solr/Elasticsearch/OpenSearch comparison, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ===
+
+=== Issue #57 esci_beauty full-matrix result ===
+Q2_brand_filter                               Filtrete                                                     native=      48 match=true
+    execution order: solr -> havenask -> native -> opensearch -> elasticsearch
+    native          mean=   0.0002ms p50=   0.0002ms p99=   0.0003ms
+    solr            mean=   8.0713ms p50=   7.0931ms p99=  17.6077ms
+    elasticsearch   mean=   9.0865ms p50=   9.0414ms p99=  11.8985ms
+    opensearch      mean=  12.7019ms p50=  12.1222ms p99=  22.7042ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q2_brand_filter                               Vivaplex                                                     native=      27 match=true
+    execution order: havenask -> opensearch -> native -> solr -> elasticsearch
+    native          mean=   0.0006ms p50=   0.0005ms p99=   0.0008ms
+    solr            mean=   7.8769ms p50=   7.1800ms p99=  14.8291ms
+    elasticsearch   mean=  12.3021ms p50=  11.2649ms p99=  23.8651ms
+    opensearch      mean=   9.9678ms p50=  10.0997ms p99=  13.1930ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q2_brand_filter                               It's a 10 Haircare                                           native=      17 match=true
+    execution order: solr -> native -> havenask -> elasticsearch -> opensearch
+    native          mean=   0.0003ms p50=   0.0003ms p99=   0.0003ms
+    solr            mean=   9.1974ms p50=   9.0517ms p99=  18.4532ms
+    elasticsearch   mean=   9.6454ms p50=   9.5378ms p99=  15.6606ms
+    opensearch      mean=   8.5944ms p50=   7.8535ms p99=  14.1943ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q11_lexical_search_NOT_correctness_gated      shampoo                                                      native=      49 match=true
+    execution order: elasticsearch -> native -> havenask -> opensearch -> solr
+    native          mean=   1.2174ms p50=   1.2587ms p99=   1.4624ms
+    solr            mean=   7.5031ms p50=   7.1852ms p99=  13.3499ms
+    elasticsearch   mean=   9.0896ms p50=   9.2076ms p99=  12.9986ms
+    opensearch      mean=  10.0603ms p50=  10.4879ms p99=  13.1375ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q11_lexical_search_NOT_correctness_gated      cream                                                        native=     137 match=true
+    execution order: native -> elasticsearch -> solr -> opensearch -> havenask
+    native          mean=   2.1991ms p50=   2.0387ms p99=   3.3695ms
+    solr            mean=   4.4363ms p50=   4.3694ms p99=   7.3141ms
+    elasticsearch   mean=  11.5842ms p50=   8.6926ms p99=  42.6369ms
+    opensearch      mean=  11.5834ms p50=  10.4797ms p99=  24.5538ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+
+=== engine-order confound check: mean latency (ms) by queue position ===
+  elasticsearch   pos1(n=1)=9.0896  pos2(n=1)=11.5842  pos4(n=1)=9.6454  pos5(n=2)=10.6943
+  havenask        pos1(n=1)=0.0001  pos2(n=1)=0.0001  pos3(n=2)=0.0001  pos5(n=1)=0.0001
+  native          pos1(n=1)=2.1991  pos2(n=2)=0.6088  pos3(n=2)=0.0004
+  opensearch      pos2(n=1)=9.9678  pos4(n=3)=11.4485  pos5(n=1)=8.5944
+  solr            pos1(n=2)=8.6343  pos3(n=1)=4.4363  pos4(n=1)=7.8769  pos5(n=1)=7.5031
+
+correctness: 5/5 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_beauty_full_matrix

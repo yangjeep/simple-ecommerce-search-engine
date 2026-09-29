@@ -1,0 +1,26 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms
+Q2_brand_filter,HP,49,[("solr", 49), ("elasticsearch", 49), ("opensearch", 49), ("havenask", 49)],true,native,0.0001043,0.000094,0.000228
+Q2_brand_filter,HP,49,[("solr", 49), ("elasticsearch", 49), ("opensearch", 49), ("havenask", 49)],true,solr,1.4201954333333333,1.362096,2.262539
+Q2_brand_filter,HP,49,[("solr", 49), ("elasticsearch", 49), ("opensearch", 49), ("havenask", 49)],true,elasticsearch,1.7661055,1.792797,2.099631
+Q2_brand_filter,HP,49,[("solr", 49), ("elasticsearch", 49), ("opensearch", 49), ("havenask", 49)],true,opensearch,1.7658240666666667,1.745678,2.208915
+Q2_brand_filter,HP,49,[("solr", 49), ("elasticsearch", 49), ("opensearch", 49), ("havenask", 49)],true,havenask,3.393215066666667,3.353338,4.104043
+Q2_brand_filter,Sceptre,43,[("solr", 43), ("elasticsearch", 43), ("opensearch", 43), ("havenask", 43)],true,native,0.0000988,0.000095,0.000154
+Q2_brand_filter,Sceptre,43,[("solr", 43), ("elasticsearch", 43), ("opensearch", 43), ("havenask", 43)],true,solr,1.7351170666666667,1.614253,3.431228
+Q2_brand_filter,Sceptre,43,[("solr", 43), ("elasticsearch", 43), ("opensearch", 43), ("havenask", 43)],true,elasticsearch,1.8283348000000001,1.681722,3.905757
+Q2_brand_filter,Sceptre,43,[("solr", 43), ("elasticsearch", 43), ("opensearch", 43), ("havenask", 43)],true,opensearch,1.5828373333333332,1.551746,1.946477
+Q2_brand_filter,Sceptre,43,[("solr", 43), ("elasticsearch", 43), ("opensearch", 43), ("havenask", 43)],true,havenask,3.322934366666667,3.322552,3.817451
+Q2_brand_filter,Acer,41,[("solr", 41), ("elasticsearch", 41), ("opensearch", 41), ("havenask", 41)],true,native,0.00010513333333333335,0.0001,0.000171
+Q2_brand_filter,Acer,41,[("solr", 41), ("elasticsearch", 41), ("opensearch", 41), ("havenask", 41)],true,solr,1.6660490333333335,1.432172,5.640699
+Q2_brand_filter,Acer,41,[("solr", 41), ("elasticsearch", 41), ("opensearch", 41), ("havenask", 41)],true,elasticsearch,1.7132421666666668,1.726346,1.952744
+Q2_brand_filter,Acer,41,[("solr", 41), ("elasticsearch", 41), ("opensearch", 41), ("havenask", 41)],true,opensearch,1.6637956,1.648223,2.042516
+Q2_brand_filter,Acer,41,[("solr", 41), ("elasticsearch", 41), ("opensearch", 41), ("havenask", 41)],true,havenask,3.3077141,3.336474,3.68161
+Q11_lexical_search_NOT_correctness_gated,monitor,262,[("solr", 362), ("elasticsearch", 362), ("opensearch", 362), ("havenask", 308)],true,native,0.2939039666666667,0.290059,0.392784
+Q11_lexical_search_NOT_correctness_gated,monitor,262,[("solr", 362), ("elasticsearch", 362), ("opensearch", 362), ("havenask", 308)],true,solr,1.2448982,1.190819,2.672044
+Q11_lexical_search_NOT_correctness_gated,monitor,262,[("solr", 362), ("elasticsearch", 362), ("opensearch", 362), ("havenask", 308)],true,elasticsearch,1.6433268,1.668428,1.987863
+Q11_lexical_search_NOT_correctness_gated,monitor,262,[("solr", 362), ("elasticsearch", 362), ("opensearch", 362), ("havenask", 308)],true,opensearch,1.6417036666666667,1.639846,1.994998
+Q11_lexical_search_NOT_correctness_gated,monitor,262,[("solr", 362), ("elasticsearch", 362), ("opensearch", 362), ("havenask", 308)],true,havenask,3.410625,3.436027,3.828252
+Q11_lexical_search_NOT_correctness_gated,cable,316,[("solr", 767), ("elasticsearch", 767), ("opensearch", 767), ("havenask", 632)],true,native,0.3227870666666667,0.318015,0.413714
+Q11_lexical_search_NOT_correctness_gated,cable,316,[("solr", 767), ("elasticsearch", 767), ("opensearch", 767), ("havenask", 632)],true,solr,1.3402918000000001,1.24917,2.703616
+Q11_lexical_search_NOT_correctness_gated,cable,316,[("solr", 767), ("elasticsearch", 767), ("opensearch", 767), ("havenask", 632)],true,elasticsearch,1.7217409666666665,1.72538,2.05724
+Q11_lexical_search_NOT_correctness_gated,cable,316,[("solr", 767), ("elasticsearch", 767), ("opensearch", 767), ("havenask", 632)],true,opensearch,1.7235925666666667,1.582412,3.637104
+Q11_lexical_search_NOT_correctness_gated,cable,316,[("solr", 767), ("elasticsearch", 767), ("opensearch", 767), ("havenask", 632)],true,havenask,3.2328416333333334,3.222645,4.001499

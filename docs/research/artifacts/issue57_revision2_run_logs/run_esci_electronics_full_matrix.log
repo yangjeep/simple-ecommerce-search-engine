@@ -1,0 +1,52 @@
+loading + ingesting real ESCI electronics slice...
+2075 real products ingested
+building commerce_core structural index...
+=== HAVENASK UNAVAILABLE this session -- 4-way native/Solr/Elasticsearch/OpenSearch comparison, see docs/experiments/ISSUE57_HAVENASK_REVISION2_LOG.md ===
+
+=== Issue #57 esci_electronics full-matrix result ===
+Q2_brand_filter                               HP                                                           native=      49 match=true
+    execution order: elasticsearch -> native -> havenask -> opensearch -> solr
+    native          mean=   0.0003ms p50=   0.0003ms p99=   0.0003ms
+    solr            mean=   7.5274ms p50=   6.8329ms p99=  16.6645ms
+    elasticsearch   mean=  13.4363ms p50=  13.3742ms p99=  20.8184ms
+    opensearch      mean=  14.7104ms p50=  15.1661ms p99=  19.0475ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0001ms
+Q2_brand_filter                               Sceptre                                                      native=      43 match=true
+    execution order: opensearch -> solr -> elasticsearch -> havenask -> native
+    native          mean=   0.0005ms p50=   0.0005ms p99=   0.0005ms
+    solr            mean=  11.6542ms p50=   9.2317ms p99=  46.5083ms
+    elasticsearch   mean=  10.0953ms p50=   9.4195ms p99=  15.3335ms
+    opensearch      mean=  12.8825ms p50=  12.0177ms p99=  21.1219ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0002ms
+Q2_brand_filter                               Acer                                                         native=      41 match=true
+    execution order: opensearch -> solr -> havenask -> native -> elasticsearch
+    native          mean=   0.0014ms p50=   0.0006ms p99=   0.0183ms
+    solr            mean=   7.4888ms p50=   7.2249ms p99=  11.4984ms
+    elasticsearch   mean=  12.6992ms p50=  12.1054ms p99=  21.9920ms
+    opensearch      mean=  15.9225ms p50=  13.8505ms p99=  42.6538ms
+    havenask        mean=   0.0001ms p50=   0.0001ms p99=   0.0003ms
+Q11_lexical_search_NOT_correctness_gated      monitor                                                      native=     262 match=true
+    execution order: havenask -> solr -> elasticsearch -> opensearch -> native
+    native          mean=   1.2174ms p50=   0.7305ms p99=   7.4385ms
+    solr            mean=  11.2709ms p50=   8.7831ms p99=  29.2824ms
+    elasticsearch   mean=  12.1076ms p50=  12.1827ms p99=  23.7138ms
+    opensearch      mean=  16.9113ms p50=  16.7249ms p99=  26.3281ms
+    havenask        mean=   0.0000ms p50=   0.0000ms p99=   0.0001ms
+Q11_lexical_search_NOT_correctness_gated      cable                                                        native=     316 match=true
+    execution order: havenask -> native -> opensearch -> elasticsearch -> solr
+    native          mean=   0.8258ms p50=   0.7704ms p99=   1.2605ms
+    solr            mean=  11.4722ms p50=  10.4737ms p99=  30.2430ms
+    elasticsearch   mean=   9.0432ms p50=   8.6251ms p99=  14.0598ms
+    opensearch      mean=  13.7469ms p50=  13.9459ms p99=  21.2813ms
+    havenask        mean=   0.0000ms p50=   0.0000ms p99=   0.0001ms
+
+=== engine-order confound check: mean latency (ms) by queue position ===
+  elasticsearch   pos1(n=1)=13.4363  pos3(n=2)=11.1015  pos4(n=1)=9.0432  pos5(n=1)=12.6992
+  havenask        pos1(n=2)=0.0000  pos3(n=2)=0.0001  pos4(n=1)=0.0001
+  native          pos2(n=2)=0.4130  pos4(n=1)=0.0014  pos5(n=2)=0.6089
+  opensearch      pos1(n=2)=14.4025  pos3(n=1)=13.7469  pos4(n=2)=15.8108
+  solr            pos2(n=3)=10.1379  pos5(n=2)=9.4998
+
+correctness: 5/5 rows had matching counts (ALL MATCH)
+
+artifacts written to dataset_cache/issue57_esci_electronics_full_matrix

@@ -1,0 +1,36 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms
+Q9_category_filter,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[("solr", 73), ("elasticsearch", 73), ("opensearch", 73), ("havenask", 73)],true,native,0.0001139,0.000095,0.000334
+Q9_category_filter,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[("solr", 73), ("elasticsearch", 73), ("opensearch", 73), ("havenask", 73)],true,solr,1.7771967333333334,1.635742,4.980567
+Q9_category_filter,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[("solr", 73), ("elasticsearch", 73), ("opensearch", 73), ("havenask", 73)],true,elasticsearch,2.5213982,2.363753,4.153332
+Q9_category_filter,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[("solr", 73), ("elasticsearch", 73), ("opensearch", 73), ("havenask", 73)],true,opensearch,2.4513936333333333,2.417161,4.168275
+Q9_category_filter,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[("solr", 73), ("elasticsearch", 73), ("opensearch", 73), ("havenask", 73)],true,havenask,5.5043305,5.425399,6.861064
+Q9_category_filter,Furniture / Living Room Furniture / Sofas,494,[("solr", 494), ("elasticsearch", 494), ("opensearch", 494), ("havenask", 494)],true,native,0.00010513333333333335,0.0001,0.000173
+Q9_category_filter,Furniture / Living Room Furniture / Sofas,494,[("solr", 494), ("elasticsearch", 494), ("opensearch", 494), ("havenask", 494)],true,solr,1.8728676000000002,1.721057,4.5944
+Q9_category_filter,Furniture / Living Room Furniture / Sofas,494,[("solr", 494), ("elasticsearch", 494), ("opensearch", 494), ("havenask", 494)],true,elasticsearch,3.216908933333333,2.750217,6.154325
+Q9_category_filter,Furniture / Living Room Furniture / Sofas,494,[("solr", 494), ("elasticsearch", 494), ("opensearch", 494), ("havenask", 494)],true,opensearch,2.4549200333333334,2.393252,4.242943
+Q9_category_filter,Furniture / Living Room Furniture / Sofas,494,[("solr", 494), ("elasticsearch", 494), ("opensearch", 494), ("havenask", 494)],true,havenask,5.520268733333333,5.378805,7.634618
+Q5_numeric_range,average_rating>=4.5,28399,[("solr", 28399), ("elasticsearch", 28399), ("opensearch", 28399), ("havenask", 28399)],true,native,0.2520906,0.210588,0.733811
+Q5_numeric_range,average_rating>=4.5,28399,[("solr", 28399), ("elasticsearch", 28399), ("opensearch", 28399), ("havenask", 28399)],true,solr,1.6332022,1.545594,2.854208
+Q5_numeric_range,average_rating>=4.5,28399,[("solr", 28399), ("elasticsearch", 28399), ("opensearch", 28399), ("havenask", 28399)],true,elasticsearch,2.3921607000000003,2.107938,5.388041
+Q5_numeric_range,average_rating>=4.5,28399,[("solr", 28399), ("elasticsearch", 28399), ("opensearch", 28399), ("havenask", 28399)],true,opensearch,2.3154512666666665,2.26344,3.675847
+Q5_numeric_range,average_rating>=4.5,28399,[("solr", 28399), ("elasticsearch", 28399), ("opensearch", 28399), ("havenask", 28399)],true,havenask,5.069526866666666,5.108281,5.467587
+Q5_numeric_range,average_rating>=3,33136,[("solr", 33136), ("elasticsearch", 33136), ("opensearch", 33136), ("havenask", 33136)],true,native,0.3332512,0.306432,0.51365
+Q5_numeric_range,average_rating>=3,33136,[("solr", 33136), ("elasticsearch", 33136), ("opensearch", 33136), ("havenask", 33136)],true,solr,1.4110065666666667,1.38641,1.901715
+Q5_numeric_range,average_rating>=3,33136,[("solr", 33136), ("elasticsearch", 33136), ("opensearch", 33136), ("havenask", 33136)],true,elasticsearch,2.3363164,2.249171,3.140426
+Q5_numeric_range,average_rating>=3,33136,[("solr", 33136), ("elasticsearch", 33136), ("opensearch", 33136), ("havenask", 33136)],true,opensearch,2.3037157333333336,2.307512,2.810408
+Q5_numeric_range,average_rating>=3,33136,[("solr", 33136), ("elasticsearch", 33136), ("opensearch", 33136), ("havenask", 33136)],true,havenask,5.1209538666666665,5.117353,6.334056
+Q10_color_facet_under_category,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[],true,native,0.04548036666666667,0.043207,0.068286
+Q10_color_facet_under_category,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[],true,solr,1.8893001999999999,1.834333,2.56982
+Q10_color_facet_under_category,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[],true,elasticsearch,2.9252686333333333,2.792912,5.272177
+Q10_color_facet_under_category,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[],true,opensearch,2.7472147666666666,2.670531,3.3788
+Q10_color_facet_under_category,Furniture / Bedroom Furniture / Beds & Headboards / Beds / Twin Beds,73,[],true,havenask,5.965498599999999,5.989498,6.893954
+Q11_lexical_title_search_NOT_correctness_gated,wood,2442,[("solr", 8191), ("elasticsearch", 8191), ("opensearch", 8191), ("havenask", 8041)],true,native,5.704473466666667,5.707855,6.221535
+Q11_lexical_title_search_NOT_correctness_gated,wood,2442,[("solr", 8191), ("elasticsearch", 8191), ("opensearch", 8191), ("havenask", 8041)],true,solr,1.8661136666666667,1.752786,3.456411
+Q11_lexical_title_search_NOT_correctness_gated,wood,2442,[("solr", 8191), ("elasticsearch", 8191), ("opensearch", 8191), ("havenask", 8041)],true,elasticsearch,2.1401787333333333,2.115387,2.482962
+Q11_lexical_title_search_NOT_correctness_gated,wood,2442,[("solr", 8191), ("elasticsearch", 8191), ("opensearch", 8191), ("havenask", 8041)],true,opensearch,2.2647412333333334,2.266492,2.724549
+Q11_lexical_title_search_NOT_correctness_gated,wood,2442,[("solr", 8191), ("elasticsearch", 8191), ("opensearch", 8191), ("havenask", 8041)],true,havenask,3.4539600333333333,3.464542,4.095558
+Q11_lexical_title_search_NOT_correctness_gated,storage,1970,[("solr", 5890), ("elasticsearch", 5890), ("opensearch", 5890), ("havenask", 5869)],true,native,5.893600533333333,5.889316,6.468372
+Q11_lexical_title_search_NOT_correctness_gated,storage,1970,[("solr", 5890), ("elasticsearch", 5890), ("opensearch", 5890), ("havenask", 5869)],true,solr,1.5448836666666668,1.514741,2.16605
+Q11_lexical_title_search_NOT_correctness_gated,storage,1970,[("solr", 5890), ("elasticsearch", 5890), ("opensearch", 5890), ("havenask", 5869)],true,elasticsearch,2.1316528999999997,2.130173,2.697553
+Q11_lexical_title_search_NOT_correctness_gated,storage,1970,[("solr", 5890), ("elasticsearch", 5890), ("opensearch", 5890), ("havenask", 5869)],true,opensearch,2.2285648,2.225356,2.615907
+Q11_lexical_title_search_NOT_correctness_gated,storage,1970,[("solr", 5890), ("elasticsearch", 5890), ("opensearch", 5890), ("havenask", 5869)],true,havenask,3.230279566666667,3.241902,3.52907

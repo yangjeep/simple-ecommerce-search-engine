@@ -1,0 +1,26 @@
+class,key,native_count,engine_counts,counts_match,engine,mean_ms,p50_ms,p99_ms
+Q2_brand_filter,Filtrete,48,[("solr", 48), ("elasticsearch", 48), ("opensearch", 48), ("havenask", 48)],true,native,0.00011773333333333334,0.000095,0.000254
+Q2_brand_filter,Filtrete,48,[("solr", 48), ("elasticsearch", 48), ("opensearch", 48), ("havenask", 48)],true,solr,1.5090131666666668,1.504519,1.893922
+Q2_brand_filter,Filtrete,48,[("solr", 48), ("elasticsearch", 48), ("opensearch", 48), ("havenask", 48)],true,elasticsearch,1.5629026666666668,1.553508,1.91094
+Q2_brand_filter,Filtrete,48,[("solr", 48), ("elasticsearch", 48), ("opensearch", 48), ("havenask", 48)],true,opensearch,1.6195208333333333,1.615263,2.123688
+Q2_brand_filter,Filtrete,48,[("solr", 48), ("elasticsearch", 48), ("opensearch", 48), ("havenask", 48)],true,havenask,3.6589711,3.678761,4.783088
+Q2_brand_filter,Vivaplex,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,native,0.0001229,0.000117,0.000249
+Q2_brand_filter,Vivaplex,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,solr,1.9142824666666665,1.642637,6.226033
+Q2_brand_filter,Vivaplex,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,elasticsearch,1.6861244333333334,1.580473,4.246983
+Q2_brand_filter,Vivaplex,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,opensearch,1.5854207666666666,1.561482,2.13162
+Q2_brand_filter,Vivaplex,27,[("solr", 27), ("elasticsearch", 27), ("opensearch", 27), ("havenask", 27)],true,havenask,3.1818488333333335,3.171838,3.772372
+Q2_brand_filter,It's a 10 Haircare,17,[("solr", 17), ("elasticsearch", 17), ("opensearch", 17), ("havenask", 17)],true,native,0.00009813333333333334,0.000092,0.000169
+Q2_brand_filter,It's a 10 Haircare,17,[("solr", 17), ("elasticsearch", 17), ("opensearch", 17), ("havenask", 17)],true,solr,1.8436556000000002,1.823223,2.076069
+Q2_brand_filter,It's a 10 Haircare,17,[("solr", 17), ("elasticsearch", 17), ("opensearch", 17), ("havenask", 17)],true,elasticsearch,1.5087227333333333,1.487075,1.909318
+Q2_brand_filter,It's a 10 Haircare,17,[("solr", 17), ("elasticsearch", 17), ("opensearch", 17), ("havenask", 17)],true,opensearch,1.547139,1.566693,1.816408
+Q2_brand_filter,It's a 10 Haircare,17,[("solr", 17), ("elasticsearch", 17), ("opensearch", 17), ("havenask", 17)],true,havenask,3.8439626000000002,3.817,4.928933
+Q11_lexical_search_NOT_correctness_gated,shampoo,49,[("solr", 223), ("elasticsearch", 223), ("opensearch", 223), ("havenask", 153)],true,native,0.2905191,0.276911,0.435658
+Q11_lexical_search_NOT_correctness_gated,shampoo,49,[("solr", 223), ("elasticsearch", 223), ("opensearch", 223), ("havenask", 153)],true,solr,1.2383649666666665,1.143823,1.812196
+Q11_lexical_search_NOT_correctness_gated,shampoo,49,[("solr", 223), ("elasticsearch", 223), ("opensearch", 223), ("havenask", 153)],true,elasticsearch,1.6519425333333335,1.53605,2.658605
+Q11_lexical_search_NOT_correctness_gated,shampoo,49,[("solr", 223), ("elasticsearch", 223), ("opensearch", 223), ("havenask", 153)],true,opensearch,1.7648788666666666,1.688273,2.689158
+Q11_lexical_search_NOT_correctness_gated,shampoo,49,[("solr", 223), ("elasticsearch", 223), ("opensearch", 223), ("havenask", 153)],true,havenask,3.348427033333333,3.328505,3.908551
+Q11_lexical_search_NOT_correctness_gated,cream,137,[("solr", 203), ("elasticsearch", 203), ("opensearch", 203), ("havenask", 121)],true,native,0.2872010333333333,0.278451,0.364123
+Q11_lexical_search_NOT_correctness_gated,cream,137,[("solr", 203), ("elasticsearch", 203), ("opensearch", 203), ("havenask", 121)],true,solr,1.1954707666666666,1.160943,1.988052
+Q11_lexical_search_NOT_correctness_gated,cream,137,[("solr", 203), ("elasticsearch", 203), ("opensearch", 203), ("havenask", 121)],true,elasticsearch,1.4136508666666667,1.404701,1.967845
+Q11_lexical_search_NOT_correctness_gated,cream,137,[("solr", 203), ("elasticsearch", 203), ("opensearch", 203), ("havenask", 121)],true,opensearch,1.7636537333333333,1.626293,4.148232
+Q11_lexical_search_NOT_correctness_gated,cream,137,[("solr", 203), ("elasticsearch", 203), ("opensearch", 203), ("havenask", 121)],true,havenask,3.3571876666666665,3.234495,5.350506
