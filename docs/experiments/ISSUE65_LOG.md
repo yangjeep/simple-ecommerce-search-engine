@@ -41,3 +41,23 @@ Append-only.
 - **Concurrency:** 894 requests (298 × 3 shuffled rounds) over 32 connections, with **0 mismatches** against the single-threaded observations.
 - **Router:** 480/480 lexical responses through H1's delegate path are identical to Solr's direct ranked top-48.
 - **Frozen pools:** `artifacts/issue65/workload/pools_frozen.json`, with SHA-256 in `results/validate/report.json`.
+
+## 2026-09-29/30 — calibration, primary search, clarifications C1/C1a, confirmations
+
+- **Transport calibration** (diagnostic; 5 s + 20 s points). Native N1 `/noop` Q* = 3,889 QPS, where the generator itself saturates: at 5,834 QPS, generator CPU is 0.96 and the run is flagged HARNESS_SATURATED. Solr health endpoint Q* = 3,727. Router → Solr health Q* = 3,403. **The harness is therefore valid for workload capacities up to about 1,700 QPS** (≥ 2x rule). Every workload capacity measured is ≤ 405 QPS.
+- **Primary search (preregistered; same launch per search).**
+  - **H1 Q* = 405.5 QPS.** 416.2 FAILs on P95 50.2 ms.
+  - **B0 failed its first point, 20 QPS:** P95 58.4 ms, P99 123.4 ms, at 16% CPU utilization, with no errors and full throughput. The per-class breakdown shows class E (complete-bucket Solr facets) at P95 98 ms and cold-cache lexical class F at P95 62 ms.
+- **Clarification C1** (posted before any further data). The amendment did not say what happens when the first point fails. C1 fixed a B0 downward bracket to 1.8 QPS and the fallback R_c. B0's downward bracket found Q*_B0 = **5.43 QPS** (5.67 FAIL) at 3–11% CPU utilization: its limit is latency feasibility, not throughput. R_c = min(5.43, 405.5) = 5.4 QPS.
+- **Clarification C1a** (posted before any further data): the downward bracket applies to every search whose first point fails.
+- **Confirmation round 1** (preregistered ladder {0.95, 1, 1.05}·Q*, 3 counterbalanced fresh-launch runs): **UNSTABLE for both treatments**, with no rate passing in ≥ 2/3.
+  - H1 at 385–426 QPS had P95 51–125 ms and P99 84–646 ms.
+  - The tails are uniform across all classes, including native exact lookups, at 35–45% CPU utilization. They fall monotonically within each launch.
+  - Reading: after a fresh launch, the jump from 5.4 QPS to the ladder shows a warm-up and queueing transient that the search's gradual ramp did not. This is recorded as a limitation, and no rule was changed.
+- **Confirmation round 2** (the preregistered UNSTABLE rule: ladder lowered by 10%):
+  - **H1:** 346.7 QPS passes in 1/3 runs, 365.0 in 2/3 and 383.2 in 2/3. **H1's confirmed max is 383.2 QPS**, i.e. 127.7 QPS/core, with median P99 91.7 ms there.
+  - **B0:** 0 of 9 points pass at 4.6–5.1 QPS (P95 52–76 ms). **B0 has no confirmed max**, since the rule allows only one extra round. Its search Q* of 5.43, with a FAIL at 5.67, is an upper bound, so **q ≥ 383.2 / 5.43 = 70.6** (a lower bound).
+- **CPU/query at R_c = 5.4 QPS**, median per round:
+  - round 1: B0 32.5 ms and H1 3.87 ms, so c = 0.119;
+  - round 2: B0 33.0 ms and H1 3.94 ms, so **c = 0.119**.
+- **Harness fix:** `pools_sha256` in the raw files was nondeterministic, because a HashMap of facet expectations serialized in random order. It is now canonical. Every run loaded the same unchanged `pools_frozen.json`, file sha256 `c1152ef7e8c8e6fb76e6249aad9d0951474f97ee48cc5e4b80275a7cdd2b15ce`.

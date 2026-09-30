@@ -1,5 +1,20 @@
 # Issue #65 — mixed-workload total-serving-system capacity
 
+**Verdict (primary mix): MODEST / MIX-DEPENDENT ADVANTAGE** — q = —, c = 0.119
+
+Rounds: B0 used round 2; H1 used round 2
+
+## Capacity table (primary mix; confirmed over 3 counterbalanced runs)
+
+| treatment | Q* (search) | confirmed max QPS | QPS/core | CPU µs/query at R_c | PASS counts (0.95/1/1.05 Q*) | P99 at confirmed max ms |
+|---|---|---|---|---|---|---|
+| B0 | 5.4 | — | — | 32,966 | 0/0/0 | — |
+| H1 | 405.5 | 383.2 | 127.7 | 3,937 | 1/2/2 | 91.75 |
+
+R_c = 5.4 QPS.
+
+Sensitivity (single search each): structural: B0 Q* —, H1 Q* —; lexical: B0 Q* —, H1 Q* —
+
 #### B0 primary search (Q* = None)
 
 | offered QPS | achieved QPS | ach/off | P50 ms | P95 ms | P99 ms | err | CPU util (of 3) | CPU µs/q | gen CPU | late P99 ms | sat | PASS |

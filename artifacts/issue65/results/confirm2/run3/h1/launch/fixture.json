@@ -1,0 +1,1 @@
+{"all_passed":true,"checks":[{"passed":true,"query":"full_positive_match"},{"passed":true,"query":"cross_variant_leakage_negative"},{"passed":true,"query":"color_only"},{"passed":true,"query":"available_only"}]}

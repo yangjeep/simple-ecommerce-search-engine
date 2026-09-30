@@ -106,7 +106,7 @@ def confirm_summary(name="confirm"):
         best = per_label[{v: k for k, v in rates.items()}.get(confirmed, "mid")] if confirmed else []
         tail = statistics.median([j["overall"]["p99_ms"] for j in best]) if best else None
         out["treatments"][t] = {
-            "qstar": qs, "rates": rates, "passes": passes, "confirmed_max_qps": confirmed,
+            "qstar": q["Q*_B0" if t == "b0" else "Q*_H1"], "ladder_base": qs, "rates": rates, "passes": passes, "confirmed_max_qps": confirmed,
             "slo_infeasible": infeasible,
             "rc_pass": [j["pass"] for j in rc],
             "qps_per_core": confirmed / CORES if confirmed is not None else None,
@@ -122,14 +122,22 @@ def verdict(conf, sens):
     """Precedence (fixed before results, see ISSUE65_LOG.md): NEGATIVE, then
     BROAD, then MODEST, then NO MATERIAL. 'Improvement' means q > 1 or c < 1."""
     b, h = conf["treatments"]["b0"], conf["treatments"]["h1"]
-    if h["confirmed_max_qps"] is None or b["confirmed_max_qps"] is None:
-        return {"verdict": "UNSTABLE (a treatment has no confirmed max)", "q": None, "c": None}
+    if h["confirmed_max_qps"] is None:
+        return {"verdict": "UNSTABLE (H1 has no confirmed max)", "q": None, "c": None}
     c = h["cpu_us_per_query_at_rc"] / b["cpu_us_per_query_at_rc"]
-    # Clarification C1: with B0 SLO-infeasible, q is undefined (reported as a
-    # feasibility difference, never as an infinite ratio).
-    q = None if b["slo_infeasible"] else h["qps_per_core"] / b["qps_per_core"]
+    q_bound = None
+    if b["slo_infeasible"]:
+        # Clarification C1: q undefined; reported as a feasibility difference.
+        q = None
+    elif b["confirmed_max_qps"] is None:
+        # B0 unconfirmed after both rounds: its search Q* (with a FAIL just
+        # above it) is an upper bound on its max, so H1/B0 >= this bound.
+        q = None
+        q_bound = h["confirmed_max_qps"] / b["qstar"] if b["qstar"] else None
+    else:
+        q = h["qps_per_core"] / b["qps_per_core"]
     tail_ok = h["p99_at_confirmed_max_ms"] is not None and h["p99_at_confirmed_max_ms"] < 100.0
-    clears = (q is not None and q >= 1.25) or c <= 0.75
+    clears = (q is not None and q >= 1.25) or (q_bound is not None and q_bound >= 1.25) or c <= 0.75
     # Sensitivity holds if H1's Q* exceeds B0's on both mixes (no sustainable
     # rate counts as 0, per clarification C1).
     sens_q = {m: {"h1": v.get("h1") or 0.0, "b0": v.get("b0") or 0.0} for m, v in sens.items()}
@@ -142,7 +150,7 @@ def verdict(conf, sens):
         v = "MODEST / MIX-DEPENDENT ADVANTAGE"
     else:
         v = "NO MATERIAL ADVANTAGE"
-    return {"verdict": v, "q": q, "c": c, "tail_ok": tail_ok, "primary_clears_bar": clears,
+    return {"verdict": v, "q": q, "q_lower_bound": q_bound, "c": c, "tail_ok": tail_ok, "primary_clears_bar": clears,
             "sensitivity_q": sens_q, "sensitivity_hold_both": sens_hold}
 
 
