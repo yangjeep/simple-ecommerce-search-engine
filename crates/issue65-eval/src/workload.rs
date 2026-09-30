@@ -78,7 +78,13 @@ pub struct Pools {
 impl Pools {
     #[must_use]
     pub fn hash(&self) -> String {
-        let text = serde_json::to_string(&self.requests).expect("json");
+        // Canonical JSON: `serde_json::Value` objects are key-ordered, so the
+        // HashMap-backed facet expectations hash deterministically. (Before
+        // this fix the hash depended on HashMap iteration order; the pools
+        // file's own sha256 is the authoritative identity of every run.)
+        let text = serde_json::to_value(&self.requests)
+            .expect("json")
+            .to_string();
         issue61_eval::sha256_hex(text.as_bytes())
     }
 
@@ -563,6 +569,19 @@ mod tests {
             sequence_hash(&sequence(&pools, "primary", 300.0, 50.0))
         );
         assert!(a.windows(2).all(|w| w[0].at_us <= w[1].at_us));
+    }
+
+    #[test]
+    fn pools_hash_is_deterministic_with_facet_maps() {
+        let mut pools = tiny_pools();
+        let facets: HashMap<String, BTreeMap<String, u64>> = (0..20)
+            .map(|i| (format!("f{i}"), BTreeMap::from([(format!("v{i}"), i)])))
+            .collect();
+        pools.requests[0].expect.facets = Some(facets);
+        let a = pools.hash();
+        let reparsed: Pools =
+            serde_json::from_str(&serde_json::to_string(&pools).unwrap()).unwrap();
+        assert_eq!(reparsed.hash(), a);
     }
 
     #[test]

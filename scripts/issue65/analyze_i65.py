@@ -77,15 +77,16 @@ def curve_md(title, d):
     return lines + [""]
 
 
-def confirm_summary():
-    plan = (R / "confirm/plan.txt").read_text().split()
+def confirm_summary(name="confirm"):
+    plan = (R / f"{name}/plan.txt").read_text().split()
     q = {k: float(v) for k, v in (x.split("=") for x in plan)}
+    scale = q.get("scale", 1.0)
     out = {"plan": q, "treatments": {}}
     for t in ("b0", "h1"):
-        qs = q["Q*_B0" if t == "b0" else "Q*_H1"]
+        qs = round(q["Q*_B0" if t == "b0" else "Q*_H1"] * scale, 2)
         per_label = {"rc": [], "lo": [], "mid": [], "hi": []}
         for run in (1, 2, 3):
-            d = R / f"confirm/run{run}/{t}"
+            d = R / f"{name}/run{run}/{t}"
             for label in per_label:
                 files = list(d.glob(f"{label}_*.json"))
                 if files:
@@ -149,13 +150,29 @@ def main():
     lines = ["# Issue #65 — mixed-workload total-serving-system capacity", ""]
     report = {}
     if (R / "confirm/plan.txt").exists():
-        conf = confirm_summary()
+        rounds = {"confirm": confirm_summary("confirm")}
+        if (R / "confirm2/plan.txt").exists():
+            rounds["confirm2"] = confirm_summary("confirm2")
+        # Section 11: a treatment whose round-1 ladder is UNSTABLE uses its
+        # round-2 (ladder lowered 10%) confirmation.
+        conf = {"plan": rounds["confirm"]["plan"], "treatments": {}}
+        for t in ("b0", "h1"):
+            r1 = rounds["confirm"]["treatments"][t]
+            if r1["confirmed_max_qps"] is None and "confirm2" in rounds:
+                conf["treatments"][t] = {**rounds["confirm2"]["treatments"][t], "round": 2}
+            else:
+                conf["treatments"][t] = {**r1, "round": 1}
+            # CPU/query at R_c: median over every confirmation launch.
+            rc_all = [p for rd in rounds.values() for p in [rd["treatments"][t]["cpu_us_per_query_at_rc"]] if p]
+            conf["treatments"][t]["cpu_us_per_query_at_rc_by_round"] = rc_all
+        report["rounds"] = rounds
         sens = {}
         for mix in ("structural", "lexical"):
             sens[mix] = {t: qstar(R / f"sensitivity/{mix}/{t}") for t in ("b0", "h1")}
         v = verdict(conf, sens)
         report.update({"confirm": conf, "sensitivity_qstar": sens, "verdict": v})
         lines += [f"**Verdict (primary mix): {v['verdict']}** — q = {fmt(v['q'], 3)}, c = {fmt(v['c'], 3)}", "",
+                  "Rounds: " + "; ".join(f"{t.upper()} used round {conf['treatments'][t]['round']}" for t in ("b0", "h1")), "",
                   "## Capacity table (primary mix; confirmed over 3 counterbalanced runs)", "",
                   "| treatment | Q* (search) | confirmed max QPS | QPS/core | CPU µs/query at R_c | PASS counts (0.95/1/1.05 Q*) | P99 at confirmed max ms |",
                   "|---|---|---|---|---|---|---|"]

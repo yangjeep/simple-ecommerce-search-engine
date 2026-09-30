@@ -250,7 +250,10 @@ case "$phase" in
     echo "Q* b0 primary (downward) = ${pass:-0}" | tee -a "$dir/search.log"
     ambient b0down after "$AMBIENT"
     ;;
-  confirm)
+  confirm | confirm2)
+    # confirm2: the preregistered UNSTABLE rule -- ladder lowered by 10%.
+    SCALE=1.0; COUT="$OUT/confirm"
+    [[ "$phase" == confirm2 ]] && SCALE=0.9 && COUT="$OUT/confirm2"
     QB0=$(cat "$OUT/search/b0/qstar.txt"); QH1=$(cat "$OUT/search/h1/qstar.txt")
     # Clarification C1: fall back to the downward bracket; R_c = 20 QPS if
     # B0 has no sustainable rate.
@@ -260,15 +263,16 @@ case "$phase" in
     else
       RC=20
     fi
-    echo "Q*_B0=$QB0 Q*_H1=$QH1 R_c=$RC" | tee "$OUT/confirm/plan.txt"
+    echo "Q*_B0=$QB0 Q*_H1=$QH1 R_c=$RC scale=$SCALE" | tee "$COUT/plan.txt"
     declare -A ORDER=([1]="b0 h1" [2]="h1 b0" [3]="b0 h1")
     for run in 1 2 3; do
       for t in ${ORDER[$run]}; do
-        dir="$OUT/confirm/run$run/$t"
+        dir="$COUT/run$run/$t"
         launch "$t" 3 "$dir/launch" || exit 1
         ambient "confirm_${run}_$t" before "$AMBIENT"
         point "$t" primary 20 "$dir/precondition_20.json" --duration 30 >/dev/null
         q=$QB0; [[ "$t" == h1 ]] && q=$QH1
+        q=$(python3 -c "print(round($q * $SCALE, 2))")
         labels="rc lo mid hi"
         python3 -c "import sys; sys.exit(0 if float('$q') > 0 else 1)" || labels="rc"
         for label in $labels; do
@@ -279,7 +283,7 @@ case "$phase" in
             hi) r=$(python3 -c "print(round($q * 1.05, 1))") ;;
           esac
           res=$(point "$t" primary "$r" "$dir/${label}_${r}.json")
-          echo "confirm run=$run $t $label $r $res" | tee -a "$OUT/confirm/confirm.log"
+          echo "$phase run=$run $t $label $r $res" | tee -a "$COUT/confirm.log"
         done
         ambient "confirm_${run}_$t" after "$AMBIENT"
       done
