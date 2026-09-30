@@ -202,10 +202,23 @@ fn main() {
                     solr: true,
                     route: "solr_delegate",
                 },
-                (t, None) => panic!("treatment {t} cannot serve class F request {}", r.id),
+                // A native-only treatment has no route for class F. Mixes used
+                // with it give F zero weight; this inert target is never
+                // scheduled (asserted below).
+                (_, None) => Target {
+                    url: String::new(),
+                    body: None,
+                    solr: false,
+                    route: "unroutable",
+                },
             }
         })
         .collect();
+    assert!(
+        seq.iter().all(|s| targets[s.req].route != "unroutable"),
+        "the {} mix schedules a class this treatment cannot route",
+        args.mix
+    );
     let targets = Arc::new(targets);
     let pools = Arc::new(pools);
     let seq = Arc::new(seq);

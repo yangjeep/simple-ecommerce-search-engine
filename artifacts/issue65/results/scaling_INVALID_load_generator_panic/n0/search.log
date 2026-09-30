@@ -1,0 +1,8 @@
+search n0 native_plp 20 FAIL
+down n0 native_plp 13.3 FAIL
+down n0 native_plp 8.9 FAIL
+down n0 native_plp 5.9 FAIL
+down n0 native_plp 4.0 FAIL
+down n0 native_plp 2.6 FAIL
+down n0 native_plp 1.8 FAIL
+Q* n0 native_plp = 0 (first fail 1.8)
