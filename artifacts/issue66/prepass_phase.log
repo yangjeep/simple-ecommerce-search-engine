@@ -1,0 +1,7 @@
+=== 2026-09-30T07:44:27Z provision solr (fresh index) for b0 ===
+CONTROL structural_not_equivalent=0 vs_frozen f_total=480 num_found_same=480 same_set=425 same_order=2
+=== 2026-09-30T07:48:29Z provision solr (fresh index) for b0 ===
+EQUIVALENT structural_not_equivalent=0 f: EQUIVALENT f_total=480 not_equivalent=0 kinds={} exact_order_same=2
+=== 2026-09-30T07:52:32Z provision solr (fresh index) for b0 ===
+EQUIVALENT structural_not_equivalent=0 f: EQUIVALENT f_total=480 not_equivalent=0 kinds={} exact_order_same=2
+=== 2026-09-30T07:56:31Z phase prepass done ===

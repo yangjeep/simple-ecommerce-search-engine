@@ -1,0 +1,3 @@
+SOLR: F recorded=480 not_equivalent=0
+I65_VALIDATE excluded=0 fatal=[]
+recorded 480 F responses
