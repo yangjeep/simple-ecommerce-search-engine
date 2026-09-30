@@ -1,0 +1,4 @@
+descend h1 cpu primary t50 heap3g 3 S1=FAIL S2=PASS mode=latency
+descend h1 cpu primary t50 heap3g 1 S1=PASS S2=PASS mode=none
+descend h1 mem primary t50 heap3g 12 S1=PASS S2=PASS mode=none
+descend h1 mem primary t50 heap3g 3 S1=FAIL S2=FAIL mode=oom
