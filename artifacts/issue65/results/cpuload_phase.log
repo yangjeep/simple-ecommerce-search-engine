@@ -1,0 +1,7 @@
+=== 2026-09-30T05:56:51Z provision solr (fresh index) for b0 ===
+cpuload b0 50 FAIL
+cpuload b0 100 FAIL
+=== 2026-09-30T06:04:09Z provision solr (fresh index) for h1 ===
+cpuload h1 50 FAIL
+cpuload h1 100 PASS
+=== 2026-09-30T06:11:51Z phase cpuload done ===

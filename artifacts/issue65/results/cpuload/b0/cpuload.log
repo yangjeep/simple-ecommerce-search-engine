@@ -1,0 +1,2 @@
+cpuload b0 50 FAIL
+cpuload b0 100 FAIL

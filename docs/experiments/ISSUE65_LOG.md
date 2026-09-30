@@ -83,3 +83,61 @@ Append-only.
   - Primary: q ≥ 70.6 as a lower bound, and c = 0.119.
   - H1's P99 at its confirmed max is 91.7 ms, under 100.
   - Sensitivity holds.
+
+## 2026-09-30 — adversarial review; CPU-accounting correction (supersedes the c / q / utilization numbers above)
+
+A fresh, read-only reviewer recomputed the results from the raw JSONs. Its findings and their dispositions are listed below and in the decision doc (§7). The numbers above are kept as they were first recorded. **Where the two disagree, this entry supersedes them.**
+
+**1. HIGH: the CPU accounting was wrong.**
+- **Bug:** `i65_load` took `total_cpu_us` from the *first* key of the cgroup BTreeMap. For H1 that key is `i65-native`, so the "total" left out the Solr delegate.
+- **Scope:** H1's `cpu_per_query_ms` and `util` fields, in every H1 point, were native-only.
+- **Fix:** use the `total` key, which is the slice counter. `analyze_i65.py` now computes both fields from the raw `cpu_usec.total` in every file. Nothing was rerun: the raw counters were always recorded correctly, and PASS/FAIL never depended on CPU.
+- **Corrected values:**
+
+  | quantity | as recorded above | corrected |
+  |---|---|---|
+  | c, round 2 (per launch) | 0.119 | **0.658** (0.658 / 0.726 / 0.630) |
+  | c, round 1 | 0.119 | **0.704** |
+  | H1 CPU/query at 383.2 QPS | 3.3 ms | **5.6 ms** |
+  | H1 slice utilization at 383.2 QPS | 42% | **71–72%** |
+  | H1 utilization over the primary search | 2.6–45% | **10.3–78.7%** |
+
+  The "≈ 8x CPU efficiency" claim is withdrawn. The native-only scaling diagnostic is unaffected.
+- **Verdict:** under the preregistered precedence, the result is still **BROAD CAPACITY ADVANTAGE**, now via c = 0.658 ≤ 0.75 with only a small margin.
+
+**2. The bound "q ≥ 70.6" is invalid.** PASS is not monotone in rate: B0 passed at 4.0, 4.95 and 5.43 in the search but failed 9/9 at 4.6–5.7 in confirmation. B0 was also never searched upward while warm. q is therefore undefined, and the bound has been removed from the analysis.
+
+**3. H1 failed the SLO at R_c = 5.4 QPS, and at the 20 QPS precondition, in all 6 confirmation launches.** Its P99 was 120–140 ms, driven by the cold delegate (class F). This is now disclosed, and C1's phrasing is corrected.
+
+**Other findings, now disclosed:**
+- **4. c depends on R_c.** It is reported at every matched point.
+- **5. Low-rate PASS/FAIL is close to noise**, with about 300 requests per window.
+- **6. Ladder order confounds H1's confirmed max.** The highest rate is always the warmest point.
+- **7. Memory is `memory.current`, not RSS.** It has been relabelled.
+- **8. Minor points:**
+  - the load-point count is 205, not 213;
+  - the in-load check covers `num_found` plus the class-A id only;
+  - `Slots` is not panic-safe or FIFO;
+  - a missing JSON counts as FAIL.
+- **9. The inference from the warm diagnostic has been removed.** Its numbers are reported as data only.
+
+**Post-hoc CPU-under-load diagnostic (`cpuload` phase).** This was posted to #65 before it ran. It is not preregistered and is not used by the verdict. Each treatment gets one fresh launch and a 20 QPS precondition, then primary-mix points at 50 and 100 QPS with the SLO ignored. It records slice CPU/query only. Results are in the next entry.
+
+## 2026-09-30 — post-hoc CPU-under-load diagnostic (not preregistered; not used by the verdict)
+
+- **Setup:** `run_i65.sh cpuload`, primary mix, SLO ignored, one fresh launch per treatment plus a 30 s precondition at 20 QPS.
+- **Slice CPU/query (utilization in parentheses):**
+
+  | offered | B0 | H1 | c |
+  |---|---|---|---|
+  | 50 QPS | 20.0 ms (33%) | 12.9 ms (22%) | 0.647 |
+  | 100 QPS | 16.2 ms (54%) | 8.3 ms (27%) | 0.511 |
+
+- **Solr is mostly fixed cost here.** Within H1, Solr's window CPU is 27.3 s at 50 QPS and 28.2 s at 100 QPS: nearly load-independent, even though F traffic doubled. The native share went from 11.6 s to 21.2 s.
+- **Marginal slope (Δ CPU / Δ queries):** B0 12.3 ms/query, H1 3.6 ms/query, a ratio of about 0.29.
+- **SLO at these points** (reported only):
+  - B0 failed at both 50 and 100, with P95 60 / 71 ms driven by E and F.
+  - H1 failed at 50 on P99 118.9 ms (cold F P99 155).
+  - H1 passed at 100.
+- **Caveats:** 2 points × 1 launch, and the fixed-versus-marginal decomposition of Solr's cost was not measured separately.
+- **Reading:** a hypothesis for #66, not a result.

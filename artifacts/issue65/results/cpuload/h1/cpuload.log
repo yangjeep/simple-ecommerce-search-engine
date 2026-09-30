@@ -1,0 +1,2 @@
+cpuload h1 50 FAIL
+cpuload h1 100 PASS
