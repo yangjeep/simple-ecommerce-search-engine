@@ -1,1 +1,58 @@
 === 2026-09-29T23:22:52Z provision solr (fresh index) for h1 ===
+search h1 primary 20 PASS
+search h1 primary 30.0 PASS
+search h1 primary 45.0 PASS
+search h1 primary 67.5 PASS
+search h1 primary 101.2 PASS
+search h1 primary 151.8 PASS
+search h1 primary 227.7 PASS
+search h1 primary 341.5 PASS
+search h1 primary 512.2 PASS
+search h1 primary 768.3 PASS
+search h1 primary 1152.4 PASS
+search h1 primary 1728.6 PASS
+search h1 primary 2592.9 PASS
+search h1 primary 3889.4 PASS
+search h1 primary 5834.1 FAIL
+refine h1 primary 4861.8 FAIL
+refine h1 primary 4375.6 FAIL
+refine h1 primary 4132.5 FAIL
+refine h1 primary 4010.9 FAIL
+Q* h1 primary = 3889.4 (first fail 4010.9)
+search b0 primary 20 PASS
+search b0 primary 30.0 PASS
+search b0 primary 45.0 PASS
+search b0 primary 67.5 PASS
+search b0 primary 101.2 PASS
+search b0 primary 151.8 PASS
+search b0 primary 227.7 PASS
+search b0 primary 341.5 PASS
+search b0 primary 512.2 PASS
+search b0 primary 768.3 PASS
+search b0 primary 1152.4 PASS
+search b0 primary 1728.6 PASS
+search b0 primary 2592.9 PASS
+search b0 primary 3889.4 FAIL
+refine b0 primary 3241.2 PASS
+refine b0 primary 3565.3 PASS
+refine b0 primary 3727.4 PASS
+Q* b0 primary = 3727.4 (first fail 3889.4)
+search h1 primary 20 PASS
+search h1 primary 30.0 PASS
+search h1 primary 45.0 PASS
+search h1 primary 67.5 PASS
+search h1 primary 101.2 PASS
+search h1 primary 151.8 PASS
+search h1 primary 227.7 PASS
+search h1 primary 341.5 PASS
+search h1 primary 512.2 PASS
+search h1 primary 768.3 PASS
+search h1 primary 1152.4 PASS
+search h1 primary 1728.6 PASS
+search h1 primary 2592.9 PASS
+search h1 primary 3889.4 FAIL
+refine h1 primary 3241.2 PASS
+refine h1 primary 3565.3 FAIL
+refine h1 primary 3403.2 PASS
+Q* h1 primary = 3403.2 (first fail 3565.3)
+=== 2026-09-29T23:51:59Z phase calibrate done ===

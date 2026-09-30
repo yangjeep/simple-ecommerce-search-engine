@@ -1,0 +1,14 @@
+search h1 primary 20 PASS
+search h1 primary 30.0 PASS
+search h1 primary 45.0 PASS
+search h1 primary 67.5 PASS
+search h1 primary 101.2 PASS
+search h1 primary 151.8 PASS
+search h1 primary 227.7 PASS
+search h1 primary 341.5 PASS
+search h1 primary 512.2 FAIL
+refine h1 primary 426.9 FAIL
+refine h1 primary 384.2 PASS
+refine h1 primary 405.5 PASS
+refine h1 primary 416.2 FAIL
+Q* h1 primary = 405.5 (first fail 416.2)

@@ -118,5 +118,5 @@ neither jattach nor jstack in /home/yangjeep/.cache/e3b-engines/jdk could be fou
 ==> committing
 ==> forceMerge(1)
 ==> numFound=515928 (expected 515928)
-==> index_bytes=266748987
-PROVISION_OK container=i77-solr docs=515928 index_bytes=266748987
+==> index_bytes=266821514
+PROVISION_OK container=i77-solr docs=515928 index_bytes=266821514

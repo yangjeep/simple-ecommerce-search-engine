@@ -6,6 +6,7 @@
 #   bash scripts/issue65/run_i65.sh validate      # correctness pre-pass -> pools_frozen.json
 #   bash scripts/issue65/run_i65.sh scaling       # N0 / N1 W=1,2,3 native scaling (diagnostic)
 #   bash scripts/issue65/run_i65.sh search        # B0 then H1 capacity search, primary mix
+#   bash scripts/issue65/run_i65.sh b0down        # clarification C1: B0 downward bracket
 #   bash scripts/issue65/run_i65.sh confirm       # 3 counterbalanced confirmations, primary mix
 #   bash scripts/issue65/run_i65.sh sensitivity   # structural + lexical mixes, one search each
 #   bash scripts/issue65/run_i65.sh control       # conditional: no-lexical decomposition
@@ -212,9 +213,42 @@ case "$phase" in
       ambient "search_$t" after "$AMBIENT"
     done
     ;;
+  b0down)
+    # Clarification C1: B0 downward bracket (20/1.5^k down to 1.8 QPS), then
+    # bisect between the first PASS and the next-higher FAIL to 5%.
+    dir="$OUT/search/b0_down"
+    launch b0 3 "$dir/launch" || exit 1
+    ambient b0down before "$AMBIENT"
+    point b0 primary 20 "$dir/precondition_20.json" --duration 30 >/dev/null
+    fail=20 pass=""
+    for r in 13.3 8.9 5.9 4.0 2.6 1.8; do
+      res=$(point b0 primary "$r" "$dir/rate_${r}.json")
+      echo "down b0 primary $r $res" | tee -a "$dir/search.log"
+      if [[ "$res" == PASS ]]; then pass="$r"; break; fi
+      fail="$r"
+    done
+    if [[ -n "$pass" ]]; then
+      while python3 -c "import sys; sys.exit(0 if ($fail - $pass) / $pass > 0.05 else 1)"; do
+        mid=$(python3 -c "print(round(($pass + $fail) / 2, 2))")
+        res=$(point b0 primary "$mid" "$dir/rate_${mid}.json")
+        echo "refine b0 primary $mid $res" | tee -a "$dir/search.log"
+        if [[ "$res" == PASS ]]; then pass="$mid"; else fail="$mid"; fi
+      done
+    fi
+    echo "${pass:-0}" >"$dir/qstar.txt"
+    echo "Q* b0 primary (downward) = ${pass:-0}" | tee -a "$dir/search.log"
+    ambient b0down after "$AMBIENT"
+    ;;
   confirm)
     QB0=$(cat "$OUT/search/b0/qstar.txt"); QH1=$(cat "$OUT/search/h1/qstar.txt")
-    RC=$(python3 -c "print(round(min($QB0, $QH1), 1))")
+    # Clarification C1: fall back to the downward bracket; R_c = 20 QPS if
+    # B0 has no sustainable rate.
+    if [[ "$QB0" == none ]]; then QB0=$(cat "$OUT/search/b0_down/qstar.txt"); fi
+    if python3 -c "import sys; sys.exit(0 if float('$QB0') > 0 else 1)"; then
+      RC=$(python3 -c "print(round(min($QB0, $QH1), 1))")
+    else
+      RC=20
+    fi
     echo "Q*_B0=$QB0 Q*_H1=$QH1 R_c=$RC" | tee "$OUT/confirm/plan.txt"
     declare -A ORDER=([1]="b0 h1" [2]="h1 b0" [3]="b0 h1")
     for run in 1 2 3; do
@@ -224,7 +258,9 @@ case "$phase" in
         ambient "confirm_${run}_$t" before "$AMBIENT"
         point "$t" primary 20 "$dir/precondition_20.json" --duration 30 >/dev/null
         q=$QB0; [[ "$t" == h1 ]] && q=$QH1
-        for label in rc lo mid hi; do
+        labels="rc lo mid hi"
+        python3 -c "import sys; sys.exit(0 if float('$q') > 0 else 1)" || labels="rc"
+        for label in $labels; do
           case "$label" in
             rc) r=$RC ;;
             lo) r=$(python3 -c "print(round($q * 0.95, 1))") ;;
