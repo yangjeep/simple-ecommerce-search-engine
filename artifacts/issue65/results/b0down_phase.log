@@ -1,0 +1,10 @@
+=== 2026-09-30T00:21:27Z provision solr (fresh index) for b0 ===
+down b0 primary 13.3 FAIL
+down b0 primary 8.9 FAIL
+down b0 primary 5.9 FAIL
+down b0 primary 4.0 PASS
+refine b0 primary 4.95 PASS
+refine b0 primary 5.43 PASS
+refine b0 primary 5.67 FAIL
+Q* b0 primary (downward) = 5.43
+=== 2026-09-30T00:33:34Z phase b0down done ===

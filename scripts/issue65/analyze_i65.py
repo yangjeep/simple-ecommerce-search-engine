@@ -34,6 +34,7 @@ def points(d):
 
 
 def qstar(d):
+    """Q* of a search dir; "none" (first point failed) -> None."""
     p = Path(d) / "qstar.txt"
     if not p.exists():
         return None
@@ -93,16 +94,21 @@ def confirm_summary():
         passes = {lab: sum(1 for j in per_label[lab] if j["pass"]) for lab in ("lo", "mid", "hi")}
         confirmed = None
         for lab in ("hi", "mid", "lo"):
-            if passes[lab] >= 2:
+            if qs > 0 and passes[lab] >= 2:
                 confirmed = rates[lab]
                 break
+        infeasible = qs == 0  # clarification C1: no sustainable rate >= 1.8 QPS
+        if infeasible:
+            confirmed = 0.0
         rc = per_label["rc"]
         cpuq = statistics.median([j["total_cpu_us_per_ok_query"] for j in rc]) if rc else None
         best = per_label[{v: k for k, v in rates.items()}.get(confirmed, "mid")] if confirmed else []
         tail = statistics.median([j["overall"]["p99_ms"] for j in best]) if best else None
         out["treatments"][t] = {
             "qstar": qs, "rates": rates, "passes": passes, "confirmed_max_qps": confirmed,
-            "qps_per_core": confirmed / CORES if confirmed else None,
+            "slo_infeasible": infeasible,
+            "rc_pass": [j["pass"] for j in rc],
+            "qps_per_core": confirmed / CORES if confirmed is not None else None,
             "cpu_us_per_query_at_rc": cpuq, "rc_points": [j["overall"] for j in rc],
             "p99_at_confirmed_max_ms": tail,
             "confirmed_points": [{"pass": j["pass"], **j["overall"], "cpu_util": j.get("total_cpu_utilization_of_3_cores"),
@@ -115,19 +121,23 @@ def verdict(conf, sens):
     """Precedence (fixed before results, see ISSUE65_LOG.md): NEGATIVE, then
     BROAD, then MODEST, then NO MATERIAL. 'Improvement' means q > 1 or c < 1."""
     b, h = conf["treatments"]["b0"], conf["treatments"]["h1"]
-    if not (b["confirmed_max_qps"] and h["confirmed_max_qps"]):
+    if h["confirmed_max_qps"] is None or b["confirmed_max_qps"] is None:
         return {"verdict": "UNSTABLE (a treatment has no confirmed max)", "q": None, "c": None}
-    q = h["qps_per_core"] / b["qps_per_core"]
     c = h["cpu_us_per_query_at_rc"] / b["cpu_us_per_query_at_rc"]
+    # Clarification C1: with B0 SLO-infeasible, q is undefined (reported as a
+    # feasibility difference, never as an infinite ratio).
+    q = None if b["slo_infeasible"] else h["qps_per_core"] / b["qps_per_core"]
     tail_ok = h["p99_at_confirmed_max_ms"] is not None and h["p99_at_confirmed_max_ms"] < 100.0
-    clears = q >= 1.25 or c <= 0.75
-    sens_q = {m: (v["h1"] / v["b0"]) if v.get("h1") and v.get("b0") else None for m, v in sens.items()}
-    sens_hold = bool(sens_q) and all(x is not None and x > 1.0 for x in sens_q.values())
-    if q <= 0.8 or c >= 1.25:
+    clears = (q is not None and q >= 1.25) or c <= 0.75
+    # Sensitivity holds if H1's Q* exceeds B0's on both mixes (no sustainable
+    # rate counts as 0, per clarification C1).
+    sens_q = {m: {"h1": v.get("h1") or 0.0, "b0": v.get("b0") or 0.0} for m, v in sens.items()}
+    sens_hold = bool(sens_q) and all(x["h1"] > x["b0"] for x in sens_q.values())
+    if (q is not None and q <= 0.8) or c >= 1.25:
         v = "NEGATIVE"
     elif clears and tail_ok and sens_hold:
         v = "BROAD CAPACITY ADVANTAGE"
-    elif clears or q > 1.0 or c < 1.0:
+    elif clears or (q is not None and q > 1.0) or c < 1.0:
         v = "MODEST / MIX-DEPENDENT ADVANTAGE"
     else:
         v = "NO MATERIAL ADVANTAGE"
@@ -156,7 +166,7 @@ def main():
                          f"{fmt(x['cpu_us_per_query_at_rc'], 0)} | {p['lo']}/{p['mid']}/{p['hi']} | {fmt(x['p99_at_confirmed_max_ms'], 2)} |")
         lines += ["", f"R_c = {conf['plan']['R_c']} QPS.", "",
                   "Sensitivity (single search each): " + "; ".join(
-                      f"{m}: B0 Q* {fmt(s['b0'])}, H1 Q* {fmt(s['h1'])}, ratio {fmt(v['sensitivity_q'][m], 3)}" for m, s in sens.items()), ""]
+                      f"{m}: B0 Q* {fmt(s['b0'])}, H1 Q* {fmt(s['h1'])}" for m, s in sens.items()), ""]
     for label, d in [("B0 primary search", R / "search/b0"), ("H1 primary search", R / "search/h1")]:
         if d.exists():
             lines += curve_md(label, d)

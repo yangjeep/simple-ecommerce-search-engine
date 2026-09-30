@@ -160,7 +160,18 @@ search() {
       break
     fi
   done
-  if [[ -n "$pass" && -n "$fail" ]]; then
+  # Clarification C1a: a search whose first point (20 QPS) fails brackets
+  # downward (20/1.5^k to 1.8 QPS) to its first PASS; none -> Q* = 0.
+  if [[ -z "$pass" ]]; then
+    for r in 13.3 8.9 5.9 4.0 2.6 1.8; do
+      res=$(point "$kind" "$mix" "$r" "$dir/rate_${r}.json" "$@")
+      echo "down $kind $mix $r $res" | tee -a "$dir/search.log"
+      if [[ "$res" == PASS ]]; then pass="$r"; break; fi
+      fail="$r"
+    done
+    [[ -z "$pass" ]] && pass=0
+  fi
+  if [[ -n "$pass" && "$pass" != 0 && -n "$fail" ]]; then
     while python3 -c "import sys; sys.exit(0 if ($fail - $pass) / $pass > 0.05 else 1)"; do
       local mid res
       mid=$(python3 -c "print(round(($pass + $fail) / 2, 1))")
