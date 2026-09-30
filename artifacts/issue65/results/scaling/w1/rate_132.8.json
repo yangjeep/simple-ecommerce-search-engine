@@ -1,0 +1,107 @@
+{
+  "achieved_qps": 131.25,
+  "close_each": false,
+  "cpu_usec": {
+    "i65-native": 39625256.0,
+    "total": 39625256.0
+  },
+  "dispatch_lateness_p99_ms": 1.649,
+  "duration_s": 60.0,
+  "error_kinds": {},
+  "experiment_id": "I65-E5",
+  "generator_cpu_share": 0.137601230652694,
+  "harness_saturated": false,
+  "late_join": false,
+  "memory_current_bytes": {
+    "i65-native": 4436410368,
+    "total": 4857909248
+  },
+  "mix": "native_plp",
+  "noop": null,
+  "offered_qps": 132.8,
+  "overall": {
+    "achieved_over_offered": 1.0,
+    "error_rate": 0.0,
+    "errors": 0,
+    "max_ms": 154.544,
+    "mean_ms": 17.69604787301587,
+    "offered": 7875,
+    "ok": 7875,
+    "p50_ms": 13.338,
+    "p95_ms": 52.212,
+    "p99_ms": 75.127
+  },
+  "pass": false,
+  "per_class": {
+    "B": {
+      "achieved_over_offered": 1.0,
+      "error_rate": 0.0,
+      "errors": 0,
+      "max_ms": 108.55,
+      "mean_ms": 14.044963004484305,
+      "offered": 1784,
+      "ok": 1784,
+      "p50_ms": 8.246,
+      "p95_ms": 49.574,
+      "p99_ms": 73.373
+    },
+    "C": {
+      "achieved_over_offered": 1.0,
+      "error_rate": 0.0,
+      "errors": 0,
+      "max_ms": 147.859,
+      "mean_ms": 26.478994509803922,
+      "offered": 1275,
+      "ok": 1275,
+      "p50_ms": 20.791,
+      "p95_ms": 57.232,
+      "p99_ms": 80.491
+    },
+    "D": {
+      "achieved_over_offered": 1.0,
+      "error_rate": 0.0,
+      "errors": 0,
+      "max_ms": 142.949,
+      "mean_ms": 13.797029635901778,
+      "offered": 2362,
+      "ok": 2362,
+      "p50_ms": 7.418,
+      "p95_ms": 48.161,
+      "p99_ms": 71.42
+    },
+    "E": {
+      "achieved_over_offered": 1.0,
+      "error_rate": 0.0,
+      "errors": 0,
+      "max_ms": 154.544,
+      "mean_ms": 19.539878158109207,
+      "offered": 2454,
+      "ok": 2454,
+      "p50_ms": 16.533,
+      "p95_ms": 53.005,
+      "p99_ms": 78.806
+    }
+  },
+  "per_route": {
+    "native": 7875
+  },
+  "pools_sha256": "28d718c968b704276cf77163cfbf8c605895d577f33a4cbb7e33208b79335513",
+  "scheduled_in_window": 7875,
+  "scheduled_total": 9266,
+  "schema_version": 1,
+  "sequence_sha256": "2277bbe74ef55d29fe7a8a08851225894fbdb2b949b9adfc1ff24a9c52c4baf8",
+  "slo": {
+    "achieved_over_offered": 0.98,
+    "error_rate": 0.001,
+    "p95_ms": 50.0,
+    "p99_ms": 100.0
+  },
+  "threads": 128,
+  "timeout_ms": 2000,
+  "timestamp_utc": 1790745154,
+  "total_cpu_us_per_ok_query": 5031.778539682539,
+  "total_cpu_utilization_of_3_cores": 0.220142066663374,
+  "treatment": "native",
+  "warmup_s": 10.0,
+  "window_wall_s": 59.999521522
+}

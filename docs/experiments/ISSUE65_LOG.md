@@ -61,3 +61,25 @@ Append-only.
   - round 1: B0 32.5 ms and H1 3.87 ms, so c = 0.119;
   - round 2: B0 33.0 ms and H1 3.94 ms, so **c = 0.119**.
 - **Harness fix:** `pools_sha256` in the raw files was nondeterministic, because a HashMap of facet expectations serialized in random order. It is now canonical. Every run loaded the same unchanged `pools_frozen.json`, file sha256 `c1152ef7e8c8e6fb76e6249aad9d0951474f97ee48cc5e4b80275a7cdd2b15ce`.
+
+## 2026-09-30 — sensitivity, warm diagnostic, native scaling
+
+- **Sensitivity** (preregistered, one search each, C1a):
+
+  | mix | B0 Q* | H1 Q* |
+  |---|---|---|
+  | structural | 7.1 | 19.1 |
+  | lexical | 0 | 19.1 |
+
+  H1 > B0 on both mixes, so the preregistered sensitivity condition holds.
+  - H1 failed its first point (20 QPS) in both mixes, only on P99 (104 / 106 ms). The whole tail came from class F: the cold-cache Solr delegate at P99 121–157 ms. The native classes were at P99 ≤ 36 ms.
+  - C1a's downward bracket therefore caps H1 below 20. These values are not capacities.
+- **Warm diagnostic** (post-hoc, posted to #65 before it ran, not used by the verdict): each sensitivity search after an unmeasured 180 s warm-up at 60 QPS. Structural: B0 5.9, H1 448.2. Lexical: B0 43.1, H1 327.3.
+- **Native scaling** (diagnostic, `native_plp` = B–E).
+  - A first run was **invalid**: `i65_load` panicked building a target for class F under the native-only treatment, although F is never scheduled there, and every point was a crash. It is preserved under `results/scaling_INVALID_load_generator_panic/`. The fix is an inert target plus an assertion that no unroutable class is ever scheduled.
+  - Rerun: N0 123.3, N1 W=1 126.5, W=2 277.5, W=3 416.2 QPS (3.29x W=1), with CPU/query flat at 4.8–5.2 ms.
+- **Decomposition control:** not run. It is conditional on H1 missing the bar on the primary mix (amendment §14), and H1 clears it (c = 0.119; q ≥ 70.6).
+- **Verdict, per `analyze_i65.py` with the precedence fixed before results:** BROAD CAPACITY ADVANTAGE.
+  - Primary: q ≥ 70.6 as a lower bound, and c = 0.119.
+  - H1's P99 at its confirmed max is 91.7 ms, under 100.
+  - Sensitivity holds.

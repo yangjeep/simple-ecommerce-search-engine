@@ -1003,16 +1003,16 @@
   },
   "sensitivity_qstar": {
     "structural": {
-      "b0": null,
-      "h1": null
+      "b0": 7.1,
+      "h1": 19.1
     },
     "lexical": {
-      "b0": null,
-      "h1": null
+      "b0": 0.0,
+      "h1": 19.1
     }
   },
   "verdict": {
-    "verdict": "MODEST / MIX-DEPENDENT ADVANTAGE",
+    "verdict": "BROAD CAPACITY ADVANTAGE",
     "q": null,
     "q_lower_bound": 70.57090239410681,
     "c": 0.1194387400726117,
@@ -1020,14 +1020,14 @@
     "primary_clears_bar": true,
     "sensitivity_q": {
       "structural": {
-        "h1": 0.0,
-        "b0": 0.0
+        "h1": 19.1,
+        "b0": 7.1
       },
       "lexical": {
-        "h1": 0.0,
+        "h1": 19.1,
         "b0": 0.0
       }
     },
-    "sensitivity_hold_both": false
+    "sensitivity_hold_both": true
   }
 }

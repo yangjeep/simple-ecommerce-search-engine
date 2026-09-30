@@ -179,7 +179,9 @@ def main():
             sens[mix] = {t: qstar(R / f"sensitivity/{mix}/{t}") for t in ("b0", "h1")}
         v = verdict(conf, sens)
         report.update({"confirm": conf, "sensitivity_qstar": sens, "verdict": v})
-        lines += [f"**Verdict (primary mix): {v['verdict']}** — q = {fmt(v['q'], 3)}, c = {fmt(v['c'], 3)}", "",
+        qtxt = fmt(v['q'], 3) if v.get('q') is not None else (
+            f"≥ {v['q_lower_bound']:.1f} (lower bound: B0 unconfirmed)" if v.get('q_lower_bound') else "undefined")
+        lines += [f"**Verdict (primary mix): {v['verdict']}** — q = {qtxt}, c = {fmt(v['c'], 3)}", "",
                   "Rounds: " + "; ".join(f"{t.upper()} used round {conf['treatments'][t]['round']}" for t in ("b0", "h1")), "",
                   "## Capacity table (primary mix; confirmed over 3 counterbalanced runs)", "",
                   "| treatment | Q* (search) | confirmed max QPS | QPS/core | CPU µs/query at R_c | PASS counts (0.95/1/1.05 Q*) | P99 at confirmed max ms |",
