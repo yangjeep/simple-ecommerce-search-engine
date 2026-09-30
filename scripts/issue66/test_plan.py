@@ -133,5 +133,90 @@ class Plan(unittest.TestCase):
         self.assertEqual(plan.best_mem(self.r, "b0", "S2"), ("1g", 2.0))
 
 
+
+def summary(cpu, mem, joint=None):
+    """cpu[kind][rate][slo] -> level|None ('INFEASIBLE' marks status); mem[kind][slo] -> level."""
+    out = {}
+    for k in plan.KINDS:
+        out[k] = {"cpu": {}, "mem": {}, "joint": {}}
+        for t in plan.TIERS:
+            for slo in plan.SLOS:
+                lv = cpu[k][t][slo]
+                out[k]["cpu"].setdefault(f"t{t}", {})[slo] = (
+                    {"level": None, "status": "INFEASIBLE"} if lv == "INF" else {"level": lv})
+        for slo in plan.SLOS:
+            out[k]["mem"][slo] = {"level": mem[k][slo], "heap": "1g"}
+        if joint:
+            out[k]["joint"]["S2"] = {"cores": joint[k][0], "mem": joint[k][1], "heap": "1g",
+                                     "passes": 3, "jointly_feasible": joint[k][2]}
+    return out
+
+
+def flat(level_by_tier, s1="INF"):
+    return {t: {"S1": s1, "S2": level_by_tier[t]} for t in plan.TIERS}
+
+
+class Verdict(unittest.TestCase):
+    def setUp(self):
+        import analyze_i66
+        self.v = analyze_i66.verdict
+
+    def test_keep_on_cores_with_robustness(self):
+        s = summary({"b0": flat({50: 1.5, 100: 2, 200: 3}), "h1": flat({50: 1, 100: 1, 200: 2})},
+                    {"b0": {"S1": 2, "S2": 2}, "h1": {"S1": 6, "S2": 6}},
+                    {"b0": (2, 2, True), "h1": (1, 6, True)})
+        r = self.v(s)
+        self.assertEqual(r["label"], "KEEP")
+        self.assertEqual(r["limiting_resource_t2_s2"], {"b0": "cpu", "h1": "ram"})
+        self.assertAlmostEqual(r["units_t2_s2"]["ratio"], 1.5 / 2)
+
+    def test_refine_when_cores_only_at_t2(self):
+        # u: H1 max(1, 8/4) = 2 vs B0 max(2, 0.5) = 2 -> ratio 1 (not met).
+        s = summary({"b0": flat({50: 1, 100: 2, 200: 2}), "h1": flat({50: 1, 100: 1, 200: 2})},
+                    {"b0": {"S1": 2, "S2": 2}, "h1": {"S1": 8, "S2": 8}},
+                    {"b0": (2, 2, True), "h1": (1, 8, True)})
+        self.assertEqual(self.v(s)["label"], "REFINE")
+
+    def test_reject(self):
+        s = summary({"b0": flat({50: 1, 100: 1, 200: 2}, s1=1), "h1": flat({50: 1, 100: 1, 200: 2}, s1=1)},
+                    {"b0": {"S1": 2, "S2": 2}, "h1": {"S1": 6, "S2": 6}},
+                    {"b0": (1, 2, True), "h1": (1, 6, True)})
+        self.assertEqual(self.v(s)["label"], "REJECT")
+
+    def test_s1_bound_alone_is_refine_not_keep(self):
+        s = summary({"b0": flat({50: 1, 100: 1, 200: 2}), "h1": flat({50: 1, 100: 1, 200: 2}, s1=1)},
+                    {"b0": {"S1": 2, "S2": 2}, "h1": {"S1": 6, "S2": 6}},
+                    {"b0": (1, 2, True), "h1": (1, 6, True)})
+        self.assertEqual(self.v(s)["label"], "REFINE")
+
+    def test_flagged_units_cannot_keep(self):
+        # u ratio 0.5 but not jointly confirmed (H1 joint fails) -> REFINE.
+        s = summary({"b0": flat({50: 1, 100: 2, 200: 2}), "h1": flat({50: 1, 100: 1, 200: 2})},
+                    {"b0": {"S1": 12, "S2": 12}, "h1": {"S1": 4, "S2": 4}},
+                    {"b0": (2, 12, True), "h1": (1, 4, False)})
+        r = self.v(s)
+        # GiB ratio 4/12 <= 0.75 still keeps on the RAM criterion.
+        self.assertEqual(r["label"], "KEEP")
+        self.assertTrue(r["units_t2_s2"]["flagged_not_joint"])
+
+
+
+class FEquiv(unittest.TestCase):
+    def test_tie_aware(self):
+        from f_equiv import equivalent
+        a = {"num_found": 10, "hits": [["x", 5.0], ["y", 3.0], ["z", 3.0], ["w", 1.0]]}
+        # Reordered ties above the boundary: equivalent.
+        self.assertTrue(equivalent(a, {"num_found": 10, "hits": [["x", 5.0], ["z", 3.0], ["y", 3.0], ["w", 1.0]]})[0])
+        # Different id at the boundary score (tied group cut at top-K): equivalent.
+        self.assertTrue(equivalent(a, {"num_found": 10, "hits": [["x", 5.0], ["y", 3.0], ["z", 3.0], ["v", 1.0]]})[0])
+        # Different id above the boundary: not equivalent.
+        self.assertEqual(equivalent(a, {"num_found": 10, "hits": [["x", 5.0], ["y", 3.0], ["q", 3.0], ["w", 1.0]]}),
+                         (False, "ids_above_boundary"))
+        # Score drift or num_found change: not equivalent.
+        self.assertEqual(equivalent(a, {"num_found": 10, "hits": [["x", 5.1], ["y", 3.0], ["z", 3.0], ["w", 1.0]]}),
+                         (False, "scores"))
+        self.assertEqual(equivalent(a, {"num_found": 11, "hits": a["hits"]}), (False, "num_found/len"))
+
+
 if __name__ == "__main__":
     unittest.main()

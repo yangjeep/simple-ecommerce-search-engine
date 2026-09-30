@@ -1,0 +1,3 @@
+=== 2026-09-30T07:38:04Z provision solr (fresh index) for b0 ===
+EXCLUDED structural_not_equivalent=0 f_diff=478 f_total=480
+=== 2026-09-30T07:41:49Z provision solr (fresh index) for b0 ===

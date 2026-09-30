@@ -366,25 +366,28 @@ case "$phase" in
     runjobs smoke_jobs
     ;;
   prepass)
-    # Section 8: Solr structural equivalence + F ranked ids identical to the
-    # frozen 3g expectations, at every non-3g heap, before its windows count.
-    for heap in 1g 512m; do
+    # Section 8 + C7a: at every heap (3g = fresh-index control), the #65
+    # structural Solr pre-pass plus a tie-aware F record (ids + scores). A
+    # non-3g heap is EQUIVALENT when its structural pre-pass is clean and its
+    # F responses are tie-aware equivalent to the fresh 3g control's.
+    FEQ="python3 $REPO_ROOT/scripts/issue66/f_equiv.py"
+    for heap in 3g 1g 512m; do
       d="$OUT/prepass/heap$heap"; mkdir -p "$d"
       export I66_SOLR_HEAP=$heap
       envelope 3 12G
-      launch b0 3 "$d/launch" || { echo "EXCLUDED: launch failed" >"$d/RESULT"; continue; }
+      launch b0 3 "$d/launch" || { echo "EXCLUDED launch_failed" >"$d/RESULT"; cat "$d/RESULT"; continue; }
       taskset -c "$I77_DRIVER_CPU" "$BIN/i65_validate" --pools "$POOLS" --solr "$SOLR" \
-        --out-pools "$d/pools_rerecorded.json" --report "$d/validate.json" >"$d/validate.txt" 2>&1
-      python3 - "$POOLS" "$d/pools_rerecorded.json" "$d/validate.json" >"$d/RESULT" <<'PY'
-import json, sys
-frozen, rerec, rep = (json.load(open(p)) for p in sys.argv[1:4])
-f = {r["id"]: r["expect"] for r in frozen["requests"] if r["class"] == "F"}
-g = {r["id"]: r["expect"] for r in rerec["requests"] if r["class"] == "F"}
-diff = [i for i in f if f[i].get("ids") != g.get(i, {}).get("ids") or f[i].get("num_found") != g.get(i, {}).get("num_found")]
-bad = len(rep["solr_not_equivalent"]) + len(rep["excluded"])
-print(("EQUIVALENT" if not diff and not bad else "EXCLUDED") + f" structural_not_equivalent={bad} f_diff={len(diff)} f_total={len(f)}")
-PY
-      rm -f "$d/pools_rerecorded.json"
+        --report "$d/validate.json" >"$d/validate.txt" 2>&1
+      taskset -c "$I77_DRIVER_CPU" $FEQ record "$SOLR" "$POOLS" "$d/f_scores.json" >>"$d/validate.txt" 2>&1
+      $FEQ frozen "$d/f_scores.json" "$POOLS" >"$d/vs_frozen.txt" 2>&1
+      bad=$(python3 -c "import json; r=json.load(open('$d/validate.json')); print(len(r['solr_not_equivalent']) + len(r['excluded']))" 2>/dev/null || echo 999)
+      if [[ $heap == 3g ]]; then
+        echo "CONTROL structural_not_equivalent=$bad $(cat "$d/vs_frozen.txt")" >"$d/RESULT"
+      else
+        f=$($FEQ compare "$OUT/prepass/heap3g/f_scores.json" "$d/f_scores.json" 2>&1)
+        if [[ "$bad" == 0 && "$f" == EQUIVALENT* ]]; then v=EQUIVALENT; else v=EXCLUDED; fi
+        echo "$v structural_not_equivalent=$bad f: $f" >"$d/RESULT"
+      fi
       cat "$d/RESULT"
     done
     unset I66_SOLR_HEAP
