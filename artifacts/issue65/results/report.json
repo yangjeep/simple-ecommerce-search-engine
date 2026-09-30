@@ -91,7 +91,7 @@
             false
           ],
           "qps_per_core": null,
-          "cpu_us_per_query_at_rc": 3866.6637426900584,
+          "cpu_us_per_query_at_rc": 22847.415204678364,
           "rc_points": [
             {
               "achieved_over_offered": 1.0,
@@ -227,7 +227,7 @@
             false
           ],
           "qps_per_core": 127.73333333333333,
-          "cpu_us_per_query_at_rc": 3937.4590643274855,
+          "cpu_us_per_query_at_rc": 21690.795321637426,
           "rc_points": [
             {
               "achieved_over_offered": 1.0,
@@ -280,7 +280,8 @@
               "p50_ms": 10.122,
               "p95_ms": 58.116,
               "p99_ms": 120.177,
-              "cpu_util": 0.4161298539314673,
+              "cpu_util": 0.708971219592225,
+              "cpu_us_per_q": 5564.236712448223,
               "memory": {
                 "i65-native": 4442882048,
                 "i77-solr": 3866529792,
@@ -377,7 +378,8 @@
               "p50_ms": 9.324,
               "p95_ms": 47.492,
               "p99_ms": 91.749,
-              "cpu_util": 0.41848174266486254,
+              "cpu_util": 0.714727376732875,
+              "cpu_us_per_q": 5609.310355352082,
               "memory": {
                 "i65-native": 4443607040,
                 "i77-solr": 3858382848,
@@ -474,7 +476,8 @@
               "p50_ms": 9.707,
               "p95_ms": 46.834,
               "p99_ms": 81.908,
-              "cpu_util": 0.42442204634550035,
+              "cpu_util": 0.7245804995458048,
+              "cpu_us_per_q": 5686.695574449532,
               "memory": {
                 "i65-native": 4442980352,
                 "i77-solr": 3848433664,
@@ -660,7 +663,7 @@
           false
         ],
         "qps_per_core": 127.73333333333333,
-        "cpu_us_per_query_at_rc": 3937.4590643274855,
+        "cpu_us_per_query_at_rc": 21690.795321637426,
         "rc_points": [
           {
             "achieved_over_offered": 1.0,
@@ -713,7 +716,8 @@
             "p50_ms": 10.122,
             "p95_ms": 58.116,
             "p99_ms": 120.177,
-            "cpu_util": 0.4161298539314673,
+            "cpu_util": 0.708971219592225,
+            "cpu_us_per_q": 5564.236712448223,
             "memory": {
               "i65-native": 4442882048,
               "i77-solr": 3866529792,
@@ -810,7 +814,8 @@
             "p50_ms": 9.324,
             "p95_ms": 47.492,
             "p99_ms": 91.749,
-            "cpu_util": 0.41848174266486254,
+            "cpu_util": 0.714727376732875,
+            "cpu_us_per_q": 5609.310355352082,
             "memory": {
               "i65-native": 4443607040,
               "i77-solr": 3858382848,
@@ -907,7 +912,8 @@
             "p50_ms": 9.707,
             "p95_ms": 46.834,
             "p99_ms": 81.908,
-            "cpu_util": 0.42442204634550035,
+            "cpu_util": 0.7245804995458048,
+            "cpu_us_per_q": 5686.695574449532,
             "memory": {
               "i65-native": 4442980352,
               "i77-solr": 3848433664,
@@ -995,8 +1001,8 @@
         ],
         "round": 2,
         "cpu_us_per_query_at_rc_by_round": [
-          3866.6637426900584,
-          3937.4590643274855
+          22847.415204678364,
+          21690.795321637426
         ]
       }
     }
@@ -1014,8 +1020,8 @@
   "verdict": {
     "verdict": "BROAD CAPACITY ADVANTAGE",
     "q": null,
-    "q_lower_bound": 70.57090239410681,
-    "c": 0.1194387400726117,
+    "q_lower_bound": null,
+    "c": 0.6579677965062901,
     "tail_ok": true,
     "primary_clears_bar": true,
     "sensitivity_q": {

@@ -315,6 +315,23 @@ case "$phase" in
       done
     done
     ;;
+  cpuload)
+    # Post-hoc DIAGNOSTIC (not preregistered; never used by the verdict):
+    # total serving CPU/query for both treatments at 50 and 100 QPS on the
+    # primary mix, SLO ignored, to measure marginal CPU/query under load
+    # (the preregistered R_c = 5.4 QPS is dominated by fixed overhead).
+    for t in b0 h1; do
+      dir="$OUT/cpuload/$t"
+      launch "$t" 3 "$dir/launch" || exit 1
+      ambient "cpuload_$t" before "$AMBIENT"
+      point "$t" primary 20 "$dir/precondition_20.json" --duration 30 >/dev/null
+      for r in 50 100; do
+        res=$(point "$t" primary "$r" "$dir/rate_${r}.json")
+        echo "cpuload $t $r $res" | tee -a "$dir/cpuload.log"
+      done
+      ambient "cpuload_$t" after "$AMBIENT"
+    done
+    ;;
   control)
     for t in b0 h1; do
       launch "$t" 3 "$OUT/control/$t/launch" || exit 1

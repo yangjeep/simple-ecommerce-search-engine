@@ -25,6 +25,19 @@ def load(p):
     return json.loads(Path(p).read_text())
 
 
+def slice_cpu_per_q(j):
+    """CPU/query from the raw slice counter (`cpu_usec.total`). The derived
+    `total_cpu_us_per_ok_query` field written by the first i65_load build
+    took the first cgroup key and omitted Solr for H1 (review finding 1)."""
+    total = (j.get("cpu_usec") or {}).get("total")
+    return total / max(j["overall"]["ok"], 1) if total is not None else None
+
+
+def slice_util(j):
+    total = (j.get("cpu_usec") or {}).get("total")
+    return total / 1e6 / j["window_wall_s"] / CORES if total is not None else None
+
+
 def points(d):
     out = []
     for f in sorted(Path(d).glob("rate_*.json")):
@@ -49,7 +62,7 @@ def curve_rows(d):
         rows.append({
             "offered": j["offered_qps"], "achieved": j["achieved_qps"], "achieved_over_offered": o["achieved_over_offered"],
             "p50": o["p50_ms"], "p95": o["p95_ms"], "p99": o["p99_ms"], "error_rate": o["error_rate"],
-            "cpu_util": j.get("total_cpu_utilization_of_3_cores"), "cpu_us_per_q": j.get("total_cpu_us_per_ok_query"),
+            "cpu_util": slice_util(j), "cpu_us_per_q": slice_cpu_per_q(j),
             "gen_cpu": j["generator_cpu_share"], "late_p99_ms": j["dispatch_lateness_p99_ms"],
             "saturated": j["harness_saturated"], "pass": j["pass"],
         })
@@ -102,7 +115,7 @@ def confirm_summary(name="confirm"):
         if infeasible:
             confirmed = 0.0
         rc = per_label["rc"]
-        cpuq = statistics.median([j["total_cpu_us_per_ok_query"] for j in rc]) if rc else None
+        cpuq = statistics.median([slice_cpu_per_q(j) for j in rc]) if rc else None
         best = per_label[{v: k for k, v in rates.items()}.get(confirmed, "mid")] if confirmed else []
         tail = statistics.median([j["overall"]["p99_ms"] for j in best]) if best else None
         out["treatments"][t] = {
@@ -112,7 +125,7 @@ def confirm_summary(name="confirm"):
             "qps_per_core": confirmed / CORES if confirmed is not None else None,
             "cpu_us_per_query_at_rc": cpuq, "rc_points": [j["overall"] for j in rc],
             "p99_at_confirmed_max_ms": tail,
-            "confirmed_points": [{"pass": j["pass"], **j["overall"], "cpu_util": j.get("total_cpu_utilization_of_3_cores"),
+            "confirmed_points": [{"pass": j["pass"], **j["overall"], "cpu_util": slice_util(j), "cpu_us_per_q": slice_cpu_per_q(j),
                                   "memory": j["memory_current_bytes"], "per_class": j["per_class"], "per_route": j["per_route"]} for j in best],
         }
     return out
@@ -130,10 +143,10 @@ def verdict(conf, sens):
         # Clarification C1: q undefined; reported as a feasibility difference.
         q = None
     elif b["confirmed_max_qps"] is None:
-        # B0 unconfirmed after both rounds: its search Q* (with a FAIL just
-        # above it) is an upper bound on its max, so H1/B0 >= this bound.
+        # B0 unconfirmed after both rounds. No valid bound on q exists: PASS
+        # is not monotone in rate (cold low-rate tails), and B0 was never
+        # searched upward from 20 QPS warm (review finding 4).
         q = None
-        q_bound = h["confirmed_max_qps"] / b["qstar"] if b["qstar"] else None
     else:
         q = h["qps_per_core"] / b["qps_per_core"]
     tail_ok = h["p99_at_confirmed_max_ms"] is not None and h["p99_at_confirmed_max_ms"] < 100.0
@@ -180,7 +193,7 @@ def main():
         v = verdict(conf, sens)
         report.update({"confirm": conf, "sensitivity_qstar": sens, "verdict": v})
         qtxt = fmt(v['q'], 3) if v.get('q') is not None else (
-            f"≥ {v['q_lower_bound']:.1f} (lower bound: B0 unconfirmed)" if v.get('q_lower_bound') else "undefined")
+            "undefined (B0 unconfirmed; latency-feasibility-limited)")
         lines += [f"**Verdict (primary mix): {v['verdict']}** — q = {qtxt}, c = {fmt(v['c'], 3)}", "",
                   "Rounds: " + "; ".join(f"{t.upper()} used round {conf['treatments'][t]['round']}" for t in ("b0", "h1")), "",
                   "## Capacity table (primary mix; confirmed over 3 counterbalanced runs)", "",

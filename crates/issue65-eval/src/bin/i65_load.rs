@@ -401,7 +401,10 @@ fn main() {
             )
         })
         .collect();
-    let total_cpu_us = cpu.values().next().copied().flatten();
+    // The serving budget's own counter (the slice), never "the first map
+    // entry": BTreeMap order would pick `i65-native` over `total` for H1 and
+    // silently drop Solr (adversarial review finding 1).
+    let total_cpu_us = cpu.get("total").copied().flatten();
     let generator_cpu_share = (ge - gs) as f64 / 1e6 / wall_s;
     lateness_us.sort_unstable();
     let lateness_p99_ms = percentile(&lateness_us, 99.0);
