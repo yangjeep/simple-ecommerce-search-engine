@@ -183,7 +183,7 @@ def main():
                 conf["treatments"][t] = {**rounds["confirm2"]["treatments"][t], "round": 2}
             else:
                 conf["treatments"][t] = {**r1, "round": 1}
-            # CPU/query at R_c: median over every confirmation launch.
+            # CPU/query at R_c: median over the launches of the round used (pooling both rounds gives 0.681 for c).
             rc_all = [p for rd in rounds.values() for p in [rd["treatments"][t]["cpu_us_per_query_at_rc"]] if p]
             conf["treatments"][t]["cpu_us_per_query_at_rc_by_round"] = rc_all
         report["rounds"] = rounds

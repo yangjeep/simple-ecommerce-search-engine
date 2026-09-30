@@ -10,7 +10,7 @@
 
 Taken at face value, the result is two different findings:
 
-1. **A large latency-feasibility advantage.** Under the frozen SLO, H1 is confirmed at **383.2 QPS**. B0 (Solr-only) cannot hold the SLO reliably at any load from 4.6 to 20 QPS: its P95 sits at about 50–64 ms. What limits B0 is the latency of Solr's complete-bucket facets and of cold lexical queries, not CPU. B0 ran at 3–16% utilization.
+1. **A large latency-feasibility advantage.** Under the frozen SLO, H1 is confirmed at **383.2 QPS**. B0 (Solr-only) cannot hold the SLO reliably at any load from 4.6 to 20 QPS: in the measured primary windows its P95 was 45–76 ms, and 79–91 ms at the 20-QPS preconditions. What limits B0 is the latency of Solr's complete-bucket facets and of cold lexical queries, not CPU. B0 ran at 3–16% slice utilization in its measured primary-mix windows at 4–20 QPS.
 2. **A modest and fragile total-CPU advantage.** At the low matched loads where both treatments were measured, H1 uses **0.63–0.74 of B0's total serving CPU per query**. That clears the 0.75 bar only narrowly. On the warm sensitivity mixes the ratio is 0.48–0.80 (§3.4). A post-hoc under-load diagnostic is in §3.5.
 
 **Not claimed:**
@@ -23,8 +23,8 @@ Taken at face value, the result is two different findings:
 | max sustainable QPS on the primary mix (P95 < 50, P99 < 100, err < 0.1%, ≥ 98% achieved) | **None confirmed.** The downward search passed at 4.0 / 4.95 / 5.43 (cold, windows of about 300 requests). Both confirmation rounds failed **9/9** at 4.6–5.7. | **383.2 QPS confirmed** (2/3 in round 2), i.e. **127.7 QPS/core** |
 | total serving CPU/query at R_c = 5.4 QPS (slice counter, 3 + 3 fresh launches) | 31.0–34.0 ms | 21.4–23.0 ms → **c = 0.658** (round 2, used); 0.704 (round 1) |
 | q = H1 QPS/core ÷ B0 QPS/core | — | **Undefined.** B0 has no confirmed sustainable rate, and because PASS is not monotone in rate (cold low-rate tails), no valid bound exists. |
-| slice CPU utilization | 3–16% at the rates B0 was tested | 71–72% at 383.2 QPS |
-| cgroup `memory.current` (not RSS; includes page cache) | 3.68 GiB | **7.82 GiB** (native 4.14 + Solr 3.60) |
+| slice CPU utilization | 3–16% in its measured primary-mix windows (4–20 QPS); 22–28% at the 20-QPS preconditions; 33% / 54% at 50 / 100 QPS (post-hoc) | 71–72% at 383.2 QPS |
+| cgroup `memory.current` (not RSS; includes page cache) | 3.68 GiB (round 2; 3.62–3.95 across all B0 launches, i.e. H1 is 1.98–2.2x) | **7.82 GiB** (native 4.14 + Solr 3.60) |
 | sensitivity (preregistered; requires H1 > B0) | structural 7.1 / lexical 0 | structural 19.1 / lexical 19.1. The condition holds, but H1's values are capped by cold start and are not capacities (§4). |
 
 ## 1. What was frozen
@@ -68,10 +68,10 @@ Taken at face value, the result is two different findings:
 | confirmation round 2: ladder lowered 10% (the preregistered UNSTABLE rule) | 0/3 at 4.6 / 4.89 / 5.1 | **1/3 at 346.7, 2/3 at 365.0, 2/3 at 383.2 → confirmed max 383.2** |
 
 **Caveats on this table:**
-- **B0 is always near the P95 boundary.** At every rate tested from 4 to 13 QPS, its P95 was 48–64 ms, pinned by class E at about 80 ms with a 20% share. A 60 s window at 5 QPS holds about 300 requests, so P99 is roughly the third-worst request and the Poisson count varies by ±10%. B0's search-level PASS/FAIL is therefore close to noise: 5.43 passed in the search and then failed 3/3 in confirmation.
+- **B0 is always near the P95 boundary.** At the rates tested from 4 to 13 QPS, its P95 was 45–76 ms (45.3 at 4.0 QPS; 68.7–75.9 at 5.1 QPS in two confirmation runs), pinned by class E at about 80 ms with a 20% share. A 60 s window at 5 QPS holds about 300 requests, so P99 is roughly the third-worst request and the Poisson count varies by ±10%. B0's search-level PASS/FAIL is therefore close to noise: 5.43 passed in the search and then failed 3/3 in confirmation.
 - **H1's confirmed max is confounded by order.** Within each launch the ladder always runs rc → lo → mid → hi, so the highest rate is also the warmest point, and pass counts rise with rate (1/3, 2/3, 2/3). Read 383.2 as "passes about two times in three somewhere in 350–400 QPS", not as a sharp capacity.
 - **Round 1's H1 failures were a transient.** Tails were uniform across classes and fell monotonically within each launch: a post-launch warm-up and queueing transient. By contrast, the search reached 405.5 after a gradual ramp of about 12 minutes.
-- **H1 failed the SLO at R_c = 5.4 QPS in all 6 confirmation launches** (P95 49–57.5, P99 120–140). It also failed at the 20-QPS precondition in all 6. The cause was class F through the cold delegate (P99 170–227 ms).
+- **H1 failed the SLO at R_c = 5.4 QPS in all 6 confirmation launches** (P95 49–57.5, P99 120–140). It also failed at the 20-QPS precondition in all 6. The cause was class F through the cold delegate: F's P99 was 172–227 ms at R_c and 217–303 ms at the precondition, while the native classes stayed at P99 ≤ 78 ms.
 - **At the only matched load the protocol defines, neither treatment meets the SLO.** C1's phrasing ("B0 cannot hold the SLO at any tested load, while H1 holds it up to Q*_H1") is incorrect: H1 holds the SLO only once it is warm and loaded.
 
 ### 3.2 H1 at its confirmed max (383.2 QPS; medians of 3 runs; routes fixed before measurement)
@@ -197,6 +197,10 @@ The reviewer could not falsify any of the following:
 - that C1, C1a and round 2 each came before the data they govern;
 - the scaling diagnostic;
 - that the verdict label follows from the preregistered rule via c ≤ 0.75.
+
+**A second focused review** of the rewritten document was also run. It reproduced every headline number and the verdict from the raw counters. Its corrections to ranges are applied above, and two caveats are added here:
+- **The P99 tail condition passes on the median of 3 runs** (91.7 ms). Run 1 at 383.2 QPS had P99 120.2 ms and failed.
+- **One BROAD condition is unchecked.** The `analyze_i65.py` docstring lists "SLO/quality equivalent" as a BROAD condition, but the code never checks it. c is measured at R_c, where *both* treatments fail the SLO (§3.1). Quality equivalence is by construction (§2), but SLO equivalence at the c measurement point does not hold. Pooling all 6 launches instead of taking the round-2 median gives c = 0.681.
 
 ## 8. Consequence
 
