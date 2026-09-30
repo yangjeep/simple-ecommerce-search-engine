@@ -299,6 +299,22 @@ case "$phase" in
       done
     done
     ;;
+  warmsens)
+    # Post-hoc DIAGNOSTIC (not preregistered; never used by the verdict):
+    # the sensitivity searches, each after an unmeasured 180 s warm-up at
+    # 60 QPS, identical for both treatments, to separate cold-cache Solr
+    # lexical tails at low rates from capacity.
+    for mix in structural lexical; do
+      for t in b0 h1; do
+        dir="$OUT/warmsens/$mix/$t"
+        launch "$t" 3 "$dir/launch" || exit 1
+        ambient "warm_${mix}_$t" before "$AMBIENT"
+        point "$t" "$mix" 60 "$dir/warmup_60.json" --warmup 0 --duration 180 >/dev/null
+        search "$t" "$mix" "$dir"
+        ambient "warm_${mix}_$t" after "$AMBIENT"
+      done
+    done
+    ;;
   control)
     for t in b0 h1; do
       launch "$t" 3 "$OUT/control/$t/launch" || exit 1

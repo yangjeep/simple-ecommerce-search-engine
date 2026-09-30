@@ -1,0 +1,8 @@
+search b0 structural 20 FAIL
+down b0 structural 13.3 FAIL
+down b0 structural 8.9 FAIL
+down b0 structural 5.9 PASS
+refine b0 structural 7.4 FAIL
+refine b0 structural 6.7 PASS
+refine b0 structural 7.1 PASS
+Q* b0 structural = 7.1 (first fail 7.4)

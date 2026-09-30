@@ -1,0 +1,8 @@
+search b0 lexical 20 FAIL
+down b0 lexical 13.3 FAIL
+down b0 lexical 8.9 FAIL
+down b0 lexical 5.9 FAIL
+down b0 lexical 4.0 FAIL
+down b0 lexical 2.6 FAIL
+down b0 lexical 1.8 FAIL
+Q* b0 lexical = 0 (first fail 1.8)
