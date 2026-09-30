@@ -1,0 +1,12 @@
+search h1 lexical 20 PASS
+search h1 lexical 30.0 PASS
+search h1 lexical 45.0 PASS
+search h1 lexical 67.5 PASS
+search h1 lexical 101.2 PASS
+search h1 lexical 151.8 PASS
+search h1 lexical 227.7 PASS
+search h1 lexical 341.5 FAIL
+refine h1 lexical 284.6 PASS
+refine h1 lexical 313.1 PASS
+refine h1 lexical 327.3 PASS
+Q* h1 lexical = 327.3 (first fail 341.5)
