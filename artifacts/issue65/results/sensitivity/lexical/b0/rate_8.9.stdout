@@ -1,0 +1,1 @@
+I65_LOAD treatment=b0 mix=lexical offered=8.9 achieved=8.4 p95=55.94ms p99=121.11ms err=0.0000 cpu/q=Some(20743.0)us util=Some(0.058) gen_cpu=0.01 late_p99=0.22ms saturated=false PASS=false

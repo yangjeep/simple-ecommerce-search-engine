@@ -1,0 +1,33 @@
+=== 2026-09-30T02:32:53Z provision solr (fresh index) for b0 ===
+search b0 structural 20 FAIL
+down b0 structural 13.3 FAIL
+down b0 structural 8.9 FAIL
+down b0 structural 5.9 PASS
+refine b0 structural 7.4 FAIL
+refine b0 structural 6.7 PASS
+refine b0 structural 7.1 PASS
+Q* b0 structural = 7.1 (first fail 7.4)
+=== 2026-09-30T02:45:13Z provision solr (fresh index) for h1 ===
+search h1 structural 20 FAIL
+down h1 structural 13.3 PASS
+refine h1 structural 16.6 PASS
+refine h1 structural 18.3 PASS
+refine h1 structural 19.1 PASS
+Q* h1 structural = 19.1 (first fail 20)
+=== 2026-09-30T02:56:26Z provision solr (fresh index) for b0 ===
+search b0 lexical 20 FAIL
+down b0 lexical 13.3 FAIL
+down b0 lexical 8.9 FAIL
+down b0 lexical 5.9 FAIL
+down b0 lexical 4.0 FAIL
+down b0 lexical 2.6 FAIL
+down b0 lexical 1.8 FAIL
+Q* b0 lexical = 0 (first fail 1.8)
+=== 2026-09-30T03:08:42Z provision solr (fresh index) for h1 ===
+search h1 lexical 20 FAIL
+down h1 lexical 13.3 PASS
+refine h1 lexical 16.6 PASS
+refine h1 lexical 18.3 PASS
+refine h1 lexical 19.1 PASS
+Q* h1 lexical = 19.1 (first fail 20)
+=== 2026-09-30T03:20:13Z phase sensitivity done ===

@@ -42,9 +42,14 @@ e3b_scope_start() {
   shift 2
   e3b_scope_stop "$unit"
   local quota=$(( I77_CPUS * 100 ))
-  nohup systemd-run --user --scope --quiet --unit="$unit" \
+  # Issue #65: E3B_SLICE places the scope inside an aggregate serving slice
+  # (whose own CPUQuota/MemoryMax bind all scopes in it together), and
+  # E3B_SCOPE_MEMORY overrides the per-scope ceiling. Both unset for #77/#79.
+  local slice_args=()
+  [[ -n "${E3B_SLICE:-}" ]] && slice_args=(--slice="$E3B_SLICE")
+  nohup systemd-run --user --scope --quiet --unit="$unit" "${slice_args[@]}" \
     -p "CPUQuota=${quota}%" \
-    -p "MemoryMax=$(e3b_systemd_bytes "$I77_MEMORY")" \
+    -p "MemoryMax=$(e3b_systemd_bytes "${E3B_SCOPE_MEMORY:-$I77_MEMORY}")" \
     -p "MemorySwapMax=0" \
     taskset -c "$I77_CPUSET" "$@" >"$logfile" 2>&1 &
   # Wait until the scope unit exists so callers can read its cgroup.

@@ -1,0 +1,32 @@
+Q*_B0=5.43 Q*_H1=405.5 R_c=5.4 scale=0.9
+=== 2026-09-30T01:35:00Z provision solr (fresh index) for b0 ===
+confirm2 run=1 b0 rc 5.4 FAIL
+confirm2 run=1 b0 lo 4.6 FAIL
+confirm2 run=1 b0 mid 4.89 FAIL
+confirm2 run=1 b0 hi 5.1 FAIL
+=== 2026-09-30T01:43:44Z provision solr (fresh index) for h1 ===
+confirm2 run=1 h1 rc 5.4 FAIL
+confirm2 run=1 h1 lo 346.7 FAIL
+confirm2 run=1 h1 mid 364.95 PASS
+confirm2 run=1 h1 hi 383.2 FAIL
+=== 2026-09-30T01:53:46Z provision solr (fresh index) for h1 ===
+confirm2 run=2 h1 rc 5.4 FAIL
+confirm2 run=2 h1 lo 346.7 FAIL
+confirm2 run=2 h1 mid 364.95 FAIL
+confirm2 run=2 h1 hi 383.2 PASS
+=== 2026-09-30T02:03:51Z provision solr (fresh index) for b0 ===
+confirm2 run=2 b0 rc 5.4 FAIL
+confirm2 run=2 b0 lo 4.6 FAIL
+confirm2 run=2 b0 mid 4.89 FAIL
+confirm2 run=2 b0 hi 5.1 FAIL
+=== 2026-09-30T02:12:44Z provision solr (fresh index) for b0 ===
+confirm2 run=3 b0 rc 5.4 FAIL
+confirm2 run=3 b0 lo 4.6 FAIL
+confirm2 run=3 b0 mid 4.89 FAIL
+confirm2 run=3 b0 hi 5.1 FAIL
+=== 2026-09-30T02:21:27Z provision solr (fresh index) for h1 ===
+confirm2 run=3 h1 rc 5.4 FAIL
+confirm2 run=3 h1 lo 346.7 PASS
+confirm2 run=3 h1 mid 364.95 PASS
+confirm2 run=3 h1 hi 383.2 PASS
+=== 2026-09-30T02:31:31Z phase confirm2 done ===

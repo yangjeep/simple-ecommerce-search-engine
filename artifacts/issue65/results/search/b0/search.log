@@ -1,0 +1,2 @@
+search b0 primary 20 FAIL
+Q* b0 primary = none (first fail 20)

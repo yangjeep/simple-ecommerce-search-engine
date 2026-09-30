@@ -1,0 +1,18 @@
+{
+  "concurrency": {
+    "mismatches": [],
+    "requests": 894,
+    "rounds": 3,
+    "threads": 32
+  },
+  "excluded": [],
+  "f_recorded": 480,
+  "fatal": [],
+  "fixture_ok": true,
+  "native_checked": 298,
+  "native_failures": [],
+  "pools_sha256": "9011b90cd5f8c78c9663b84cf91a5fd5da52bd111088e08f64958ee923483d99",
+  "router_checked": 480,
+  "router_failures": [],
+  "solr_not_equivalent": []
+}

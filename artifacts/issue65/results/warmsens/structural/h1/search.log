@@ -1,0 +1,13 @@
+search h1 structural 20 PASS
+search h1 structural 30.0 PASS
+search h1 structural 45.0 PASS
+search h1 structural 67.5 PASS
+search h1 structural 101.2 PASS
+search h1 structural 151.8 PASS
+search h1 structural 227.7 PASS
+search h1 structural 341.5 PASS
+search h1 structural 512.2 FAIL
+refine h1 structural 426.9 PASS
+refine h1 structural 469.6 FAIL
+refine h1 structural 448.2 PASS
+Q* h1 structural = 448.2 (first fail 469.6)

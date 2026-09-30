@@ -1,0 +1,1 @@
+I65_LOAD treatment=h1 mix=primary offered=512.2 achieved=507.0 p95=0.95ms p99=1.68ms err=0.0000 cpu/q=Some(334.0)us util=Some(0.056) gen_cpu=0.23 late_p99=0.31ms saturated=false PASS=true

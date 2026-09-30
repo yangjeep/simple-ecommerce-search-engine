@@ -1,0 +1,11 @@
+search n0 native_plp 20 PASS
+search n0 native_plp 30.0 PASS
+search n0 native_plp 45.0 PASS
+search n0 native_plp 67.5 PASS
+search n0 native_plp 101.2 PASS
+search n0 native_plp 151.8 FAIL
+refine n0 native_plp 126.5 FAIL
+refine n0 native_plp 113.8 PASS
+refine n0 native_plp 120.2 PASS
+refine n0 native_plp 123.3 PASS
+Q* n0 native_plp = 123.3 (first fail 126.5)

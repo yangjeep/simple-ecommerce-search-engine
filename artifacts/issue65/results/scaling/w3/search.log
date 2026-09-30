@@ -1,0 +1,14 @@
+search native native_plp 20 PASS
+search native native_plp 30.0 PASS
+search native native_plp 45.0 PASS
+search native native_plp 67.5 PASS
+search native native_plp 101.2 PASS
+search native native_plp 151.8 PASS
+search native native_plp 227.7 PASS
+search native native_plp 341.5 PASS
+search native native_plp 512.2 FAIL
+refine native native_plp 426.9 FAIL
+refine native native_plp 384.2 PASS
+refine native native_plp 405.5 PASS
+refine native native_plp 416.2 PASS
+Q* native native_plp = 416.2 (first fail 426.9)

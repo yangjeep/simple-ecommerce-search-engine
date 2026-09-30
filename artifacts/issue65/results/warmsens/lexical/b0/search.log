@@ -1,0 +1,7 @@
+search b0 lexical 20 PASS
+search b0 lexical 30.0 PASS
+search b0 lexical 45.0 FAIL
+refine b0 lexical 37.5 PASS
+refine b0 lexical 41.2 PASS
+refine b0 lexical 43.1 PASS
+Q* b0 lexical = 43.1 (first fail 45.0)

@@ -1,0 +1,6 @@
+search h1 lexical 20 FAIL
+down h1 lexical 13.3 PASS
+refine h1 lexical 16.6 PASS
+refine h1 lexical 18.3 PASS
+refine h1 lexical 19.1 PASS
+Q* h1 lexical = 19.1 (first fail 20)
