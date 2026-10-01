@@ -161,7 +161,7 @@
     },
     "gib_ratio_t2_s2": {
       "ratio": 5.0,
-      "kind": "exact"
+      "kind": "lower_bound_b0_at_ladder_floor"
     },
     "units_t2_s2": {
       "h1": 1.25,

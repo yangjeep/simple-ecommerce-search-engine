@@ -27,7 +27,7 @@
 - cores t100_S2: 0.500 (exact)
 - cores t200_S1: 0.667 (bound_b0_infeasible)
 - cores t200_S2: 0.500 (bound_b0_infeasible)
-- GiB T2/S2: 5.000 (exact)
+- GiB T2/S2: 5.000 (lower_bound_b0_at_ladder_floor)
 - normalized units u = max(cores, GiB/4) T2/S2: H1 1.25, B0 2.00, ratio 0.625 (flagged: not jointly confirmed)
 - sensitivity shapes (non-gating): {"1:2": {"b0": 2.0, "h1": 2.5}, "1:8": {"b0": 2.0, "h1": 1.0}}
 - limiting resource at T2/S2: {"b0": "cpu", "h1": "ram"}

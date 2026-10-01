@@ -19,6 +19,7 @@ from candidates import candidate, step_up  # noqa: E402
 from judge import judge, load_pair  # noqa: E402
 
 TIERS = [50, 100, 200]
+MEM_LADDER_GIB = [12, 8, 7, 6, 5, 4, 3, 2, 1.5, 1]
 T2 = 100
 HEAPS = ["3g", "1g", "512m"]
 KINDS = ["b0", "h1"]

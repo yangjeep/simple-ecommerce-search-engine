@@ -75,7 +75,11 @@ def verdict(s):
     mem = ratio(s["h1"]["mem"]["S2"], s["b0"]["mem"]["S2"])
     if mem[1] == "bound_b0_infeasible":  # a bound over cores means nothing for GiB
         mem = (None, "b0_mem_infeasible")
-    gib_t2 = mem[0] is not None and mem[0] <= BAR
+    if mem[1] == "exact" and s["b0"]["mem"]["S2"]["level"] == min(plan.MEM_LADDER_GIB):
+        # B0 passed at the ladder floor: its true minimum is <= the floor, so
+        # H1/B0 is a lower bound (review finding 4).
+        mem = (mem[0], "lower_bound_b0_at_ladder_floor")
+    gib_t2 = mem[0] is not None and mem[0] <= BAR and mem[1] == "exact"
     # C3: u from the joint confirmation when both treatments are jointly feasible.
     u = {}
     flagged = False
