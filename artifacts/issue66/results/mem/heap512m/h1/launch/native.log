@@ -1,0 +1,2 @@
+{"build_ms":68558.817858,"cand_mode":"p0r (requested per request)","docs":515928,"i65_ready":true,"load_ms":9167.211688,"rho_s":0.0833779131971903,"solr_url":"http://127.0.0.1:8985","tau_f":919.4972390657695,"workers":3}
+i65_server: connection error: Broken pipe (os error 32)

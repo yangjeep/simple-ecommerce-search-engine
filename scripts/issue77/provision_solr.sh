@@ -17,6 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=../../benchmarks/configs/issue77/resource_envelope.env
 source "$REPO_ROOT/benchmarks/configs/issue77/resource_envelope.env"
+# Issue #66: optional heap override for the resource-envelope sweep (unset = frozen I77 heap).
+I77_JVM_HEAP="${I66_SOLR_HEAP:-$I77_JVM_HEAP}"
 
 if [[ $# -ne 2 ]]; then
   echo "FATAL: usage: provision_solr.sh <catalog_path> <expected_docs>" >&2

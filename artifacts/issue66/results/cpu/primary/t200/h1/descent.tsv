@@ -1,0 +1,6 @@
+3 PASS PASS none level_3.json
+2.5 PASS PASS none level_2.5.json
+2 PASS PASS none level_2.json
+1.5 PASS PASS none level_1.5.json
+1 FAIL FAIL errors level_1.json
+0.75 FAIL FAIL errors level_0.75.json

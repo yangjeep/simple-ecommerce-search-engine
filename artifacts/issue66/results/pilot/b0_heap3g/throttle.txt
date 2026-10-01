@@ -1,0 +1,6 @@
+quota 1 before: nr_throttled 826 throttled_usec 9571487 
+quota 1 after: nr_throttled 915 throttled_usec 14569138 
+100000 100000
+quota 0.5 before: nr_throttled 915 throttled_usec 14569138 
+quota 0.5 after: nr_throttled 1198 throttled_usec 67511690 
+50000 100000

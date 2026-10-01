@@ -1,0 +1,2 @@
+b0_mem_primary_t100_h512m_1	b0	mem	primary	100	512m	3	1	S2	mem_confirm
+h1_mem_primary_t100_h512m_5	h1	mem	primary	100	512m	3	5	S1,S2	mem_confirm

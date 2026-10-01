@@ -1,0 +1,131 @@
+{
+  "b0": {
+    "cpu": {
+      "t50": {
+        "S1": {
+          "level": null,
+          "descent_candidate": "INFEASIBLE",
+          "status": "INFEASIBLE"
+        },
+        "S2": {
+          "level": 1.5,
+          "job": "b0_cpu_primary_t50_h3g_1.5",
+          "stage": "cpu_confirm"
+        }
+      },
+      "t100": {
+        "S1": {
+          "level": null,
+          "descent_candidate": "INFEASIBLE",
+          "status": "INFEASIBLE"
+        },
+        "S2": {
+          "level": 2.0,
+          "job": "b0_cpu_primary_t100_h3g_2",
+          "stage": "cpu_confirm"
+        }
+      },
+      "t200": {
+        "S1": {
+          "level": null,
+          "descent_candidate": "INFEASIBLE",
+          "status": "INFEASIBLE"
+        },
+        "S2": {
+          "level": null,
+          "descent_candidate": "INFEASIBLE",
+          "status": "INFEASIBLE"
+        }
+      }
+    },
+    "mem": {
+      "S1": {
+        "level": null,
+        "descent_candidate": null,
+        "status": "INFEASIBLE"
+      },
+      "S2": {
+        "level": 1.0,
+        "heap": "512m",
+        "job": "b0_mem_primary_t100_h512m_1"
+      }
+    },
+    "joint": {
+      "S2": {
+        "cores": 2.0,
+        "mem": 1.0,
+        "heap": "512m",
+        "passes": 0,
+        "jointly_feasible": false
+      }
+    }
+  },
+  "h1": {
+    "cpu": {
+      "t50": {
+        "S1": {
+          "level": 1.0,
+          "job": "h1_cpu_primary_t50_h3g_1",
+          "stage": "cpu_confirm_stepup"
+        },
+        "S2": {
+          "level": 0.75,
+          "job": "h1_cpu_primary_t50_h3g_0.75",
+          "stage": "cpu_confirm_stepup"
+        }
+      },
+      "t100": {
+        "S1": {
+          "level": 1.0,
+          "job": "h1_cpu_primary_t100_h3g_1",
+          "stage": "cpu_confirm"
+        },
+        "S2": {
+          "level": 1.0,
+          "job": "h1_cpu_primary_t100_h3g_1",
+          "stage": "cpu_confirm_stepup"
+        }
+      },
+      "t200": {
+        "S1": {
+          "level": 2.0,
+          "job": "h1_cpu_primary_t200_h3g_2",
+          "stage": "cpu_confirm_stepup"
+        },
+        "S2": {
+          "level": 1.5,
+          "job": "h1_cpu_primary_t200_h3g_1.5",
+          "stage": "cpu_confirm"
+        }
+      }
+    },
+    "mem": {
+      "S1": {
+        "level": 5.0,
+        "heap": "512m",
+        "job": "h1_mem_primary_t100_h512m_5"
+      },
+      "S2": {
+        "level": 5.0,
+        "heap": "512m",
+        "job": "h1_mem_primary_t100_h512m_5"
+      }
+    },
+    "joint": {
+      "S1": {
+        "cores": 1.0,
+        "mem": 5.0,
+        "heap": "512m",
+        "passes": 0,
+        "jointly_feasible": false
+      },
+      "S2": {
+        "cores": 1.0,
+        "mem": 5.0,
+        "heap": "512m",
+        "passes": 2,
+        "jointly_feasible": true
+      }
+    }
+  }
+}

@@ -1,0 +1,1 @@
+vs_frozen f_total=480 num_found_same=480 same_set=425 same_order=2

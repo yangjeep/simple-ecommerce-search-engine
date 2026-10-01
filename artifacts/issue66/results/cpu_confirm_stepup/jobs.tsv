@@ -1,0 +1,4 @@
+h1_cpu_primary_t50_h3g_1	h1	cpu	primary	50	3g	1	12	S1	cpu_confirm_stepup
+h1_cpu_primary_t50_h3g_0.75	h1	cpu	primary	50	3g	0.75	12	S2	cpu_confirm_stepup
+h1_cpu_primary_t100_h3g_1	h1	cpu	primary	100	3g	1	12	S2	cpu_confirm_stepup
+h1_cpu_primary_t200_h3g_2	h1	cpu	primary	200	3g	2	12	S1	cpu_confirm_stepup

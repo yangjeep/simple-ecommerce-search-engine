@@ -129,6 +129,13 @@ This diagnostic was posted to #65 before it ran. It uses one fresh launch per tr
 - **Caveats.** The data is 2 points × 1 launch, and the part of Solr's cost that is fixed rather than per-query was not separately measured. A long-lived, fully merged production Solr might not carry this background cost.
 - **How to use these numbers.** They are a hypothesis for #66 (does a fixed-workload envelope reward H1 more at higher load?), not a result. The preregistered c remains 0.658.
 
+> **Post-merge correction (2026-09-30, #66 pilot; the text above is preserved).**
+> - **The load-independent-background explanation is falsified.** A freshly provisioned, force-merged Solr uses **≈ 0.016 cores at idle**, both after provisioning and after a 50-QPS window (`artifacts/issue66/results/pilot/`).
+> - **Likely cause instead:** the flat delegate CPU from 50 to 100 QPS is more likely **warm-up (JIT/caches) confounded with window order**, since the 100-QPS window always ran after the 50-QPS one.
+> - **How to read the numbers:** c = 0.51 at 100 QPS and the marginal ratio of ≈ 0.29 are order-confounded post-hoc numbers, not a load trend.
+> - **Unaffected:** the preregistered c = 0.658 and the verdict.
+> - **Follow-up:** #66 controls warm-up (300 s at the tier rate) and ordering (fresh-launch confirmations) for this reason.
+
 ## 4. Sensitivity (preregistered: one search per mix; the verdict requires H1 > B0 on both)
 
 | mix | B0 Q* | H1 Q* | H1 > B0 |
@@ -204,7 +211,7 @@ The reviewer could not falsify any of the following:
 
 ## 8. Consequence
 
-- **#60.** The whole-workload thesis is **KEPT, narrowly**: for latency-feasible capacity on this family of mixes, H1 serves about 380 QPS under an SLO that Solr alone cannot meet. The total-CPU efficiency is **modest (c ≈ 0.63–0.74 at matched low load) and fragile**. In the post-hoc diagnostic it improves with load (0.51 at 100 QPS), a pattern consistent with a load-independent Solr background cost. Memory is **not** kept: H1 uses 2.1x B0's cgroup memory, and E2's REFINE stands.
+- **#60.** The whole-workload thesis is **KEPT, narrowly**: for latency-feasible capacity on this family of mixes, H1 serves about 380 QPS under an SLO that Solr alone cannot meet. The total-CPU efficiency is **modest (c ≈ 0.63–0.74 at matched low load) and fragile**. In the post-hoc diagnostic it improves with load (0.51 at 100 QPS), a pattern consistent with a load-independent Solr background cost. *(Post-merge correction: the #66 pilot falsified that explanation; see §3.5.)* Memory is **not** kept: H1 uses 2.1x B0's cgroup memory, and E2's REFINE stands.
 - **#66 (fixed workload → minimum CPU/RAM envelope).** It must weigh, in one experiment, H1's latency feasibility at a given core count, the modest per-query CPU difference, and H1's 2.1x memory. It must also measure B0 at loads above its SLO limit (throughput only) to get a marginal CPU comparison.
 - **H1 REFINE candidates** (not done here):
   - numeric-range construction, behind the class C tail;

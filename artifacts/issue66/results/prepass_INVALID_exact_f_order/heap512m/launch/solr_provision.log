@@ -1,0 +1,18 @@
+==> removing any prior i77-solr scope/solr home
+==> starting scope i77-solr
+neither jattach nor jstack in /home/yangjeep/.cache/e3b-engines/jdk could be found, so no thread dumps are possible. Continuing.
+==> waiting for Solr to become ready (timeout 3600s)
+  solr is ready
+==> creating fixture core i77_fixture
+neither jattach nor jstack in /home/yangjeep/.cache/e3b-engines/jdk could be found, so no thread dumps are possible. Continuing.
+==> defining Dataset A schema on i77_wands
+  Dataset A schema defined
+==> defining Dataset B (fixture) schema on i77_fixture
+==> loading Dataset B fixture (4 docs)
+  Dataset B fixture loaded
+==> indexing /home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl into i77_wands (streamed, batched)
+  indexed 5000 docs
+  indexed 10000 docs
+  indexed 15000 docs
+  indexed 20000 docs
+  indexed 25000 docs
