@@ -1,0 +1,5 @@
+3 FAIL PASS latency level_3.json
+2.5 FAIL PASS latency level_2.5.json
+2 FAIL PASS latency_throttled level_2.json
+1.5 FAIL FAIL latency_throttled level_1.5.json
+1 FAIL FAIL errors level_1.json

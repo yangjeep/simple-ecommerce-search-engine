@@ -1,0 +1,14 @@
+=== 2026-09-30T22:34:34Z provision solr (fresh index) for b0 ===
+mem_confirm b0_mem_primary_t100_h512m_1 run1 cores=3 mem=1 heap=512m S1=FAIL S2=PASS mode=latency
+=== 2026-09-30T22:46:24Z provision solr (fresh index) for h1 ===
+mem_confirm h1_mem_primary_t100_h512m_5 run1 cores=3 mem=5 heap=512m S1=PASS S2=PASS mode=none
+=== 2026-09-30T22:59:40Z provision solr (fresh index) for h1 ===
+mem_confirm h1_mem_primary_t100_h512m_5 run2 cores=3 mem=5 heap=512m S1=PASS S2=PASS mode=none
+=== 2026-09-30T23:12:37Z provision solr (fresh index) for b0 ===
+mem_confirm b0_mem_primary_t100_h512m_1 run2 cores=3 mem=1 heap=512m S1=FAIL S2=PASS mode=latency
+=== 2026-09-30T23:24:12Z provision solr (fresh index) for b0 ===
+mem_confirm b0_mem_primary_t100_h512m_1 run3 cores=3 mem=1 heap=512m S1=FAIL S2=PASS mode=latency
+=== 2026-09-30T23:36:05Z provision solr (fresh index) for h1 ===
+mem_confirm h1_mem_primary_t100_h512m_5 run3 cores=3 mem=5 heap=512m S1=PASS S2=PASS mode=none
+no jobs for mem_confirm_stepup
+=== 2026-09-30T23:49:12Z phase memconfirm done ===

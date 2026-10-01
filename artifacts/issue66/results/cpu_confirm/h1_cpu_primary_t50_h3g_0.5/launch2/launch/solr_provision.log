@@ -1,0 +1,122 @@
+==> removing any prior i77-solr scope/solr home
+==> starting scope i77-solr
+neither jattach nor jstack in /home/yangjeep/.cache/e3b-engines/jdk could be found, so no thread dumps are possible. Continuing.
+==> waiting for Solr to become ready (timeout 3600s)
+  solr is ready
+==> creating fixture core i77_fixture
+neither jattach nor jstack in /home/yangjeep/.cache/e3b-engines/jdk could be found, so no thread dumps are possible. Continuing.
+==> defining Dataset A schema on i77_wands
+  Dataset A schema defined
+==> defining Dataset B (fixture) schema on i77_fixture
+==> loading Dataset B fixture (4 docs)
+  Dataset B fixture loaded
+==> indexing /home/yangjeep/orca/workspaces/simple-ecommerce-search-engine/resource-experiments/dataset_cache/wands_scale/catalog_12x.jsonl into i77_wands (streamed, batched)
+  indexed 5000 docs
+  indexed 10000 docs
+  indexed 15000 docs
+  indexed 20000 docs
+  indexed 25000 docs
+  indexed 30000 docs
+  indexed 35000 docs
+  indexed 40000 docs
+  indexed 45000 docs
+  indexed 50000 docs
+  indexed 55000 docs
+  indexed 60000 docs
+  indexed 65000 docs
+  indexed 70000 docs
+  indexed 75000 docs
+  indexed 80000 docs
+  indexed 85000 docs
+  indexed 90000 docs
+  indexed 95000 docs
+  indexed 100000 docs
+  indexed 105000 docs
+  indexed 110000 docs
+  indexed 115000 docs
+  indexed 120000 docs
+  indexed 125000 docs
+  indexed 130000 docs
+  indexed 135000 docs
+  indexed 140000 docs
+  indexed 145000 docs
+  indexed 150000 docs
+  indexed 155000 docs
+  indexed 160000 docs
+  indexed 165000 docs
+  indexed 170000 docs
+  indexed 175000 docs
+  indexed 180000 docs
+  indexed 185000 docs
+  indexed 190000 docs
+  indexed 195000 docs
+  indexed 200000 docs
+  indexed 205000 docs
+  indexed 210000 docs
+  indexed 215000 docs
+  indexed 220000 docs
+  indexed 225000 docs
+  indexed 230000 docs
+  indexed 235000 docs
+  indexed 240000 docs
+  indexed 245000 docs
+  indexed 250000 docs
+  indexed 255000 docs
+  indexed 260000 docs
+  indexed 265000 docs
+  indexed 270000 docs
+  indexed 275000 docs
+  indexed 280000 docs
+  indexed 285000 docs
+  indexed 290000 docs
+  indexed 295000 docs
+  indexed 300000 docs
+  indexed 305000 docs
+  indexed 310000 docs
+  indexed 315000 docs
+  indexed 320000 docs
+  indexed 325000 docs
+  indexed 330000 docs
+  indexed 335000 docs
+  indexed 340000 docs
+  indexed 345000 docs
+  indexed 350000 docs
+  indexed 355000 docs
+  indexed 360000 docs
+  indexed 365000 docs
+  indexed 370000 docs
+  indexed 375000 docs
+  indexed 380000 docs
+  indexed 385000 docs
+  indexed 390000 docs
+  indexed 395000 docs
+  indexed 400000 docs
+  indexed 405000 docs
+  indexed 410000 docs
+  indexed 415000 docs
+  indexed 420000 docs
+  indexed 425000 docs
+  indexed 430000 docs
+  indexed 435000 docs
+  indexed 440000 docs
+  indexed 445000 docs
+  indexed 450000 docs
+  indexed 455000 docs
+  indexed 460000 docs
+  indexed 465000 docs
+  indexed 470000 docs
+  indexed 475000 docs
+  indexed 480000 docs
+  indexed 485000 docs
+  indexed 490000 docs
+  indexed 495000 docs
+  indexed 500000 docs
+  indexed 505000 docs
+  indexed 510000 docs
+  indexed 515000 docs
+  indexed 515928 docs total
+==> committing
+==> forceMerge(1)
+==> numFound=515928 (expected 515928)
+==> index_bytes=266750003
+PROVISION_OK container=i77-solr docs=515928 index_bytes=266750003

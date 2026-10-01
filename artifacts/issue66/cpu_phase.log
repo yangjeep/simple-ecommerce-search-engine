@@ -1,0 +1,40 @@
+=== 2026-09-30T07:56:52Z provision solr (fresh index) for b0 ===
+descend b0 cpu primary t50 heap3g 3 S1=FAIL S2=PASS mode=latency
+descend b0 cpu primary t50 heap3g 2.5 S1=PASS S2=PASS mode=none
+descend b0 cpu primary t50 heap3g 2 S1=FAIL S2=PASS mode=latency
+descend b0 cpu primary t50 heap3g 1.5 S1=FAIL S2=PASS mode=latency
+descend b0 cpu primary t50 heap3g 1 S1=FAIL S2=FAIL mode=latency_throttled
+descend b0 cpu primary t50 heap3g 0.75 S1=FAIL S2=FAIL mode=errors
+=== 2026-09-30T08:23:57Z provision solr (fresh index) for h1 ===
+descend h1 cpu primary t50 heap3g 3 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 2.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 2 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 1.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 1 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 0.75 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t50 heap3g 0.5 S1=FAIL S2=PASS mode=latency_throttled
+=== 2026-09-30T08:55:35Z provision solr (fresh index) for h1 ===
+descend h1 cpu primary t100 heap3g 3 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t100 heap3g 2.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t100 heap3g 2 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t100 heap3g 1.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t100 heap3g 1 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t100 heap3g 0.75 S1=FAIL S2=PASS mode=latency_throttled
+descend h1 cpu primary t100 heap3g 0.5 S1=FAIL S2=FAIL mode=errors
+=== 2026-09-30T09:27:04Z provision solr (fresh index) for b0 ===
+descend b0 cpu primary t100 heap3g 3 S1=FAIL S2=PASS mode=latency
+descend b0 cpu primary t100 heap3g 2.5 S1=FAIL S2=PASS mode=latency
+descend b0 cpu primary t100 heap3g 2 S1=FAIL S2=PASS mode=latency_throttled
+descend b0 cpu primary t100 heap3g 1.5 S1=FAIL S2=FAIL mode=errors
+descend b0 cpu primary t100 heap3g 1 S1=FAIL S2=FAIL mode=errors
+=== 2026-09-30T09:51:12Z provision solr (fresh index) for b0 ===
+descend b0 cpu primary t200 heap3g 3 S1=FAIL S2=FAIL mode=errors
+descend b0 cpu primary t200 heap3g 2.5 S1=FAIL S2=FAIL mode=errors
+=== 2026-09-30T10:06:25Z provision solr (fresh index) for h1 ===
+descend h1 cpu primary t200 heap3g 3 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t200 heap3g 2.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t200 heap3g 2 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t200 heap3g 1.5 S1=PASS S2=PASS mode=none
+descend h1 cpu primary t200 heap3g 1 S1=FAIL S2=FAIL mode=errors
+descend h1 cpu primary t200 heap3g 0.75 S1=FAIL S2=FAIL mode=errors
+=== 2026-09-30T10:34:53Z phase cpu done ===

@@ -1,0 +1,12 @@
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_1 run1 cores=1 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_0.75 run1 cores=0.75 mem=12 heap=3g S1=FAIL S2=PASS mode=latency_throttled
+cpu_confirm_stepup h1_cpu_primary_t100_h3g_1 run1 cores=1 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t200_h3g_2 run1 cores=2 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t200_h3g_2 run2 cores=2 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t100_h3g_1 run2 cores=1 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_0.75 run2 cores=0.75 mem=12 heap=3g S1=FAIL S2=PASS mode=latency_throttled
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_1 run2 cores=1 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_1 run3 cores=1 mem=12 heap=3g S1=PASS S2=PASS mode=none
+cpu_confirm_stepup h1_cpu_primary_t50_h3g_0.75 run3 cores=0.75 mem=12 heap=3g S1=FAIL S2=PASS mode=latency_throttled
+cpu_confirm_stepup h1_cpu_primary_t100_h3g_1 run3 cores=1 mem=12 heap=3g S1=FAIL S2=FAIL mode=latency_throttled
+cpu_confirm_stepup h1_cpu_primary_t200_h3g_2 run3 cores=2 mem=12 heap=3g S1=PASS S2=PASS mode=none

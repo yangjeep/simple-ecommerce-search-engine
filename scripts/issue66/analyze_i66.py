@@ -157,12 +157,12 @@ def main():
     for k in plan.KINDS:
         for t in plan.TIERS:
             c = s[k]["cpu"][f"t{t}"]
-            cell = lambda x: fmt(x.get("level")) if x.get("level") is not None else x.get("status", "—")  # noqa: E731
+            cell = lambda x: f"{x['level']:g}" if x.get("level") is not None else x.get("status", "—")  # noqa: E731
             md.append(f"| {k} | {t} | {cell(c['S1'])} | {cell(c['S2'])} |")
     md.append("\n| treatment | S1 GiB (heap) | S2 GiB (heap) | joint S2 (cores, GiB, heap, passes) |\n|---|---|---|---|")
     for k in plan.KINDS:
         m = s[k]["mem"]
-        cell = lambda x: f"{fmt(x['level'])} ({x['heap']})" if x.get("level") is not None else x.get("status", "—")  # noqa: E731
+        cell = lambda x: f"{x['level']:g} ({x['heap']})" if x.get("level") is not None else x.get("status", "—")  # noqa: E731
         j = s[k]["joint"].get("S2")
         jt = f"{j['cores']:g}, {j['mem']:g}, {j['heap']}, {j['passes']}/3" if j else "—"
         md.append(f"| {k} | {cell(m['S1'])} | {cell(m['S2'])} | {jt} |")
