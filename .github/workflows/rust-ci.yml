@@ -33,5 +33,20 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --all-features
 
+      - name: Athos80 offline oracle and provenance regressions
+        run: |
+          python3 -m unittest discover -s scripts/athos80_validation -p 'test_*.py'
+          python3 scripts/athos80_verify_query_provenance.py
+
+      - name: Athos80 isolated HTTP correctness
+        run: |
+          cargo build --locked -p athos80-eval --features bm25 --bins
+          python3 scripts/athos80_http_smoke.py "$PWD/target/debug/athos80_server" "$PWD/target/athos80-smoke"
+          python3 scripts/athos80_validation/prepare_fixtures.py
+          BINARY="$PWD/target/debug/athos80_server"
+          BINARY_SHA=$(sha256sum "$BINARY" | cut -d' ' -f1)
+          python3 scripts/athos80_validation/run_correctness.py --run-approved --binary "$BINARY" --expect-binary-sha256 "$BINARY_SHA" --phase synthetic --port 18890 --output target/athos80-synthetic
+          python3 scripts/athos80_validation/run_correctness.py --run-approved --binary "$BINARY" --expect-binary-sha256 "$BINARY_SHA" --phase global --port 18890 --output target/athos80-global
+
       - name: cargo build --release
         run: cargo build --workspace --release

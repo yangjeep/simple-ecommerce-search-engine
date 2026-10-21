@@ -1,0 +1,24 @@
+{
+  "source": "athos80_validation/wands/frozen-v1/workload.json",
+  "source_sha256": "c4d0cd3a4071b5d0f88a8d8ff4068c126b303e9b66f535db24b2f08cb1ac8400",
+  "cases": [
+    {
+      "query_id": 208,
+      "q": "\"fawkes 36\"\" blue vanity\"",
+      "normalized": "fawkes 36 blue vanity",
+      "expected_product_id": 1
+    },
+    {
+      "query_id": 285,
+      "q": "\"48\"\" sliding single track , barn door for laundry\"",
+      "normalized": "48 sliding single track barn door for laundry",
+      "expected_product_id": 4
+    },
+    {
+      "query_id": 391,
+      "q": "\"writing desk 48\"\"\"",
+      "normalized": "writing desk 48",
+      "expected_product_id": 6
+    }
+  ]
+}

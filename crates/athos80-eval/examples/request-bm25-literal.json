@@ -1,0 +1,29 @@
+{
+  "q": "shoes\"\"",
+  "lexical": {
+    "profile": "bm25_literal"
+  },
+  "facets": [
+    {
+      "name": "color",
+      "field": {
+        "type": "attribute",
+        "name": "color"
+      }
+    },
+    {
+      "name": "size",
+      "field": {
+        "type": "attribute",
+        "name": "size"
+      }
+    },
+    {
+      "name": "material",
+      "field": {
+        "type": "attribute",
+        "name": "material"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1013 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:athos80-experimental-v1.1:catalog",
+  "title": "CatalogInput",
+  "description": "Experimental input shape. Rust runtime additionally validates identity uniqueness, finite values, active pin positions, and contextual semantics; HTTP adds documented resource caps. No Athos compatibility claim.",
+  "$defs": {
+    "Value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "enum"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "multi_enum"
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "boolean"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "numeric"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "text"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Attributes": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Value"
+      }
+    },
+    "Filter": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "enum"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "attribute",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "multi_enum_contains"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "attribute",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "boolean"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "attribute",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "numeric"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "op": {
+              "enum": [
+                "eq",
+                "lt",
+                "lte",
+                "gt",
+                "gte"
+              ]
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "attribute",
+            "op",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "text_contains"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "attribute",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "brand"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "category"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "product_type"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "price_under_cents"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": -9223372036854775808,
+              "maximum": 9223372036854775807
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "price_over_cents"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": -9223372036854775808,
+              "maximum": 9223372036854775807
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ResultMode": {
+      "enum": [
+        "products",
+        "variants"
+      ]
+    },
+    "LexicalHit": {
+      "type": "object",
+      "properties": {
+        "product_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "variant_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000000.0
+        },
+        "relevance_bucket": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "product_id",
+        "variant_id",
+        "score",
+        "relevance_bucket"
+      ],
+      "additionalProperties": false
+    },
+    "LexicalInput": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "const": "exact_token_and"
+            }
+          },
+          "required": [
+            "profile"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "const": "bm25"
+            }
+          },
+          "required": [
+            "profile"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "const": "bm25_literal"
+            }
+          },
+          "required": [
+            "profile"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "const": "supplied"
+            },
+            "hits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/LexicalHit"
+              }
+            }
+          },
+          "required": [
+            "profile",
+            "hits"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Context": {
+      "type": "object",
+      "properties": {
+        "category_id": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "Scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "global"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "category"
+            },
+            "category_id": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            }
+          },
+          "required": [
+            "type",
+            "category_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "query"
+            },
+            "query": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "query"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "query_equals"
+            },
+            "query": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "query"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "query_contains_all"
+            },
+            "tokens": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "tokens"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "context_category"
+            },
+            "category_id": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            }
+          },
+          "required": [
+            "type",
+            "category_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "context_tag"
+            },
+            "tag": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "tag"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "all"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "products"
+            },
+            "ids": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 18446744073709551615
+              }
+            }
+          },
+          "required": [
+            "type",
+            "ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "variants"
+            },
+            "ids": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 18446744073709551615
+              }
+            }
+          },
+          "required": [
+            "type",
+            "ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "filters"
+            },
+            "filters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Filter"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "filters"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "hide"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "group"
+            },
+            "order": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "rank": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type",
+            "rank"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "pin"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            }
+          },
+          "required": [
+            "type",
+            "position"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          }
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "action": {
+          "$ref": "#/$defs/Action"
+        }
+      },
+      "required": [
+        "id",
+        "target",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "PersonalSignal": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "factor": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4
+        }
+      },
+      "required": [
+        "target",
+        "factor"
+      ],
+      "additionalProperties": false
+    },
+    "FacetField": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "attribute"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "brand"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "category"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "product_type"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "price_cents"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FacetRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/FacetField"
+        }
+      },
+      "required": [
+        "name",
+        "field"
+      ],
+      "additionalProperties": false
+    },
+    "Request": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string"
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Filter"
+          }
+        },
+        "in_stock_only": {
+          "type": "boolean"
+        },
+        "result_mode": {
+          "$ref": "#/$defs/ResultMode"
+        },
+        "facet_count_mode": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ResultMode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "facets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacetRequest"
+          }
+        },
+        "lexical": {
+          "$ref": "#/$defs/LexicalInput"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          }
+        },
+        "personal_signals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PersonalSignal"
+          }
+        },
+        "sort": {
+          "enum": [
+            "relevance",
+            "price_asc",
+            "price_desc"
+          ]
+        },
+        "sort_policy": {
+          "enum": [
+            "shopper_overrides",
+            "merch_overrides"
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "VariantInput": {
+      "type": "object",
+      "properties": {
+        "variant_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "price_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "available_units": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "in_stock": {
+          "type": "boolean"
+        },
+        "attributes": {
+          "$ref": "#/$defs/Attributes"
+        }
+      },
+      "required": [
+        "variant_id",
+        "price_cents",
+        "available_units",
+        "in_stock"
+      ],
+      "additionalProperties": false
+    },
+    "ProductInput": {
+      "type": "object",
+      "properties": {
+        "product_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "title": {
+          "type": "string"
+        },
+        "brand_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "category_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "product_type_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "attributes": {
+          "$ref": "#/$defs/Attributes"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VariantInput"
+          }
+        }
+      },
+      "required": [
+        "product_id",
+        "title",
+        "brand_id",
+        "category_id",
+        "product_type_id",
+        "variants"
+      ],
+      "additionalProperties": false
+    },
+    "CatalogInput": {
+      "type": "object",
+      "properties": {
+        "products": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProductInput"
+          }
+        }
+      },
+      "required": [
+        "products"
+      ],
+      "additionalProperties": false
+    },
+    "ReplayInput": {
+      "type": "object",
+      "properties": {
+        "catalog": {
+          "$ref": "#/$defs/CatalogInput"
+        },
+        "requests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Request"
+          }
+        }
+      },
+      "required": [
+        "catalog",
+        "requests"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$ref": "#/$defs/CatalogInput"
+}

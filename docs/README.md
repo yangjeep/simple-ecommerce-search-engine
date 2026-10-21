@@ -57,3 +57,9 @@ The documentation points into several non-doc directories on purpose:
 - **Project-level summary** → keep it short and put it at `docs/` root
 
 Do not create a new documentation category for one issue or one phase.
+
+## Variant-first search experiment
+
+[First-iteration report](experiments/ATHOS80_FIRST_ITERATION.md): isolated search,
+merchandising and supplied personalization, with explicit correctness, recall
+and resource-measurement limits. This is not an 80/20 cost or coverage claim.
