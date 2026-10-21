@@ -30,6 +30,8 @@ d['VariantInput']=obj({'variant_id':U,'price_cents':{'type':'integer','minimum':
 d['ProductInput']=obj({'product_id':U,'title':S,'brand_id':U32,'category_id':U32,'product_type_id':U32,'attributes':ref('Attributes'),'variants':arr(ref('VariantInput'))},['product_id','title','brand_id','category_id','product_type_id','variants'])
 d['CatalogInput']=obj({'products':arr(ref('ProductInput'))})
 d['ReplayInput']=obj({'catalog':ref('CatalogInput'),'requests':arr(ref('Request'))})
-for name,kind in [('request','Request'),('catalog','CatalogInput'),('replay','ReplayInput')]:
+# Public schema type identifiers; filenames are derived, not credential pairs.
+for kind in ['Request', 'CatalogInput', 'ReplayInput']:
+    name = kind.removesuffix('Input').lower()
     value={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'urn:athos80-experimental-v1.1:'+name,'title':kind,'description':'Experimental input shape. Rust runtime additionally validates identity uniqueness, finite values, active pin positions, and contextual semantics; HTTP adds documented resource caps. No Athos compatibility claim.','$defs':d,**ref(kind)}
     (root/(name+'.schema.json')).write_text(json.dumps(value,indent=2)+'\n')
