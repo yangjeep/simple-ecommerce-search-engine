@@ -1,0 +1,363 @@
+{
+  "scope": "pure baseline; 480 official queries; no synthetic browse, filtering, stock restriction, pagination offset, facets, merchandising or supplied personalization",
+  "queries": 480,
+  "http_successes": 480,
+  "http_failures": 0,
+  "judged_queries": 480,
+  "queries_with_positive_idcg": 479,
+  "queries_without_positive_idcg": 1,
+  "ndcg_at_10_macro_all_480_zero_idcg_as_zero": 0.38637892767840865,
+  "ndcg_at_10_macro_all_480_observed_label_min": 0.38637892767840865,
+  "ndcg_at_10_macro_all_480_observed_label_max": 0.38637892767840865,
+  "ndcg_at_10_macro_positive_idcg_queries": 0.38718556427063916,
+  "zero_result_queries": 159,
+  "zero_result_rate_pct_of_all_480": 33.125,
+  "zero_result_rate_pct_of_successful_requests": 33.125,
+  "queries_with_any_judged_relevant_top10": 297,
+  "judged_relevant_success_at_10_pct_all_480": 61.875,
+  "judged_relevant_success_at_10_count_observed_label_min": 297,
+  "judged_relevant_success_at_10_count_observed_label_max": 297,
+  "queries_with_any_exact_top10": 258,
+  "returned_top10_hits": 2157,
+  "judged_returned_top10_hits": 1850,
+  "unjudged_returned_top10_hits": 307,
+  "judged_coverage_pct_returned_hits": 85.76726935558646,
+  "empty_top10_slots": 2643,
+  "qrel_rows": 233448,
+  "qrel_label_counts": {
+    "Exact": 25614,
+    "Irrelevant": 61201,
+    "Partial": 146633
+  },
+  "qrel_unique_query_product_pairs": 231873,
+  "qrel_duplicate_rows": 1575,
+  "qrel_conflicting_pairs": 14,
+  "qrel_conflicting_queries": 14,
+  "qrel_conflict_details": [
+    {
+      "query_id": "0",
+      "product_id": "31306",
+      "observed_labels": [
+        "Irrelevant",
+        "Partial"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "12",
+      "product_id": "34349",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "24",
+      "product_id": "696",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "89",
+      "product_id": "24413",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "106",
+      "product_id": "1990",
+      "observed_labels": [
+        "Irrelevant",
+        "Partial"
+      ],
+      "file_last_reference_label": "Irrelevant"
+    },
+    {
+      "query_id": "243",
+      "product_id": "5766",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "246",
+      "product_id": "38402",
+      "observed_labels": [
+        "Irrelevant",
+        "Partial"
+      ],
+      "file_last_reference_label": "Irrelevant"
+    },
+    {
+      "query_id": "258",
+      "product_id": "2076",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "293",
+      "product_id": "19210",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Exact"
+    },
+    {
+      "query_id": "313",
+      "product_id": "602",
+      "observed_labels": [
+        "Irrelevant",
+        "Partial"
+      ],
+      "file_last_reference_label": "Irrelevant"
+    },
+    {
+      "query_id": "327",
+      "product_id": "22268",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "421",
+      "product_id": "29138",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Partial"
+    },
+    {
+      "query_id": "425",
+      "product_id": "40107",
+      "observed_labels": [
+        "Partial",
+        "Exact"
+      ],
+      "file_last_reference_label": "Exact"
+    },
+    {
+      "query_id": "444",
+      "product_id": "15033",
+      "observed_labels": [
+        "Irrelevant",
+        "Partial"
+      ],
+      "file_last_reference_label": "Irrelevant"
+    }
+  ],
+  "qrel_duplicate_policy": "Deduplicate identical query/product labels. File-last label is only a deterministic reference, NOT official adjudication. Exact per-query min/max enumerates every observed conflicting label, recomputes DCG and IDCG, then macro-averages extrema over all480.",
+  "linear_gains": {
+    "Exact": 1.0,
+    "Partial": 0.5,
+    "Irrelevant": 0.0
+  },
+  "discount": "gain/log2(rank+1), rank starts at 1; no exponentiation",
+  "idcg": "all products with qrels for the query, sorted by gain, top10",
+  "missing_judgment_policy": "unjudged retrieved products contribute zero, not asserted irrelevant; empty result slots contribute zero",
+  "zero_idcg_policy": "zero in all-480 macro; excluded only in separately labeled positive-IDCG macro",
+  "http_failure_policy": "zero retrieval score in macro, always explicitly reported; no successful-query-only exclusion",
+  "zero_result_query_ids": [
+    "12",
+    "14",
+    "15",
+    "16",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "30",
+    "31",
+    "35",
+    "42",
+    "46",
+    "49",
+    "51",
+    "52",
+    "56",
+    "61",
+    "62",
+    "73",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "83",
+    "84",
+    "87",
+    "88",
+    "90",
+    "92",
+    "98",
+    "99",
+    "101",
+    "107",
+    "110",
+    "111",
+    "116",
+    "129",
+    "134",
+    "136",
+    "137",
+    "139",
+    "140",
+    "145",
+    "171",
+    "174",
+    "179",
+    "188",
+    "189",
+    "190",
+    "191",
+    "196",
+    "197",
+    "199",
+    "200",
+    "201",
+    "202",
+    "203",
+    "204",
+    "205",
+    "207",
+    "208",
+    "209",
+    "210",
+    "212",
+    "213",
+    "214",
+    "215",
+    "216",
+    "218",
+    "219",
+    "221",
+    "222",
+    "223",
+    "224",
+    "225",
+    "233",
+    "236",
+    "244",
+    "263",
+    "265",
+    "266",
+    "269",
+    "272",
+    "277",
+    "279",
+    "280",
+    "285",
+    "286",
+    "290",
+    "293",
+    "294",
+    "295",
+    "300",
+    "301",
+    "305",
+    "309",
+    "321",
+    "322",
+    "327",
+    "343",
+    "344",
+    "345",
+    "347",
+    "348",
+    "354",
+    "360",
+    "363",
+    "364",
+    "366",
+    "371",
+    "373",
+    "375",
+    "377",
+    "378",
+    "379",
+    "381",
+    "382",
+    "383",
+    "385",
+    "387",
+    "388",
+    "389",
+    "390",
+    "392",
+    "393",
+    "394",
+    "397",
+    "399",
+    "400",
+    "401",
+    "402",
+    "405",
+    "406",
+    "416",
+    "424",
+    "427",
+    "451",
+    "452",
+    "453",
+    "455",
+    "458",
+    "459",
+    "460",
+    "467",
+    "468",
+    "471",
+    "474",
+    "475",
+    "478",
+    "479",
+    "480",
+    "482",
+    "484",
+    "485",
+    "486"
+  ],
+  "no_positive_idcg_query_ids": [
+    "366"
+  ],
+  "sources": {
+    "official_dataset": "https://github.com/wayfair/WANDS/blob/3b74dcf4ba29ab8ff3e6a50b5b09fc627cb882b5/README.md",
+    "paper_table3_linear_label_values": "https://easychair.org/publications/preprint/j2D4/download"
+  },
+  "not_claims": [
+    "Athos relevance parity",
+    "production business lift",
+    "merchandising or personalization quality",
+    "regression against old Issue57 pipeline",
+    "80 percent capability coverage",
+    "20 percent total cost"
+  ],
+  "provenance": {
+    "release_binary_sha256": "1551492f9a4d2aee3816ff11d9f93683e4543a8662e513e2c33df1160c992ae3",
+    "serving_catalog_sha256": "ad02122bf29672f34ec84c7a01a9d05a38d684c3a359cfdb5903be9980eaac36",
+    "query_sha256": "63b61660560fecc33ec490804c7e2b81402ee3e7c31a9cbb5e03736639f68e95",
+    "label_sha256": "c11fe81ad62f17f56f316b0ec9630ebe8fbe1393578cb0ca4f05c17253a180ef",
+    "cases_sha256": "5713aa0abaee49385a0f5310b58c7ae82f06d4de073691cbbc5400f3673e488a",
+    "responses_sha256": "bcddecc23698f4fc99bde4551070f686c41259fbc95dbd3548d4b63076ca3194",
+    "collection_manifest_sha256": "19a0d4060951ee4e3a5e3f15af05c8ed9f759f0d8bd9b3aec7ed9c38c87ff7d7",
+    "source_verification_sha256": "966715cecb478511b2553e04f57829d4cc07d6c736804c0887a1a668e969ec60",
+    "product_mapping_sha256": "8009595d469d57bf7146652e62d76a8c558ed2fd3e390d91965c69c86d3e31a4",
+    "scorer_sha256": "5daa78ad99fef22e3367b65777819d30a61d417459a3e5b8dbc82b1b17de35fd"
+  }
+}

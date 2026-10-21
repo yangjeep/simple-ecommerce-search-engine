@@ -1,0 +1,186 @@
+{
+  "catalog": {
+    "products": [
+      {
+        "product_id": 1,
+        "title": "P shoes",
+        "brand_id": 1,
+        "category_id": 7,
+        "product_type_id": 1,
+        "attributes": {
+          "description": {
+            "type": "text",
+            "value": "comfortable shoes"
+          },
+          "material": {
+            "type": "enum",
+            "value": "cotton"
+          }
+        },
+        "variants": [
+          {
+            "variant_id": 11,
+            "price_cents": 1000,
+            "available_units": 10,
+            "in_stock": true,
+            "attributes": {
+              "color": {
+                "type": "enum",
+                "value": "red"
+              },
+              "size": {
+                "type": "enum",
+                "value": "S"
+              }
+            }
+          },
+          {
+            "variant_id": 12,
+            "price_cents": 1200,
+            "available_units": 0,
+            "in_stock": false,
+            "attributes": {
+              "color": {
+                "type": "enum",
+                "value": "blue"
+              },
+              "size": {
+                "type": "enum",
+                "value": "L"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "product_id": 2,
+        "title": "Q shoes",
+        "brand_id": 2,
+        "category_id": 7,
+        "product_type_id": 1,
+        "attributes": {
+          "description": {
+            "type": "text",
+            "value": "comfortable shoes"
+          },
+          "material": {
+            "type": "enum",
+            "value": "cotton"
+          }
+        },
+        "variants": [
+          {
+            "variant_id": 21,
+            "price_cents": 2000,
+            "available_units": 10,
+            "in_stock": true,
+            "attributes": {
+              "color": {
+                "type": "enum",
+                "value": "red"
+              },
+              "size": {
+                "type": "enum",
+                "value": "L"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "product_id": 3,
+        "title": "R shoes",
+        "brand_id": 3,
+        "category_id": 7,
+        "product_type_id": 1,
+        "attributes": {
+          "description": {
+            "type": "text",
+            "value": "comfortable shoes"
+          },
+          "material": {
+            "type": "enum",
+            "value": "cotton"
+          }
+        },
+        "variants": [
+          {
+            "variant_id": 31,
+            "price_cents": 3000,
+            "available_units": 10,
+            "in_stock": true,
+            "attributes": {
+              "color": {
+                "type": "enum",
+                "value": "red"
+              },
+              "size": {
+                "type": "enum",
+                "value": "L"
+              }
+            }
+          },
+          {
+            "variant_id": 32,
+            "price_cents": 4000,
+            "available_units": 10,
+            "in_stock": true,
+            "attributes": {
+              "color": {
+                "type": "enum",
+                "value": "blue"
+              },
+              "size": {
+                "type": "enum",
+                "value": "L"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "requests": [
+    {
+      "q": "shoes\"\"",
+      "lexical": {
+        "profile": "bm25_literal"
+      },
+      "facets": [
+        {
+          "name": "color",
+          "field": {
+            "type": "attribute",
+            "name": "color"
+          }
+        },
+        {
+          "name": "size",
+          "field": {
+            "type": "attribute",
+            "name": "size"
+          }
+        },
+        {
+          "name": "material",
+          "field": {
+            "type": "attribute",
+            "name": "material"
+          }
+        }
+      ]
+    },
+    {
+      "q": "shoes AND",
+      "lexical": {
+        "profile": "bm25_literal"
+      }
+    },
+    {
+      "q": "\"\"[]",
+      "lexical": {
+        "profile": "bm25_literal"
+      }
+    }
+  ]
+}

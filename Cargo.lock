@@ -56,6 +56,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "athos80-eval"
+version = "0.1.1"
+dependencies = [
+ "commerce-core",
+ "libc",
+ "serde",
+ "serde_json",
+ "tantivy",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

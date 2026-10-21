@@ -1,0 +1,38 @@
+{
+  "q": "shoes",
+  "filters": [
+    {
+      "type": "enum",
+      "attribute": "color",
+      "value": "red"
+    },
+    {
+      "type": "enum",
+      "attribute": "size",
+      "value": "L"
+    }
+  ],
+  "facets": [
+    {
+      "name": "color",
+      "field": {
+        "type": "attribute",
+        "name": "color"
+      }
+    },
+    {
+      "name": "size",
+      "field": {
+        "type": "attribute",
+        "name": "size"
+      }
+    },
+    {
+      "name": "material",
+      "field": {
+        "type": "attribute",
+        "name": "material"
+      }
+    }
+  ]
+}

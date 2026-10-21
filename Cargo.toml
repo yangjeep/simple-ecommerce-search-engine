@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/athos80-eval",
     "crates/commerce-core",
     "crates/comparator-eval",
     "crates/round1-eval",

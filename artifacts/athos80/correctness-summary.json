@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "checks": 1924,
+  "passed_checks": 1924,
+  "failed_checks": 0,
+  "catalog_sha256": "ad02122bf29672f34ec84c7a01a9d05a38d684c3a359cfdb5903be9980eaac36",
+  "cases_sha256": "392fb42fdf557c358b6c055f2e91abfece481eabe2b85179c3ffdf71209b1e9e",
+  "oracle_sha256": "78bd87e1d352f529a58ff08b7b48d0cc64e47576aa52da3c23f007d46a2ab5d9",
+  "validator_sha256": "08f7751af1e79174285738e8215842a2667475fa5777be62bd3faee7456148fe",
+  "endpoint": "http://127.0.0.1:18883/search",
+  "fulltext_trace_used": true,
+  "lexical_claim": "Tantivy traces verify pipeline integration, not independent BM25/tokenizer/relevance parity.",
+  "failures": [],
+  "not_claims": [
+    "80% Athos coverage",
+    "20% Athos total cost"
+  ]
+}

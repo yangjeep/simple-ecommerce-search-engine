@@ -1,0 +1,21 @@
+[package]
+name = "athos80-eval"
+version = "0.1.1"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Isolated behavioral experiment: variant-safe search, merchandising, and bounded personalization; not Athos compatibility."
+
+[dependencies]
+commerce-core = { path = "../commerce-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+libc = "0.2"
+
+[features]
+default = []
+bm25 = ["dep:tantivy"]
+
+[dependencies.tantivy]
+version = "0.22"
+optional = true
