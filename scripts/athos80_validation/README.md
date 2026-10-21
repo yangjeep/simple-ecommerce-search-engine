@@ -35,7 +35,7 @@ python3 scripts/athos80_validation/run_correctness.py --run-approved \
   --phase synthetic --port 18890 --output target/athos80-synthetic
 python3 scripts/athos80_validation/run_correctness.py --run-approved \
   --binary "$BINARY" --expect-binary-sha256 "$BINARY_SHA" \
-  --phase global --port 18890 --output target/athos80-global
+  --phase global --port 18891 --output target/athos80-global
 ```
 
 The wrappers check that the port is free, launch their own child, validate full
