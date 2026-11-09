@@ -5,7 +5,15 @@ on:
       - 'scripts/public_benchmarks/**'
       - 'tests/public_benchmarks/**'
       - 'benchmarks/manifests/qp_faith_public.json'
-      - 'crates/issue61-eval/src/bin/qp_faith_native.rs'
+      - 'crates/commerce-core/**'
+      - 'crates/issue61-eval/**'
+      - 'crates/phase6a-eval/**'
+      - 'crates/comparator-eval/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'scripts/datasets/fetch_wands.sh'
+      - 'scripts/datasets/prepare_wands.py'
+      - 'scripts/datasets/wands_checksums.sha256'
       - '.github/workflows/qp-faith-public.yml'
 permissions:
   contents: read
