@@ -1,0 +1,495 @@
+{
+  "all_cells_equal_published": true,
+  "by_condition": {
+    "default_extract": {
+      "gemma4": {
+        "category_routing_rate": 0.0,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.0,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "gpt4o": {
+        "category_routing_rate": 0.036,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.036,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "gpt52": {
+        "category_routing_rate": 0.509,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.509,
+          "style": 0.073
+        },
+        "n_entity": 55
+      },
+      "haiku": {
+        "category_routing_rate": 0.218,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.218,
+          "style": 0.036
+        },
+        "n_entity": 55
+      },
+      "llama4": {
+        "category_routing_rate": 0.418,
+        "emission": {
+          "brand": 0.145,
+          "color": 0.164,
+          "material": 0.164,
+          "price_range": 0.164,
+          "product_type": 0.418,
+          "style": 0.164
+        },
+        "n_entity": 55
+      },
+      "mistral4": {
+        "category_routing_rate": 0.436,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.436,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "qwen4": {
+        "category_routing_rate": 0.236,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.236,
+          "style": 0.036
+        },
+        "n_entity": 55
+      },
+      "sonnet": {
+        "category_routing_rate": 0.327,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.327,
+          "style": 0.036
+        },
+        "n_entity": 55
+      },
+      "together-llama70": {
+        "category_routing_rate": 0.382,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.382,
+          "style": 0.055
+        },
+        "n_entity": 55
+      }
+    },
+    "practitioner_narrow": {
+      "gemma4": {
+        "category_routing_rate": 0.909,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.073,
+          "material": 0.055,
+          "price_range": 0.0,
+          "product_type": 0.909,
+          "style": 0.127
+        },
+        "n_entity": 55
+      },
+      "gpt4o": {
+        "category_routing_rate": 0.727,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.727,
+          "style": 0.273
+        },
+        "n_entity": 55
+      },
+      "gpt52": {
+        "category_routing_rate": 0.527,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.0,
+          "material": 0.018,
+          "price_range": 0.0,
+          "product_type": 0.527,
+          "style": 0.309
+        },
+        "n_entity": 55
+      },
+      "haiku": {
+        "category_routing_rate": 0.691,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.691,
+          "style": 0.091
+        },
+        "n_entity": 55
+      },
+      "llama4": {
+        "category_routing_rate": 1.0,
+        "emission": {
+          "brand": 0.327,
+          "color": 0.509,
+          "material": 0.364,
+          "price_range": 0.091,
+          "product_type": 1.0,
+          "style": 0.491
+        },
+        "n_entity": 55
+      },
+      "mistral4": {
+        "category_routing_rate": 0.564,
+        "emission": {
+          "brand": 0.055,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.564,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "qwen4": {
+        "category_routing_rate": 0.727,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.109,
+          "material": 0.018,
+          "price_range": 0.0,
+          "product_type": 0.727,
+          "style": 0.345
+        },
+        "n_entity": 55
+      },
+      "sonnet": {
+        "category_routing_rate": 0.491,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.055,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.491,
+          "style": 0.055
+        },
+        "n_entity": 55
+      },
+      "together-llama70": {
+        "category_routing_rate": 0.945,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.945,
+          "style": 0.109
+        },
+        "n_entity": 55
+      }
+    },
+    "practitioner_shopping": {
+      "gemma4": {
+        "category_routing_rate": 0.509,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.509,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "gpt4o": {
+        "category_routing_rate": 0.527,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.527,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "gpt52": {
+        "category_routing_rate": 0.509,
+        "emission": {
+          "brand": 0.055,
+          "color": 0.0,
+          "material": 0.018,
+          "price_range": 0.0,
+          "product_type": 0.509,
+          "style": 0.345
+        },
+        "n_entity": 55
+      },
+      "haiku": {
+        "category_routing_rate": 0.673,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.673,
+          "style": 0.091
+        },
+        "n_entity": 55
+      },
+      "llama4": {
+        "category_routing_rate": 0.709,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.018,
+          "product_type": 0.709,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "mistral4": {
+        "category_routing_rate": 0.927,
+        "emission": {
+          "brand": 0.036,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.927,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "qwen4": {
+        "category_routing_rate": 0.218,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.218,
+          "style": 0.145
+        },
+        "n_entity": 55
+      },
+      "sonnet": {
+        "category_routing_rate": 0.382,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.382,
+          "style": 0.036
+        },
+        "n_entity": 55
+      },
+      "together-llama70": {
+        "category_routing_rate": 0.764,
+        "emission": {
+          "brand": 0.055,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.764,
+          "style": 0.127
+        },
+        "n_entity": 55
+      }
+    },
+    "stock_selfquery": {
+      "gemma4": {
+        "category_routing_rate": 0.0,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.0,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "gpt4o": {
+        "category_routing_rate": 0.036,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.036,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "gpt52": {
+        "category_routing_rate": 0.018,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.018,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "haiku": {
+        "category_routing_rate": 0.018,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.018,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "llama4": {
+        "category_routing_rate": 0.455,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.055,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.455,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "mistral4": {
+        "category_routing_rate": 0.727,
+        "emission": {
+          "brand": 0.073,
+          "color": 0.018,
+          "material": 0.018,
+          "price_range": 0.018,
+          "product_type": 0.727,
+          "style": 0.036
+        },
+        "n_entity": 55
+      },
+      "qwen4": {
+        "category_routing_rate": 0.036,
+        "emission": {
+          "brand": 0.0,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.036,
+          "style": 0.018
+        },
+        "n_entity": 55
+      },
+      "sonnet": {
+        "category_routing_rate": 0.036,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.0,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.036,
+          "style": 0.0
+        },
+        "n_entity": 55
+      },
+      "together-llama70": {
+        "category_routing_rate": 0.2,
+        "emission": {
+          "brand": 0.018,
+          "color": 0.018,
+          "material": 0.0,
+          "price_range": 0.0,
+          "product_type": 0.2,
+          "style": 0.055
+        },
+        "n_entity": 55
+      }
+    }
+  },
+  "cell_count": 36,
+  "entity_query_count": 55,
+  "limits": [
+    "Cached generations only; not a fresh behavioral replication.",
+    "R1.2 prompt ladder only; not the full paper or aggressive expansion arm.",
+    "Non-object plans follow upstream emission semantics, not proof of safe behavior.",
+    "Procedural motif routing is not retrieval quality or organic-query prevalence.",
+    "No current commerce-core, WANDS or ESCI retrieval results produced."
+  ],
+  "non_object_plans_by_file": {
+    "results/cond-default_extract-gemma4__probe_plans.jsonl": 0,
+    "results/cond-default_extract-gpt4o__probe_plans.jsonl": 0,
+    "results/cond-default_extract-gpt52__probe_plans.jsonl": 0,
+    "results/cond-default_extract-haiku__probe_plans.jsonl": 0,
+    "results/cond-default_extract-llama4__probe_plans.jsonl": 0,
+    "results/cond-default_extract-mistral4__probe_plans.jsonl": 0,
+    "results/cond-default_extract-qwen4__probe_plans.jsonl": 0,
+    "results/cond-default_extract-sonnet__probe_plans.jsonl": 0,
+    "results/cond-default_extract-together-llama70__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-gemma4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-gpt4o__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-gpt52__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-haiku__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-llama4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-mistral4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-qwen4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-sonnet__probe_plans.jsonl": 0,
+    "results/cond-practitioner_narrow-together-llama70__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-gemma4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-gpt4o__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-gpt52__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-haiku__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-llama4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-mistral4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-qwen4__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-sonnet__probe_plans.jsonl": 0,
+    "results/cond-practitioner_shopping-together-llama70__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-gemma4__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-gpt4o__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-gpt52__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-haiku__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-llama4__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-mistral4__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-qwen4__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-sonnet__probe_plans.jsonl": 0,
+    "results/cond-stock_selfquery-together-llama70__probe_plans.jsonl": 0
+  },
+  "query_count": 73,
+  "status": "cached_public_replay_passed",
+  "upstream_revision": "5c82a21e7904bec61c11be21d9cf7d60bd440d23"
+}
