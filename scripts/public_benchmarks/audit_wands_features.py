@@ -23,6 +23,10 @@ def features(raw):
 
 
 def audit(raw_path, prepared_path, probe_path, native_path):
+    native = json.loads(native_path.read_text())
+    for path, key in ((prepared_path, "catalog_sha256"), (probe_path, "probe_sha256")):
+        if hashlib.sha256(path.read_bytes()).hexdigest() != native["summary"].get(key):
+            raise ValueError(f"native report input mismatch: {key}")
     csv.field_size_limit(sys.maxsize)
     with raw_path.open(newline="") as stream:
         raw = {r["product_id"]: r for r in csv.DictReader(stream, delimiter="\t")}
@@ -30,7 +34,6 @@ def audit(raw_path, prepared_path, probe_path, native_path):
                 if (r := json.loads(line))}
     probe = {r["query"]: r for line in probe_path.read_text().splitlines()
              if (r := json.loads(line))}
-    native = json.loads(native_path.read_text())
     groups, focus = [], []
     for row in native["rows"]:
         if row["family"] != "B_attr":
