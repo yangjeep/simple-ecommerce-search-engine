@@ -1,4 +1,9 @@
-# QP-Faith public alignment: cached replay gate
+# QP-Faith public alignment: replay and native constraint audit
+
+**Current status:** cached public replay and the real native WANDS constraint
+audit have run successfully. The native result is mixed, not an architecture
+pass: see the measured continuation at the end. Ranked WANDS/ESCI retrieval
+and the LLM-installed merchant-context arm remain unrun.
 
 ## Question and boundary
 
@@ -59,7 +64,7 @@ No planner runners, API clients, model weights, catalogs or retrieval caches are
 downloaded or executed. Raw source artifacts remain outside Git; the small
 derived report is committed.
 
-## Stage 2: current-system comparison, not implemented or run here
+## Stage 2: original integration contract (implementation continuation below)
 
 Before claiming system alignment, implement an exporter around the real
 commerce_core::ir::compile path using a frozen, provenance-recorded installed
@@ -172,6 +177,64 @@ cargo run --release -p issue61-eval --bin qp_faith_native -- \
   artifacts/public_benchmarks/qp_faith_native.json
 ```
 
-CI execution results are pending at the time of this continuation. ESCI retrieval,
+At implementation time CI results were pending; measured results follow below. ESCI retrieval,
 ranked WANDS judgments, LLM-installed lexicon export and full-paper headline
 replication remain out of this arm's measured scope.
+
+
+## Measured native result and adversarial countercheck
+
+[Successful run 42680176431](https://github.com/yangjeep/simple-ecommerce-search-engine/actions/runs/42680176431)
+tested head 79af38c8f2cc9ebc67e9955fdb6da386227aea82 using PR merge commit
+e8448616eb3704348865100d7eb983b0b22dcaed. Full output is preserved in
+artifacts/public_benchmarks/qp_faith_native.json, downloaded from CI artifact
+13701074968. The ZIP SHA-256 was verified as
+c0d6f01c235ae1719fbd039e63ddec29891432d3666a3cf8ddb802922f26754d.
+
+- 39 pinned public files fetched and verified; 36/36 cached score cells match.
+- WANDS source checksums verified; existing preparation produced 42,994 products.
+- Both native regression tests pass, including real compilation/execution,
+  product deduplication, deliberately different source/internal IDs, and the
+  cross-variant negative case. All 13 Python tests pass.
+- 55/55 A_entity queries emit no product-type hard filter and retain every
+  procedural relevant product. **They also retain all 42,994 catalog products.**
+  This is abstention at the hard-filter layer, not proof of good ranking.
+- 18/18 B_attr queries emit at least one hard constraint. 16/18 match all
+  reference slot/value pairs under exact normalized matching. This is slot
+  coverage, not overall semantic correctness.
+- B_attr mean per-query relevant-candidate retention is **0.4021730074**.
+  Sixteen of eighteen queries lose relevant products. "white doormats" retains
+  none. Thus matching the requested slot values is not sufficient for faithful
+  candidate retention under these representations.
+- "metal chandeliers" and "glass chandeliers" retain their material ambiguity;
+  only product type is hard-filtered. Both retain all reference relevant products.
+
+### Interpretation and competing explanations
+
+Do **not** declare an overall pass from the motif result. The attributed-query
+countercheck exposes a real mismatch that must be understood before an
+end-to-end quality claim.
+
+Source inspection identifies a concrete semantic mismatch: QP-Faith make_probe.py
+defines B_attr relevance with normalized token membership across all feature
+values. Existing prepare_wands.py retains one value per feature key, and the
+engine ingestion uses single Enum attributes/exact filtering. This is a
+plausible mechanism for the loss, not an exhaustive query-by-query causal audit.
+The engine also has documented product-class normalization choices. Do not
+change either representation or labels after seeing these scores just to raise
+the result; a harmonized arm needs its own declared protocol and baseline.
+
+**Verdict: REVISE for cross-benchmark semantic comparability.** Cached reproduction
+passes; the native motif routing arm abstains safely; attributed candidate
+retention does not establish comparable semantics. No ranking, speed, production
+prevalence or full-system superiority claim follows.
+
+Fresh independent review prompted the exact-slot countercheck, source-ID /
+variant-safety regression, and dependency-aware CI triggers. No further concrete
+defects were found in that delta. Repository-wide Rust CI is separately tracked
+on the PR; the benchmark run is not a substitute for that full quality gate.
+
+Next work: characterize the 16 attributed losses against original feature values,
+preregister any representation alignment, then run ranked WANDS and separately
+pinned ESCI populations. Keep full-catalog ESCI distinct from existing training
+vertical slices.
