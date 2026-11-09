@@ -1,0 +1,1358 @@
+{
+  "rows": [
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "dinosaur",
+      "relevant_products": 117,
+      "residual_lexical": [
+        "dinosaur"
+      ],
+      "retained_relevant_products": 117
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "rooster",
+      "relevant_products": 176,
+      "residual_lexical": [
+        "rooster"
+      ],
+      "retained_relevant_products": 176
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[Boost { attribute: \"shape\", value: \"butterfly\", weight: 0.5 }]",
+      "product_type_hard_filter": false,
+      "query": "butterfly",
+      "relevant_products": 92,
+      "residual_lexical": [
+        "butterfly"
+      ],
+      "retained_relevant_products": 92
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "bees",
+      "relevant_products": 41,
+      "residual_lexical": [
+        "bees"
+      ],
+      "retained_relevant_products": 41
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "queen",
+      "relevant_products": 216,
+      "residual_lexical": [
+        "queen"
+      ],
+      "retained_relevant_products": 216
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "sunflowers",
+      "relevant_products": 41,
+      "residual_lexical": [
+        "sunflowers"
+      ],
+      "retained_relevant_products": 41
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "simple",
+      "relevant_products": 48,
+      "residual_lexical": [
+        "simple"
+      ],
+      "retained_relevant_products": 48
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "flamingo",
+      "relevant_products": 48,
+      "residual_lexical": [
+        "flamingo"
+      ],
+      "retained_relevant_products": 48
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "lily",
+      "relevant_products": 20,
+      "residual_lexical": [
+        "lily"
+      ],
+      "retained_relevant_products": 20
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "elephant",
+      "relevant_products": 52,
+      "residual_lexical": [
+        "elephant"
+      ],
+      "retained_relevant_products": 52
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "bear",
+      "relevant_products": 21,
+      "residual_lexical": [
+        "bear"
+      ],
+      "retained_relevant_products": 21
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "bulb",
+      "relevant_products": 279,
+      "residual_lexical": [
+        "bulb"
+      ],
+      "retained_relevant_products": 279
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "fish",
+      "relevant_products": 32,
+      "residual_lexical": [
+        "fish"
+      ],
+      "retained_relevant_products": 32
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "birds",
+      "relevant_products": 19,
+      "residual_lexical": [
+        "birds"
+      ],
+      "retained_relevant_products": 19
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "owls",
+      "relevant_products": 17,
+      "residual_lexical": [
+        "owls"
+      ],
+      "retained_relevant_products": 17
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "roses",
+      "relevant_products": 39,
+      "residual_lexical": [
+        "roses"
+      ],
+      "retained_relevant_products": 39
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "dinosaurs",
+      "relevant_products": 28,
+      "residual_lexical": [
+        "dinosaurs"
+      ],
+      "retained_relevant_products": 28
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "pineapples",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "pineapples"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "daisy",
+      "relevant_products": 14,
+      "residual_lexical": [
+        "daisy"
+      ],
+      "retained_relevant_products": 14
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "starfish",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "starfish"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "lotus",
+      "relevant_products": 12,
+      "residual_lexical": [
+        "lotus"
+      ],
+      "retained_relevant_products": 12
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "vine",
+      "relevant_products": 10,
+      "residual_lexical": [
+        "vine"
+      ],
+      "retained_relevant_products": 10
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "trunk",
+      "relevant_products": 15,
+      "residual_lexical": [
+        "trunk"
+      ],
+      "retained_relevant_products": 15
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "cuisine",
+      "relevant_products": 14,
+      "residual_lexical": [
+        "cuisine"
+      ],
+      "retained_relevant_products": 14
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "ornamental",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "ornamental"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "climber",
+      "relevant_products": 11,
+      "residual_lexical": [
+        "climber"
+      ],
+      "retained_relevant_products": 11
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "root",
+      "relevant_products": 10,
+      "residual_lexical": [
+        "root"
+      ],
+      "retained_relevant_products": 10
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "giant",
+      "relevant_products": 9,
+      "residual_lexical": [
+        "giant"
+      ],
+      "retained_relevant_products": 9
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "blade",
+      "relevant_products": 94,
+      "residual_lexical": [
+        "blade"
+      ],
+      "retained_relevant_products": 94
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "aloe",
+      "relevant_products": 68,
+      "residual_lexical": [
+        "aloe"
+      ],
+      "retained_relevant_products": 68
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "feeder",
+      "relevant_products": 36,
+      "residual_lexical": [
+        "feeder"
+      ],
+      "retained_relevant_products": 36
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "breakfast",
+      "relevant_products": 31,
+      "residual_lexical": [
+        "breakfast"
+      ],
+      "retained_relevant_products": 31
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "lunch",
+      "relevant_products": 29,
+      "residual_lexical": [
+        "lunch"
+      ],
+      "retained_relevant_products": 29
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "holly",
+      "relevant_products": 8,
+      "residual_lexical": [
+        "holly"
+      ],
+      "retained_relevant_products": 8
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "succulent",
+      "relevant_products": 51,
+      "residual_lexical": [
+        "succulent"
+      ],
+      "retained_relevant_products": 51
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "arbor",
+      "relevant_products": 22,
+      "residual_lexical": [
+        "arbor"
+      ],
+      "retained_relevant_products": 22
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "spider",
+      "relevant_products": 9,
+      "residual_lexical": [
+        "spider"
+      ],
+      "retained_relevant_products": 9
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "triceratops",
+      "relevant_products": 9,
+      "residual_lexical": [
+        "triceratops"
+      ],
+      "retained_relevant_products": 9
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "sticker",
+      "relevant_products": 8,
+      "residual_lexical": [
+        "sticker"
+      ],
+      "retained_relevant_products": 8
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "dinner",
+      "relevant_products": 22,
+      "residual_lexical": [
+        "dinner"
+      ],
+      "retained_relevant_products": 22
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "crab",
+      "relevant_products": 18,
+      "residual_lexical": [
+        "crab"
+      ],
+      "retained_relevant_products": 18
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "flamingos",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "flamingos"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "frog",
+      "relevant_products": 12,
+      "residual_lexical": [
+        "frog"
+      ],
+      "retained_relevant_products": 12
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "fruit",
+      "relevant_products": 11,
+      "residual_lexical": [
+        "fruit"
+      ],
+      "retained_relevant_products": 11
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "foliage",
+      "relevant_products": 9,
+      "residual_lexical": [
+        "foliage"
+      ],
+      "retained_relevant_products": 9
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "octopus",
+      "relevant_products": 8,
+      "residual_lexical": [
+        "octopus"
+      ],
+      "retained_relevant_products": 8
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "orchids",
+      "relevant_products": 69,
+      "residual_lexical": [
+        "orchids"
+      ],
+      "retained_relevant_products": 69
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "wing",
+      "relevant_products": 24,
+      "residual_lexical": [
+        "wing"
+      ],
+      "retained_relevant_products": 24
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "flour",
+      "relevant_products": 17,
+      "residual_lexical": [
+        "flour"
+      ],
+      "retained_relevant_products": 17
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "noodle",
+      "relevant_products": 10,
+      "residual_lexical": [
+        "noodle"
+      ],
+      "retained_relevant_products": 10
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "stump",
+      "relevant_products": 9,
+      "residual_lexical": [
+        "stump"
+      ],
+      "retained_relevant_products": 9
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "cereal",
+      "relevant_products": 19,
+      "residual_lexical": [
+        "cereal"
+      ],
+      "retained_relevant_products": 19
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "condiment",
+      "relevant_products": 14,
+      "residual_lexical": [
+        "condiment"
+      ],
+      "retained_relevant_products": 14
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "casserole",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "casserole"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 42994,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 0,
+      "family": "A_entity",
+      "hard_constraints_debug": "[]",
+      "known_slot_count": 0,
+      "known_slots": {},
+      "preferences_debug": "[]",
+      "product_type_hard_filter": false,
+      "query": "sauce",
+      "relevant_products": 13,
+      "residual_lexical": [
+        "sauce"
+      ],
+      "retained_relevant_products": 13
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 0,
+      "candidate_relevant_retention": 0.0,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"white\" }), Structural(ProductType(ProductTypeId(141)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "white",
+        "product_type": "doormats"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "white doormats",
+      "relevant_products": 15,
+      "residual_lexical": [],
+      "retained_relevant_products": 0
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 7,
+      "candidate_relevant_retention": 0.1346153846153846,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"gray\" }), Structural(ProductType(ProductTypeId(70)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "gray",
+        "product_type": "nightstands"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "gray nightstands",
+      "relevant_products": 52,
+      "residual_lexical": [],
+      "retained_relevant_products": 7
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 15,
+      "candidate_relevant_retention": 0.3191489361702128,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"black\" }), Structural(ProductType(ProductTypeId(50)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "black",
+        "product_type": "planters"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "black planters",
+      "relevant_products": 47,
+      "residual_lexical": [],
+      "retained_relevant_products": 15
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 91,
+      "candidate_relevant_retention": 0.37089201877934275,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"white\" }), Structural(ProductType(ProductTypeId(1)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "white",
+        "product_type": "beds"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "white beds",
+      "relevant_products": 213,
+      "residual_lexical": [],
+      "retained_relevant_products": 79
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 30,
+      "candidate_relevant_retention": 0.5660377358490566,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"brown\" }), Structural(ProductType(ProductTypeId(50)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "brown",
+        "product_type": "planters"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "brown planters",
+      "relevant_products": 53,
+      "residual_lexical": [],
+      "retained_relevant_products": 30
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 20,
+      "candidate_relevant_retention": 0.21052631578947367,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"black\" }), Structural(ProductType(ProductTypeId(141)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "black",
+        "product_type": "doormats"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "black doormats",
+      "relevant_products": 95,
+      "residual_lexical": [],
+      "retained_relevant_products": 20
+    },
+    {
+      "ambiguity_debug": "[AmbiguousSpan { text: \"metal\", candidates: [Candidate { resolved: Constraint(Attribute(Enum { attribute: \"color\", value: \"metal\" })), confidence: 1.0 }, Candidate { resolved: Constraint(Attribute(Enum { attribute: \"material\", value: \"metal\" })), confidence: 1.0 }, Candidate { resolved: Constraint(Attribute(Enum { attribute: \"primarymaterial\", value: \"metal\" })), confidence: 1.0 }] }]",
+      "candidate_products": 390,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 1,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Structural(ProductType(ProductTypeId(42)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "material": "metal",
+        "product_type": "chandeliers"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "metal chandeliers",
+      "relevant_products": 346,
+      "residual_lexical": [],
+      "retained_relevant_products": 346
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 109,
+      "candidate_relevant_retention": 0.4692982456140351,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"black\" }), Structural(ProductType(ProductTypeId(1)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "black",
+        "product_type": "beds"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "black beds",
+      "relevant_products": 228,
+      "residual_lexical": [],
+      "retained_relevant_products": 107
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 28,
+      "candidate_relevant_retention": 0.45161290322580644,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"gray\" }), Structural(ProductType(ProductTypeId(50)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "gray",
+        "product_type": "planters"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "gray planters",
+      "relevant_products": 62,
+      "residual_lexical": [],
+      "retained_relevant_products": 28
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 24,
+      "candidate_relevant_retention": 0.42857142857142855,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"black\" }), Structural(ProductType(ProductTypeId(70)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "black",
+        "product_type": "nightstands"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "black nightstands",
+      "relevant_products": 56,
+      "residual_lexical": [],
+      "retained_relevant_products": 24
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 17,
+      "candidate_relevant_retention": 0.25,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"brown\" }), Structural(ProductType(ProductTypeId(70)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "brown",
+        "product_type": "nightstands"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "brown nightstands",
+      "relevant_products": 68,
+      "residual_lexical": [],
+      "retained_relevant_products": 17
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 177,
+      "candidate_relevant_retention": 0.42431761786600497,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"gray\" }), Structural(ProductType(ProductTypeId(1)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "gray",
+        "product_type": "beds"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "gray beds",
+      "relevant_products": 403,
+      "residual_lexical": [],
+      "retained_relevant_products": 171
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 24,
+      "candidate_relevant_retention": 0.41379310344827586,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"white\" }), Structural(ProductType(ProductTypeId(50)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "white",
+        "product_type": "planters"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "white planters",
+      "relevant_products": 58,
+      "residual_lexical": [],
+      "retained_relevant_products": 24
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 61,
+      "candidate_relevant_retention": 0.4485294117647059,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"brown\" }), Structural(ProductType(ProductTypeId(1)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "brown",
+        "product_type": "beds"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "brown beds",
+      "relevant_products": 136,
+      "residual_lexical": [],
+      "retained_relevant_products": 61
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 23,
+      "candidate_relevant_retention": 0.27058823529411763,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"white\" }), Structural(ProductType(ProductTypeId(70)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "white",
+        "product_type": "nightstands"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "white nightstands",
+      "relevant_products": 85,
+      "residual_lexical": [],
+      "retained_relevant_products": 23
+    },
+    {
+      "ambiguity_debug": "[AmbiguousSpan { text: \"glass\", candidates: [Candidate { resolved: Constraint(Attribute(Enum { attribute: \"material\", value: \"glass\" })), confidence: 1.0 }, Candidate { resolved: Constraint(Attribute(Enum { attribute: \"primarymaterial\", value: \"glass\" })), confidence: 1.0 }] }]",
+      "candidate_products": 390,
+      "candidate_relevant_retention": 1.0,
+      "exact_known_slots_matched": 1,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Structural(ProductType(ProductTypeId(42)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "material": "glass",
+        "product_type": "chandeliers"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "glass chandeliers",
+      "relevant_products": 58,
+      "residual_lexical": [],
+      "retained_relevant_products": 58
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 37,
+      "candidate_relevant_retention": 0.3978494623655914,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"brown\" }), Structural(ProductType(ProductTypeId(141)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "brown",
+        "product_type": "doormats"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "brown doormats",
+      "relevant_products": 93,
+      "residual_lexical": [],
+      "retained_relevant_products": 37
+    },
+    {
+      "ambiguity_debug": "[]",
+      "candidate_products": 2,
+      "candidate_relevant_retention": 0.08333333333333333,
+      "exact_known_slots_matched": 2,
+      "family": "B_attr",
+      "hard_constraints_debug": "[Attribute(Enum { attribute: \"color\", value: \"gray\" }), Structural(ProductType(ProductTypeId(141)))]",
+      "known_slot_count": 2,
+      "known_slots": {
+        "color": "gray",
+        "product_type": "doormats"
+      },
+      "preferences_debug": "[]",
+      "product_type_hard_filter": true,
+      "query": "gray doormats",
+      "relevant_products": 24,
+      "residual_lexical": [],
+      "retained_relevant_products": 2
+    }
+  ],
+  "summary": {
+    "arm": "existing_issue61_wands_catalog_profile_compile_lexicon_min_frequency_1",
+    "attributed_all_known_slots_matched": 16,
+    "attributed_any_hard_constraint": 18,
+    "attributed_queries": 18,
+    "catalog_products": 42994,
+    "catalog_sha256": "42b9309ca7112bf04fe9fe438057f86f8cd913713b5eea3a9358833523a094b1",
+    "engine_commit": "e8448616eb3704348865100d7eb983b0b22dcaed",
+    "entity_mean_candidate_relevant_retention": 1.0,
+    "entity_product_type_hard_filter_count": 0,
+    "entity_product_type_hard_filter_rate": 0.0,
+    "entity_queries": 55,
+    "limitations": [
+      "Existing statistics-derived lexicon, not an LLM-installed merchant-context arm.",
+      "Candidate retention is not Recall@K; there is no ranker in this experiment.",
+      "Procedural relevance sets are not WANDS human judgments.",
+      "No ESCI result or production prevalence inference."
+    ],
+    "probe_sha256": "6d01c359119065ce03bf6248b4bc1a347c9c590eacc58ac04fdc1ba27e90fd83",
+    "query_count": 73,
+    "ranking_executed": false
+  }
+}
