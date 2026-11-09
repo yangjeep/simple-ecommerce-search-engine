@@ -145,6 +145,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "candidate_products": candidates.len(),
             "relevant_products": relevant.len(), "retained_relevant_products": retained,
             "candidate_relevant_retention": retention,
+            "retained_relevant_pids": if p.family == "B_attr" {
+                Some(relevant.intersection(&candidates).cloned().collect::<Vec<_>>())
+            } else {
+                None
+            },
+            "hard_enum_constraints": compiled.constraints.iter().filter_map(|c| match c {
+                ResolvedConstraint::Attribute(Constraint::Enum { attribute, value }) => {
+                    Some(json!({"attribute": attribute, "value": value}))
+                }
+                _ => None,
+            }).collect::<Vec<_>>(),
         }));
     }
     let summary = json!({
