@@ -273,9 +273,22 @@ impl LexicalDelegate for BitmapTantivyDelegate {
         restrict_to: Option<&std::collections::BTreeSet<ProductId>>,
         limit: usize,
     ) -> Vec<LexicalHit> {
-        let text = terms.join(" ");
-        let (text_query, _errors) = self.query_parser.parse_query_lenient(&text);
+        self.search_with_diagnostics(terms, restrict_to, limit).0
+    }
+}
 
+impl BitmapTantivyDelegate {
+    /// Same lenient query and ranking semantics as `search`, with diagnostics
+    /// retained for evaluation instead of silently treating errors as misses.
+    pub fn search_with_diagnostics(
+        &self,
+        terms: &[String],
+        restrict_to: Option<&std::collections::BTreeSet<ProductId>>,
+        limit: usize,
+    ) -> (Vec<LexicalHit>, Vec<String>) {
+        let text = terms.join(" ");
+        let (text_query, errors) = self.query_parser.parse_query_lenient(&text);
+        let mut diagnostics: Vec<String> = errors.iter().map(|e| format!("parse: {e:?}")).collect();
         let final_query: Box<dyn Query> = match restrict_to {
             Some(allowed) if !allowed.is_empty() => {
                 let mut bitmap = RoaringBitmap::new();
@@ -289,31 +302,33 @@ impl LexicalDelegate for BitmapTantivyDelegate {
                     allowed: Arc::new(bitmap),
                 })
             }
-            Some(_) => return Vec::new(),
+            Some(_) => return (Vec::new(), diagnostics),
             None => text_query,
         };
-
         let searcher = self.reader.searcher();
-        let Ok(top_docs) = searcher.search(&final_query, &TopDocs::with_limit(limit)) else {
-            return Vec::new();
+        let top_docs = match searcher.search(&final_query, &TopDocs::with_limit(limit)) {
+            Ok(hits) => hits,
+            Err(error) => {
+                diagnostics.push(format!("search: {error}"));
+                return (Vec::new(), diagnostics);
+            }
         };
-
-        top_docs
-            .into_iter()
-            .filter_map(|(score, addr)| {
-                let segment_reader = searcher.segment_reader(addr.segment_ord);
-                let ordinal_column = segment_reader
-                    .fast_fields()
-                    .u64(PRODUCT_ORDINAL_FIELD)
-                    .ok()?;
-                let ordinal = ordinal_column.first(addr.doc_id)?;
-                Some(LexicalHit {
-                    product: ProductId(ordinal),
-                    score: score as f64,
-                    variant: None,
-                })
-            })
-            .collect()
+        let mut hits = Vec::new();
+        for (score, addr) in top_docs {
+            let segment_reader = searcher.segment_reader(addr.segment_ord);
+            match segment_reader.fast_fields().u64(PRODUCT_ORDINAL_FIELD) {
+                Ok(column) => match column.first(addr.doc_id) {
+                    Some(ordinal) => hits.push(LexicalHit {
+                        product: ProductId(ordinal),
+                        score: score as f64,
+                        variant: None,
+                    }),
+                    None => diagnostics.push(format!("missing ordinal: {addr:?}")),
+                },
+                Err(error) => diagnostics.push(format!("ordinal field: {error}")),
+            }
+        }
+        (hits, diagnostics)
     }
 }
 
@@ -354,6 +369,40 @@ mod tests {
                 product(30, "wood dining table", "a six-seat dining table"),
             ],
         }
+    }
+
+    #[test]
+    fn diagnostics_preserve_valid_query_rankings() {
+        let catalog = test_catalog();
+        let built = build_index(&catalog).unwrap();
+        let delegate = BitmapTantivyDelegate::new(
+            &built.index,
+            vec![built.title_field, built.description_field],
+        )
+        .unwrap();
+        let terms = vec!["wood".to_string()];
+        let (hits, diagnostics) = delegate.search_with_diagnostics(&terms, None, 10);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(hits, delegate.search(&terms, None, 10));
+        let allowed = BTreeSet::from([ProductId(10)]);
+        let (hits, diagnostics) = delegate.search_with_diagnostics(&terms, Some(&allowed), 10);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(hits, delegate.search(&terms, Some(&allowed), 10));
+    }
+
+    #[test]
+    fn malformed_query_diagnostics_are_not_silently_lost() {
+        let catalog = test_catalog();
+        let built = build_index(&catalog).unwrap();
+        let delegate = BitmapTantivyDelegate::new(
+            &built.index,
+            vec![built.title_field, built.description_field],
+        )
+        .unwrap();
+        let terms = vec!["(".to_string()];
+        let (hits, diagnostics) = delegate.search_with_diagnostics(&terms, None, 10);
+        assert!(!diagnostics.is_empty());
+        assert_eq!(hits, delegate.search(&terms, None, 10));
     }
 
     #[test]

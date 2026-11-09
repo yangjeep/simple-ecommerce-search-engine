@@ -688,6 +688,7 @@ dependencies = [
  "commerce-core",
  "comparator-eval",
  "issue35-eval",
+ "issue61-eval",
  "phase6a-eval",
  "phase9-eval",
  "serde",
@@ -2168,3 +2169,4 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
+

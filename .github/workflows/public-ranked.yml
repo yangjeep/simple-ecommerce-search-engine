@@ -1,0 +1,70 @@
+name: Public ranked comparison
+on:
+  pull_request:
+    paths:
+      - 'scripts/public_benchmarks/**'
+      - 'tests/public_benchmarks/**'
+      - 'crates/commerce-core/**'
+      - 'crates/issue57-eval/**'
+      - 'crates/issue61-eval/**'
+      - 'crates/issue35-eval/**'
+      - 'crates/phase6a-eval/**'
+      - 'crates/phase9-eval/**'
+      - 'scripts/datasets/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/public-ranked.yml'
+concurrency:
+  group: public-ranked-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  ranked:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        dataset: [wands, esci_electronics]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Check locked build and regression tests
+        run: |
+          python3 -m unittest discover -s tests/public_benchmarks -v
+          cargo test --locked -p issue57-eval --bin public_ranked
+          cargo test --locked -p phase9-eval --lib bitmap_delegate
+      - name: Fetch pinned WANDS
+        if: matrix.dataset == 'wands'
+        run: |
+          bash scripts/datasets/fetch_wands.sh
+          python3 scripts/datasets/prepare_wands.py
+      - name: Fetch pinned ESCI electronics train slice
+        if: matrix.dataset == 'esci_electronics'
+        run: |
+          python3 -m pip install pyarrow==18.1.0
+          bash scripts/datasets/fetch_esci_electronics.sh
+          python3 scripts/datasets/filter_esci_electronics.py
+      - name: Run preregistered paired ranked comparison
+        run: |
+          mkdir -p artifacts/public_benchmarks
+          cargo run --locked --release -p issue57-eval --bin public_ranked -- ${{ matrix.dataset }} artifacts/public_benchmarks/ranked_${{ matrix.dataset }}
+          cat artifacts/public_benchmarks/ranked_${{ matrix.dataset }}/summary.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ranked-${{ matrix.dataset }}
+          path: |
+            artifacts/public_benchmarks/ranked_${{ matrix.dataset }}
+            crates/issue57-eval/src/bin/public_ranked.rs
+            crates/phase9-eval/src/bitmap_delegate.rs
+            Cargo.lock

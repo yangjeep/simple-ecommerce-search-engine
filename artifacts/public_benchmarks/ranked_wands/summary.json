@@ -1,0 +1,31 @@
+{
+  "changed_rankings": 119,
+  "claim": "descriptive paired retrieval comparison only; no system-level verdict",
+  "complete_without_diagnostics": false,
+  "conflicting_duplicate_qrel_rows": 14,
+  "conflicting_query_product_pairs": 14,
+  "dataset": "wands",
+  "diagnostic_queries": 14,
+  "identical_duplicate_qrel_rows": 1561,
+  "macro_means": {
+    "lexical": {
+      "mrr_at_10": 0.8715582863969958,
+      "ndcg_at_10": 0.688745786613785,
+      "recall_at_10": 0.05813819778633661
+    },
+    "native": {
+      "mrr_at_10": 0.8517016555726231,
+      "ndcg_at_10": 0.6636731509879413,
+      "recall_at_10": 0.05573693111850032
+    },
+    "native_minus_lexical": {
+      "mrr_at_10": -0.01985663082437267,
+      "ndcg_at_10": -0.025072635625843803,
+      "recall_at_10": -0.0024012666678362915
+    }
+  },
+  "no_positive_qrel_queries": 1,
+  "paired_scored_queries": 465,
+  "qrel_diagnostic_queries": 14,
+  "total_queries": 480
+}

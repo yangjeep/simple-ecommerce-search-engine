@@ -1,0 +1,31 @@
+{
+  "changed_rankings": 263,
+  "claim": "descriptive paired retrieval comparison only; no system-level verdict",
+  "complete_without_diagnostics": false,
+  "conflicting_duplicate_qrel_rows": 0,
+  "conflicting_query_product_pairs": 0,
+  "dataset": "esci_electronics",
+  "diagnostic_queries": 4,
+  "identical_duplicate_qrel_rows": 85,
+  "macro_means": {
+    "lexical": {
+      "mrr_at_10": 0.3223139221605479,
+      "ndcg_at_10": 0.3097321437095821,
+      "recall_at_10": 0.4032651072409935
+    },
+    "native": {
+      "mrr_at_10": 0.3155670789106371,
+      "ndcg_at_10": 0.30342192490000447,
+      "recall_at_10": 0.3934260200057268
+    },
+    "native_minus_lexical": {
+      "mrr_at_10": -0.006746843249910723,
+      "ndcg_at_10": -0.006310218809577599,
+      "recall_at_10": -0.009839087235266681
+    }
+  },
+  "no_positive_qrel_queries": 110,
+  "paired_scored_queries": 489,
+  "qrel_diagnostic_queries": 0,
+  "total_queries": 600
+}

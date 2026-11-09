@@ -1,0 +1,20 @@
+[
+  {
+    "dataset": "wands",
+    "run_url": "https://github.com/yangjeep/simple-ecommerce-search-engine/actions/runs/42699839852",
+    "artifact_id": 13711132178,
+    "archive_sha256": "0ef22218a2e266c52fea5cd74be03ac73c6a3570c377f6d60c7139a0102a8fbe",
+    "expires_at": "2027-02-07",
+    "queries_jsonl_sha256": "5cbc70b4961f09ae3396ca9c5d7080580477dee6ae24754b04ee9cb5c95b880a",
+    "queries_jsonl_bytes": 36172630
+  },
+  {
+    "dataset": "esci_electronics",
+    "run_url": "https://github.com/yangjeep/simple-ecommerce-search-engine/actions/runs/42699839852",
+    "artifact_id": 13710013738,
+    "archive_sha256": "6d8126701d65d2591b0acb20ceddf7231af74e3762ff843eb66901e480d8445e",
+    "expires_at": "2027-02-07",
+    "queries_jsonl_sha256": "e0465dc38a2908ed660202da1f22d1eb09f3c59adf0d8351aa0a4bfb73edf0e6",
+    "queries_jsonl_bytes": 2220436
+  }
+]
