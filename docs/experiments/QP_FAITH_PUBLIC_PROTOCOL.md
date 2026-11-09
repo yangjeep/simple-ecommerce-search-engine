@@ -127,3 +127,51 @@ workspace validation.
 current-system exporter and retrieval gates can run in an equipped checkout.
 Next question: do the installed, actually enforced structural constraints lose
 relevant cross-category products on the identical public probe?
+
+## Continuation: actual compiler arm (2026-11-09)
+
+The initial execution record above is preserved. A subsequent implementation adds
+crates/issue61-eval/src/bin/qp_faith_native.rs and the Public QP-Faith replay PR
+workflow. That workflow provides an equipped checkout without credentials or
+model APIs in the evaluator.
+
+This arm reuses issue61_eval::load_dataset(Wands), including its existing
+CatalogProfile -> compile_lexicon(min_enum_frequency=1), then calls the real
+commerce_core::ir::compile and CommerceQuery::execute for every public query.
+It is the existing **statistics-derived lexicon arm**, not an LLM-installed
+merchant context, and does not generalize to every system configuration.
+
+It records hard constraints, soft preferences, ambiguity and residual text;
+counts ProductType/ProductTypeAny hard-filter emission; and measures the fraction
+of each procedural relevant_pids set surviving the compiled hard constraints.
+Candidate IDs are deduplicated at product level after variant-safe execution.
+Missing/duplicate relevant IDs, incomplete probe counts and an incomplete WANDS
+catalog stop execution. Both motif and attributed query rows remain in the report.
+
+This is **candidate-set retention, not ranked Recall@K**. With no hard filters all
+catalog products survive, so perfect retention alone says nothing about useful
+retrieval or attribute extraction. Inspect B_attr constraints/candidate counts and
+the untouched residual text before drawing conclusions. Category constraints
+are retained in the debug record but are not silently relabeled product_type.
+
+The workflow fetches WANDS using the existing immutable source/checksum script,
+uses prepare_wands.py without changes, tests the adapter, runs its release binary,
+and uploads JSON evidence. The report fingerprints the exported catalog and
+probe and records GITHUB_SHA, which is the checked-out PR merge commit in PR CI.
+The deterministic lexicon's provenance is that commit, catalog hash, and existing
+loader/min-frequency setting; no separately installed lexicon is substituted.
+
+Equivalent command in an equipped checkout, after fetching/preparing WANDS and
+the pinned public source:
+
+```sh
+cargo test -p issue61-eval --bin qp_faith_native
+cargo run --release -p issue61-eval --bin qp_faith_native -- \
+  dataset_cache/wands/catalog.jsonl \
+  dataset_cache/qp-faith-public/data/probe/probe.jsonl \
+  artifacts/public_benchmarks/qp_faith_native.json
+```
+
+CI execution results are pending at the time of this continuation. ESCI retrieval,
+ranked WANDS judgments, LLM-installed lexicon export and full-paper headline
+replication remain out of this arm's measured scope.
