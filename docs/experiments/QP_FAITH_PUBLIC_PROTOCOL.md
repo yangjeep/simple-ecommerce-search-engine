@@ -238,3 +238,39 @@ Next work: characterize the 16 attributed losses against original feature values
 preregister any representation alignment, then run ranked WANDS and separately
 pinned ESCI populations. Keep full-catalog ESCI distinct from existing training
 vertical slices.
+
+## Observational feature audit: verified mechanism
+
+A continuation directly joins original WANDS product.csv, the existing prepared
+catalog and observed native retained IDs. The audit script checks prepared/probe
+hashes against the native report before attributing exclusions.
+
+Run 42697121928 completed the audit. In the 2,092 attributed query-product
+reference pairs, 1,049 survive and 1,043 are excluded. All 1,043 exclusions are
+explained by the actual emitted Enum predicates, with zero enum-only prediction
+disagreements inside the public relevant sets:
+
+- 415 pairs have a matching raw feature value that is not the retained prepared
+  exact value (the preparation overwrites repeated keys).
+- 628 pairs satisfy normalized token membership in a raw feature value, but not
+  exact whole-value equality.
+
+These are query-product pairs, not distinct products, and the aggregate survival
+ratio is not the earlier unweighted mean per-query retention.
+
+The seven shared doormat IDs 1508, 3473, 3594, 3650, 5728, 12994 and 38821 all
+contain many repeated raw color entries. Their prepared colors are respectively
+medium blue, gold, evergreen, medium blue, medium brown, yellow and light green.
+All seven are actually excluded from each of white/black/brown/gray doormats.
+For example, 1508 has an explicit raw "white" entry but preparation retains
+"medium blue"; the real compiler emits color="white", and real execution rejects
+that prepared Enum. The same source contains compound values such as
+"red black", "medium brown" and "medium gray", which explain token-vs-value
+differences for other color queries.
+
+This confirms representation incompatibility in this measured arm, not an
+unsupported claim that the raw bag defines real variants, availability, or
+product identity. No variant reconstruction, label rewriting or serving fix was
+made. Raw relevant feature values and actual decisions are preserved in
+artifacts/public_benchmarks/qp_faith_feature_audit.json; native output now includes
+attributed retained IDs and structured hard Enum predicates for auditability.
