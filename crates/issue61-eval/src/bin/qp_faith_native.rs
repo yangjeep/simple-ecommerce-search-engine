@@ -110,21 +110,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .into());
         }
         let compiled = compile(&p.query, &data.lexicon);
-        let candidates = candidate_source_ids(
-            &compiled,
-            &data.catalog,
-            &data.source_id_by_product,
-        );
+        let candidates = candidate_source_ids(&compiled, &data.catalog, &data.source_id_by_product);
         let retained = relevant.intersection(&candidates).count();
         let retention = retained as f64 / relevant.len() as f64;
         let category = category_emitted(&compiled.constraints);
-        let known = p.known_slots.as_object().ok_or("known_slots must be an object")?;
+        let known = p
+            .known_slots
+            .as_object()
+            .ok_or("known_slots must be an object")?;
         let matched = known
             .iter()
             .filter(|(slot, value)| {
-                value.as_str().is_some_and(|v| {
-                    known_slot_matches(slot, v, &compiled.constraints, &data)
-                })
+                value
+                    .as_str()
+                    .is_some_and(|v| known_slot_matches(slot, v, &compiled.constraints, &data))
             })
             .count();
         if p.family == "B_attr" {
@@ -213,5 +212,4 @@ mod tests {
         let contradictory = compile("black Nike size 9", &lexicon);
         assert!(candidate_source_ids(&contradictory, &catalog, &ids).is_empty());
     }
-
 }
