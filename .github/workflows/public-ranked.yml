@@ -36,8 +36,8 @@ jobs:
         with:
           python-version: '3.12'
       - uses: Swatinem/rust-cache@v2
-      - name: Format evaluation additions for verification
-        run: cargo fmt --all
+      - name: Check formatting
+        run: cargo fmt --all -- --check
       - name: Check locked build and regression tests
         run: |
           python3 -m unittest discover -s tests/public_benchmarks -v

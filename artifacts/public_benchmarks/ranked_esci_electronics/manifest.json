@@ -1,0 +1,48 @@
+{
+  "catalog_products": 2075,
+  "code_revision": "28dd8db3ba68b2b0becbe8356dbf2629d4275054",
+  "dataset": "esci_electronics",
+  "dcg": "linear gain / log2(rank + 1)",
+  "delegate_oversample": 20,
+  "duplicate_count_semantics": "identical_duplicate_rows counts repeats of an already seen product/label/gain; conflicting_duplicate_rows counts new distinct label/gain alternatives after a product's first; conflicting_product_ids counts unique affected products",
+  "gain_scale": {
+    "Complement": 0.01,
+    "Exact": 1.0,
+    "Irrelevant": 0.0,
+    "Substitute": 0.1
+  },
+  "k": 10,
+  "limits": [
+    "No external search services or model calls",
+    "Not a whole-system or latency claim",
+    "No qrel-based tuning; shared ingested catalog and shared Tantivy text index",
+    "Missing-catalog judgments stay in the metric denominator",
+    "Qrel/parser/search/mapping diagnostics invalidate BOTH paired scores; raw qrels, rows and raw rankings retained",
+    "No-positive-judgment queries retained with null metrics, not pooled into score means",
+    "No significance or held-out generalization claim"
+  ],
+  "min_enum_frequency": 1,
+  "protocol": "public_ranked_v2",
+  "qrel_duplicate_policy": "Identical label/gain repeats counted and collapsed; conflicting products have no selected gain; conflicting queries retain raw qrels and rankings, null both scores, and fail completed run",
+  "queries": 600,
+  "relevant": "gain > 0; unjudged hits score zero and judged coverage is reported",
+  "residual_policy": null,
+  "scope": "Existing pinned ESCI electronics TRAIN slice; NOT full ESCI, NOT held-out test; export lacks original query IDs",
+  "selectivity_threshold": 0.05,
+  "sources": [
+    {
+      "bytes": 4182075,
+      "path": "dataset_cache/esci_electronics/esci_electronics_products.jsonl",
+      "sha256": "282e76242aad807132d1aae388b081802cd3864ad5bfbf228a30f2b4d390a7c4"
+    },
+    {
+      "bytes": 141302,
+      "path": "dataset_cache/esci_electronics/esci_electronics_queries.jsonl",
+      "sha256": "1e3f580c0ea1c1ec2eebdf65a9be93dd51deb09017f19a52898e328e350ba9e9"
+    }
+  ],
+  "treatments": [
+    "lexical_full_query_no_filter",
+    "compiled_native_pipeline"
+  ]
+}

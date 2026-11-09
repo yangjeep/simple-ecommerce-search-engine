@@ -60,7 +60,10 @@ impl Qrels {
             "product_id": id, "label": label, "gain": gain, "source_row": source_row
         }));
         let variants = self.seen.entry(id.to_owned()).or_default();
-        if variants.iter().any(|(old_label, old_gain)| old_label == label && *old_gain == gain) {
+        if variants
+            .iter()
+            .any(|(old_label, old_gain)| old_label == label && *old_gain == gain)
+        {
             self.identical_duplicate_rows += 1;
             return;
         }
@@ -75,7 +78,8 @@ impl Qrels {
             self.gains.insert(id.to_owned(), value);
         }
         if gain.is_none() {
-            self.diagnostics.push(format!("unknown qrel label {label:?} for product {id}"));
+            self.diagnostics
+                .push(format!("unknown qrel label {label:?} for product {id}"));
         }
         variants.push((label.to_owned(), gain));
     }
@@ -132,7 +136,12 @@ fn load_wands() -> Result<Dataset> {
             Some(WandsLabel::Irrelevant) => Some(0.0),
             None => None,
         };
-        judgments.entry(qid.to_owned()).or_default().insert(pid, label, gain, serde_json::to_value(&row)?);
+        judgments.entry(qid.to_owned()).or_default().insert(
+            pid,
+            label,
+            gain,
+            serde_json::to_value(&row)?,
+        );
     }
     let mut queries = Vec::new();
     let mut seen = BTreeSet::new();
@@ -190,10 +199,15 @@ fn load_esci() -> Result<Dataset> {
             } else {
                 None
             };
-            qrels.insert(&j.product_id, &j.label, gain, json!({
-                "export_row": i + 1, "judgment_index": judgment_index,
-                "product_id": j.product_id, "label": j.label
-            }));
+            qrels.insert(
+                &j.product_id,
+                &j.label,
+                gain,
+                json!({
+                    "export_row": i + 1, "judgment_index": judgment_index,
+                    "product_id": j.product_id, "label": j.label
+                }),
+            );
         }
         queries.push(Query {
             id: format!("export_row_{}", i + 1),
@@ -390,7 +404,8 @@ fn run(dataset: &str, output: &Path) -> Result<()> {
         );
         let has_positive = q.qrels.gains.values().any(|&g| g > 0.0);
         let has_errors = !q.qrels.diagnostics.is_empty()
-            || !baseline_errors.is_empty() || !native_errors.is_empty();
+            || !baseline_errors.is_empty()
+            || !native_errors.is_empty();
         diagnostic_queries += usize::from(has_errors);
         no_positive += usize::from(!has_positive && q.qrels.diagnostics.is_empty());
         identical_duplicate_rows += q.qrels.identical_duplicate_rows;
@@ -556,7 +571,10 @@ mod tests {
         assert_eq!(qrels.raw_rows.len(), 5);
         assert_eq!(qrels.identical_duplicate_rows, 2);
         assert_eq!(qrels.conflicting_duplicate_rows, 1);
-        assert_eq!(qrels.conflicting_product_ids, BTreeSet::from(["p".to_owned()]));
+        assert_eq!(
+            qrels.conflicting_product_ids,
+            BTreeSet::from(["p".to_owned()])
+        );
         assert!(!qrels.diagnostics.is_empty());
     }
 

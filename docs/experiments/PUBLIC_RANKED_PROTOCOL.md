@@ -80,3 +80,17 @@ For the next run, declare these rules before scores:
 - Label gains, query text, catalog and ranking settings remain unchanged.
 
 This is an input-integrity amendment, not tuning against ranked results.
+
+## Measured v2 results: REVISE, not a win
+
+Run [42699839852](https://github.com/yangjeep/simple-ecommerce-search-engine/actions/runs/42699839852) executed both complete query workloads. Summaries, input hashes, initial failures and v2 failures are checked in under `artifacts/public_benchmarks/`. Full raw qrels and ranked rows are CI artifacts; their verified archive and queries-file hashes and expiry are in `ranked_artifact_sources.json`. These artifacts expire on 2027-02-07; rerun the pinned workflow afterward. Raw catalogs are not redistributed here.
+
+WANDS: 42,994 catalog products, 480 queries, 465 paired valid scores. Fourteen queries have conflicting original judgments; one further query has no positive judgment. 1,561 identical repeated judgment rows were counted and collapsed. Native versus full-query lexical: nDCG@10 0.663673 vs 0.688746; Recall@10 0.055737 vs 0.058138; MRR@10 0.851702 vs 0.871558. These are descriptive subset means. The declared whole-run gate remains failed. All 465 scores were independently recomputed from retained rows with no discrepancy. No search/parser errors occurred in WANDS.
+
+ESCI electronics TRAIN slice: 2,075 products, 600 exported query rows, 489 paired valid scores. Four queries have execution diagnostics; 110 have no positive judgments (sets overlap). 85 identical repeated judgment rows were collapsed, no conflicting judgments. Native versus lexical: nDCG@10 0.303422 vs 0.309732; Recall@10 0.393426 vs 0.403265; MRR@10 0.315567 vs 0.322314. Again the gate fails and these are only valid-pair means, not full ESCI or held-out results.
+
+WANDS mechanism evidence: `marble` and `driftwood mirror` consume lexical text into ambiguity, then have no hard constraints or residual terms. FastPath returns IDs 0–9 with zero scores: nDCG drops from 1.0 and 0.90035 respectively to zero. This is lexical signal loss, not overfiltering. `decorative wall clocks` and `feather wall art` have attribute/type constraints and no residual text, then zero native hits; the artifacts alone do not distinguish incorrect intent from incompatible catalog representation. These observations motivate separate preregistered ablations, not a post-hoc change to this run.
+
+No semantic fix, qrel relabeling, LLM call, significance test, or whole-system superiority claim is made.
+
+Independent recomputation also verified all 489 ESCI pairs. Its four failures are actual Tantivy query-parser diagnostics in both arms: row 79 treats `delivered:` as a nonexistent field; rows 320 and 332 have malformed leading wildcard/operator syntax; row 399 has an unparsed expression tail. The first three also lack positive judgments: exclusive accounting is 489 scored + 107 no-positive-only + 4 diagnostic rows. No silent parser fallback was used. A concrete negative is `amazon basic mini display port to hdmi cable`, compiled with HDMI as a color constraint plus brand, nDCG 1→0. Sparse judgments/unjudged-zero scoring and combined filtering/text/ranking changes limit causal attribution.
