@@ -21,8 +21,7 @@ fn category_emitted(constraints: &[ResolvedConstraint]) -> bool {
         matches!(
             c,
             ResolvedConstraint::Structural(
-                StructuralConstraint::ProductType(_)
-                    | StructuralConstraint::ProductTypeAny(_)
+                StructuralConstraint::ProductType(_) | StructuralConstraint::ProductTypeAny(_)
             )
         )
     })
@@ -31,7 +30,9 @@ fn category_emitted(constraints: &[ResolvedConstraint]) -> bool {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 4 {
-        return Err("usage: qp_faith_native <wands-catalog.jsonl> <probe.jsonl> <output.json>".into());
+        return Err(
+            "usage: qp_faith_native <wands-catalog.jsonl> <probe.jsonl> <output.json>".into(),
+        );
     }
     let catalog_bytes = std::fs::read(&args[1])?;
     let probe_bytes = std::fs::read(&args[2])?;
@@ -64,7 +65,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for p in probes {
         let relevant: BTreeSet<String> = p.relevant_pids.iter().map(u64::to_string).collect();
         if relevant.len() != p.relevant_pids.len() || !relevant.is_subset(&universe) {
-            return Err(format!("{}: duplicate or missing public relevant product IDs", p.query).into());
+            return Err(format!(
+                "{}: duplicate or missing public relevant product IDs",
+                p.query
+            )
+            .into());
         }
         let compiled = compile(&p.query, &data.lexicon);
         let candidates: BTreeSet<String> = compiled
