@@ -1,0 +1,37 @@
+name: Public QP-Faith replay
+on:
+  pull_request:
+    paths:
+      - 'scripts/public_benchmarks/**'
+      - 'tests/public_benchmarks/**'
+      - 'benchmarks/manifests/qp_faith_public.json'
+      - 'crates/issue61-eval/src/bin/qp_faith_native.rs'
+      - '.github/workflows/qp-faith-public.yml'
+permissions:
+  contents: read
+jobs:
+  public-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Offline tooling tests
+        run: python3 -m unittest discover -s tests/public_benchmarks -v
+      - name: Fetch pinned public outputs and replay official scorer
+        run: |
+          mkdir -p artifacts/public_benchmarks
+          python3 scripts/public_benchmarks/qp_faith.py --fetch --source dataset_cache/qp-faith-public --output artifacts/public_benchmarks/qp_faith_replay.json
+      - name: Fetch and verify WANDS
+        run: |
+          bash scripts/datasets/fetch_wands.sh
+          python3 scripts/datasets/prepare_wands.py
+      - name: Test actual compiler adapter
+        run: cargo test -p issue61-eval --bin qp_faith_native
+      - name: Execute actual compiler and hard filters on public probe
+        run: cargo run --release -p issue61-eval --bin qp_faith_native -- dataset_cache/wands/catalog.jsonl dataset_cache/qp-faith-public/data/probe/probe.jsonl artifacts/public_benchmarks/qp_faith_native.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qp-faith-public-results
+          path: artifacts/public_benchmarks/qp_faith*.json
