@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -31,12 +32,17 @@ class FeatureAuditTests(unittest.TestCase):
             row = {"query": "white doormats", "family": "B_attr",
                    "retained_relevant_pids": [], "retained_relevant_products": 0,
                    "hard_enum_constraints": [{"attribute": "color", "value": "white"}]}
-            native.write_text(json.dumps({"summary": {}, "rows": [row]}))
+            summary = {"catalog_sha256": hashlib.sha256(prepared.read_bytes()).hexdigest(),
+                       "probe_sha256": hashlib.sha256(probe.read_bytes()).hexdigest()}
+            native.write_text(json.dumps({"summary": summary, "rows": [row]}))
             result = m.audit(raw, prepared, probe, native)
             self.assertEqual(result["queries"][0]["enum_only_prediction_disagreement_ids"], [])
             self.assertEqual(result["queries"][0]["exclusion_reason_counts"],
                              {"matching_raw_value_not_prepared_exact_value": 1})
             self.assertFalse(result["focus_products"][0]["actual_native_retained"])
+            prepared.write_text(prepared.read_text() + "\n")
+            with self.assertRaisesRegex(ValueError, "native report input mismatch"):
+                m.audit(raw, prepared, probe, native)
 
 
 if __name__ == "__main__":
