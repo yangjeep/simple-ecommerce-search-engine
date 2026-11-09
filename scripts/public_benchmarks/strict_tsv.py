@@ -17,6 +17,8 @@ def read_rows(path):
             raise ValueError("empty or duplicate TSV headers")
         rows = []
         for row in reader:
+            if row == header:
+                raise ValueError(f"TSV row {reader.line_num}: repeated header")
             if len(row) != len(header):
                 raise ValueError(f"TSV row {reader.line_num}: wrong column count")
             rows.append(dict(zip(header, row)))

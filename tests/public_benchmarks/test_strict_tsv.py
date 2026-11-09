@@ -28,6 +28,10 @@ class StrictTsvTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.read("id\tid\n1\t2\n")
 
+    def test_rejects_repeated_header_row(self):
+        with self.assertRaisesRegex(ValueError, "repeated header"):
+            self.read("id\tlabel\n1\tExact\nid\tlabel\n")
+
     def test_rejects_wrong_width(self):
         with self.assertRaises(ValueError):
             self.read("id\tlabel\n1\n")

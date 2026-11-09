@@ -130,6 +130,9 @@ fn load_esci() -> Result<Dataset> {
     for (i, q) in raw_queries.into_iter().enumerate() {
         let mut gains = BTreeMap::new();
         for j in q.judgments {
+            if !matches!(j.label.as_str(), "Exact" | "Substitute" | "Complement" | "Irrelevant") {
+                return Err(format!("unknown ESCI label {:?} at export row {} for product {}", j.label, i + 1, j.product_id).into());
+            }
             insert_gain(&mut gains, &j.product_id, issue35_eval::label_gain(&j.label))?;
         }
         queries.push(Query { id: format!("export_row_{}", i + 1), text: q.query, gains });
@@ -173,6 +176,20 @@ fn ranked_ids(ids: impl Iterator<Item = ProductId>, external: &BTreeMap<ProductI
         ranked.push(external.get(&pid).ok_or_else(|| format!("unmapped ProductId {}", pid.0))?.clone());
     }
     Ok(ranked)
+}
+
+fn ranked_ids_or_diagnostic(
+    ids: impl Iterator<Item = ProductId>,
+    external: &BTreeMap<ProductId, String>,
+    diagnostics: &mut Vec<String>,
+) -> Vec<String> {
+    match ranked_ids(ids, external) {
+        Ok(ranking) => ranking,
+        Err(error) => {
+            diagnostics.push(format!("rank mapping: {error}"));
+            Vec::new()
+        }
+    }
 }
 
 fn metric_json(score: (f64, f64, f64)) -> Value {
@@ -227,17 +244,38 @@ fn run(dataset: &str, output: &Path) -> Result<()> {
     let mut changed = 0usize;
     for q in &data.queries {
         let baseline = delegate.search(std::slice::from_ref(&q.text), None, K);
-        let baseline_errors = delegate.diagnostics.take();
+        let mut baseline_errors = delegate.diagnostics.take();
         let compiled = compile(&q.text, &lexicon);
         let (plan, native) = execute_planned(&compiled, &data.catalog, &index, Some(&delegate), K, &policy, None);
-        let native_errors = delegate.diagnostics.take();
-        let baseline = ranked_ids(baseline.iter().map(|h| h.product), &data.external_ids)?;
-        let native = ranked_ids(native.iter().map(|h| h.product), &data.external_ids)?;
+        let mut native_errors = delegate.diagnostics.take();
+        // Keep original rank positions, including unmapped/duplicate IDs, even
+        // when the pair cannot be scored. A bad hit must not abort later queries.
+        let baseline_raw: Vec<Value> = baseline.iter().map(|h| json!({
+            "internal_product_id": h.product.0,
+            "external_product_id": data.external_ids.get(&h.product),
+            "score": h.score,
+            "variant_id": h.variant.map(|v| v.0)
+        })).collect();
+        let native_raw: Vec<Value> = native.iter().map(|h| json!({
+            "internal_product_id": h.product.0,
+            "external_product_id": data.external_ids.get(&h.product),
+            "score": h.score,
+            "variant_id": h.variant.0
+        })).collect();
+        let baseline = ranked_ids_or_diagnostic(
+            baseline.iter().map(|h| h.product), &data.external_ids, &mut baseline_errors,
+        );
+        let native = ranked_ids_or_diagnostic(
+            native.iter().map(|h| h.product), &data.external_ids, &mut native_errors,
+        );
         let has_positive = q.gains.values().any(|&g| g > 0.0);
         let has_errors = !baseline_errors.is_empty() || !native_errors.is_empty();
         diagnostic_queries += usize::from(has_errors);
         no_positive += usize::from(!has_positive);
-        changed += usize::from(baseline != native);
+        changed += usize::from(
+            baseline_raw.iter().map(|h| &h["internal_product_id"]).collect::<Vec<_>>()
+                != native_raw.iter().map(|h| &h["internal_product_id"]).collect::<Vec<_>>()
+        );
         let status = if has_errors { "paired_diagnostic_failure" } else if !has_positive { "no_positive_qrels" } else { "scored" };
         let scores = if has_positive && !has_errors {
             paired += 1;
@@ -257,8 +295,10 @@ fn run(dataset: &str, output: &Path) -> Result<()> {
             "compiled_ambiguities": format!("{:?}", compiled.ambiguous),
             "residual_lexical": compiled.residual_lexical, "plan": format!("{:?}", plan.outcome),
             "selectivity": plan.selectivity,
-            "lexical_judged_hits": judged_hits(&baseline), "native_judged_hits": judged_hits(&native),
+            "lexical_judged_hits": if baseline_errors.is_empty() { Some(judged_hits(&baseline)) } else { None },
+            "native_judged_hits": if native_errors.is_empty() { Some(judged_hits(&native)) } else { None },
             "lexical_ranked_ids": baseline, "native_ranked_ids": native,
+            "lexical_raw_ranking": baseline_raw, "native_raw_ranking": native_raw,
             "lexical_diagnostics": baseline_errors, "native_diagnostics": native_errors
         });
         serde_json::to_writer(&mut rows, &row)?;
@@ -330,6 +370,22 @@ mod tests {
         let scores = ndcg_recall_mrr(&["present".to_owned()], &gains, K);
         assert_eq!(scores.1, 0.5);
         assert!(scores.0 < 1.0);
+    }
+
+    #[test]
+    fn mapping_failures_become_diagnostics_and_later_queries_continue() {
+        let ids = BTreeMap::from([(ProductId(7), "asin".to_owned())]);
+        let mut errors = Vec::new();
+        assert!(ranked_ids_or_diagnostic([ProductId(8)].into_iter(), &ids, &mut errors).is_empty());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("unmapped ProductId 8"));
+        errors.clear();
+        assert!(ranked_ids_or_diagnostic([ProductId(7), ProductId(7)].into_iter(), &ids, &mut errors).is_empty());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("duplicate ranked ProductId 7"));
+        errors.clear();
+        assert_eq!(ranked_ids_or_diagnostic([ProductId(7)].into_iter(), &ids, &mut errors), vec!["asin"]);
+        assert!(errors.is_empty());
     }
 
     #[test]
