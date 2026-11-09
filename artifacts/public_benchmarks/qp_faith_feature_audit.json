@@ -1,0 +1,3039 @@
+{
+  "status": "observational_audit",
+  "native_summary": {
+    "arm": "existing_issue61_wands_catalog_profile_compile_lexicon_min_frequency_1",
+    "attributed_all_known_slots_matched": 16,
+    "attributed_any_hard_constraint": 18,
+    "attributed_queries": 18,
+    "catalog_products": 42994,
+    "catalog_sha256": "42b9309ca7112bf04fe9fe438057f86f8cd913713b5eea3a9358833523a094b1",
+    "engine_commit": "e86a7f7c4bc8ef7d69acebfb2b2e005d47a40901",
+    "entity_mean_candidate_relevant_retention": 1.0,
+    "entity_product_type_hard_filter_count": 0,
+    "entity_product_type_hard_filter_rate": 0.0,
+    "entity_queries": 55,
+    "limitations": [
+      "Existing statistics-derived lexicon, not an LLM-installed merchant-context arm.",
+      "Candidate retention is not Recall@K; there is no ranker in this experiment.",
+      "Procedural relevance sets are not WANDS human judgments.",
+      "No ESCI result or production prevalence inference."
+    ],
+    "probe_sha256": "6d01c359119065ce03bf6248b4bc1a347c9c590eacc58ac04fdc1ba27e90fd83",
+    "query_count": 73,
+    "ranking_executed": false
+  },
+  "input_sha256": {
+    "product.csv": "d993926254572e6eba96c8fd87cc549a17fb91ad3748308036eee4cf92b10ac6",
+    "catalog.jsonl": "42b9309ca7112bf04fe9fe438057f86f8cd913713b5eea3a9358833523a094b1",
+    "probe.jsonl": "6d01c359119065ce03bf6248b4bc1a347c9c590eacc58ac04fdc1ba27e90fd83",
+    "qp_faith_native.json": "dd024bb19026be4715c77ef2ba3b9138c3043990fabd9323f4b58eff4dccd0cd"
+  },
+  "queries": [
+    {
+      "query": "white doormats",
+      "reference_count": 15,
+      "actual_retained_count": 0,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 7,
+        "matching_raw_value_not_prepared_exact_value": 8
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "gray nightstands",
+      "reference_count": 52,
+      "actual_retained_count": 7,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 36,
+        "matching_raw_value_not_prepared_exact_value": 9
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "black planters",
+      "reference_count": 47,
+      "actual_retained_count": 15,
+      "exclusion_reason_counts": {
+        "matching_raw_value_not_prepared_exact_value": 19,
+        "raw_token_membership_not_exact_enum": 13
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "white beds",
+      "reference_count": 213,
+      "actual_retained_count": 79,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 53,
+        "matching_raw_value_not_prepared_exact_value": 81
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "brown planters",
+      "reference_count": 53,
+      "actual_retained_count": 30,
+      "exclusion_reason_counts": {
+        "matching_raw_value_not_prepared_exact_value": 6,
+        "raw_token_membership_not_exact_enum": 17
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "black doormats",
+      "reference_count": 95,
+      "actual_retained_count": 20,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 67,
+        "matching_raw_value_not_prepared_exact_value": 8
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "metal chandeliers",
+      "reference_count": 346,
+      "actual_retained_count": 346,
+      "exclusion_reason_counts": {},
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "black beds",
+      "reference_count": 228,
+      "actual_retained_count": 107,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 39,
+        "matching_raw_value_not_prepared_exact_value": 82
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "gray planters",
+      "reference_count": 62,
+      "actual_retained_count": 28,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 26,
+        "matching_raw_value_not_prepared_exact_value": 8
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "black nightstands",
+      "reference_count": 56,
+      "actual_retained_count": 24,
+      "exclusion_reason_counts": {
+        "matching_raw_value_not_prepared_exact_value": 22,
+        "raw_token_membership_not_exact_enum": 10
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "brown nightstands",
+      "reference_count": 68,
+      "actual_retained_count": 17,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 44,
+        "matching_raw_value_not_prepared_exact_value": 7
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "gray beds",
+      "reference_count": 403,
+      "actual_retained_count": 171,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 135,
+        "matching_raw_value_not_prepared_exact_value": 97
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "white planters",
+      "reference_count": 58,
+      "actual_retained_count": 24,
+      "exclusion_reason_counts": {
+        "matching_raw_value_not_prepared_exact_value": 17,
+        "raw_token_membership_not_exact_enum": 17
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "brown beds",
+      "reference_count": 136,
+      "actual_retained_count": 61,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 60,
+        "matching_raw_value_not_prepared_exact_value": 15
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "white nightstands",
+      "reference_count": 85,
+      "actual_retained_count": 23,
+      "exclusion_reason_counts": {
+        "matching_raw_value_not_prepared_exact_value": 28,
+        "raw_token_membership_not_exact_enum": 34
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "glass chandeliers",
+      "reference_count": 58,
+      "actual_retained_count": 58,
+      "exclusion_reason_counts": {},
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "brown doormats",
+      "reference_count": 93,
+      "actual_retained_count": 37,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 52,
+        "matching_raw_value_not_prepared_exact_value": 4
+      },
+      "enum_only_prediction_disagreement_ids": []
+    },
+    {
+      "query": "gray doormats",
+      "reference_count": 24,
+      "actual_retained_count": 2,
+      "exclusion_reason_counts": {
+        "raw_token_membership_not_exact_enum": 18,
+        "matching_raw_value_not_prepared_exact_value": 4
+      },
+      "enum_only_prediction_disagreement_ids": []
+    }
+  ],
+  "focus_products": [
+    {
+      "product_id": "1508",
+      "query": "white doormats",
+      "title": "keppler pineapple 36 in . x 15 in . non-slip outdoor boot tray",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "3473",
+      "query": "white doormats",
+      "title": "melina beachcomber 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "gold"
+        ]
+      ],
+      "prepared_color": "gold",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "3594",
+      "query": "white doormats",
+      "title": "markel anchor 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "evergreen"
+        ]
+      ],
+      "prepared_color": "evergreen",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "3650",
+      "query": "white doormats",
+      "title": "markel parquet non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "light gree"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "5728",
+      "query": "white doormats",
+      "title": "markel honeycomb 36 in . x 24 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "medium brown"
+        ]
+      ],
+      "prepared_color": "medium brown",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "12994",
+      "query": "white doormats",
+      "title": "kiesel elipse outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "yellow"
+        ]
+      ],
+      "prepared_color": "yellow",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "38821",
+      "query": "white doormats",
+      "title": "mayson hello 35 in . x 23 in . non-slip indoor/outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "red/black"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "brown"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ]
+      ],
+      "prepared_color": "light green",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "white"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "1508",
+      "query": "black doormats",
+      "title": "keppler pineapple 36 in . x 15 in . non-slip outdoor boot tray",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3473",
+      "query": "black doormats",
+      "title": "melina beachcomber 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "gold"
+        ]
+      ],
+      "prepared_color": "gold",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3594",
+      "query": "black doormats",
+      "title": "markel anchor 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "evergreen"
+        ]
+      ],
+      "prepared_color": "evergreen",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3650",
+      "query": "black doormats",
+      "title": "markel parquet non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "light gree"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "5728",
+      "query": "black doormats",
+      "title": "markel honeycomb 36 in . x 24 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "medium brown"
+        ]
+      ],
+      "prepared_color": "medium brown",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "12994",
+      "query": "black doormats",
+      "title": "kiesel elipse outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "yellow"
+        ]
+      ],
+      "prepared_color": "yellow",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "38821",
+      "query": "black doormats",
+      "title": "mayson hello 35 in . x 23 in . non-slip indoor/outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "red/black"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "brown"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ]
+      ],
+      "prepared_color": "light green",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "black"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "1508",
+      "query": "brown doormats",
+      "title": "keppler pineapple 36 in . x 15 in . non-slip outdoor boot tray",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3473",
+      "query": "brown doormats",
+      "title": "melina beachcomber 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "gold"
+        ]
+      ],
+      "prepared_color": "gold",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3594",
+      "query": "brown doormats",
+      "title": "markel anchor 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "evergreen"
+        ]
+      ],
+      "prepared_color": "evergreen",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3650",
+      "query": "brown doormats",
+      "title": "markel parquet non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "light gree"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "5728",
+      "query": "brown doormats",
+      "title": "markel honeycomb 36 in . x 24 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "medium brown"
+        ]
+      ],
+      "prepared_color": "medium brown",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "12994",
+      "query": "brown doormats",
+      "title": "kiesel elipse outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "yellow"
+        ]
+      ],
+      "prepared_color": "yellow",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "38821",
+      "query": "brown doormats",
+      "title": "mayson hello 35 in . x 23 in . non-slip indoor/outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "red/black"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "brown"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ]
+      ],
+      "prepared_color": "light green",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "brown"
+        }
+      ],
+      "exclusion_reasons": [
+        "matching_raw_value_not_prepared_exact_value"
+      ]
+    },
+    {
+      "product_id": "1508",
+      "query": "gray doormats",
+      "title": "keppler pineapple 36 in . x 15 in . non-slip outdoor boot tray",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3473",
+      "query": "gray doormats",
+      "title": "melina beachcomber 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "gold"
+        ]
+      ],
+      "prepared_color": "gold",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3594",
+      "query": "gray doormats",
+      "title": "markel anchor 35 in . x 23 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "evergreen"
+        ]
+      ],
+      "prepared_color": "evergreen",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "3650",
+      "query": "gray doormats",
+      "title": "markel parquet non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "light gree"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "medium brown"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ]
+      ],
+      "prepared_color": "medium blue",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "5728",
+      "query": "gray doormats",
+      "title": "markel honeycomb 36 in . x 24 in . non-slip outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "medium brown"
+        ]
+      ],
+      "prepared_color": "medium brown",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "12994",
+      "query": "gray doormats",
+      "title": "kiesel elipse outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "purple"
+        ],
+        [
+          "color",
+          "red black"
+        ],
+        [
+          "color",
+          "bluestone"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "light green"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "solid red"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "yellow"
+        ]
+      ],
+      "prepared_color": "yellow",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    },
+    {
+      "product_id": "38821",
+      "query": "gray doormats",
+      "title": "mayson hello 35 in . x 23 in . non-slip indoor/outdoor door mat",
+      "raw_product_class": "Doormats",
+      "raw_color_features": [
+        [
+          "color",
+          "camel"
+        ],
+        [
+          "color",
+          "gold"
+        ],
+        [
+          "color",
+          "red"
+        ],
+        [
+          "color",
+          "navy"
+        ],
+        [
+          "color",
+          "dark brown"
+        ],
+        [
+          "color",
+          "charcoal"
+        ],
+        [
+          "color",
+          "aquamarine"
+        ],
+        [
+          "color",
+          "yellow"
+        ],
+        [
+          "color",
+          "red/black"
+        ],
+        [
+          "color",
+          "evergreen"
+        ],
+        [
+          "color",
+          "brown"
+        ],
+        [
+          "color",
+          "white"
+        ],
+        [
+          "color",
+          "orange"
+        ],
+        [
+          "color",
+          "medium blue"
+        ],
+        [
+          "color",
+          "bordeaux"
+        ],
+        [
+          "color",
+          "medium gray"
+        ],
+        [
+          "color",
+          "light green"
+        ]
+      ],
+      "prepared_color": "light green",
+      "actual_hard_enum_constraints": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "actual_native_retained": false,
+      "published_relevant": true,
+      "failed_enum_predicates": [
+        {
+          "attribute": "color",
+          "value": "gray"
+        }
+      ],
+      "exclusion_reasons": [
+        "raw_token_membership_not_exact_enum"
+      ]
+    }
+  ],
+  "limits": [
+    "Feature bags are product-level metadata, not verified variant identities.",
+    "Reasons describe representation differences, not corrections to ground truth.",
+    "Enum-only agreement is tested only within published relevant sets.",
+    "Native decisions come from real compiler/executor, not this Python predictor."
+  ]
+}
