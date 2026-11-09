@@ -57,3 +57,26 @@ promotion threshold is asserted. Do not infer causal benefit from a single
 aggregate: separate routing/constraint changes from ranking path changes and
 preserve the known WANDS feature-representation mismatch. A failed acquisition,
 parser or execution stage is a blocker with logs, not a measured score.
+
+## Amendment v2: duplicate judgments, before any successful score output
+
+Initial run 42698435456 compiled both datasets and passed regression tests, but
+stopped during qrel loading before emitting any ranking scores:
+WANDS encountered duplicate product judgment 41180; ESCI electronics encountered
+B07D377Q6D. Failure artifacts are preserved. No interpretation of model quality
+or query selection follows from these input failures.
+
+For the next run, declare these rules before scores:
+
+- Retain every original judgment row in per-query evidence.
+- Identical repeated query-product labels are one metric judgment, not multiple
+  products. Collapse them while reporting duplicate counts.
+- Conflicting labels for the same query-product pair are unresolved input
+  diagnostics. Do not select max/min/first/last label. Both paired scores are
+  null for that query; preserve raw judgments and continue the workload.
+- Conflicts join the diagnostic query count and make the completed run nonzero.
+  Report positive-qrel/diagnostic-free subset means only with explicit coverage,
+  never as a clean full-workload result.
+- Label gains, query text, catalog and ranking settings remain unchanged.
+
+This is an input-integrity amendment, not tuning against ranked results.

@@ -378,7 +378,8 @@ mod tests {
         let delegate = BitmapTantivyDelegate::new(
             &built.index,
             vec![built.title_field, built.description_field],
-        ).unwrap();
+        )
+        .unwrap();
         let terms = vec!["wood".to_string()];
         let (hits, diagnostics) = delegate.search_with_diagnostics(&terms, None, 10);
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
@@ -396,7 +397,8 @@ mod tests {
         let delegate = BitmapTantivyDelegate::new(
             &built.index,
             vec![built.title_field, built.description_field],
-        ).unwrap();
+        )
+        .unwrap();
         let terms = vec!["(".to_string()];
         let (hits, diagnostics) = delegate.search_with_diagnostics(&terms, None, 10);
         assert!(!diagnostics.is_empty());
@@ -493,4 +495,3 @@ mod tests {
         );
     }
 }
-
