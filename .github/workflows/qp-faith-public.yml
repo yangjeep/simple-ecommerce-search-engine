@@ -39,6 +39,8 @@ jobs:
         run: cargo test -p issue61-eval --bin qp_faith_native
       - name: Execute actual compiler and hard filters on public probe
         run: cargo run --release -p issue61-eval --bin qp_faith_native -- dataset_cache/wands/catalog.jsonl dataset_cache/qp-faith-public/data/probe/probe.jsonl artifacts/public_benchmarks/qp_faith_native.json
+      - name: Audit original features against actual filter decisions
+        run: python3 scripts/public_benchmarks/audit_wands_features.py dataset_cache/wands/product.csv dataset_cache/wands/catalog.jsonl dataset_cache/qp-faith-public/data/probe/probe.jsonl artifacts/public_benchmarks/qp_faith_native.json artifacts/public_benchmarks/qp_faith_feature_audit.json
       - uses: actions/upload-artifact@v4
         with:
           name: qp-faith-public-results
